@@ -1,0 +1,72 @@
+/**
+ * mock 冒烟:用 msw/node 起同一份 handlers,经 contracts createClient 走登录 → /me → 业务接口
+ * (浏览器里 msw 走 Service Worker,此脚本验证 handlers/数据/客户端联通逻辑)
+ * 运行:npm run test:mock
+ */
+import { setupServer } from 'msw/node';
+import { createClient } from '../../../packages/contracts/src/index';
+import { handlers } from '../src/mocks/handlers';
+
+const server = setupServer(...handlers);
+server.listen({ onUnhandledRequest: 'error' });
+
+let token: string | null = null;
+let sawUnauthorized = false;
+const api = createClient({
+  baseUrl: 'http://localhost/api/v1',
+  getToken: () => token,
+  onUnauthorized: () => { sawUnauthorized = true; },
+});
+
+const assert = (cond: unknown, msg: string) => { if (!cond) throw new Error(`✗ ${msg}`); console.log(`✓ ${msg}`); };
+
+try {
+  // 未登录 → 401 触发 onUnauthorized
+  await api.get('/me').catch(() => undefined);
+  assert(sawUnauthorized, '未登录访问 /me 触发 401 → onUnauthorized');
+
+  // 管理员登录
+  const login = await api.post('/auth/login', { body: { phone: '13800000001', password: 'Admin@123' } });
+  token = login.data.accessToken;
+  assert(login.data.me.role === 'admin' && login.data.me.orgName === '启明演示机构', '管理员 13800000001/Admin@123 登录,机构=启明演示机构');
+
+  const me = await api.get('/me');
+  assert(me.data.name === '王校长', '/me 返回 王校长');
+
+  const teachers = await api.get('/admin/teachers', { query: { page: 1, size: 20 } });
+  assert(teachers.data.total === 2, '教师列表 2 人(seed 口径)');
+
+  const stus = await api.get('/admin/students', { query: { page: 1, size: 50 } });
+  assert(stus.data.total === 12, '学生列表 12 人(seed 口径)');
+
+  const dash = await api.get('/admin/dashboard');
+  assert(dash.data.studentCount === 12, '管理员总览 studentCount=12');
+
+  // 教师登录 + 题库
+  const tLogin = await api.post('/auth/login', { body: { phone: '13800000002', password: 'Teacher@123' } });
+  token = tLogin.data.accessToken;
+  const qs = await api.get('/questions', { query: { page: 1, size: 50 } });
+  assert(qs.data.total === 30, '题库 30 题(seed 口径)');
+  const courses = await api.get('/teacher/courses');
+  assert(courses.data.length === 2, '教师课程 2 门');
+
+  // 学生登录码兑换
+  const sLogin = await api.post('/auth/student/qr-exchange', {
+    body: { token: 'QM-DEMO', deviceFingerprint: 'fp-smoke', deviceName: 'smoke-tablet' },
+  });
+  token = sLogin.data.accessToken;
+  assert(sLogin.data.me.name === '林小满', '学生登录码 QM-DEMO 兑换为 林小满');
+  const today = await api.get('/student/today');
+  assert(!!today.data.todayLesson, '/student/today 返回今日课程');
+  const wrong = await api.get('/student/wrong-book', { query: { page: 1, size: 20 } });
+  assert(wrong.data.total === 2, '错题本 2 条');
+
+  // 错误密码
+  token = null;
+  const bad = await api.post('/auth/login', { body: { phone: '13800000001', password: 'wrong' } }).catch((e) => e);
+  assert(bad instanceof Error, '错误密码被拒绝');
+
+  console.log('\nmock 冒烟全部通过');
+} finally {
+  server.close();
+}
