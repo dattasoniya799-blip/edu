@@ -12,7 +12,8 @@ import type {
 } from '@qiming/contracts';
 
 const ORG = '启明演示机构';
-const orgSettings: MeDto['orgSettings'] = {
+/** 全机构设置(各 Me 共享同一引用;PUT /admin/settings 时由 handlers 原地修改) */
+export const orgSettings: MeDto['orgSettings'] = {
   ai: { qaGuideOnly: true, preGrading: true },
   studentHours: { start: '06:00', end: '22:30' },
   deviceBinding: true,
