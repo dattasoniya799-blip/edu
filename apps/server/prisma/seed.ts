@@ -9,6 +9,7 @@
  * 数据为确定性生成(固定随机种子),便于 Gate-0 对账。
  * 密码哈希: scrypt(开发态);生产在 A1 任务切换为 argon2。演示密码统一 Admin@123 / Teacher@123
  */
+import 'dotenv/config'; // 防止脚本误写默认库(波次1事故根因修复)
 import { Client } from 'pg';
 import { scryptSync, randomBytes } from 'crypto';
 

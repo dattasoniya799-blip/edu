@@ -4,6 +4,7 @@
  * 行为: 逐图谱校验(重复code/断链parent/断链edge/缺必填) → 全部通过才入库(事务) → 输出对账报告
  * 幂等: 同 (org_id, graph.code) 已存在则跳过该图谱并在报告中注明
  */
+import 'dotenv/config'; // 防止脚本误写默认库(波次1事故根因修复)
 import { Client } from 'pg';
 import * as fs from 'fs';
 import * as path from 'path';
