@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { LoggerModule } from 'nestjs-pino';
+import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
@@ -49,6 +50,7 @@ import { RedisModule } from './redis/redis.module';
     RedisModule,
     AuditModule,
     AuthModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [
