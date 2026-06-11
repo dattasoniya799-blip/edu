@@ -101,6 +101,67 @@ try {
   const afterDel = await api.get('/questions', { query: { page: 1, size: 50 } });
   assert(afterDel.data.total === 30, '删除后题库回到 30 题');
 
+  // ===== B4 编排→发布→组卷→发布作业全链路(有状态 mock) =====
+  const lessons = await api.get('/courses/{id}/lessons', { params: { id: 1 } });
+  assert(lessons.data.length === 6, '讲次时间线 6 讲(seed 口径)');
+  assert(lessons.data[3].status === 'draft' && lessons.data[3].prepChecklist.homework === false,
+    '第 4 讲初始 draft,checklist 缺 homework');
+
+  const pub1 = await api.post('/lessons/{id}/publish', { params: { id: 4 } }).catch((e) => e);
+  assert(pub1 instanceof Error && (pub1 as { code?: number }).code === 4201
+    && Array.isArray((pub1 as { detail?: unknown }).detail)
+    && ((pub1 as { detail: string[] }).detail).includes('homework'),
+    '缺课后作业时发布 → 4201 + detail 含 homework(A4 形状)');
+
+  const hw = await api.post('/papers', {
+    body: { name: '第4讲课后作业 · 一次函数的图象平移', type: 'homework', questions: [{ questionId: 1, score: 5 }, { questionId: 5, score: 5 }, { questionId: 4, score: 10 }] },
+  });
+  assert(hw.data.status === 'published' && hw.data.totalScore === 20, '组卷创建即 published,totalScore=Σ=20');
+
+  const asg = await api.post('/assignments', {
+    body: { paperId: hw.data.id, lessonId: 4, kind: 'homework', target: { courseId: 1 }, dueAt: '2026-06-17T13:00:00.000Z' },
+  });
+  assert(asg.data.id > 1 && asg.data.scoreCounted && asg.data.questionCount === 3, '发布作业:assignment 创建,homework 计分');
+
+  const segs4 = await api.get('/lessons/{id}/segments', { params: { id: 4 } });
+  await api.put('/lessons/{id}/segments', {
+    params: { id: 4 },
+    body: [...segs4.data, { seq: segs4.data.length + 1, type: 'homework', durationMin: 0, config: {}, resourceId: null, paperId: hw.data.id }],
+  });
+  const l4 = await api.get('/lessons/{id}', { params: { id: 4 } });
+  assert(l4.data.prepChecklist.homework === true, '挂载作业卷后 checklist.homework=true(PUT segments 同步重算)');
+  await api.post('/lessons/{id}/publish', { params: { id: 4 } });
+  const l4after = await api.get('/lessons/{id}', { params: { id: 4 } });
+  assert(l4after.data.status === 'ready', '补齐后发布 → 讲次状态变 ready(验收项)');
+
+  const lockedPut = await api.put('/papers/{id}', {
+    params: { id: hw.data.id },
+    body: { name: 'x', type: 'homework', questions: [{ questionId: 1, score: 5 }] },
+  }).catch((e) => e);
+  assert(lockedPut instanceof Error && (lockedPut as { code?: number }).code === 4302, '被 assignment 引用的卷禁改 → 4302');
+
+  // ===== B4 批改复核链路(第 3 讲作业,4 份解答题) =====
+  const pending0 = await api.get('/grading/pending');
+  assert(pending0.data[0]?.pendingCount === 4, '/grading/pending:4 份待复核(seed 口径)');
+  const fin0 = await api.post('/grading/assignments/{id}/finalize', { params: { id: 1 } }).catch((e) => e);
+  assert(fin0 instanceof Error && (fin0 as { code?: number }).code === 4501
+    && Array.isArray((fin0 as { detail?: unknown }).detail) && ((fin0 as { detail: number[] }).detail).length === 4,
+    '未复核完出分 → 4501 + detail=pendingAnswerIds(A5 形状)');
+
+  const g41 = await api.get('/grading/answers/{id}', { params: { id: 41 } });
+  assert(g41.data.studentName === '许诺' && g41.data.aiScore === 7 && g41.data.finalScore === null, '单份详情:许诺 AI 预批 7/10');
+  await api.put('/grading/answers/{id}/review', { params: { id: 41 }, body: { finalScore: 5, comment: '注意还原方向' } });
+  const pending1 = await api.get('/grading/pending');
+  assert(pending1.data[0]?.pendingCount === 3, '改分确认后 pending 数下降 4→3(验收项)');
+  await api.post('/grading/assignments/{id}/adopt-ai', { params: { id: 1 } });
+  const pending2 = await api.get('/grading/pending');
+  assert(pending2.data[0]?.pendingCount === 0, '全部采纳 AI 分后 pending=0');
+  const prog = await api.get('/assignments/{id}/progress', { params: { id: 1 } });
+  assert(prog.data.pendingSubjective === 0 && prog.data.gradedSubjective === 12, 'progress 与复核状态对账');
+  await api.post('/grading/assignments/{id}/finalize', { params: { id: 1 } });
+  const pending3 = await api.get('/grading/pending');
+  assert(pending3.data.length === 0, '出分后待复核列表清空');
+
   // 学生登录码兑换
   const sLogin = await api.post('/auth/student/qr-exchange', {
     body: { token: 'QM-DEMO', deviceFingerprint: 'fp-smoke', deviceName: 'smoke-tablet' },

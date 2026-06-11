@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import type { CourseDto } from '@qiming/contracts';
-import { Card, EmptyState, ProgressBar, StatCard, Tag } from '@qiming/ui';
+import { Button, Card, EmptyState, ProgressBar, StatCard, Tag } from '@qiming/ui';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthProvider';
 import { PageHead } from './Shell';
@@ -9,6 +10,7 @@ const CLASS_TYPE_LABEL = { group: '班课', one_on_one: '一对一', one_on_thre
 
 export function Dashboard() {
   const { me } = useAuth();
+  const navigate = useNavigate();
   const [courses, setCourses] = useState<CourseDto[]>([]);
   const [pending, setPending] = useState(0);
   const [loaded, setLoaded] = useState(false);
@@ -27,7 +29,9 @@ export function Dashboard() {
       <PageHead title={`${me?.name ?? ''} 老师,你好`} sub="今天的备课与批改安排都在这里" />
       <div className="mb-5 grid grid-cols-2 gap-4 xl:grid-cols-4">
         <StatCard ribbon="primary" label="在带课程" value={loaded ? courses.length : '—'} />
-        <StatCard ribbon="orange" label="待复核答卷" value={loaded ? pending : '—'} />
+        <Link to="/grading" aria-label="去批改复核">
+          <StatCard ribbon="orange" label="待复核答卷" value={loaded ? pending : '—'} delta="点击进入批改复核 →" />
+        </Link>
         <StatCard ribbon="green" label="本周课次" value={loaded ? courses.filter((c) => c.nextLessonAt).length : '—'} />
         <StatCard ribbon="violet" label="AI 预批" value="已开启" />
       </div>
@@ -45,6 +49,13 @@ export function Dashboard() {
                   {c.nextLessonAt && ` · 下次 ${new Date(c.nextLessonAt).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`}
                 </div>
                 <ProgressBar className="mt-3" value={Math.round((c.currentLesson / c.totalLessons) * 100)} tone="primary" />
+                {/* B4:课程卡 → 讲次时间线 / 备课入口 */}
+                <div className="mt-3.5 flex gap-2">
+                  <Button className="!px-3 !py-1.5 !text-xs" onClick={() => navigate(`/courses?courseId=${c.id}`)}>讲次列表</Button>
+                  <Button variant="primary" className="!px-3 !py-1.5 !text-xs" onClick={() => navigate(`/courses?courseId=${c.id}`)}>
+                    {c.nextLessonAt ? '编排课堂' : '查看编排'}
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
