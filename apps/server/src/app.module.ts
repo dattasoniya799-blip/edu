@@ -8,6 +8,10 @@ import { AppController } from './app.controller';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { AssignmentModule } from './assignment/assignment.module';
+import { AttemptModule } from './attempt/attempt.module';
+import { GradingModule } from './grading/grading.module';
+import { MasteryModule } from './mastery/mastery.module';
+import { WrongBookModule } from './wrongbook/wrongbook.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -67,6 +71,10 @@ import { UploadModule } from './upload/upload.module';
     PaperModule,
     AssignmentModule,
     ResourceModule,
+    MasteryModule,
+    WrongBookModule,
+    GradingModule,
+    AttemptModule,
   ],
   controllers: [AppController],
   providers: [
