@@ -1,0 +1,742 @@
+{
+  "metadata": {
+    "code": "math_junior_ability_v1",
+    "graph_type": "problem_solving_ability",
+    "subject": "数学",
+    "grade_range": [
+      "初一",
+      "初二",
+      "初三"
+    ],
+    "curriculum": "junior_math_problem_solving",
+    "status": "reviewed",
+    "version": 1,
+    "notes": "初中数学解题能力图谱。用于题目多维标注，回答学生需要具备什么能力才能完成题目。"
+  },
+  "sources": [
+    {
+      "id": "user-draft-2026-06-01",
+      "title": "初中数学解题能力与策略标签体系",
+      "source_type": "user_provided_taxonomy"
+    }
+  ],
+  "nodes": [
+    {
+      "code": "MATH-JH-ABL-CONCEPT",
+      "name": "概念理解能力",
+      "parent_code": "",
+      "level": 1,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "理解数学概念、定义、性质和适用条件。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-CONCEPT-DEFINITION",
+      "name": "定义识别",
+      "parent_code": "MATH-JH-ABL-CONCEPT",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "识别题目涉及的基本概念。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-CONCEPT-PROPERTY",
+      "name": "性质理解",
+      "parent_code": "MATH-JH-ABL-CONCEPT",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "理解概念、图形、函数的性质。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-CONCEPT-CONDITION",
+      "name": "条件辨析",
+      "parent_code": "MATH-JH-ABL-CONCEPT",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "判断公式、定理、方法的适用条件。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-INFO",
+      "name": "信息提取能力",
+      "parent_code": "",
+      "level": 1,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "从题干、图形、表格和图象中提取有效信息。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-INFO-EXPLICIT",
+      "name": "显性信息提取",
+      "parent_code": "MATH-JH-ABL-INFO",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "提取题干直接给出的条件。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-INFO-IMPLICIT",
+      "name": "隐含信息挖掘",
+      "parent_code": "MATH-JH-ABL-INFO",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "发现题目未明说但可由条件推出的信息。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-INFO-GEOMETRY",
+      "name": "图形信息转化",
+      "parent_code": "MATH-JH-ABL-INFO",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "从图形中读取边、角、位置和结构关系。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-INFO-CHART",
+      "name": "图表信息读取",
+      "parent_code": "MATH-JH-ABL-INFO",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "从表格、统计图、函数图象中读取信息。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-CALC",
+      "name": "运算处理能力",
+      "parent_code": "",
+      "level": 1,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "完成数式、方程、函数、几何和数据相关计算。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-CALC-ALGEBRA",
+      "name": "数式运算",
+      "parent_code": "MATH-JH-ABL-CALC",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "完成代数式、整式、分式、根式等运算。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-CALC-EQUATION",
+      "name": "方程与不等式求解",
+      "parent_code": "MATH-JH-ABL-CALC",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "求解方程、方程组、不等式和不等式组。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-CALC-FUNCTION",
+      "name": "函数表达式求解",
+      "parent_code": "MATH-JH-ABL-CALC",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "求函数解析式、交点坐标和参数。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-CALC-GEOMETRY",
+      "name": "几何计算",
+      "parent_code": "MATH-JH-ABL-CALC",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "完成长度、角度、面积、体积、弧长和扇形面积计算。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-CALC-DATA",
+      "name": "数据计算",
+      "parent_code": "MATH-JH-ABL-CALC",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "完成平均数、方差、概率、频率等统计计算。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-REASON",
+      "name": "逻辑推理能力",
+      "parent_code": "",
+      "level": 1,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "根据条件推导结论，完成证明、讨论和表达。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-REASON-INFER",
+      "name": "条件推出结论",
+      "parent_code": "MATH-JH-ABL-REASON",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "根据已知条件逐步推出目标结论。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-REASON-BACKWARD",
+      "name": "逆向推理",
+      "parent_code": "MATH-JH-ABL-REASON",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "从目标结论倒推需要证明或求解的中间条件。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-REASON-CASE",
+      "name": "分类讨论",
+      "parent_code": "MATH-JH-ABL-REASON",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "根据不同情况分别分析问题。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-REASON-EQUIVALENT",
+      "name": "等价转化",
+      "parent_code": "MATH-JH-ABL-REASON",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "将问题转化成更易处理的等价形式。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-REASON-EXPRESSION",
+      "name": "严密表达",
+      "parent_code": "MATH-JH-ABL-REASON",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "证明过程完整、顺序清晰、理由充分、符号规范。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-MODEL",
+      "name": "建模应用能力",
+      "parent_code": "",
+      "level": 1,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "把实际问题抽象为数量、方程、函数或几何模型。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-MODEL-QUANTITY",
+      "name": "数量关系建模",
+      "parent_code": "MATH-JH-ABL-MODEL",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "从实际问题中提炼数量关系。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-MODEL-EQUATION",
+      "name": "方程模型建立",
+      "parent_code": "MATH-JH-ABL-MODEL",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "把实际问题转化为方程或方程组。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-MODEL-FUNCTION",
+      "name": "函数模型建立",
+      "parent_code": "MATH-JH-ABL-MODEL",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "把实际问题转化为函数关系。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-MODEL-GEOMETRY",
+      "name": "几何模型建立",
+      "parent_code": "MATH-JH-ABL-MODEL",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "将实际场景抽象为几何图形或几何关系。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-MODEL-CHECK",
+      "name": "结果解释与检验",
+      "parent_code": "MATH-JH-ABL-MODEL",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "判断求得结果是否符合实际意义和题目限制。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-SPATIAL",
+      "name": "图形与空间想象能力",
+      "parent_code": "",
+      "level": 1,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "识别几何结构，理解图形变化，并用空间关系解决问题。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-SPATIAL-SHAPE",
+      "name": "图形识别",
+      "parent_code": "MATH-JH-ABL-SPATIAL",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "识别基本图形、特殊图形和几何结构。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-SPATIAL-AUXILIARY",
+      "name": "辅助线意识",
+      "parent_code": "MATH-JH-ABL-SPATIAL",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "判断几何题中是否需要添加辅助线以及如何添加。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-SPATIAL-TRANSFORM",
+      "name": "图形变换理解",
+      "parent_code": "MATH-JH-ABL-SPATIAL",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "理解平移、旋转、轴对称、中心对称、位似和折叠。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-SPATIAL-COORDINATE",
+      "name": "坐标几何转化",
+      "parent_code": "MATH-JH-ABL-SPATIAL",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "用坐标表示并处理几何关系。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-TRANSFER",
+      "name": "综合迁移能力",
+      "parent_code": "",
+      "level": 1,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "整合多个知识点和方法，处理综合题、探究题和压轴题。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-TRANSFER-MULTI",
+      "name": "多知识点整合",
+      "parent_code": "MATH-JH-ABL-TRANSFER",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "在一道题中同时调用多个知识点。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-TRANSFER-METHOD",
+      "name": "方法迁移",
+      "parent_code": "MATH-JH-ABL-TRANSFER",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "把已学方法迁移到新情境或新题型中。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-TRANSFER-INQUIRY",
+      "name": "开放探究",
+      "parent_code": "MATH-JH-ABL-TRANSFER",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "处理规律、猜想证明、新定义、动点和参数变化问题。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-TRANSFER-HARD-STEPS",
+      "name": "压轴题分步突破",
+      "parent_code": "MATH-JH-ABL-TRANSFER",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "将复杂综合题拆成多个可解决的小目标。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-REFLECT",
+      "name": "审题与反思能力",
+      "parent_code": "",
+      "level": 1,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "准确理解题意、检查条件完整性并检验答案合理性。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-REFLECT-QUESTION",
+      "name": "题意理解",
+      "parent_code": "MATH-JH-ABL-REFLECT",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "准确理解题目要求和限制条件。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-REFLECT-CONDITION",
+      "name": "条件完整性检查",
+      "parent_code": "MATH-JH-ABL-REFLECT",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "检查定义域、分母、实际意义、图形位置等限制是否遗漏。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-ABL-REFLECT-ANSWER",
+      "name": "答案合理性检验",
+      "parent_code": "MATH-JH-ABL-REFLECT",
+      "level": 2,
+      "category": "解题能力",
+      "subject": "数学",
+      "summary": "判断结果是否符合数值范围、实际意义和原题要求。",
+      "status": "reviewed",
+      "version": 1
+    }
+  ],
+  "edges": [
+    {
+      "from_code": "MATH-JH-ABL-CONCEPT",
+      "to_code": "MATH-JH-ABL-CONCEPT-DEFINITION",
+      "relation": "parent_child",
+      "rationale": "定义识别是概念理解能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-CONCEPT",
+      "to_code": "MATH-JH-ABL-CONCEPT-PROPERTY",
+      "relation": "parent_child",
+      "rationale": "性质理解是概念理解能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-CONCEPT",
+      "to_code": "MATH-JH-ABL-CONCEPT-CONDITION",
+      "relation": "parent_child",
+      "rationale": "条件辨析是概念理解能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-INFO",
+      "to_code": "MATH-JH-ABL-INFO-EXPLICIT",
+      "relation": "parent_child",
+      "rationale": "显性信息提取是信息提取能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-INFO",
+      "to_code": "MATH-JH-ABL-INFO-IMPLICIT",
+      "relation": "parent_child",
+      "rationale": "隐含信息挖掘是信息提取能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-INFO",
+      "to_code": "MATH-JH-ABL-INFO-GEOMETRY",
+      "relation": "parent_child",
+      "rationale": "图形信息转化是信息提取能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-INFO",
+      "to_code": "MATH-JH-ABL-INFO-CHART",
+      "relation": "parent_child",
+      "rationale": "图表信息读取是信息提取能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-CALC",
+      "to_code": "MATH-JH-ABL-CALC-ALGEBRA",
+      "relation": "parent_child",
+      "rationale": "数式运算是运算处理能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-CALC",
+      "to_code": "MATH-JH-ABL-CALC-EQUATION",
+      "relation": "parent_child",
+      "rationale": "方程与不等式求解是运算处理能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-CALC",
+      "to_code": "MATH-JH-ABL-CALC-FUNCTION",
+      "relation": "parent_child",
+      "rationale": "函数表达式求解是运算处理能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-CALC",
+      "to_code": "MATH-JH-ABL-CALC-GEOMETRY",
+      "relation": "parent_child",
+      "rationale": "几何计算是运算处理能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-CALC",
+      "to_code": "MATH-JH-ABL-CALC-DATA",
+      "relation": "parent_child",
+      "rationale": "数据计算是运算处理能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-REASON",
+      "to_code": "MATH-JH-ABL-REASON-INFER",
+      "relation": "parent_child",
+      "rationale": "条件推出结论是逻辑推理能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-REASON",
+      "to_code": "MATH-JH-ABL-REASON-BACKWARD",
+      "relation": "parent_child",
+      "rationale": "逆向推理是逻辑推理能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-REASON",
+      "to_code": "MATH-JH-ABL-REASON-CASE",
+      "relation": "parent_child",
+      "rationale": "分类讨论是逻辑推理能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-REASON",
+      "to_code": "MATH-JH-ABL-REASON-EQUIVALENT",
+      "relation": "parent_child",
+      "rationale": "等价转化是逻辑推理能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-REASON",
+      "to_code": "MATH-JH-ABL-REASON-EXPRESSION",
+      "relation": "parent_child",
+      "rationale": "严密表达是逻辑推理能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-MODEL",
+      "to_code": "MATH-JH-ABL-MODEL-QUANTITY",
+      "relation": "parent_child",
+      "rationale": "数量关系建模是建模应用能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-MODEL",
+      "to_code": "MATH-JH-ABL-MODEL-EQUATION",
+      "relation": "parent_child",
+      "rationale": "方程模型建立是建模应用能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-MODEL",
+      "to_code": "MATH-JH-ABL-MODEL-FUNCTION",
+      "relation": "parent_child",
+      "rationale": "函数模型建立是建模应用能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-MODEL",
+      "to_code": "MATH-JH-ABL-MODEL-GEOMETRY",
+      "relation": "parent_child",
+      "rationale": "几何模型建立是建模应用能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-MODEL",
+      "to_code": "MATH-JH-ABL-MODEL-CHECK",
+      "relation": "parent_child",
+      "rationale": "结果解释与检验是建模应用能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-SPATIAL",
+      "to_code": "MATH-JH-ABL-SPATIAL-SHAPE",
+      "relation": "parent_child",
+      "rationale": "图形识别是图形与空间想象能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-SPATIAL",
+      "to_code": "MATH-JH-ABL-SPATIAL-AUXILIARY",
+      "relation": "parent_child",
+      "rationale": "辅助线意识是图形与空间想象能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-SPATIAL",
+      "to_code": "MATH-JH-ABL-SPATIAL-TRANSFORM",
+      "relation": "parent_child",
+      "rationale": "图形变换理解是图形与空间想象能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-SPATIAL",
+      "to_code": "MATH-JH-ABL-SPATIAL-COORDINATE",
+      "relation": "parent_child",
+      "rationale": "坐标几何转化是图形与空间想象能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-TRANSFER",
+      "to_code": "MATH-JH-ABL-TRANSFER-MULTI",
+      "relation": "parent_child",
+      "rationale": "多知识点整合是综合迁移能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-TRANSFER",
+      "to_code": "MATH-JH-ABL-TRANSFER-METHOD",
+      "relation": "parent_child",
+      "rationale": "方法迁移是综合迁移能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-TRANSFER",
+      "to_code": "MATH-JH-ABL-TRANSFER-INQUIRY",
+      "relation": "parent_child",
+      "rationale": "开放探究是综合迁移能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-TRANSFER",
+      "to_code": "MATH-JH-ABL-TRANSFER-HARD-STEPS",
+      "relation": "parent_child",
+      "rationale": "压轴题分步突破是综合迁移能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-REFLECT",
+      "to_code": "MATH-JH-ABL-REFLECT-QUESTION",
+      "relation": "parent_child",
+      "rationale": "题意理解是审题与反思能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-REFLECT",
+      "to_code": "MATH-JH-ABL-REFLECT-CONDITION",
+      "relation": "parent_child",
+      "rationale": "条件完整性检查是审题与反思能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-ABL-REFLECT",
+      "to_code": "MATH-JH-ABL-REFLECT-ANSWER",
+      "relation": "parent_child",
+      "rationale": "答案合理性检验是审题与反思能力的二级能力。",
+      "status": "reviewed",
+      "version": 1
+    }
+  ]
+}

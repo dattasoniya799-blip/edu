@@ -1,0 +1,620 @@
+{
+  "metadata": {
+    "code": "math_junior_strategy_v1",
+    "graph_type": "problem_solving_strategy",
+    "subject": "数学",
+    "grade_range": [
+      "初一",
+      "初二",
+      "初三"
+    ],
+    "curriculum": "junior_math_problem_solving",
+    "status": "reviewed",
+    "version": 1,
+    "notes": "初中数学解题策略图谱。用于题目多维标注，回答这道题通常采用什么方法解决。"
+  },
+  "sources": [
+    {
+      "id": "user-draft-2026-06-01",
+      "title": "初中数学解题能力与策略标签体系",
+      "source_type": "user_provided_taxonomy"
+    }
+  ],
+  "nodes": [
+    {
+      "code": "MATH-JH-STR-DIRECT",
+      "name": "直接处理策略",
+      "parent_code": "",
+      "level": 1,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "直接代入、套用公式或进行基础化简变形。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-DIRECT-SUBSTITUTE",
+      "name": "直接代入",
+      "parent_code": "MATH-JH-STR-DIRECT",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "把已知数值直接代入公式、表达式或方程。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-DIRECT-FORMULA",
+      "name": "公式套用",
+      "parent_code": "MATH-JH-STR-DIRECT",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "识别题目对应公式并进行套用。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-DIRECT-SIMPLIFY",
+      "name": "化简变形",
+      "parent_code": "MATH-JH-STR-DIRECT",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "对整式、分式、根式、方程等进行化简或等价变形。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-EQUATION",
+      "name": "方程思想",
+      "parent_code": "",
+      "level": 1,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "设未知量、寻找等量关系并通过方程解决问题。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-EQUATION-UNKNOWN",
+      "name": "设未知数",
+      "parent_code": "MATH-JH-STR-EQUATION",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "根据题目目标设定未知量。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-EQUATION-RELATION",
+      "name": "建立等量关系",
+      "parent_code": "MATH-JH-STR-EQUATION",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "从利润、行程、工程、面积等关系中建立方程。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-EQUATION-SOLVE",
+      "name": "解方程/方程组",
+      "parent_code": "MATH-JH-STR-EQUATION",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "通过解方程或方程组得到目标量。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-FUNCTION",
+      "name": "函数思想",
+      "parent_code": "",
+      "level": 1,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "用变量关系、函数图象、单调性和最值解决问题。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-FUNCTION-BUILD",
+      "name": "建立函数关系",
+      "parent_code": "MATH-JH-STR-FUNCTION",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "根据变量关系建立函数表达式。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-FUNCTION-GRAPH",
+      "name": "图象分析",
+      "parent_code": "MATH-JH-STR-FUNCTION",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "借助函数图象分析交点、增减性和变化趋势。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-FUNCTION-EXTREMUM",
+      "name": "最值分析",
+      "parent_code": "MATH-JH-STR-FUNCTION",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "用函数方法求最大值或最小值。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-GRAPHIC",
+      "name": "数形结合",
+      "parent_code": "",
+      "level": 1,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "把代数关系和图形关系结合起来分析。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-GRAPHIC-ALGEBRA-TO-GRAPH",
+      "name": "代数图象化",
+      "parent_code": "MATH-JH-STR-GRAPHIC",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "把方程、不等式、函数等代数对象转化为图象理解。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-GRAPHIC-GRAPH-TO-ALGEBRA",
+      "name": "图形代数化",
+      "parent_code": "MATH-JH-STR-GRAPHIC",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "把几何或图象关系转化为坐标、方程或数量关系。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-TRANSFORM",
+      "name": "转化化归",
+      "parent_code": "",
+      "level": 1,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "把复杂问题转化为熟悉问题或基础问题。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-TRANSFORM-GEO-ALGEBRA",
+      "name": "几何转代数",
+      "parent_code": "MATH-JH-STR-TRANSFORM",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "把长度、面积、坐标等几何问题转化为代数关系。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-TRANSFORM-PROOF-CALC",
+      "name": "证明转计算",
+      "parent_code": "MATH-JH-STR-TRANSFORM",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "把几何证明中的关系转化为可计算的数量关系。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-TRANSFORM-EXTREMUM-FUNCTION",
+      "name": "最值转函数",
+      "parent_code": "MATH-JH-STR-TRANSFORM",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "把动点、面积、利润等最值问题转化为函数问题。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-CLASSIFY",
+      "name": "分类讨论",
+      "parent_code": "",
+      "level": 1,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "当条件或位置不唯一时分情况处理。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-CLASSIFY-PARAMETER",
+      "name": "按参数分类",
+      "parent_code": "MATH-JH-STR-CLASSIFY",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "根据参数范围或取值情况分类讨论。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-CLASSIFY-POSITION",
+      "name": "按图形位置分类",
+      "parent_code": "MATH-JH-STR-CLASSIFY",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "根据动点、线段、图形位置等情况分类讨论。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-CLASSIFY-SIGN",
+      "name": "按符号范围分类",
+      "parent_code": "MATH-JH-STR-CLASSIFY",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "根据正负、绝对值、不等式范围等情况分类讨论。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-CONSTRUCT",
+      "name": "构造策略",
+      "parent_code": "",
+      "level": 1,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "主动构造辅助对象帮助解题。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-CONSTRUCT-AUXILIARY",
+      "name": "构造辅助线",
+      "parent_code": "MATH-JH-STR-CONSTRUCT",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "在几何证明或计算中添加辅助线。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-CONSTRUCT-EQUATION",
+      "name": "构造方程",
+      "parent_code": "MATH-JH-STR-CONSTRUCT",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "根据面积、线段和差、函数交点等关系构造方程。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-CONSTRUCT-FUNCTION",
+      "name": "构造函数",
+      "parent_code": "MATH-JH-STR-CONSTRUCT",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "为最值、变化关系或动点问题构造函数。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-CONSTRUCT-SIMILAR-CONGRUENT",
+      "name": "构造相似/全等",
+      "parent_code": "MATH-JH-STR-CONSTRUCT",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "通过辅助线、连接线段或旋转等方式构造相似或全等关系。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-SPECIALIZE",
+      "name": "特殊化策略",
+      "parent_code": "",
+      "level": 1,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "利用特殊值或特殊情形发现规律、排除选项或推广结论。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-SPECIALIZE-VALUE",
+      "name": "特殊值代入",
+      "parent_code": "MATH-JH-STR-SPECIALIZE",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "用特殊数值快速验证、排除或发现规律。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-SPECIALIZE-GENERALIZE",
+      "name": "从特殊到一般",
+      "parent_code": "MATH-JH-STR-SPECIALIZE",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "先观察特殊情况，再归纳一般规律。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-REFLECT",
+      "name": "检验反思",
+      "parent_code": "",
+      "level": 1,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "解完后主动检查答案、限制条件和完整性。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-REFLECT-SUBSTITUTE",
+      "name": "代回检验",
+      "parent_code": "MATH-JH-STR-REFLECT",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "把结果代回原方程、表达式或条件中检验。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-REFLECT-RANGE",
+      "name": "范围检验",
+      "parent_code": "MATH-JH-STR-REFLECT",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "检查定义域、实际意义、正负范围和题目限制。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "code": "MATH-JH-STR-REFLECT-MISSING",
+      "name": "漏解检查",
+      "parent_code": "MATH-JH-STR-REFLECT",
+      "level": 2,
+      "category": "解题策略",
+      "subject": "数学",
+      "summary": "检查分类讨论、几何存在性或方程求解中是否漏解。",
+      "status": "reviewed",
+      "version": 1
+    }
+  ],
+  "edges": [
+    {
+      "from_code": "MATH-JH-STR-DIRECT",
+      "to_code": "MATH-JH-STR-DIRECT-SUBSTITUTE",
+      "relation": "parent_child",
+      "rationale": "直接代入是直接处理策略的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-DIRECT",
+      "to_code": "MATH-JH-STR-DIRECT-FORMULA",
+      "relation": "parent_child",
+      "rationale": "公式套用是直接处理策略的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-DIRECT",
+      "to_code": "MATH-JH-STR-DIRECT-SIMPLIFY",
+      "relation": "parent_child",
+      "rationale": "化简变形是直接处理策略的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-EQUATION",
+      "to_code": "MATH-JH-STR-EQUATION-UNKNOWN",
+      "relation": "parent_child",
+      "rationale": "设未知数是方程思想的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-EQUATION",
+      "to_code": "MATH-JH-STR-EQUATION-RELATION",
+      "relation": "parent_child",
+      "rationale": "建立等量关系是方程思想的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-EQUATION",
+      "to_code": "MATH-JH-STR-EQUATION-SOLVE",
+      "relation": "parent_child",
+      "rationale": "解方程/方程组是方程思想的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-FUNCTION",
+      "to_code": "MATH-JH-STR-FUNCTION-BUILD",
+      "relation": "parent_child",
+      "rationale": "建立函数关系是函数思想的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-FUNCTION",
+      "to_code": "MATH-JH-STR-FUNCTION-GRAPH",
+      "relation": "parent_child",
+      "rationale": "图象分析是函数思想的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-FUNCTION",
+      "to_code": "MATH-JH-STR-FUNCTION-EXTREMUM",
+      "relation": "parent_child",
+      "rationale": "最值分析是函数思想的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-GRAPHIC",
+      "to_code": "MATH-JH-STR-GRAPHIC-ALGEBRA-TO-GRAPH",
+      "relation": "parent_child",
+      "rationale": "代数图象化是数形结合的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-GRAPHIC",
+      "to_code": "MATH-JH-STR-GRAPHIC-GRAPH-TO-ALGEBRA",
+      "relation": "parent_child",
+      "rationale": "图形代数化是数形结合的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-TRANSFORM",
+      "to_code": "MATH-JH-STR-TRANSFORM-GEO-ALGEBRA",
+      "relation": "parent_child",
+      "rationale": "几何转代数是转化化归的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-TRANSFORM",
+      "to_code": "MATH-JH-STR-TRANSFORM-PROOF-CALC",
+      "relation": "parent_child",
+      "rationale": "证明转计算是转化化归的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-TRANSFORM",
+      "to_code": "MATH-JH-STR-TRANSFORM-EXTREMUM-FUNCTION",
+      "relation": "parent_child",
+      "rationale": "最值转函数是转化化归的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-CLASSIFY",
+      "to_code": "MATH-JH-STR-CLASSIFY-PARAMETER",
+      "relation": "parent_child",
+      "rationale": "按参数分类是分类讨论的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-CLASSIFY",
+      "to_code": "MATH-JH-STR-CLASSIFY-POSITION",
+      "relation": "parent_child",
+      "rationale": "按图形位置分类是分类讨论的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-CLASSIFY",
+      "to_code": "MATH-JH-STR-CLASSIFY-SIGN",
+      "relation": "parent_child",
+      "rationale": "按符号范围分类是分类讨论的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-CONSTRUCT",
+      "to_code": "MATH-JH-STR-CONSTRUCT-AUXILIARY",
+      "relation": "parent_child",
+      "rationale": "构造辅助线是构造策略的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-CONSTRUCT",
+      "to_code": "MATH-JH-STR-CONSTRUCT-EQUATION",
+      "relation": "parent_child",
+      "rationale": "构造方程是构造策略的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-CONSTRUCT",
+      "to_code": "MATH-JH-STR-CONSTRUCT-FUNCTION",
+      "relation": "parent_child",
+      "rationale": "构造函数是构造策略的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-CONSTRUCT",
+      "to_code": "MATH-JH-STR-CONSTRUCT-SIMILAR-CONGRUENT",
+      "relation": "parent_child",
+      "rationale": "构造相似/全等是构造策略的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-SPECIALIZE",
+      "to_code": "MATH-JH-STR-SPECIALIZE-VALUE",
+      "relation": "parent_child",
+      "rationale": "特殊值代入是特殊化策略的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-SPECIALIZE",
+      "to_code": "MATH-JH-STR-SPECIALIZE-GENERALIZE",
+      "relation": "parent_child",
+      "rationale": "从特殊到一般是特殊化策略的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-REFLECT",
+      "to_code": "MATH-JH-STR-REFLECT-SUBSTITUTE",
+      "relation": "parent_child",
+      "rationale": "代回检验是检验反思的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-REFLECT",
+      "to_code": "MATH-JH-STR-REFLECT-RANGE",
+      "relation": "parent_child",
+      "rationale": "范围检验是检验反思的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    },
+    {
+      "from_code": "MATH-JH-STR-REFLECT",
+      "to_code": "MATH-JH-STR-REFLECT-MISSING",
+      "relation": "parent_child",
+      "rationale": "漏解检查是检验反思的二级策略。",
+      "status": "reviewed",
+      "version": 1
+    }
+  ]
+}

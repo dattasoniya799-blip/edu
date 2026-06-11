@@ -1,0 +1,13 @@
+{
+  "name": "@qiming/server",
+  "private": true,
+  "scripts": {
+    "db:migrate": "prisma migrate dev",
+    "db:apply-sql": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f prisma/migrations/0001_init/migration.sql",
+    "db:seed:base": "tsx prisma/seed.ts --phase base",
+    "db:import-kp": "tsx tools/import-kp.ts --org 1 --dir ../../data/knowledge-graphs",
+    "db:seed:business": "tsx prisma/seed.ts --phase business"
+  },
+  "dependencies": { "@prisma/client": "^5.22.0", "pg": "^8.13.0" },
+  "devDependencies": { "prisma": "^5.22.0", "tsx": "^4.19.0", "typescript": "^5.6.0", "@types/node": "^22.0.0", "@types/pg": "^8.11.0" }
+}

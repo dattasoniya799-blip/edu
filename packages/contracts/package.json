@@ -1,0 +1,16 @@
+{
+  "name": "@qiming/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "lint:openapi": "node scripts/validate-openapi.mjs",
+    "gen:sdk": "openapi-typescript openapi.yaml -o src/generated/api-types.ts",
+    "check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "openapi-typescript": "^7.4.0",
+    "@apidevtools/swagger-parser": "^10.1.0"
+  }
+}

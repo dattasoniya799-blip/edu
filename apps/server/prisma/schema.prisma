@@ -1,0 +1,551 @@
+// =============================================================
+// 启明智学 · 数据库唯一事实 (W0-1)
+// 对应《后端设计文档》第 5 章;知识点部分按用户实际数据升级为三维图谱
+// 标注 [v1.1] 的字段为 MVP 延后但预留的字段
+// =============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------- 枚举 ----------------
+enum Role            { admin teacher student }
+enum OrgStatus       { active suspended }
+enum UserStatus      { active disabled pending }
+enum ClassType       { group one_on_one one_on_three }
+enum CourseStatus    { draft ongoing finished archived }
+enum LessonStatus    { draft ready in_progress finished }
+enum SegmentType     { warmup lecture practice summary homework break_time }
+enum ResourceType    { ppt pdf video interactive image }
+enum QuestionType    { single multi blank solution }
+enum QuestionScope   { private shared }          // MVP 全机构共用,默认 shared;[v1.1] 私有题库
+enum QuestionStatus  { draft published retired }
+enum PaperType       { homework exam practice }
+enum AssignmentKind  { homework in_class correction wrong_redo consolidation }
+enum AttemptStatus   { in_progress submitted graded }
+enum WrongStatus     { open cleared }
+enum SessionStatus   { scheduled live paused ended }
+enum ParticipantState{ normal stuck hand_up offline }
+enum AiFeature       { class_companion qa pre_grading diagnosis }
+enum GraphType       { curriculum_knowledge problem_solving_ability problem_solving_strategy }
+enum EdgeRelation    { parent_child prerequisite related }
+
+// ---------------- 机构与用户 ----------------
+model Org {
+  id        BigInt    @id @default(autoincrement())
+  name      String    @db.VarChar(64)
+  status    OrgStatus @default(active)
+  settings  Json      @default("{}") // AI开关/使用时段/设备绑定策略
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  users     User[]
+  courses   Course[]
+  @@map("orgs")
+}
+
+model User {
+  id           BigInt     @id @default(autoincrement())
+  orgId        BigInt     @map("org_id")
+  role         Role
+  name         String     @db.VarChar(32)
+  phone        String?    @db.VarChar(64) // 教师/管理员登录号;学生为家长手机号。应用层加密
+  passwordHash String?    @map("password_hash")
+  status       UserStatus @default(active)
+  teacherNo    String?    @map("teacher_no") @db.VarChar(20)
+  studentNo    String?    @map("student_no") @db.VarChar(20)
+  profile      Json       @default("{}") // 学段学科(师)/年级(生)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  deletedAt    DateTime?  @map("deleted_at")
+
+  org          Org        @relation(fields: [orgId], references: [id])
+  device       Device?
+  enrollments  CourseStudent[]
+  attempts     Attempt[]
+  wrongBook    WrongBookEntry[]
+  mastery      MasterySnapshot[]
+  @@unique([orgId, teacherNo])
+  @@unique([orgId, studentNo])
+  @@index([orgId, role])
+  @@map("users")
+}
+
+model Device {
+  id                BigInt   @id @default(autoincrement())
+  orgId             BigInt   @map("org_id")
+  studentId         BigInt   @unique @map("student_id")
+  deviceFingerprint String   @map("device_fingerprint")
+  deviceName        String?  @map("device_name")
+  boundAt           DateTime @default(now()) @map("bound_at")
+  lastSeenAt        DateTime? @map("last_seen_at")
+  student           User     @relation(fields: [studentId], references: [id])
+  @@index([orgId])
+  @@map("devices")
+}
+
+model LoginTicket {
+  id        BigInt    @id @default(autoincrement())
+  orgId     BigInt    @map("org_id")
+  studentId BigInt    @map("student_id")
+  token     String    @unique @db.VarChar(64)
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  @@index([orgId, studentId])
+  @@map("login_tickets")
+}
+
+// ---------------- 课程 · 讲次 · 环节 ----------------
+model Course {
+  id            BigInt       @id @default(autoincrement())
+  orgId         BigInt       @map("org_id")
+  name          String       @db.VarChar(64)
+  classType     ClassType    @map("class_type")
+  subject       String       @db.VarChar(16)
+  stage         String       @db.VarChar(16)
+  teacherId     BigInt       @map("teacher_id")
+  totalLessons  Int          @map("total_lessons")
+  scheduleRule  Json         @default("{}") @map("schedule_rule") // MVP: 手动逐讲设时间;[v1.1] RRULE 自动排课
+  status        CourseStatus @default(draft)
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  deletedAt     DateTime?    @map("deleted_at")
+
+  org           Org          @relation(fields: [orgId], references: [id])
+  students      CourseStudent[]
+  lessons       Lesson[]
+  @@index([orgId, teacherId])
+  @@map("courses")
+}
+
+model CourseStudent {
+  id        BigInt   @id @default(autoincrement())
+  orgId     BigInt   @map("org_id")
+  courseId  BigInt   @map("course_id")
+  studentId BigInt   @map("student_id")
+  status    String   @default("active") @db.VarChar(12) // active/quit
+  joinedAt  DateTime @default(now()) @map("joined_at")
+  course    Course   @relation(fields: [courseId], references: [id])
+  student   User     @relation(fields: [studentId], references: [id])
+  @@unique([orgId, courseId, studentId])
+  @@map("course_students")
+}
+
+model Lesson {
+  id             BigInt       @id @default(autoincrement())
+  orgId          BigInt       @map("org_id")
+  courseId       BigInt       @map("course_id")
+  seq            Int
+  title          String       @db.VarChar(128)
+  scheduledStart DateTime?    @map("scheduled_start")
+  scheduledEnd   DateTime?    @map("scheduled_end")
+  status         LessonStatus @default(draft)
+  prepChecklist  Json         @default("{}") @map("prep_checklist")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  course         Course        @relation(fields: [courseId], references: [id])
+  segments       LessonSegment[]
+  sessions       ClassSession[]
+  assignments    Assignment[]
+  @@unique([courseId, seq])
+  @@index([orgId])
+  @@map("lessons")
+}
+
+model LessonSegment {
+  id          BigInt      @id @default(autoincrement())
+  orgId       BigInt      @map("org_id")
+  lessonId    BigInt      @map("lesson_id")
+  seq         Int
+  type        SegmentType
+  durationMin Int         @map("duration_min")
+  config      Json        @default("{}") // warmup:{source,count} lecture:{checkpoints} practice:{ai_guide,stuck_alert_min}
+  resourceId  BigInt?     @map("resource_id")
+  paperId     BigInt?     @map("paper_id")
+  lesson      Lesson      @relation(fields: [lessonId], references: [id])
+  resource    Resource?   @relation(fields: [resourceId], references: [id])
+  paper       Paper?      @relation(fields: [paperId], references: [id])
+  @@unique([lessonId, seq])
+  @@index([orgId])
+  @@map("lesson_segments")
+}
+
+model Resource {
+  id        BigInt       @id @default(autoincrement())
+  orgId     BigInt       @map("org_id")
+  ownerId   BigInt       @map("owner_id")
+  type      ResourceType
+  name      String       @db.VarChar(128)
+  ossKey    String       @map("oss_key")
+  size      BigInt       @default(0)
+  meta      Json         @default("{}") // 页数/时长/小测打点
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+  deletedAt DateTime?    @map("deleted_at")
+  segments  LessonSegment[]
+  @@index([orgId, ownerId])
+  @@map("resources")
+}
+
+// ---------------- 三维知识图谱(按用户实际数据建模) ----------------
+model KpGraph {
+  id         BigInt    @id @default(autoincrement())
+  orgId      BigInt    @map("org_id")
+  code       String    @db.VarChar(64)  // e.g. math_junior_pep_v1
+  graphType  GraphType @map("graph_type")
+  subject    String    @db.VarChar(16)
+  gradeRange Json      @default("[]") @map("grade_range")
+  metadata   Json      @default("{}") // curriculum/publisher/notes/sources 原样保留
+  version    Int       @default(1)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  nodes      KpNode[]
+  edges      KpEdge[]
+  @@unique([orgId, code])
+  @@map("kp_graphs")
+}
+
+model KpNode {
+  id          BigInt   @id @default(autoincrement())
+  orgId       BigInt   @map("org_id")
+  graphId     BigInt   @map("graph_id")
+  code        String   @db.VarChar(64)   // e.g. MATH-JH-NUM-001(对账用 ext_id)
+  name        String   @db.VarChar(128)
+  parentCode  String?  @map("parent_code") @db.VarChar(64) // 能力/策略图谱树型用
+  level       Int?
+  category    String?  @db.VarChar(32)
+  grade       String?  @db.VarChar(16)   // 教材图谱:初一/初二/初三
+  chapter     String?  @db.VarChar(64)
+  section     String?  @db.VarChar(16)
+  difficulty  Int?     @db.SmallInt      // 教材图谱 1-5
+  examWeight  Decimal? @map("exam_weight") @db.Decimal(4, 2)
+  abilityTags Json     @default("[]") @map("ability_tags")
+  summary     String?
+  content     String?                    // 教材图谱的详细内容(612 个节点有)
+  sourceRefs  Json     @default("[]") @map("source_refs")
+  version     Int      @default(1)
+  graph       KpGraph  @relation(fields: [graphId], references: [id])
+  edgesFrom   KpEdge[] @relation("edge_from")
+  edgesTo     KpEdge[] @relation("edge_to")
+  tags        QuestionTag[]
+  mastery     MasterySnapshot[]
+  @@unique([graphId, code])
+  @@index([orgId, grade, chapter])
+  @@map("kp_nodes")
+}
+
+model KpEdge {
+  id         BigInt       @id @default(autoincrement())
+  orgId      BigInt       @map("org_id")
+  graphId    BigInt       @map("graph_id")
+  fromNodeId BigInt       @map("from_node_id")
+  toNodeId   BigInt       @map("to_node_id")
+  relation   EdgeRelation
+  confidence Decimal?     @db.Decimal(4, 2)
+  rationale  String?
+  graph      KpGraph      @relation(fields: [graphId], references: [id])
+  fromNode   KpNode       @relation("edge_from", fields: [fromNodeId], references: [id])
+  toNode     KpNode       @relation("edge_to", fields: [toNodeId], references: [id])
+  @@unique([graphId, fromNodeId, toNodeId, relation])
+  @@index([orgId])
+  @@map("kp_edges")
+}
+
+// ---------------- 题库 ----------------
+model Question {
+  id              BigInt         @id @default(autoincrement())
+  orgId           BigInt         @map("org_id")
+  ownerId         BigInt         @map("owner_id")
+  scope           QuestionScope  @default(shared)
+  type            QuestionType
+  stage           String         @db.VarChar(16)
+  subject         String         @db.VarChar(16)
+  textbookVersion String?        @map("textbook_version") @db.VarChar(32)
+  chapter         String?        @db.VarChar(64)
+  stemLatex       String         @map("stem_latex")
+  figures         Json           @default("[]") // [{ossKey,position}]
+  answer          Json           // single:{choice} blank:{texts[]} solution:{referenceLatex}
+  rubric          Json           @default("[]") // [{step,desc,score}] AI预批依据
+  analysisLatex   String?        @map("analysis_latex")
+  difficulty      Int            @default(2) @db.SmallInt
+  status          QuestionStatus @default(draft)
+  stats           Json           @default("{}") // 正确率/组卷次数,异步更新
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  deletedAt       DateTime?      @map("deleted_at")
+  options         QuestionOption[]
+  tags            QuestionTag[]
+  paperItems      PaperQuestion[]
+  @@index([orgId, subject, status])
+  @@map("questions")
+}
+
+model QuestionOption {
+  id           BigInt   @id @default(autoincrement())
+  orgId        BigInt   @map("org_id")
+  questionId   BigInt   @map("question_id")
+  label        String   @db.VarChar(4)
+  contentLatex String   @map("content_latex")
+  isCorrect    Boolean  @default(false) @map("is_correct")
+  question     Question @relation(fields: [questionId], references: [id])
+  @@unique([questionId, label])
+  @@map("question_options")
+}
+
+// 题目多维标注:同一张表覆盖 知识点/能力/策略 三个维度(由 node.graph 区分)
+model QuestionTag {
+  id         BigInt   @id @default(autoincrement())
+  orgId      BigInt   @map("org_id")
+  questionId BigInt   @map("question_id")
+  nodeId     BigInt   @map("node_id")
+  question   Question @relation(fields: [questionId], references: [id])
+  node       KpNode   @relation(fields: [nodeId], references: [id])
+  @@unique([questionId, nodeId])
+  @@index([orgId, nodeId])
+  @@map("question_tags")
+}
+
+// ---------------- 试卷 · 作业 · 作答 · 批改 ----------------
+model Paper {
+  id         BigInt    @id @default(autoincrement())
+  orgId      BigInt    @map("org_id")
+  creatorId  BigInt    @map("creator_id")
+  name       String    @db.VarChar(128)
+  type       PaperType
+  totalScore Decimal   @default(0) @map("total_score") @db.Decimal(6, 1)
+  status     String    @default("draft") @db.VarChar(12) // draft/published
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  questions  PaperQuestion[]
+  segments   LessonSegment[]
+  assignments Assignment[]
+  @@index([orgId, creatorId])
+  @@map("papers")
+}
+
+model PaperQuestion {
+  id         BigInt   @id @default(autoincrement())
+  orgId      BigInt   @map("org_id")
+  paperId    BigInt   @map("paper_id")
+  questionId BigInt   @map("question_id")
+  seq        Int
+  score      Decimal  @db.Decimal(5, 1)
+  paper      Paper    @relation(fields: [paperId], references: [id])
+  question   Question @relation(fields: [questionId], references: [id])
+  @@unique([paperId, seq])
+  @@unique([paperId, questionId])
+  @@map("paper_questions")
+}
+
+model Assignment {
+  id            BigInt         @id @default(autoincrement())
+  orgId         BigInt         @map("org_id")
+  paperId       BigInt         @map("paper_id")
+  lessonId      BigInt?        @map("lesson_id")
+  kind          AssignmentKind
+  target        Json           // {courseId} 或 {studentIds:[...]}
+  publishAt     DateTime       @default(now()) @map("publish_at")
+  dueAt         DateTime?      @map("due_at")
+  gradingPolicy Json           @default("{}") @map("grading_policy")
+  scoreCounted  Boolean        @default(true) @map("score_counted") // 订正/重做=false
+  createdAt     DateTime       @default(now()) @map("created_at")
+  paper         Paper          @relation(fields: [paperId], references: [id])
+  lesson        Lesson?        @relation(fields: [lessonId], references: [id])
+  attempts      Attempt[]
+  @@index([orgId, lessonId])
+  @@map("assignments")
+}
+
+model Attempt {
+  id              BigInt        @id @default(autoincrement())
+  orgId           BigInt        @map("org_id")
+  assignmentId    BigInt        @map("assignment_id")
+  studentId       BigInt        @map("student_id")
+  attemptNo       Int           @default(1) @map("attempt_no")
+  status          AttemptStatus @default(in_progress)
+  startedAt       DateTime      @default(now()) @map("started_at")
+  submittedAt     DateTime?     @map("submitted_at")
+  score           Decimal?      @db.Decimal(6, 1)
+  objectiveScore  Decimal?      @map("objective_score") @db.Decimal(6, 1)
+  subjectiveScore Decimal?      @map("subjective_score") @db.Decimal(6, 1)
+  durationSec     Int?          @map("duration_sec")
+  assignment      Assignment    @relation(fields: [assignmentId], references: [id])
+  student         User          @relation(fields: [studentId], references: [id])
+  answers         Answer[]
+  @@unique([assignmentId, studentId, attemptNo])
+  @@index([orgId, studentId])
+  @@map("attempts")
+}
+
+model Answer {
+  id           BigInt   @id @default(autoincrement())
+  orgId        BigInt   @map("org_id")
+  attemptId    BigInt   @map("attempt_id")
+  questionId   BigInt   @map("question_id")
+  response     Json     // single:{choice} blank:{texts[]} solution:{photoOssKey|inkOssKey|text}
+  isCorrect    Boolean? @map("is_correct")
+  score        Decimal? @db.Decimal(5, 1)
+  flagged      Boolean  @default(false)
+  timeSpentSec Int?     @map("time_spent_sec")
+  aiHelpCount  Int      @default(0) @map("ai_help_count")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  attempt      Attempt  @relation(fields: [attemptId], references: [id])
+  grading      GradingRecord?
+  wrongEntries WrongBookEntry[]
+  @@unique([attemptId, questionId])
+  @@index([orgId, questionId])
+  @@map("answers")
+}
+
+model GradingRecord {
+  id          BigInt    @id @default(autoincrement())
+  orgId       BigInt    @map("org_id")
+  answerId    BigInt    @unique @map("answer_id")
+  aiScore     Decimal?  @map("ai_score") @db.Decimal(5, 1)
+  aiSteps     Json      @default("[]") @map("ai_steps") // [{step,ok,comment}]
+  aiErrorTags Json      @default("[]") @map("ai_error_tags")
+  finalScore  Decimal?  @map("final_score") @db.Decimal(5, 1)
+  reviewerId  BigInt?   @map("reviewer_id")
+  comment     String?
+  reviewedAt  DateTime? @map("reviewed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  answer      Answer    @relation(fields: [answerId], references: [id])
+  @@index([orgId])
+  @@map("grading_records")
+}
+
+model WrongBookEntry {
+  id               BigInt      @id @default(autoincrement())
+  orgId            BigInt      @map("org_id")
+  studentId        BigInt      @map("student_id")
+  questionId       BigInt      @map("question_id")
+  sourceAnswerId   BigInt      @map("source_answer_id")
+  wrongCount       Int         @default(1) @map("wrong_count")
+  correctRedoCount Int         @default(0) @map("correct_redo_count") // 达 2 → cleared
+  errorTags        Json        @default("[]") @map("error_tags")
+  status           WrongStatus @default(open)
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+  student          User        @relation(fields: [studentId], references: [id])
+  sourceAnswer     Answer      @relation(fields: [sourceAnswerId], references: [id])
+  @@unique([studentId, questionId])
+  @@index([orgId, studentId, status])
+  @@map("wrong_book_entries")
+}
+
+model MasterySnapshot {
+  id          BigInt   @id @default(autoincrement())
+  orgId       BigInt   @map("org_id")
+  studentId   BigInt   @map("student_id")
+  nodeId      BigInt   @map("node_id") // 指向 kp_nodes,三维通用
+  mastery     Int      @default(0) // 0-100
+  sampleCount Int      @default(0) @map("sample_count")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  student     User     @relation(fields: [studentId], references: [id])
+  node        KpNode   @relation(fields: [nodeId], references: [id])
+  @@unique([studentId, nodeId])
+  @@index([orgId, studentId])
+  @@map("mastery_snapshots")
+}
+
+// ---------------- 课堂实时 ----------------
+model ClassSession {
+  id          BigInt        @id @default(autoincrement())
+  orgId       BigInt        @map("org_id")
+  lessonId    BigInt        @map("lesson_id")
+  status      SessionStatus @default(scheduled)
+  actualStart DateTime?     @map("actual_start")
+  actualEnd   DateTime?     @map("actual_end")
+  mode        Json          @default("{}") // {guide_only,stuck_alert_min,lockdown}
+  createdAt   DateTime      @default(now()) @map("created_at")
+  lesson      Lesson        @relation(fields: [lessonId], references: [id])
+  participants SessionParticipant[]
+  events      SessionEvent[]
+  @@index([orgId, lessonId])
+  @@map("class_sessions")
+}
+
+model SessionParticipant {
+  id             BigInt           @id @default(autoincrement())
+  orgId          BigInt           @map("org_id")
+  sessionId      BigInt           @map("session_id")
+  studentId      BigInt           @map("student_id")
+  joinAt         DateTime?        @map("join_at")
+  leaveAt        DateTime?        @map("leave_at")
+  currentSegment Int?             @map("current_segment")
+  progress       Json             @default("{}")
+  state          ParticipantState @default(normal)
+  session        ClassSession     @relation(fields: [sessionId], references: [id])
+  @@unique([sessionId, studentId])
+  @@index([orgId])
+  @@map("session_participants")
+}
+
+model SessionEvent {
+  id        BigInt       @id @default(autoincrement())
+  orgId     BigInt       @map("org_id")
+  sessionId BigInt       @map("session_id")
+  studentId BigInt?      @map("student_id")
+  type      String       @db.VarChar(32) // join/leave/segment_enter/answer_submit/ai_ask/stuck_alert/hand_up
+  payload   Json         @default("{}")
+  ts        DateTime     @default(now())
+  session   ClassSession @relation(fields: [sessionId], references: [id])
+  @@index([sessionId, ts])
+  @@index([orgId])
+  @@map("session_events")
+}
+
+// ---------------- AI 计量 · 审计 ----------------
+model AiCall {
+  id        BigInt    @id @default(autoincrement())
+  orgId     BigInt    @map("org_id")
+  feature   AiFeature
+  userId    BigInt?   @map("user_id")
+  sessionId BigInt?   @map("session_id")
+  courseId  BigInt?   @map("course_id")
+  lessonId  BigInt?   @map("lesson_id")
+  provider  String    @db.VarChar(32)
+  model     String    @db.VarChar(64)
+  tokensIn  Int       @map("tokens_in")
+  tokensOut Int       @map("tokens_out")
+  cost      Decimal   @db.Decimal(10, 4)
+  latencyMs Int?      @map("latency_ms")
+  status    String    @default("ok") @db.VarChar(16)
+  createdAt DateTime  @default(now()) @map("created_at")
+  @@index([orgId, createdAt])
+  @@index([orgId, feature])
+  @@map("ai_calls")
+}
+
+model AiQuota {
+  id             BigInt  @id @default(autoincrement())
+  orgId          BigInt  @map("org_id")
+  period         String  @db.VarChar(7) // yyyy-MM
+  monthlyLimit   Decimal @map("monthly_limit") @db.Decimal(10, 2)
+  alertThreshold Int     @default(80) @map("alert_threshold")
+  overPolicy     String  @default("disable_qa") @map("over_policy") @db.VarChar(24)
+  usedCost       Decimal @default(0) @map("used_cost") @db.Decimal(10, 4)
+  @@unique([orgId, period])
+  @@map("ai_quotas")
+}
+
+model AuditLog {
+  id         BigInt   @id @default(autoincrement())
+  orgId      BigInt   @map("org_id")
+  actorId    BigInt   @map("actor_id")
+  action     String   @db.VarChar(48)
+  targetType String?  @map("target_type") @db.VarChar(32)
+  targetId   BigInt?  @map("target_id")
+  detail     Json     @default("{}")
+  ip         String?  @db.VarChar(45)
+  createdAt  DateTime @default(now()) @map("created_at")
+  @@index([orgId, createdAt])
+  @@map("audit_logs")
+}

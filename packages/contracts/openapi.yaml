@@ -1,0 +1,1032 @@
+openapi: 3.1.0
+info:
+  title: 启明智学 API
+  version: 0.1.0
+  description: |
+    W0-2 契约 · MVP 口径(对应《MVP 裁剪手册》)。统一响应包 {code,message,data};
+    分页 {items,total};鉴权 Bearer JWT,payload 含 {uid,orgId,role}。
+    角色约束写在各接口 description 的 [角色] 标注中。
+servers: [{ url: /api/v1 }]
+security: [{ bearer: [] }]
+
+components:
+  securitySchemes:
+    bearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    page: { name: page, in: query, schema: { type: integer, default: 1, minimum: 1 } }
+    size: { name: size, in: query, schema: { type: integer, default: 20, maximum: 50 } }
+    keyword: { name: keyword, in: query, schema: { type: string } }
+    idPath: { name: id, in: path, required: true, schema: { type: integer } }
+  responses:
+    Err:
+      description: 业务/鉴权错误(401 未登录 403 越权 404 不存在或跨租户)
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrResp' } } }
+  schemas:
+    ErrResp:
+      type: object
+      required: [code, message]
+      properties: { code: { type: integer }, message: { type: string }, detail: {} }
+    OkVoid:
+      type: object
+      required: [code, message, data]
+      properties: { code: { type: integer, enum: [0] }, message: { type: string }, data: { type: 'null' } }
+    # ---- 枚举 ----
+    Role: { type: string, enum: [admin, teacher, student] }
+    UserStatus: { type: string, enum: [active, disabled, pending] }
+    ClassType: { type: string, enum: [group, one_on_one, one_on_three] }
+    LessonStatus: { type: string, enum: [draft, ready, in_progress, finished] }
+    SegmentType: { type: string, enum: [warmup, lecture, practice, summary, homework, break_time] }
+    ResourceType: { type: string, enum: [ppt, pdf, video, interactive, image] }
+    QuestionType: { type: string, enum: [single, multi, blank, solution] }
+    QuestionStatus: { type: string, enum: [draft, published, retired] }
+    PaperType: { type: string, enum: [homework, exam, practice] }
+    AssignmentKind: { type: string, enum: [homework, in_class, correction, wrong_redo, consolidation] }
+    AttemptStatus: { type: string, enum: [in_progress, submitted, graded] }
+    WrongStatus: { type: string, enum: [open, cleared] }
+    GraphType: { type: string, enum: [curriculum_knowledge, problem_solving_ability, problem_solving_strategy] }
+    # ---- 实体(与 src/dto.ts 一一对应) ----
+    Me:
+      type: object
+      required: [id, orgId, role, name, orgName, orgSettings]
+      properties:
+        id: { type: integer }
+        orgId: { type: integer }
+        role: { $ref: '#/components/schemas/Role' }
+        name: { type: string }
+        orgName: { type: string }
+        orgSettings:
+          type: object
+          required: [ai, studentHours, deviceBinding]
+          properties:
+            ai:
+              type: object
+              required: [qaGuideOnly, preGrading]
+              properties: { qaGuideOnly: { type: boolean }, preGrading: { type: boolean } }
+            studentHours:
+              type: object
+              required: [start, end]
+              properties: { start: { type: string }, end: { type: string } }
+            deviceBinding: { type: boolean }
+    Teacher:
+      type: object
+      required: [id, name, teacherNo, phone, stage, subject, status, courseCount, questionCount, resourceCount]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        teacherNo: { type: string }
+        phone: { type: string }
+        stage: { type: string }
+        subject: { type: string }
+        status: { $ref: '#/components/schemas/UserStatus' }
+        courseCount: { type: integer }
+        questionCount: { type: integer }
+        resourceCount: { type: integer }
+    TeacherInput:
+      type: object
+      required: [name, phone, stage, subject]
+      properties:
+        name: { type: string, maxLength: 32 }
+        phone: { type: string }
+        teacherNo: { type: string, description: 不传则自动生成 }
+        stage: { type: string }
+        subject: { type: string }
+    Student:
+      type: object
+      required: [id, name, studentNo, parentPhone, grade, status, courses, device, weekStudySec]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        studentNo: { type: string }
+        parentPhone: { type: string }
+        grade: { type: string }
+        status: { $ref: '#/components/schemas/UserStatus' }
+        courses:
+          type: array
+          items:
+            type: object
+            required: [id, name, classType]
+            properties:
+              id: { type: integer }
+              name: { type: string }
+              classType: { $ref: '#/components/schemas/ClassType' }
+        device:
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [name, boundAt]
+              properties: { name: { type: string }, boundAt: { type: string, format: date-time } }
+        weekStudySec: { type: integer }
+    StudentInput:
+      type: object
+      required: [name, parentPhone, grade]
+      properties:
+        name: { type: string, maxLength: 32 }
+        parentPhone: { type: string }
+        studentNo: { type: string }
+        grade: { type: string }
+        courseIds: { type: array, items: { type: integer } }
+    Course:
+      type: object
+      required: [id, name, classType, subject, stage, teacherId, teacherName, totalLessons, currentLesson, studentCount, status, nextLessonAt, attendanceRate, homeworkRate]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        classType: { $ref: '#/components/schemas/ClassType' }
+        subject: { type: string }
+        stage: { type: string }
+        teacherId: { type: integer }
+        teacherName: { type: string }
+        totalLessons: { type: integer }
+        currentLesson: { type: integer }
+        studentCount: { type: integer }
+        status: { type: string }
+        nextLessonAt: { oneOf: [{ type: 'null' }, { type: string, format: date-time }] }
+        attendanceRate: { oneOf: [{ type: 'null' }, { type: number }] }
+        homeworkRate: { oneOf: [{ type: 'null' }, { type: number }] }
+    CourseInput:
+      type: object
+      required: [name, classType, subject, stage, teacherId, totalLessons]
+      properties:
+        name: { type: string }
+        classType: { $ref: '#/components/schemas/ClassType' }
+        subject: { type: string }
+        stage: { type: string }
+        teacherId: { type: integer }
+        totalLessons: { type: integer, minimum: 1 }
+        studentIds: { type: array, items: { type: integer } }
+    Lesson:
+      type: object
+      required: [id, courseId, seq, title, scheduledStart, scheduledEnd, status, prepChecklist]
+      properties:
+        id: { type: integer }
+        courseId: { type: integer }
+        seq: { type: integer }
+        title: { type: string }
+        scheduledStart: { oneOf: [{ type: 'null' }, { type: string, format: date-time }] }
+        scheduledEnd: { oneOf: [{ type: 'null' }, { type: string, format: date-time }] }
+        status: { $ref: '#/components/schemas/LessonStatus' }
+        prepChecklist: { type: object, additionalProperties: { type: boolean } }
+    Segment:
+      type: object
+      required: [seq, type, durationMin, config, resourceId, paperId]
+      properties:
+        id: { type: integer }
+        seq: { type: integer }
+        type: { $ref: '#/components/schemas/SegmentType' }
+        durationMin: { type: integer }
+        config: { type: object, additionalProperties: true }
+        resourceId: { oneOf: [{ type: 'null' }, { type: integer }] }
+        paperId: { oneOf: [{ type: 'null' }, { type: integer }] }
+    Resource:
+      type: object
+      required: [id, type, name, ossKey, size, meta, usedByLessons, createdAt]
+      properties:
+        id: { type: integer }
+        type: { $ref: '#/components/schemas/ResourceType' }
+        name: { type: string }
+        ossKey: { type: string }
+        size: { type: integer }
+        meta: { type: object, additionalProperties: true }
+        usedByLessons:
+          type: array
+          items:
+            type: object
+            required: [lessonId, lessonTitle]
+            properties: { lessonId: { type: integer }, lessonTitle: { type: string } }
+        createdAt: { type: string, format: date-time }
+    KpGraph:
+      type: object
+      required: [id, code, graphType, subject, nodeCount]
+      properties:
+        id: { type: integer }
+        code: { type: string }
+        graphType: { $ref: '#/components/schemas/GraphType' }
+        subject: { type: string }
+        nodeCount: { type: integer }
+    KpNode:
+      type: object
+      required: [id, graphId, code, name, parentCode, level, category, grade, chapter, section, difficulty, examWeight, summary]
+      properties:
+        id: { type: integer }
+        graphId: { type: integer }
+        code: { type: string }
+        name: { type: string }
+        parentCode: { oneOf: [{ type: 'null' }, { type: string }] }
+        level: { oneOf: [{ type: 'null' }, { type: integer }] }
+        category: { oneOf: [{ type: 'null' }, { type: string }] }
+        grade: { oneOf: [{ type: 'null' }, { type: string }] }
+        chapter: { oneOf: [{ type: 'null' }, { type: string }] }
+        section: { oneOf: [{ type: 'null' }, { type: string }] }
+        difficulty: { oneOf: [{ type: 'null' }, { type: integer }] }
+        examWeight: { oneOf: [{ type: 'null' }, { type: number }] }
+        summary: { oneOf: [{ type: 'null' }, { type: string }] }
+    RubricStep:
+      type: object
+      required: [step, desc, score]
+      properties: { step: { type: integer }, desc: { type: string }, score: { type: number } }
+    QuestionOption:
+      type: object
+      required: [label, contentLatex]
+      properties:
+        label: { type: string }
+        contentLatex: { type: string }
+        isCorrect: { type: boolean, description: 学生视图不下发 }
+    QuestionTagRef:
+      type: object
+      required: [nodeId, graphType, code, name]
+      properties:
+        nodeId: { type: integer }
+        graphType: { $ref: '#/components/schemas/GraphType' }
+        code: { type: string }
+        name: { type: string }
+    QuestionAnswer:
+      oneOf:
+        - { type: object, required: [choice], properties: { choice: { type: string } } }
+        - { type: object, required: [choices], properties: { choices: { type: array, items: { type: string } } } }
+        - { type: object, required: [texts], properties: { texts: { type: array, items: { type: string } } } }
+        - { type: object, required: [referenceLatex], properties: { referenceLatex: { type: string } } }
+    Question:
+      type: object
+      required: [id, type, stage, subject, textbookVersion, chapter, stemLatex, figures, options, answer, rubric, analysisLatex, difficulty, status, tags, stats, ownerName, createdAt]
+      properties:
+        id: { type: integer }
+        type: { $ref: '#/components/schemas/QuestionType' }
+        stage: { type: string }
+        subject: { type: string }
+        textbookVersion: { oneOf: [{ type: 'null' }, { type: string }] }
+        chapter: { oneOf: [{ type: 'null' }, { type: string }] }
+        stemLatex: { type: string }
+        figures:
+          type: array
+          items:
+            type: object
+            required: [ossKey, position]
+            properties: { ossKey: { type: string }, position: { type: integer } }
+        options: { type: array, items: { $ref: '#/components/schemas/QuestionOption' } }
+        answer: { oneOf: [{ type: 'null' }, { $ref: '#/components/schemas/QuestionAnswer' }] }
+        rubric: { type: array, items: { $ref: '#/components/schemas/RubricStep' } }
+        analysisLatex: { oneOf: [{ type: 'null' }, { type: string }] }
+        difficulty: { type: integer, minimum: 1, maximum: 3 }
+        status: { $ref: '#/components/schemas/QuestionStatus' }
+        tags: { type: array, items: { $ref: '#/components/schemas/QuestionTagRef' } }
+        stats:
+          type: object
+          required: [correctRate, usedInPapers]
+          properties:
+            correctRate: { oneOf: [{ type: 'null' }, { type: number }] }
+            usedInPapers: { type: integer }
+        ownerName: { type: string }
+        createdAt: { type: string, format: date-time }
+    QuestionInput:
+      type: object
+      required: [type, stage, subject, stemLatex, answer]
+      properties:
+        type: { $ref: '#/components/schemas/QuestionType' }
+        stage: { type: string }
+        subject: { type: string }
+        textbookVersion: { type: string }
+        chapter: { type: string }
+        stemLatex: { type: string }
+        figures: { type: array, items: { type: object, required: [ossKey, position], properties: { ossKey: { type: string }, position: { type: integer } } } }
+        options: { type: array, items: { $ref: '#/components/schemas/QuestionOption' }, description: 选择题必填且 isCorrect 必须恰有规定数量 }
+        answer: { $ref: '#/components/schemas/QuestionAnswer' }
+        rubric: { type: array, items: { $ref: '#/components/schemas/RubricStep' }, description: 解答题必填,AI 预批依据 }
+        analysisLatex: { type: string }
+        difficulty: { type: integer, minimum: 1, maximum: 3 }
+        tagNodeIds: { type: array, items: { type: integer }, description: 三维标注,至少 1 个教材知识点 }
+    Paper:
+      type: object
+      required: [id, name, type, totalScore, status, questions]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        type: { $ref: '#/components/schemas/PaperType' }
+        totalScore: { type: number }
+        status: { type: string }
+        questions:
+          type: array
+          items:
+            type: object
+            required: [seq, questionId, score, type, stemLatex]
+            properties:
+              seq: { type: integer }
+              questionId: { type: integer }
+              score: { type: number }
+              type: { $ref: '#/components/schemas/QuestionType' }
+              stemLatex: { type: string }
+    PaperInput:
+      type: object
+      required: [name, type, questions]
+      properties:
+        name: { type: string }
+        type: { $ref: '#/components/schemas/PaperType' }
+        questions:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [questionId, score]
+            properties: { questionId: { type: integer }, score: { type: number } }
+    Assignment:
+      type: object
+      required: [id, paperId, paperName, lessonId, kind, target, publishAt, dueAt, scoreCounted, questionCount, totalScore]
+      properties:
+        id: { type: integer }
+        paperId: { type: integer }
+        paperName: { type: string }
+        lessonId: { oneOf: [{ type: 'null' }, { type: integer }] }
+        kind: { $ref: '#/components/schemas/AssignmentKind' }
+        target:
+          type: object
+          properties:
+            courseId: { type: integer }
+            studentIds: { type: array, items: { type: integer } }
+        publishAt: { type: string, format: date-time }
+        dueAt: { oneOf: [{ type: 'null' }, { type: string, format: date-time }] }
+        scoreCounted: { type: boolean }
+        questionCount: { type: integer }
+        totalScore: { type: number }
+    AssignmentInput:
+      type: object
+      required: [paperId, kind, target]
+      properties:
+        paperId: { type: integer }
+        lessonId: { type: integer }
+        kind: { $ref: '#/components/schemas/AssignmentKind' }
+        target:
+          type: object
+          properties:
+            courseId: { type: integer }
+            studentIds: { type: array, items: { type: integer } }
+        dueAt: { type: string, format: date-time }
+    AnswerResponseBody:
+      oneOf:
+        - { type: object, required: [choice], properties: { choice: { type: string } } }
+        - { type: object, required: [choices], properties: { choices: { type: array, items: { type: string } } } }
+        - { type: object, required: [texts], properties: { texts: { type: array, items: { type: string } } } }
+        - { type: object, required: [photoOssKey], properties: { photoOssKey: { type: string } } }
+        - { type: object, required: [text], properties: { text: { type: string } } }
+    Answer:
+      type: object
+      required: [questionId, response, isCorrect, score, flagged]
+      properties:
+        questionId: { type: integer }
+        response: { oneOf: [{ type: 'null' }, { $ref: '#/components/schemas/AnswerResponseBody' }] }
+        isCorrect: { oneOf: [{ type: 'null' }, { type: boolean }] }
+        score: { oneOf: [{ type: 'null' }, { type: number }] }
+        flagged: { type: boolean }
+    Attempt:
+      type: object
+      required: [id, assignmentId, status, attemptNo, startedAt, submittedAt, score, objectiveScore, subjectiveScore, answers]
+      properties:
+        id: { type: integer }
+        assignmentId: { type: integer }
+        status: { $ref: '#/components/schemas/AttemptStatus' }
+        attemptNo: { type: integer }
+        startedAt: { type: string, format: date-time }
+        submittedAt: { oneOf: [{ type: 'null' }, { type: string, format: date-time }] }
+        score: { oneOf: [{ type: 'null' }, { type: number }] }
+        objectiveScore: { oneOf: [{ type: 'null' }, { type: number }] }
+        subjectiveScore: { oneOf: [{ type: 'null' }, { type: number }] }
+        answers: { type: array, items: { $ref: '#/components/schemas/Answer' } }
+    SubmitAnswerResult:
+      type: object
+      required: [judged, isCorrect, correctAnswer, analysisLatex]
+      properties:
+        judged: { type: boolean, description: 客观题 true 即时判分;主观题 false 入预批队列 }
+        isCorrect: { oneOf: [{ type: 'null' }, { type: boolean }] }
+        correctAnswer: { oneOf: [{ type: 'null' }, { type: string }] }
+        analysisLatex: { oneOf: [{ type: 'null' }, { type: string }], description: 判错后下发解析 }
+    GradingItem:
+      type: object
+      required: [answerId, studentId, studentName, questionId, stemLatex, rubric, photoUrl, textResponse, aiScore, aiSteps, aiErrorTags, finalScore, comment]
+      properties:
+        answerId: { type: integer }
+        studentId: { type: integer }
+        studentName: { type: string }
+        questionId: { type: integer }
+        stemLatex: { type: string }
+        rubric: { type: array, items: { $ref: '#/components/schemas/RubricStep' } }
+        photoUrl: { oneOf: [{ type: 'null' }, { type: string }], description: 签名URL,短时效 }
+        textResponse: { oneOf: [{ type: 'null' }, { type: string }] }
+        aiScore: { oneOf: [{ type: 'null' }, { type: number }] }
+        aiSteps:
+          type: array
+          items:
+            type: object
+            required: [step, ok]
+            properties: { step: { type: integer }, ok: { type: boolean }, comment: { type: string } }
+        aiErrorTags: { type: array, items: { type: string } }
+        finalScore: { oneOf: [{ type: 'null' }, { type: number }] }
+        comment: { oneOf: [{ type: 'null' }, { type: string }] }
+    WrongBookItem:
+      type: object
+      required: [id, questionId, type, stemLatex, analysisLatex, wrongCount, correctRedoCount, errorTags, status, sourceName, createdAt]
+      properties:
+        id: { type: integer }
+        questionId: { type: integer }
+        type: { $ref: '#/components/schemas/QuestionType' }
+        stemLatex: { type: string }
+        analysisLatex: { oneOf: [{ type: 'null' }, { type: string }] }
+        wrongCount: { type: integer }
+        correctRedoCount: { type: integer }
+        errorTags: { type: array, items: { type: string } }
+        status: { $ref: '#/components/schemas/WrongStatus' }
+        sourceName: { type: string }
+        createdAt: { type: string, format: date-time }
+    MasteryItem:
+      type: object
+      required: [nodeId, nodeName, graphType, mastery, sampleCount]
+      properties:
+        nodeId: { type: integer }
+        nodeName: { type: string }
+        graphType: { $ref: '#/components/schemas/GraphType' }
+        mastery: { type: integer, minimum: 0, maximum: 100 }
+        sampleCount: { type: integer }
+    AiUsageSummary:
+      type: object
+      required: [period, totalTokens, totalCost, monthlyLimit, usedPercent, avgCostPerLesson]
+      properties:
+        period: { type: string }
+        totalTokens: { type: integer }
+        totalCost: { type: number }
+        monthlyLimit: { type: number }
+        usedPercent: { type: number }
+        avgCostPerLesson: { oneOf: [{ type: 'null' }, { type: number }] }
+    AiUsageBreakdown:
+      type: object
+      required: [key, label, tokens, cost, percent]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        tokens: { type: integer }
+        cost: { type: number }
+        percent: { type: number }
+    StsCredential:
+      type: object
+      required: [uploadUrl, ossKey, expiresAt]
+      properties:
+        uploadUrl: { type: string, description: 预签名直传 URL(PUT) }
+        ossKey: { type: string }
+        expiresAt: { type: string, format: date-time }
+
+paths:
+  # ================= 认证 =================
+  /auth/login:
+    post:
+      summary: 账号密码登录 [admin/teacher]
+      security: []
+      requestBody:
+        required: true
+        content: {application/json: {schema: {type: object, required: [phone, password], properties: {phone: {type: string}, password: {type: string}}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [accessToken, refreshToken, me], properties: {accessToken: {type: string}, refreshToken: {type: string}, me: {$ref: '#/components/schemas/Me'}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /auth/student/qr-exchange:
+    post:
+      summary: 平板扫码:一次性 ticket 换 JWT 并绑定设备 [公开]
+      security: []
+      requestBody:
+        required: true
+        content: {application/json: {schema: {type: object, required: [token, deviceFingerprint, deviceName], properties: {token: {type: string}, deviceFingerprint: {type: string}, deviceName: {type: string}}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [accessToken, refreshToken, me], properties: {accessToken: {type: string}, refreshToken: {type: string}, me: {$ref: '#/components/schemas/Me'}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /auth/refresh:
+    post:
+      summary: 刷新令牌 [*]
+      security: []
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [refreshToken], properties: {refreshToken: {type: string}}}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [accessToken, refreshToken], properties: {accessToken: {type: string}, refreshToken: {type: string}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /auth/logout:
+    post:
+      summary: 退出登录 [*]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /me:
+    get:
+      summary: 当前用户与机构设置 [*]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/Me'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /me/password:
+    put:
+      summary: 修改密码 [*]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [oldPassword, newPassword], properties: {oldPassword: {type: string}, newPassword: {type: string, minLength: 8}}}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+
+  # ================= 管理员 =================
+  /admin/teachers:
+    get:
+      summary: 教师列表 [admin]
+      parameters: [{$ref: '#/components/parameters/page'}, {$ref: '#/components/parameters/size'}, {$ref: '#/components/parameters/keyword'}, {name: status, in: query, schema: {$ref: '#/components/schemas/UserStatus'}}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [items, total], properties: {items: {type: array, items: {$ref: '#/components/schemas/Teacher'}}, total: {type: integer}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+    post:
+      summary: 创建教师(短信发初始密码) [admin]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/TeacherInput'}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/Teacher'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/teachers/{id}:
+    put:
+      summary: 编辑教师 [admin]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/TeacherInput'}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+    delete:
+      summary: 停用教师(软删) [admin]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/teachers/{id}/reset-password:
+    post:
+      summary: 重置密码并短信通知 [admin]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/students:
+    get:
+      summary: 学生列表 [admin]
+      parameters: [{$ref: '#/components/parameters/page'}, {$ref: '#/components/parameters/size'}, {$ref: '#/components/parameters/keyword'}, {name: courseId, in: query, schema: {type: integer}}, {name: deviceBound, in: query, schema: {type: boolean}}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [items, total], properties: {items: {type: array, items: {$ref: '#/components/schemas/Student'}}, total: {type: integer}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+    post:
+      summary: 创建学生(向家长手机发登录码) [admin]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/StudentInput'}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/Student'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/students/{id}:
+    put:
+      summary: 编辑学生 [admin]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/StudentInput'}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/students/{id}/profile:
+    get:
+      summary: 学生档案(课程+设备+学情摘要) [admin/teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [student, mastery, wrongOpenCount], properties: {student: {$ref: '#/components/schemas/Student'}, mastery: {type: array, items: {$ref: '#/components/schemas/MasteryItem'}}, wrongOpenCount: {type: integer}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/students/{id}/login-ticket:
+    post:
+      summary: 生成/重发平板登录码 [admin]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [token, expiresAt], properties: {token: {type: string}, expiresAt: {type: string, format: date-time}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/students/{id}/device:
+    delete:
+      summary: 解绑设备 [admin]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/courses:
+    get:
+      summary: 课程列表 [admin]
+      parameters: [{$ref: '#/components/parameters/page'}, {$ref: '#/components/parameters/size'}, {$ref: '#/components/parameters/keyword'}, {name: classType, in: query, schema: {$ref: '#/components/schemas/ClassType'}}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [items, total], properties: {items: {type: array, items: {$ref: '#/components/schemas/Course'}}, total: {type: integer}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+    post:
+      summary: 创建课程(自动生成 totalLessons 个空讲次) [admin]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CourseInput'}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/Course'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/courses/{id}:
+    put:
+      summary: 编辑课程 [admin]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CourseInput'}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/courses/{id}/roster:
+    get:
+      summary: 课程名单(到课/作业概览) [admin/teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {type: object, required: [studentId, name, attendance, homeworkAvg, status], properties: {studentId: {type: integer}, name: {type: string}, attendance: {type: string}, homeworkAvg: {oneOf: [{type: 'null'}, {type: number}]}, status: {type: string}}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/dashboard:
+    get:
+      summary: 管理员总览 [admin]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [teacherCount, studentCount, weekAttendanceRate, monthAiCost, todayLessonCount, recentEvents], properties: {teacherCount: {type: integer}, studentCount: {type: integer}, weekAttendanceRate: {oneOf: [{type: 'null'}, {type: number}]}, monthAiCost: {type: number}, todayLessonCount: {type: integer}, recentEvents: {type: array, items: {type: object, required: [text, time], properties: {text: {type: string}, time: {type: string, format: date-time}}}}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/ai-usage/summary:
+    get:
+      summary: 本月 AI 用量摘要 [admin]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/AiUsageSummary'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/ai-usage/daily:
+    get:
+      summary: 近 N 日用量曲线 [admin]
+      parameters: [{name: days, in: query, schema: {type: integer, default: 14, maximum: 31}}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {type: object, required: [date, tokens, cost], properties: {date: {type: string}, tokens: {type: integer}, cost: {type: number}}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/ai-usage/breakdown:
+    get:
+      summary: 按功能拆分(本月) [admin]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {$ref: '#/components/schemas/AiUsageBreakdown'}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/ai-quota:
+    get:
+      summary: 读取额度与告警设置 [admin]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [monthlyLimit, alertThreshold, overPolicy], properties: {monthlyLimit: {type: number}, alertThreshold: {type: integer}, overPolicy: {type: string}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+    put:
+      summary: 修改额度与告警 [admin]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [monthlyLimit, alertThreshold, overPolicy], properties: {monthlyLimit: {type: number}, alertThreshold: {type: integer, minimum: 50, maximum: 95}, overPolicy: {type: string, enum: [disable_qa, pause_all, record_only]}}}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/settings:
+    get:
+      summary: 平台设置 [admin]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/Me'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+    put:
+      summary: 修改设置(引导模式/使用时段) [admin]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, properties: {qaGuideOnly: {type: boolean}, studentHours: {type: object, required: [start, end], properties: {start: {type: string}, end: {type: string}}}}}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/audit-logs:
+    get:
+      summary: 审计日志 [admin]
+      parameters: [{$ref: '#/components/parameters/page'}, {$ref: '#/components/parameters/size'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [items, total], properties: {items: {type: array, items: {type: object, required: [actorName, action, createdAt], properties: {actorName: {type: string}, action: {type: string}, targetType: {oneOf: [{type: 'null'}, {type: string}]}, createdAt: {type: string, format: date-time}}}}, total: {type: integer}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+
+  # ================= 知识图谱(只读) =================
+  /kp/graphs:
+    get:
+      summary: 图谱列表(教材/能力/策略) [teacher/admin]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {$ref: '#/components/schemas/KpGraph'}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /kp/nodes:
+    get:
+      summary: 节点查询(按图谱/年级/章节/关键词) [teacher/admin]
+      parameters: [{name: graphId, in: query, required: true, schema: {type: integer}}, {name: grade, in: query, schema: {type: string}}, {name: chapter, in: query, schema: {type: string}}, {$ref: '#/components/parameters/keyword'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {$ref: '#/components/schemas/KpNode'}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+
+  # ================= 题库 =================
+  /questions:
+    get:
+      summary: 题目列表 [teacher]
+      parameters: [{$ref: '#/components/parameters/page'}, {$ref: '#/components/parameters/size'}, {$ref: '#/components/parameters/keyword'}, {name: type, in: query, schema: {$ref: '#/components/schemas/QuestionType'}}, {name: status, in: query, schema: {$ref: '#/components/schemas/QuestionStatus'}}, {name: difficulty, in: query, schema: {type: integer}}, {name: tagNodeId, in: query, schema: {type: integer}}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [items, total], properties: {items: {type: array, items: {$ref: '#/components/schemas/Question'}}, total: {type: integer}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+    post:
+      summary: 录题(存为草稿) [teacher]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/QuestionInput'}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/Question'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /questions/{id}:
+    get:
+      summary: 题目详情 [teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/Question'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+    put:
+      summary: 编辑题目(仅 owner 或 admin) [teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/QuestionInput'}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+    delete:
+      summary: 删除题目(软删,组卷中禁止) [teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /questions/{id}/publish:
+    post:
+      summary: 草稿入库 [teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /uploads/sts:
+    post:
+      summary: 直传凭证(题图/课件/作答照片) [*]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [purpose, fileName], properties: {purpose: {type: string, enum: [question_figure, resource, answer_photo]}, fileName: {type: string}}}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/StsCredential'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+
+  # ================= 资源库 =================
+  /resources:
+    get:
+      summary: 资源列表(含被引用讲次) [teacher]
+      parameters: [{$ref: '#/components/parameters/page'}, {$ref: '#/components/parameters/size'}, {$ref: '#/components/parameters/keyword'}, {name: type, in: query, schema: {$ref: '#/components/schemas/ResourceType'}}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [items, total], properties: {items: {type: array, items: {$ref: '#/components/schemas/Resource'}}, total: {type: integer}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+    post:
+      summary: 登记已直传的资源 [teacher]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [type, name, ossKey, size], properties: {type: {$ref: '#/components/schemas/ResourceType'}, name: {type: string}, ossKey: {type: string}, size: {type: integer}, meta: {type: object, additionalProperties: true}}}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/Resource'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /resources/{id}:
+    put:
+      summary: 重命名/更新元信息 [teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, properties: {name: {type: string}, meta: {type: object, additionalProperties: true}}}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+    delete:
+      summary: 删除资源(被讲次引用时禁止) [teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+
+  # ================= 教师 · 课程/讲次/编排/组卷/发布 =================
+  /teacher/courses:
+    get:
+      summary: 我的课程(含下次上课/备课进度) [teacher]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {$ref: '#/components/schemas/Course'}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /courses/{id}/lessons:
+    get:
+      summary: 讲次时间线 [teacher/admin]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {$ref: '#/components/schemas/Lesson'}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /lessons/{id}:
+    get:
+      summary: 讲次详情 [teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/Lesson'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+    put:
+      summary: 改标题/时间 [teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, properties: {title: {type: string}, scheduledStart: {type: string, format: date-time}, scheduledEnd: {type: string, format: date-time}}}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /lessons/{id}/segments:
+    get:
+      summary: 读取课堂编排 [teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {$ref: '#/components/schemas/Segment'}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+    put:
+      summary: 整体保存课堂编排(全量替换) [teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Segment'}}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /lessons/{id}/publish:
+    post:
+      summary: 发布课堂(检查清单未过返回 code=4201 与缺失项) [teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /papers:
+    get:
+      summary: 试卷列表 [teacher]
+      parameters: [{$ref: '#/components/parameters/page'}, {$ref: '#/components/parameters/size'}, {name: type, in: query, schema: {$ref: '#/components/schemas/PaperType'}}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [items, total], properties: {items: {type: array, items: {$ref: '#/components/schemas/Paper'}}, total: {type: integer}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+    post:
+      summary: 创建试卷(手动挑题) [teacher]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/PaperInput'}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/Paper'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /papers/{id}:
+    get:
+      summary: 试卷详情 [teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/Paper'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+    put:
+      summary: 增删题/调分(已下发的禁止) [teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/PaperInput'}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /assignments:
+    post:
+      summary: 发布作业 [teacher]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/AssignmentInput'}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/Assignment'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /assignments/{id}/progress:
+    get:
+      summary: 提交进度 [teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [submitted, totalStudents, gradedSubjective, pendingSubjective], properties: {submitted: {type: integer}, totalStudents: {type: integer}, gradedSubjective: {type: integer}, pendingSubjective: {type: integer}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+
+  # ================= 批改 =================
+  /grading/pending:
+    get:
+      summary: 待复核列表(按作业聚合) [teacher]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {type: object, required: [assignmentId, paperName, pendingCount, aiAvgScore], properties: {assignmentId: {type: integer}, paperName: {type: string}, pendingCount: {type: integer}, aiAvgScore: {oneOf: [{type: 'null'}, {type: number}]}}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /grading/answers/{id}:
+    get:
+      summary: 单份复核详情(原稿+AI预批+rubric) [teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/GradingItem'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /grading/answers/{id}/review:
+    put:
+      summary: 确认得分与评语 [teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [finalScore], properties: {finalScore: {type: number}, comment: {type: string}}}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /grading/assignments/{id}/adopt-ai:
+    post:
+      summary: 全部采纳 AI 分 [teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /grading/assignments/{id}/finalize:
+    post:
+      summary: 出分(成绩对学生可见,触发错题/掌握度任务) [teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+
+  # ================= 学生 =================
+  /student/today:
+    get:
+      summary: 今日(课程hero+任务) [student]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [todayLesson, tasks], properties: {todayLesson: {oneOf: [{type: 'null'}, {type: object, required: [lessonId, courseName, title, startAt, endAt, canEnterAt, sessionId], properties: {lessonId: {type: integer}, courseName: {type: string}, title: {type: string}, startAt: {type: string, format: date-time}, endAt: {type: string, format: date-time}, canEnterAt: {type: string, format: date-time}, sessionId: {oneOf: [{type: 'null'}, {type: integer}]}}}]}, tasks: {type: array, items: {type: object, required: [assignmentId, kind, title, questionCount, dueAt, progress], properties: {assignmentId: {type: integer}, kind: {$ref: '#/components/schemas/AssignmentKind'}, title: {type: string}, questionCount: {type: integer}, dueAt: {oneOf: [{type: 'null'}, {type: string, format: date-time}]}, progress: {type: object, required: [answered, total, status], properties: {answered: {type: integer}, total: {type: integer}, status: {type: string}}}}}}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /student/courses:
+    get:
+      summary: 我的课程 [student]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {$ref: '#/components/schemas/Course'}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /student/courses/{id}/lessons:
+    get:
+      summary: 讲次时间线(回看/订正入口) [student]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {type: object, required: [lesson, myHomework], properties: {lesson: {$ref: '#/components/schemas/Lesson'}, myHomework: {oneOf: [{type: 'null'}, {type: object, required: [assignmentId, score, wrongCount], properties: {assignmentId: {type: integer}, score: {oneOf: [{type: 'null'}, {type: number}]}, wrongCount: {type: integer}}}]}}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /student/assignments:
+    get:
+      summary: 作业列表 [student]
+      parameters: [{name: status, in: query, schema: {type: string, enum: [pending, done, all], default: pending}}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {$ref: '#/components/schemas/Assignment'}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /student/attempts:
+    post:
+      summary: 开始作答(已有进行中的则返回它=断点续答) [student]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [assignmentId], properties: {assignmentId: {type: integer}}}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/Attempt'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /student/attempts/{id}:
+    get:
+      summary: 作答详情(断点续答快照) [student]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/Attempt'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /student/attempts/{id}/answers/{qid}:
+    put:
+      summary: 提交单题(客观题即时判分) [student]
+      parameters: [{$ref: '#/components/parameters/idPath'}, {name: qid, in: path, required: true, schema: {type: integer}}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [response], properties: {response: {$ref: '#/components/schemas/AnswerResponseBody'}, timeSpentSec: {type: integer}, flagged: {type: boolean}}}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/SubmitAnswerResult'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /student/attempts/{id}/submit:
+    post:
+      summary: 交卷 [student]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/Attempt'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /student/wrong-book:
+    get:
+      summary: 错题本 [student]
+      parameters: [{$ref: '#/components/parameters/page'}, {$ref: '#/components/parameters/size'}, {name: status, in: query, schema: {$ref: '#/components/schemas/WrongStatus'}}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [items, total], properties: {items: {type: array, items: {$ref: '#/components/schemas/WrongBookItem'}}, total: {type: integer}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /student/wrong-book/{id}/redo:
+    post:
+      summary: 重做单题(生成 wrong_redo 作业,不计分) [student]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/Assignment'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /student/wrong-book/redo-all:
+    post:
+      summary: 一键重练全部 open 错题 [student]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/Assignment'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /student/report:
+    get:
+      summary: 学习报告(掌握度) [student]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [mastery, weekStats], properties: {mastery: {type: array, items: {$ref: '#/components/schemas/MasteryItem'}}, weekStats: {type: object, required: [answeredCount, correctRate, studySec, wrongOpenCount], properties: {answeredCount: {type: integer}, correctRate: {oneOf: [{type: 'null'}, {type: number}]}, studySec: {type: integer}, wrongOpenCount: {type: integer}}}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /student/resources/{id}/view:
+    get:
+      summary: 课件回看(签名URL) [student]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [url, expiresAt], properties: {url: {type: string}, expiresAt: {type: string, format: date-time}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+
+  # ================= 学情(教师) =================
+  /analytics/courses/{id}/mastery:
+    get:
+      summary: 课程知识点掌握热力 [teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {type: object, required: [nodeId, nodeName, avgMastery, studentCount], properties: {nodeId: {type: integer}, nodeName: {type: string}, avgMastery: {type: integer}, studentCount: {type: integer}}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /analytics/courses/{id}/attention:
+    get:
+      summary: 重点关注学生 [teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {type: object, required: [studentId, name, reason], properties: {studentId: {type: integer}, name: {type: string}, reason: {type: string}}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /analytics/students/{id}:
+    get:
+      summary: 单生 30 天报告 [teacher/admin]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [mastery, wrongOpenCount, attempts30d], properties: {mastery: {type: array, items: {$ref: '#/components/schemas/MasteryItem'}}, wrongOpenCount: {type: integer}, attempts30d: {type: integer}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+
+  # ================= AI =================
+  /ai/qa:
+    post:
+      summary: 学生答疑(SSE 流式;引导模式由机构设置控制;限流 6 次/分钟) [student]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [message], properties: {questionId: {oneOf: [{type: 'null'}, {type: integer}]}, attemptId: {type: integer}, message: {type: string, maxLength: 500}}}}}}
+      responses:
+        '200': {description: 'SSE 流:event=delta data={"text":string};结束 event=done data={"requestId":string}', content: {text/event-stream: {schema: {type: string}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /ai/health:
+    get:
+      summary: AI 网关健康与当前路由 [admin]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [providers], properties: {providers: {type: array, items: {type: object, required: [feature, provider, model, healthy], properties: {feature: {type: string}, provider: {type: string}, model: {type: string}, healthy: {type: boolean}}}}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
