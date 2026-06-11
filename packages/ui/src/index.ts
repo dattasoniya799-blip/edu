@@ -8,3 +8,6 @@ export { ProgressBar, type ProgressBarProps } from './ProgressBar';
 export { StatCard, type StatCardProps } from './StatCard';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export { TexText, renderMix, type TexTextProps } from './TexText';
+export { QrCode, type QrCodeProps } from './QrCode';
+export { Switch, type SwitchProps } from './Switch';
+export { Skeleton, type SkeletonProps } from './Skeleton';

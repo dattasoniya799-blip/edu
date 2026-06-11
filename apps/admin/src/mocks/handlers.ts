@@ -84,13 +84,26 @@ export const handlers = [
   })),
   http.post(`${BASE}/admin/teachers`, authed(async ({ request }) => {
     const body = (await request.json()) as { name: string; phone: string; stage: string; subject: string; teacherNo?: string };
-    return ok({
-      id: 100, name: body.name, teacherNo: body.teacherNo ?? 'T-0100', phone: body.phone,
-      stage: body.stage, subject: body.subject, status: 'pending', courseCount: 0, questionCount: 0, resourceCount: 0,
-    });
+    const id = Math.max(0, ...D.teachers.map((t) => t.id)) + 1;
+    const created = {
+      id, name: body.name, teacherNo: body.teacherNo ?? `T-${String(D.teachers.length + 1).padStart(4, '0')}`, phone: body.phone,
+      stage: body.stage, subject: body.subject, status: 'pending' as const, courseCount: 0, questionCount: 0, resourceCount: 0,
+    };
+    D.teachers.push(created); // 有状态 mock:刷新列表可见
+    return ok(created);
   })),
-  http.put(`${BASE}/admin/teachers/:id`, authed(() => okVoid())),
-  http.delete(`${BASE}/admin/teachers/:id`, authed(() => okVoid())),
+  http.put(`${BASE}/admin/teachers/:id`, authed(async ({ request, params }) => {
+    const body = (await request.json()) as { name: string; phone: string; stage: string; subject: string; teacherNo?: string };
+    const t = D.teachers.find((x) => x.id === Number(params.id));
+    if (!t) return err(404, 4040, '教师不存在');
+    Object.assign(t, { name: body.name, phone: body.phone, stage: body.stage, subject: body.subject, ...(body.teacherNo ? { teacherNo: body.teacherNo } : {}) });
+    return okVoid();
+  })),
+  http.delete(`${BASE}/admin/teachers/:id`, authed(({ params }) => {
+    const t = D.teachers.find((x) => x.id === Number(params.id));
+    if (t) t.status = 'disabled';
+    return okVoid();
+  })),
   http.post(`${BASE}/admin/teachers/:id/reset-password`, authed(() => okVoid())),
 
   http.get(`${BASE}/admin/students`, authed(({ request }) => {
@@ -105,11 +118,19 @@ export const handlers = [
     return ok(paginate(list, url));
   })),
   http.post(`${BASE}/admin/students`, authed(async ({ request }) => {
-    const body = (await request.json()) as { name: string; parentPhone: string; grade: string; studentNo?: string };
-    return ok({
-      id: 200, name: body.name, studentNo: body.studentNo ?? 'S-0200', parentPhone: body.parentPhone,
-      grade: body.grade, status: 'pending', courses: [], device: null, weekStudySec: 0,
-    });
+    const body = (await request.json()) as { name: string; parentPhone: string; grade: string; studentNo?: string; courseIds?: number[] };
+    const id = Math.max(0, ...D.students.map((s) => s.id)) + 1;
+    const created = {
+      id, name: body.name, studentNo: body.studentNo ?? `S-${String(D.students.length + 1).padStart(4, '0')}`,
+      parentPhone: body.parentPhone, grade: body.grade, status: 'pending' as const,
+      courses: (body.courseIds ?? [])
+        .map((cid) => D.courses.find((c) => c.id === cid))
+        .filter((c): c is NonNullable<typeof c> => !!c)
+        .map((c) => ({ id: c.id, name: c.name, classType: c.classType })),
+      device: null, weekStudySec: 0,
+    };
+    D.students.push(created); // 有状态 mock:刷新列表可见
+    return ok(created);
   })),
   http.put(`${BASE}/admin/students/:id`, authed(() => okVoid())),
   http.get(`${BASE}/admin/students/:id/profile`, authed(({ params }) => {
@@ -117,9 +138,20 @@ export const handlers = [
     if (!s) return err(404, 4040, '学生不存在');
     return ok({ student: s, mastery: D.mastery, wrongOpenCount: D.wrongBook.length });
   })),
-  http.post(`${BASE}/admin/students/:id/login-ticket`, authed(({ params }) =>
-    ok({ token: `QM-DEMO-${params.id}`, expiresAt: '2026-06-18T00:00:00.000Z' }))),
-  http.delete(`${BASE}/admin/students/:id/device`, authed(() => okVoid())),
+  http.post(`${BASE}/admin/students/:id/login-ticket`, authed(({ params }) => {
+    // ticket 序号与 LOGIN_TICKETS 口径一致(QM-DEMO-{序号} = 学生列表第 N 位),学生端可直接兑换
+    const idx = D.students.findIndex((s) => s.id === Number(params.id));
+    if (idx < 0) return err(404, 4040, '学生不存在');
+    const s = D.students[idx];
+    const token = `QM-DEMO-${idx + 1}`;
+    D.LOGIN_TICKETS[token] = { id: s.id, orgId: 1, role: 'student', name: s.name, orgName: D.ME_ADMIN.orgName, orgSettings: D.orgSettings };
+    return ok({ token, expiresAt: '2026-06-18T00:00:00.000Z' });
+  })),
+  http.delete(`${BASE}/admin/students/:id/device`, authed(({ params }) => {
+    const s = D.students.find((x) => x.id === Number(params.id));
+    if (s) s.device = null; // 有状态 mock:档案/列表刷新可见
+    return okVoid();
+  })),
 
   http.get(`${BASE}/admin/courses`, authed(({ request }) => {
     const url = new URL(request.url);
@@ -130,12 +162,34 @@ export const handlers = [
     return ok(paginate(list, url));
   })),
   http.post(`${BASE}/admin/courses`, authed(async ({ request }) => {
-    const body = (await request.json()) as Record<string, unknown>;
-    return ok({ ...D.courses[0], id: 300, name: body.name, status: 'draft', currentLesson: 0, studentCount: 0 });
+    const body = (await request.json()) as {
+      name: string; classType: 'group' | 'one_on_one' | 'one_on_three'; subject: string; stage: string;
+      teacherId: number; totalLessons: number; studentIds?: number[];
+    };
+    const teacher = D.teachers.find((t) => t.id === body.teacherId);
+    if (!teacher) return err(404, 4040, '教师不存在');
+    const created = {
+      id: Math.max(0, ...D.courses.map((c) => c.id)) + 1,
+      name: body.name, classType: body.classType, subject: body.subject, stage: body.stage,
+      teacherId: teacher.id, teacherName: teacher.name,
+      totalLessons: body.totalLessons, currentLesson: 0, studentCount: body.studentIds?.length ?? 0,
+      status: 'draft' as const, nextLessonAt: null, attendanceRate: null, homeworkRate: null,
+    };
+    D.courses.push(created); // 有状态 mock:刷新列表可见
+    return ok(created);
   })),
   http.put(`${BASE}/admin/courses/:id`, authed(() => okVoid())),
-  http.get(`${BASE}/admin/courses/:id/roster`, authed(() => ok(D.courseRoster))),
-  http.get(`${BASE}/admin/dashboard`, authed(() => ok(D.adminDashboard))),
+  http.get(`${BASE}/admin/courses/:id/roster`, authed(({ params }) =>
+    // seed 口径:课程 1 = 全员名单;课程 2 = 一对一(李一诺);新建课程 = 空名单
+    Number(params.id) === 1 ? ok(D.courseRoster)
+      : Number(params.id) === 2 ? ok(D.courseRoster.filter((r) => r.name === '李一诺'))
+        : ok([]))),
+  http.get(`${BASE}/admin/dashboard`, authed(() =>
+    ok({
+      ...D.adminDashboard,
+      teacherCount: D.teachers.filter((t) => t.status === 'active').length,
+      studentCount: D.students.length,
+    }))),
   http.get(`${BASE}/admin/ai-usage/summary`, authed(() => ok(D.aiUsageSummary))),
   http.get(`${BASE}/admin/ai-usage/daily`, authed(({ request }) => {
     const days = Number(new URL(request.url).searchParams.get('days') ?? 14);
@@ -143,9 +197,20 @@ export const handlers = [
   })),
   http.get(`${BASE}/admin/ai-usage/breakdown`, authed(() => ok(D.aiUsageBreakdown))),
   http.get(`${BASE}/admin/ai-quota`, authed(() => ok(D.aiQuota))),
-  http.put(`${BASE}/admin/ai-quota`, authed(() => okVoid())),
+  http.put(`${BASE}/admin/ai-quota`, authed(async ({ request }) => {
+    const body = (await request.json()) as { monthlyLimit: number; alertThreshold: number; overPolicy: string };
+    Object.assign(D.aiQuota, body); // 有状态 mock:重新读取可见
+    D.aiUsageSummary.monthlyLimit = body.monthlyLimit;
+    D.aiUsageSummary.usedPercent = Math.round((D.aiUsageSummary.totalCost / body.monthlyLimit) * 100);
+    return okVoid();
+  })),
   http.get(`${BASE}/admin/settings`, authed((info) => ok(currentUser(info.request)))),
-  http.put(`${BASE}/admin/settings`, authed(() => okVoid())),
+  http.put(`${BASE}/admin/settings`, authed(async ({ request }) => {
+    const body = (await request.json()) as { qaGuideOnly?: boolean; studentHours?: { start: string; end: string } };
+    if (body.qaGuideOnly !== undefined) D.orgSettings.ai.qaGuideOnly = body.qaGuideOnly;
+    if (body.studentHours) D.orgSettings.studentHours = { ...body.studentHours };
+    return okVoid();
+  })),
   http.get(`${BASE}/admin/audit-logs`, authed(({ request }) => ok(paginate(D.auditLogs, new URL(request.url))))),
 
   // ================= 知识图谱 =================
