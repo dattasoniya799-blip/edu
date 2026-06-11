@@ -449,7 +449,12 @@ describe('课堂实时 WebSocket(A6,/classroom)', () => {
     last.forEach((p) => exactKeys(p, MONITOR_KEYS));
 
     for (const s of extras) s.disconnect();
-  }, 25000);
+    // 等 18 个 leave 事件经 Stream 消费者落库(避免与下一用例的 flush 竞争)
+    await waitFor(async () => {
+      const leaves = await raw.sessionEvent.count({ where: { sessionId: BigInt(sid()), type: 'leave' } });
+      return leaves >= 19; // 18 extras + 此前 s1 重连断开的 1 次
+    }, 'leave 事件落库');
+  }, 30000);
 
   it('验收:participants 周期回写 → Redis flush(仅本套件键)→ 从 PG 重建,snapshot 不丢已答', async () => {
     // 1) 等回写落库(注入 400ms 周期)
@@ -527,6 +532,9 @@ describe('课堂实时 WebSocket(A6,/classroom)', () => {
       return r?.status === 'ended' ? r : null;
     }, 'session ended');
     expect(row.actualEnd).toBeTruthy();
+
+    // 结算是 end 广播后的异步流程,其最后一步是清本会话 Redis 键 → 以此为完成信号
+    await waitFor(async () => (await scanKeys(`${keyPrefix()}:*`)).length === 0, '结算完成(清键)');
     expect((await raw.lesson.findUnique({ where: { id: fx.lessonId } }))?.status).toBe('finished');
 
     // 参与者归档:leaveAt + progress 快照
@@ -537,19 +545,13 @@ describe('课堂实时 WebSocket(A6,/classroom)', () => {
     expect((p1.progress as Record<string, unknown>).answered).toBe(2);
 
     // 课后作业自动发布:A4 AssignmentService 口径(homework 环节挂的卷,整班 target)
-    const hw = await waitFor(async () => {
-      const rows = await raw.assignment.findMany({
-        where: { lessonId: fx.lessonId, kind: 'homework' },
-      });
-      return rows.length ? rows : null;
-    }, 'homework 自动发布');
+    const hw = await raw.assignment.findMany({
+      where: { lessonId: fx.lessonId, kind: 'homework' },
+    });
     expect(hw).toHaveLength(1);
     expect(hw[0].paperId).toBe(fx.homeworkPaperId);
     expect(hw[0].scoreCounted).toBe(true);
     expect(hw[0].target).toEqual({ courseId: Number(fx.courseId) });
-
-    // 本会话 Redis 键已清(结算收尾)
-    await waitFor(async () => (await scanKeys(`${keyPrefix()}:*`)).length === 0, '结算清键');
 
     // ended 终态:再 join 拒绝;重复 end 拒绝且不重复发布作业
     await joinExpectError(s1, sid());

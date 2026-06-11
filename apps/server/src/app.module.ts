@@ -8,6 +8,7 @@ import { AppController } from './app.controller';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { AssignmentModule } from './assignment/assignment.module';
+import { ClassroomModule } from './classroom/classroom.module';
 import { AttemptModule } from './attempt/attempt.module';
 import { GradingModule } from './grading/grading.module';
 import { MasteryModule } from './mastery/mastery.module';
@@ -75,6 +76,7 @@ import { UploadModule } from './upload/upload.module';
     WrongBookModule,
     GradingModule,
     AttemptModule,
+    ClassroomModule,
   ],
   controllers: [AppController],
   providers: [
