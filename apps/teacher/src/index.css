@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 全局基线:浅色底、系统中文栈、数字 tabular(颜色全部来自 design-tokens 生成的 Tailwind 主题) */
+@layer base {
+  body {
+    @apply bg-bg font-sans text-sm text-ink antialiased;
+  }
+  button {
+    @apply cursor-pointer;
+  }
+}
