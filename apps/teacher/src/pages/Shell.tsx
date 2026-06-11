@@ -29,7 +29,7 @@ export function Shell() {
   const location = useLocation();
   if (!ready) return <div className="flex min-h-screen items-center justify-center text-ink-3">加载中…</div>;
   if (!me) return <Navigate to="/login" replace />;
-  const current = NAV_ITEMS.find((n) => n.to === location.pathname)?.label ?? '';
+  const current = NAV_ITEMS.find((n) => (n.to === '/' ? location.pathname === '/' : location.pathname.startsWith(n.to)))?.label ?? '';
 
   return (
     <div className="flex min-h-screen bg-bg font-sans text-ink">

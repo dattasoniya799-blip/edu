@@ -116,11 +116,26 @@ export const kpGraphs: KpGraphDto[] = [
 ];
 
 const KP_NAMES = ['一次函数的概念', '一次函数的图象', '待定系数法', '图象的平移', '一次函数与方程', '函数增减性'];
-export const kpNodes: KpNodeDto[] = KP_NAMES.map((name, i) => ({
-  id: 101 + i, graphId: 1, code: `PEP-19-${i + 1}`, name, parentCode: 'PEP-19', level: 3,
-  category: '知识点', grade: '初二', chapter: '第十九章 一次函数', section: `19.${i + 1}`,
-  difficulty: 1 + (i % 3), examWeight: 0.6 + i * 0.05, summary: null,
-}));
+/** 能力/策略维度节点名(与 30 题的 tags 同口径:能力 201-204、策略 301-303) */
+const ABILITY_NAMES = ['运算求解', '数形结合', '逻辑推理', '建模'];
+const STRATEGY_NAMES = ['待定系数', '数形转化', '逆向还原'];
+export const kpNodes: KpNodeDto[] = [
+  ...KP_NAMES.map((name, i): KpNodeDto => ({
+    id: 101 + i, graphId: 1, code: `PEP-19-${i + 1}`, name, parentCode: 'PEP-19', level: 3,
+    category: '知识点', grade: '初二', chapter: '第十九章 一次函数', section: `19.${i + 1}`,
+    difficulty: 1 + (i % 3), examWeight: 0.6 + i * 0.05, summary: null,
+  })),
+  ...ABILITY_NAMES.map((name, i): KpNodeDto => ({
+    id: 201 + i, graphId: 2, code: `ABL-${i + 1}`, name, parentCode: null, level: 1,
+    category: '解题能力', grade: null, chapter: null, section: null,
+    difficulty: null, examWeight: null, summary: null,
+  })),
+  ...STRATEGY_NAMES.map((name, i): KpNodeDto => ({
+    id: 301 + i, graphId: 3, code: `STR-${i + 1}`, name, parentCode: null, level: 1,
+    category: '解题策略', grade: null, chapter: null, section: null,
+    difficulty: null, examWeight: null, summary: null,
+  })),
+];
 
 /** 30 道题:与 seed 同一确定性生成逻辑(单选/单选/填空/解答 循环) */
 function genQuestions(): QuestionDto[] {
@@ -154,8 +169,8 @@ function genQuestions(): QuestionDto[] {
       difficulty: 1 + (i % 3), status: 'published',
       tags: [
         { nodeId: 101 + (i % 6), graphType: 'curriculum_knowledge', code: `PEP-19-${(i % 6) + 1}`, name: KP_NAMES[i % 6] },
-        { nodeId: 201 + (i % 4), graphType: 'problem_solving_ability', code: `ABL-${(i % 4) + 1}`, name: ['运算求解', '数形结合', '逻辑推理', '建模'][i % 4] },
-        { nodeId: 301 + (i % 3), graphType: 'problem_solving_strategy', code: `STR-${(i % 3) + 1}`, name: ['待定系数', '数形转化', '逆向还原'][i % 3] },
+        { nodeId: 201 + (i % 4), graphType: 'problem_solving_ability', code: `ABL-${(i % 4) + 1}`, name: ABILITY_NAMES[i % 4] },
+        { nodeId: 301 + (i % 3), graphType: 'problem_solving_strategy', code: `STR-${(i % 3) + 1}`, name: STRATEGY_NAMES[i % 3] },
       ],
       stats: { correctRate: i % 4 === 3 ? null : 55 + ((i * 7) % 40), usedInPapers: i < 10 ? 1 + (i % 3) : 0 },
       ownerName: '张明', createdAt: '2026-06-02T03:00:00.000Z',

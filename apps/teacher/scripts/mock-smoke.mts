@@ -50,6 +50,57 @@ try {
   const courses = await api.get('/teacher/courses');
   assert(courses.data.length === 2, '教师课程 2 门');
 
+  // ===== B3 录题全链路:图谱 → 直传两步流 → 录入原型含图解答题 → 入库 → 列表回显 =====
+  const graphs = await api.get('/kp/graphs');
+  assert(graphs.data.length === 3, '/kp/graphs 三维图谱(教材/能力/策略)');
+  const kpNodes = await api.get('/kp/nodes', { query: { graphId: 1 } });
+  assert(kpNodes.data.length === 6, '/kp/nodes 教材图谱 6 节点');
+  const ablNodes = await api.get('/kp/nodes', { query: { graphId: 2 } });
+  assert(ablNodes.data.length === 4, '/kp/nodes 能力图谱 4 节点');
+  const gradeNodes = await api.get('/kp/nodes', { query: { graphId: 1, grade: '初二' } });
+  assert(gradeNodes.data.length === 6, '/kp/nodes 按年级筛选');
+
+  const sts = await api.post('/uploads/sts', { body: { purpose: 'question_figure', fileName: 'fig-1.svg' } });
+  assert(sts.data.uploadUrl.includes('question_figure') && !!sts.data.ossKey, '/uploads/sts 签发直传凭证');
+  const put = await fetch(sts.data.uploadUrl, { method: 'PUT', body: '<svg/>' });
+  assert(put.ok, '预签名 PUT 假端点直传成功(两步流第 2 步)');
+
+  // 原型 t-editor 中那道含图解答题
+  const created = await api.post('/questions', {
+    body: {
+      type: 'solution', stage: '初中', subject: '数学',
+      textbookVersion: '人教版', chapter: '第十九章 一次函数',
+      stemLatex: '如图,在平面直角坐标系中,一次函数 $y=kx+b\\ (k\\neq 0)$ 的图象经过点 $A(1,3)$ 与点 $B(-1,-1)$。\n\n(1) 求该一次函数的解析式;\n\n(2) 设图象与 $x$ 轴交于点 $C$,求 $\\triangle OAC$ 的面积;\n\n(3) 解方程组并验证交点:\n$$\\begin{cases} y=2x+1 \\\\ y=-x+4 \\end{cases}$$',
+      figures: [{ ossKey: sts.data.ossKey, position: 1 }],
+      options: [],
+      answer: { referenceLatex: '设 $y=kx+b$,代入 $A(1,3)$、$B(-1,-1)$ 得 $k=2,\\ b=1$,解析式为 $y=2x+1$。' },
+      rubric: [
+        { step: 1, desc: '设式并代入两点', score: 3 },
+        { step: 2, desc: '求出解析式', score: 4 },
+        { step: 3, desc: '正确求出三角形面积', score: 3 },
+      ],
+      analysisLatex: '把两点代入得 $\\begin{cases} k+b=3 \\\\ -k+b=-1 \\end{cases}$,解得 $k=2,\\ b=1$。',
+      difficulty: 3,
+      tagNodeIds: [102, 103, 201, 301],
+    },
+  });
+  assert(created.data.status === 'draft' && created.data.figures.length === 1, '录题保存为草稿(含 1 张图)');
+  assert(
+    created.data.tags.some((t) => t.graphType === 'curriculum_knowledge' && t.name === '待定系数法')
+    && created.data.tags.some((t) => t.graphType === 'problem_solving_ability'),
+    'tagNodeIds 解析为三维标签',
+  );
+  const detail = await api.get('/questions/{id}', { params: { id: created.data.id } });
+  assert(detail.data.stemLatex.includes('\\triangle OAC'), '题目详情回读题干一致');
+  await api.post('/questions/{id}/publish', { params: { id: created.data.id } });
+  const after = await api.get('/questions', { query: { page: 1, size: 50, status: 'published' } });
+  assert(after.data.items.some((q) => q.id === created.data.id), '提交入库后列表回显(status=published)');
+  const byTag = await api.get('/questions', { query: { page: 1, size: 50, tagNodeId: 103 } });
+  assert(byTag.data.items.some((q) => q.id === created.data.id), '按 tagNodeId 筛选命中新题');
+  await api.del('/questions/{id}', { params: { id: created.data.id } });
+  const afterDel = await api.get('/questions', { query: { page: 1, size: 50 } });
+  assert(afterDel.data.total === 30, '删除后题库回到 30 题');
+
   // 学生登录码兑换
   const sLogin = await api.post('/auth/student/qr-exchange', {
     body: { token: 'QM-DEMO', deviceFingerprint: 'fp-smoke', deviceName: 'smoke-tablet' },

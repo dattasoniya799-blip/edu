@@ -3,8 +3,41 @@
  * 统一响应包 {code,message,data};未带合法 Bearer → 401 {code:4011}
  */
 import { http, HttpResponse, type HttpResponseResolver } from 'msw';
-import type { MeDto } from '@qiming/contracts';
+import type {
+  MeDto, QuestionAnswer, QuestionDto, QuestionOptionDto, QuestionType, RubricStep,
+} from '@qiming/contracts';
 import * as D from './data';
+
+/** /questions 写接口的请求体(形状 = openapi QuestionInput,字段类型全部复用 contracts) */
+interface QuestionInput {
+  type: QuestionType; stage: string; subject: string;
+  textbookVersion?: string; chapter?: string;
+  stemLatex: string; figures?: { ossKey: string; position: number }[];
+  options?: QuestionOptionDto[]; answer: QuestionAnswer;
+  rubric?: RubricStep[]; analysisLatex?: string;
+  difficulty?: number; tagNodeIds?: number[];
+}
+
+/** QuestionInput → QuestionDto(tagNodeIds 按 kpNodes/kpGraphs 解析为三维 tags,口径同 A3) */
+function questionFromInput(
+  body: QuestionInput,
+  fixed: Pick<QuestionDto, 'id' | 'status' | 'ownerName' | 'createdAt' | 'stats'>,
+): QuestionDto {
+  const tags = (body.tagNodeIds ?? []).flatMap((nodeId) => {
+    const node = D.kpNodes.find((n) => n.id === nodeId);
+    const graph = node && D.kpGraphs.find((g) => g.id === node.graphId);
+    return node && graph ? [{ nodeId, graphType: graph.graphType, code: node.code, name: node.name }] : [];
+  });
+  return {
+    ...fixed,
+    type: body.type, stage: body.stage, subject: body.subject,
+    textbookVersion: body.textbookVersion ?? null, chapter: body.chapter ?? null,
+    stemLatex: body.stemLatex, figures: body.figures ?? [],
+    options: body.options ?? [], answer: body.answer,
+    rubric: body.rubric ?? [], analysisLatex: body.analysisLatex ?? null,
+    difficulty: body.difficulty ?? 2, tags,
+  };
+}
 
 // 通配任意 origin:浏览器 Service Worker 与 node(冒烟脚本)都能匹配
 const BASE = '*/api/v1';
@@ -153,34 +186,71 @@ export const handlers = [
   http.get(`${BASE}/kp/nodes`, authed(({ request }) => {
     const url = new URL(request.url);
     const graphId = Number(url.searchParams.get('graphId'));
+    const grade = url.searchParams.get('grade');
+    const chapter = url.searchParams.get('chapter');
     const kw = url.searchParams.get('keyword') ?? '';
-    return ok(D.kpNodes.filter((n) => n.graphId === graphId && (!kw || n.name.includes(kw))));
+    return ok(D.kpNodes.filter((n) =>
+      n.graphId === graphId
+      && (!grade || n.grade === grade)
+      && (!chapter || n.chapter === chapter)
+      && (!kw || n.name.includes(kw))));
   })),
 
-  // ================= 题库 =================
+  // ================= 题库(B3:有状态 mock,提交后列表可回显) =================
   http.get(`${BASE}/questions`, authed(({ request }) => {
     const url = new URL(request.url);
     const kw = url.searchParams.get('keyword') ?? '';
     const type = url.searchParams.get('type');
     const status = url.searchParams.get('status');
     const difficulty = url.searchParams.get('difficulty');
-    let list = D.questions.filter((q) => !kw || q.stemLatex.includes(kw));
+    const tagNodeId = url.searchParams.get('tagNodeId');
+    let list = D.questions.filter((q) => !kw || q.stemLatex.includes(kw) || q.tags.some((t) => t.name.includes(kw)));
     if (type) list = list.filter((q) => q.type === type);
     if (status) list = list.filter((q) => q.status === status);
     if (difficulty) list = list.filter((q) => q.difficulty === Number(difficulty));
+    if (tagNodeId) list = list.filter((q) => q.tags.some((t) => t.nodeId === Number(tagNodeId)));
     return ok(paginate(list, url));
   })),
   http.post(`${BASE}/questions`, authed(async ({ request }) => {
-    const body = (await request.json()) as Record<string, unknown>;
-    return ok({ ...D.questions[0], id: 400, ...body, status: 'draft', stats: { correctRate: null, usedInPapers: 0 } });
+    const body = (await request.json()) as QuestionInput;
+    const me = currentUser(request)!;
+    const q = questionFromInput(body, {
+      id: Math.max(0, ...D.questions.map((x) => x.id)) + 1,
+      status: 'draft',
+      ownerName: me.name,
+      createdAt: new Date().toISOString(),
+      stats: { correctRate: null, usedInPapers: 0 },
+    });
+    D.questions.push(q);
+    return ok(q);
   })),
   http.get(`${BASE}/questions/:id`, authed(({ params }) => {
     const q = D.questions.find((x) => x.id === Number(params.id));
     return q ? ok(q) : err(404, 4040, '题目不存在');
   })),
-  http.put(`${BASE}/questions/:id`, authed(() => okVoid())),
-  http.delete(`${BASE}/questions/:id`, authed(() => okVoid())),
-  http.post(`${BASE}/questions/:id/publish`, authed(() => okVoid())),
+  http.put(`${BASE}/questions/:id`, authed(async ({ request, params }) => {
+    const idx = D.questions.findIndex((x) => x.id === Number(params.id));
+    if (idx < 0) return err(404, 4040, '题目不存在');
+    const prev = D.questions[idx];
+    const body = (await request.json()) as QuestionInput;
+    D.questions[idx] = questionFromInput(body, {
+      id: prev.id, status: prev.status, ownerName: prev.ownerName,
+      createdAt: prev.createdAt, stats: prev.stats,
+    });
+    return okVoid();
+  })),
+  http.delete(`${BASE}/questions/:id`, authed(({ params }) => {
+    const idx = D.questions.findIndex((x) => x.id === Number(params.id));
+    if (idx < 0) return err(404, 4040, '题目不存在');
+    D.questions.splice(idx, 1);
+    return okVoid();
+  })),
+  http.post(`${BASE}/questions/:id/publish`, authed(({ params }) => {
+    const q = D.questions.find((x) => x.id === Number(params.id));
+    if (!q) return err(404, 4040, '题目不存在');
+    q.status = 'published';
+    return okVoid();
+  })),
   http.post(`${BASE}/uploads/sts`, authed(async ({ request }) => {
     const body = (await request.json()) as { purpose: string; fileName: string };
     return ok({
@@ -189,6 +259,8 @@ export const handlers = [
       expiresAt: '2026-06-11T23:59:59.000Z',
     });
   })),
+  // 直传两步流第 2 步:预签名 PUT 假端点(与 A3 契约形状一致:对 uploadUrl 直接 PUT 文件体)
+  http.put('https://oss.example.com/upload/*', () => new HttpResponse(null, { status: 200 })),
 
   // ================= 资源库 =================
   http.get(`${BASE}/resources`, authed(({ request }) => {
