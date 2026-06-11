@@ -52,7 +52,6 @@ npm run build && npm start   # 或 npm run start:dev;默认 :3000,healthz 在根
 
 ---
 
-<<<<<<< HEAD
 # A2 交付 · 管理员域接口(/admin/*)
 
 ## 范围与落点
@@ -102,7 +101,9 @@ openapi.yaml 全部 `/admin/*` 接口,代码集中在 `src/admin/`(仅在 app.mo
 
 - 改动范围:`src/admin/**`、`test/admin.e2e-spec.ts`、`README.md` 本节;`app.module.ts` 仅新增 AdminModule 的 import 与挂载。
 - 未触碰:packages/contracts、prisma/schema.prisma、A1 其余骨架文件。
-=======
+
+---
+
 # A3 交付(知识图谱只读 + 题库 + 直传凭证)
 
 负责目录:`src/kp/`、`src/question/`、`src/upload/` + 对应 e2e;`app.module.ts` 仅追加三个模块注册。
@@ -151,4 +152,56 @@ openapi.yaml 全部 `/admin/*` 接口,代码集中在 `src/admin/`(仅在 app.mo
 | 跨租户 404(宪法 §7,kp/questions 均覆盖) | kp:`跨租户:他 org 的 graphId → 404…`;question:`跨租户读他 org 题目 → 404…` |
 
 测试夹具:`test/fixtures/a3.fixtures.ts` 自建专属机构(手机号 1392 开头)+ 机构内小型图谱,afterAll 全量清理,不触碰 seed 数据;upload 用例的 UPLOAD_ROOT 指向系统临时目录,结束即删。
->>>>>>> origin/task/A3
+
+---
+
+# A4 交付 · 课程/讲次/编排/试卷/作业发布
+
+负责目录:`src/course/`、`src/lesson/`、`src/paper/`、`src/assignment/`、`src/resource/` + `test/a4.e2e-spec.ts`、`test/fixtures/a4.fixtures.ts`;`app.module.ts` 仅追加五个模块的 import 与挂载。
+(附带修复:README 中 A3 合并时遗留的 git 冲突标记 `<<<<<<<`/`=======`/`>>>>>>>` 已移除,A2/A3 两节内容逐字保留。)
+
+## 实现概览
+
+| 要求 | 落点 |
+|---|---|
+| /teacher/courses 聚合(下次上课=未来最近 lesson;到课/作业口径同 A2) | `src/course/course.service.ts`(备课进度经 Lesson.prepChecklist 下发,契约 Course 无独立字段) |
+| 讲次时间线 / 详情 / 改标题时间 | `src/lesson/`(/courses/:id/lessons [teacher/admin],其余 [teacher]) |
+| segments PUT 全量替换(事务)+ config 形状轻校验(设计文档 §5.2) | `lesson.service.ts#replaceSegments`(deleteMany+createMany 同事务;每次替换同步重算 prep_checklist) |
+| publish 校验:四类环节齐备 + practice/homework 的 paper 已 published | `lesson.service.ts#publish`;缺失 → **4201**(HTTP 409),`detail`=缺失项列表(prep_checklist 键),并同步落库 prep_checklist;通过 → status=ready |
+| papers 创建/改题重算 totalScore;被 assignment 引用禁改 → **4302** | `src/paper/paper.service.ts`(totalScore=Σscore 服务端重算,题序=数组顺序) |
+| assignments:target courseId/studentIds 二选一;correction/wrong_redo 不计分;progress | `src/assignment/assignment.service.ts` |
+| resources CRUD;usedByLessons 反查;被讲次引用禁删 → **4303**(detail 带引用讲次);软删 | `src/resource/resource.service.ts` |
+| 业务错误码(响应体 code=业务码,HTTP 409) | `src/course/business.exception.ts`(BizException + 控制器级过滤器,模式同 A3 的 4301) |
+
+## 口径约定(契约未明说处)
+
+- **paper 状态**:契约无 `/papers/:id/publish` 端点 → POST /papers 创建即 `status=published`(可被编排/作业引用);schema 的 draft 留给后续流程(seed 的 published 卷与此一致)。
+- **prep_checklist 五键**:`warmup/lecture/practice/summary/homework`;warmup/lecture/summary=环节存在,practice/homework=环节存在且所挂 paper 全部 published。
+- 挂载约束:resourceId 仅 lecture,paperId 仅 practice/homework(400);已 in_progress/finished 的讲次禁止再编排/发布(409)。
+- 教师域接口按 openapi 角色标注做门禁(@Roles),org 内不再细分 owner(契约未要求)。
+
+## 与 A5 的边界(验收项「目标学生可见/非目标不可见」)
+
+`GET /student/assignments` 属 A5 学生域(不在本任务负责目录),故未注册路由;可见性逻辑沉淀在
+`AssignmentService.listForStudent(user, status)`(target 解析唯一口径:courseId→active 选课,studentIds→包含本人;pending/done/all 过滤),`AssignmentModule` 已 export 供 A5 直接复用。
+e2e 以服务层断言(runAsUser 注入学生租户上下文)+ assignments 表数据断言完成验收。
+
+## 验收项 ↔ 测试映射(npm test 79 用例全绿 = A1 18 + A2 25 + A3 17 + A4 19,test/a4.e2e-spec.ts)
+
+| 任务卡验收项 | 测试 |
+|---|---|
+| 缺 homework 时 publish → 4201 + 缺失项,prep_checklist 同步 | `验收:缺 homework 时 publish → 4201 + 缺失项列表,prep_checklist 同步落库` |
+| 补齐后 publish → ready | `验收:补齐 homework(published paper)后 publish → ready,checklist 全绿` |
+| practice 的 paper 未 published → 4201 | `publish:practice 挂的 paper 未 published(draft)→ 4201,detail 含 practice` |
+| 发布后目标学生可见、非目标不可见 | `验收:发布后目标学生可见、非目标学生不可见(AssignmentService.listForStudent,A5 复用口径)` |
+| /teacher/courses 聚合 | `/teacher/courses:仅本人课程,nextLessonAt=未来最近讲次,字段与契约一致` |
+| segments PUT 全量替换(事务) | `PUT /lessons/:id/segments 全量替换(事务)+ GET 回读;再次 PUT 旧环节被整体替换` + `segments 校验…` |
+| papers 创建/改题重算 totalScore | `papers:创建重算 totalScore(验收项)…`、`papers:改题/调分重算 totalScore(验收项)…` |
+| 被 assignment 引用的 paper 禁改 4302 | `验收:已被 assignment 引用的 paper 禁改 → 4302` |
+| target courseId/studentIds、correction 不计分 | `assignments:整班发布…`、`assignments:定向发布(studentIds),correction 不计分…` |
+| progress 对账 | `progress:totalStudents/submitted/主观题复核进度逐项对账` |
+| resources 被引用禁删 4303 + usedByLessons 反查 | `resources:usedByLessons 反查;被引用禁删 → 4303;解除引用后软删成功(验收项)` |
+| 跨租户 404(宪法 §7,course/lesson/segments/paper/assignment/resource 全覆盖) | 各用例内的 seedTeacher/teacherA 双向 404 断言 |
+| 响应结构与 openapi 逐字段一致 | 全部用例:`@qiming/contracts` 类型断言 + exactKeys(Course/Lesson/Segment/Paper/Assignment/Resource/Progress) |
+
+测试夹具:`test/fixtures/a4.fixtures.ts` 自建专属机构(手机号 **1393** 开头)+ 课程/讲次/题目,afterAll 逆依赖全量清理,seed 数据只读;套件可重复执行(连跑多次全绿)。

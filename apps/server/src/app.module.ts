@@ -7,16 +7,21 @@ import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
+import { AssignmentModule } from './assignment/assignment.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { maskSensitive } from './common/logging/mask';
 import { ContextMiddleware } from './common/middleware/context.middleware';
+import { CourseModule } from './course/course.module';
 import { KpModule } from './kp/kp.module';
+import { LessonModule } from './lesson/lesson.module';
+import { PaperModule } from './paper/paper.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { QuestionModule } from './question/question.module';
 import { RedisModule } from './redis/redis.module';
+import { ResourceModule } from './resource/resource.module';
 import { UploadModule } from './upload/upload.module';
 
 @Module({
@@ -57,6 +62,11 @@ import { UploadModule } from './upload/upload.module';
     KpModule,
     QuestionModule,
     UploadModule,
+    CourseModule,
+    LessonModule,
+    PaperModule,
+    AssignmentModule,
+    ResourceModule,
   ],
   controllers: [AppController],
   providers: [
