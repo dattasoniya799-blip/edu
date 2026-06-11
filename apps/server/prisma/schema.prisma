@@ -14,26 +14,116 @@ datasource db {
 }
 
 // ---------------- 枚举 ----------------
-enum Role            { admin teacher student }
-enum OrgStatus       { active suspended }
-enum UserStatus      { active disabled pending }
-enum ClassType       { group one_on_one one_on_three }
-enum CourseStatus    { draft ongoing finished archived }
-enum LessonStatus    { draft ready in_progress finished }
-enum SegmentType     { warmup lecture practice summary homework break_time }
-enum ResourceType    { ppt pdf video interactive image }
-enum QuestionType    { single multi blank solution }
-enum QuestionScope   { private shared }          // MVP 全机构共用,默认 shared;[v1.1] 私有题库
-enum QuestionStatus  { draft published retired }
-enum PaperType       { homework exam practice }
-enum AssignmentKind  { homework in_class correction wrong_redo consolidation }
-enum AttemptStatus   { in_progress submitted graded }
-enum WrongStatus     { open cleared }
-enum SessionStatus   { scheduled live paused ended }
-enum ParticipantState{ normal stuck hand_up offline }
-enum AiFeature       { class_companion qa pre_grading diagnosis }
-enum GraphType       { curriculum_knowledge problem_solving_ability problem_solving_strategy }
-enum EdgeRelation    { parent_child prerequisite related }
+enum Role {
+  admin
+  teacher
+  student
+}
+enum OrgStatus {
+  active
+  suspended
+}
+enum UserStatus {
+  active
+  disabled
+  pending
+}
+enum ClassType {
+  group
+  one_on_one
+  one_on_three
+}
+enum CourseStatus {
+  draft
+  ongoing
+  finished
+  archived
+}
+enum LessonStatus {
+  draft
+  ready
+  in_progress
+  finished
+}
+enum SegmentType {
+  warmup
+  lecture
+  practice
+  summary
+  homework
+  break_time
+}
+enum ResourceType {
+  ppt
+  pdf
+  video
+  interactive
+  image
+}
+enum QuestionType {
+  single
+  multi
+  blank
+  solution
+}
+enum QuestionScope {
+  private
+  shared
+}          // MVP 全机构共用,默认 shared;[v1.1] 私有题库
+enum QuestionStatus {
+  draft
+  published
+  retired
+}
+enum PaperType {
+  homework
+  exam
+  practice
+}
+enum AssignmentKind {
+  homework
+  in_class
+  correction
+  wrong_redo
+  consolidation
+}
+enum AttemptStatus {
+  in_progress
+  submitted
+  graded
+}
+enum WrongStatus {
+  open
+  cleared
+}
+enum SessionStatus {
+  scheduled
+  live
+  paused
+  ended
+}
+enum ParticipantState {
+  normal
+  stuck
+  hand_up
+  offline
+}
+enum AiFeature {
+  class_companion
+  qa
+  pre_grading
+  diagnosis
+}
+enum GraphType {
+  curriculum_knowledge
+  problem_solving_ability
+  problem_solving_strategy
+}
+enum EdgeRelation {
+  parent_child
+  prerequisite
+  related
+}
 
 // ---------------- 机构与用户 ----------------
 model Org {

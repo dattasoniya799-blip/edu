@@ -2,6 +2,12 @@
 
 本包为任务卡 W0-1 的交付物,已在 PostgreSQL 16 真实环境完整跑通。
 
+> **契约变更记录**(详见开工包 01-项目宪法.md 末尾):
+> - [2026-06-11,已批准] schema.prisma 枚举重排为合法多行格式,零语义变化;
+>   `prisma generate` 现可正常使用。A1 起后端通过 Prisma Client(带租户注入)访问数据库。
+>
+> **A1 已交付**:后端骨架/认证/多租户/RBAC 见 `apps/server/README.md`(e2e 18/18)。
+
 ## 内容
 ```
 apps/server/prisma/schema.prisma                  数据库唯一事实(29 张表,含三维知识图谱)
