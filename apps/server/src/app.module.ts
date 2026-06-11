@@ -13,8 +13,11 @@ import { RolesGuard } from './common/guards/roles.guard';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { maskSensitive } from './common/logging/mask';
 import { ContextMiddleware } from './common/middleware/context.middleware';
+import { KpModule } from './kp/kp.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { QuestionModule } from './question/question.module';
 import { RedisModule } from './redis/redis.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -51,6 +54,9 @@ import { RedisModule } from './redis/redis.module';
     AuditModule,
     AuthModule,
     AdminModule,
+    KpModule,
+    QuestionModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [

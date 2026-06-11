@@ -3,3 +3,5 @@ dist/
 .env
 *.log
 .DS_Store
+# A3 本地上传落盘根目录(UPLOAD_ROOT 默认 ./storage,相对 apps/server)
+/apps/server/storage/
