@@ -8,7 +8,7 @@ module.exports = {
     '^@qiming/contracts$': '<rootDir>/../../packages/contracts/src/index.ts',
   },
   setupFiles: ['dotenv/config'],
-  // A5:套件结束清理 BullMQ 队列键(a5: 前缀纪律)
-  globalTeardown: '<rootDir>/test/a5.queue-teardown.cjs',
+  // A7:套件结束先跑 A5 的队列清理(内部 require a5.queue-teardown),再清 a7:ai:* 计量残留
+  globalTeardown: '<rootDir>/test/a7.redis-teardown.cjs',
   testTimeout: 30000,
 };

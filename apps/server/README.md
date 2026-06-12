@@ -379,3 +379,112 @@ ws-protocol.ts 只定义了 S→C `class:control`,**教师下发控制的 C→S 
 测试夹具:`test/fixtures/a6.fixtures.ts` 自建两机构(手机号 **1395** 开头;20 名选课学生 + 1 名未选课 + 机构B 教师),
 afterAll 断开全部 socket、按前缀清 `a6:cls:*`、逆依赖清库;seed 数据只读;套件可重复执行(全套件连跑 12 次全绿)。
 e2e 用 `app.listen(0)` 临时端口,socket.io-client 仅 websocket 传输。
+
+---
+
+# A7 交付:AI 网关(供应商抽象 + 计量 + 四能力)
+
+## 范围与落点(负责目录 src/ai/)
+
+| 要求 | 落点 |
+|---|---|
+| LlmGateway 接口(§8.1 原文形状:chat → AsyncIterable<Chunk>) | `src/ai/llm/types.ts`、`src/ai/llm/llm-gateway.service.ts` |
+| 路由表 feature→{provider,model,fallback} + 单价表 | `src/ai/config/ai-routes.default.json` + `src/ai/llm/route-table.service.ts` |
+| mock provider(确定性,验收用) | `src/ai/llm/providers/mock.provider.ts` |
+| 真实 provider 适配器(OpenAI 兼容,原生 fetch,不写死厂商) | `src/ai/llm/providers/openai-compatible.provider.ts` |
+| 计量:ai_calls 全归因 + Redis INCR 当月成本 + over_policy + alert 审计 | `llm-gateway.service.ts`(meter/enforceQuota/alertOnce) |
+| /ai/qa SSE + 引导模式(配置提示词 + 输出审查)+ 限流 6 次/分 | `src/ai/features/qa.service.ts`、`src/ai/ai.controller.ts` |
+| 预批:消费 A5 BullMQ + OCR 接口(local stub)+ JSON Schema 严格校验 | `src/ai/features/pre-grading.gateway.ts`、`src/ai/ocr/ocr.service.ts`、`src/ai/features/json-schema.ts` |
+| 伴学旁白 / 学情诊断:模板 MVP + LLM 开关 | `src/ai/features/companion.service.ts`、`diagnosis.service.ts` |
+| /ai/health(admin):当前路由 + 供应商可用性 | `ai.controller.ts#health` |
+
+跨目录改动(任务卡明示允许的接线,各一处):`app.module.ts` 挂 `AiModule`;`grading.module.ts` 的
+`AI_GATEWAY` 绑定 `{ useExisting: LlmPreGradeGateway }`;`.env.example` 追加 LLM_* 变量;
+`test/jest-e2e.config.cjs` 的 globalTeardown 换成 `a7.redis-teardown.cjs`(内部先调 A5 的清理,再清 `a7:ai:*`)。
+
+## 路由表选型与热更新机制
+
+- **选型:config 文件默认值 + Redis 覆盖键(任务卡允许 config;无专表不动 schema)。**
+  默认表在 `src/ai/config/ai-routes.default.json`(routes + pricing 单价表,元/1k token)。
+- **热更新:`SET a7:ai:routes '<部分覆盖 JSON>'` 即时生效、`DEL` 即回滚**——
+  RouteTableService 每次 resolve 时读 Redis 并与默认表逐 feature/model 合并,无进程内缓存,
+  切路由/换模型/调价**不重启生效**(e2e 已验)。覆盖 JSON 形状同默认表,可只给改动项,如
+  `{"routes":{"qa":{"provider":"openai_compatible","model":"env"}}}`。非法 JSON 安全回落默认表。
+- 费用 = tokensIn/1000×inPer1k + tokensOut/1000×outPer1k(round4),单价缺省落 `pricing.default`。
+- mock 的 token 口径:tokensIn=全部消息字符数、tokensOut=回复字符数 → 计费完全可手算。
+
+## 计量与成本护栏(§8.1/§8.3)
+
+- 每次调用写 `ai_calls`:feature/user/session/course/lesson/provider/model/tokens/cost/latency/status。
+  归因按能力可得信息填:QA 带 userId(给 attemptId 时富化 lessonId/courseId);预批经 A5 的
+  `PreGradeContext`(A5 契约,禁改)仅有 orgId;伴学由 classroom 接线时传 sessionId。org_id 由
+  PrismaService 租户注入自动填充。计量失败只记日志不影响业务回复。
+- Redis `INCRBYFLOAT a7:ai:cost:{orgId}:{yyyy-MM}` 为额度执行的实时数据源;请求前预检:
+  达 `ai_quotas.monthly_limit` 后按 `over_policy` 关能力(`disable_qa` 默认:**关答疑、保课堂伴学/预批**;
+  另支持 disable_all/none),被关能力返回业务码 **4504**(HTTP 409)。未配额度 = 不限。
+- 达 `alert_threshold`(%)写一条 `audit_logs`(action=`ai.quota.alert`,顶替系统通知),
+  Redis SETNX 保证每 org 每月仅一条。
+- 上下文裁剪:QA 只带当前题 + 最近 6 条对话(Redis `a7:ai:qa:tail:*`);旁白默认模板零成本。
+- (§8.3 的 (question_id,hint_level) 提示语缓存不在任务卡验收内,未实现,见遗留。)
+
+## /ai/qa:SSE 与引导模式
+
+- 限流:每生 **6 次/分**(Redis 固定窗口),第 7 次 → 业务码 **4501**(HTTP 429,任务卡验收)。
+  说明:A5 在 /grading/* 用过 4501(finalize 未复核);两者不同接口域、运行时不冲突,
+  契约未定义错误码注册表,按任务卡原文执行并在此备注。
+- 引导模式 = org.settings.ai.qaGuideOnly(默认开):系统提示词 `src/ai/config/qa-guided-prompt.md`
+  + 输出审查 `qa-review.json`(正则模式集 + 重写话术)——检出最终答案模式整段拦截重写,
+  **策略全在配置文件,不写死代码**。审查需全文 → 服务端攒齐上游输出统一审查后再按 SSE 分块下发
+  (对客户端仍是流式;计量按上游真实输出 token,不因重写少记)。
+- SSE 形状按 openapi:`event: delta` `data: {"text"}` …… `event: done` `data: {"requestId"}`;
+  controller 自管响应(@Res),错误体与全局过滤器同形({code,message,detail?},业务码保留)。
+
+## 与 A5 队列的对接方式(最小侵入)
+
+**保留 A5 的队列与 worker 全链路不动**(队列 `a5:pre_grading`、prefix a5、并发 5、
+worker 在租户上下文调 `GradingService.processPreGrade`),只把 `GradingModule` 中
+`AI_GATEWAY` 的 Provider 绑定从 `StubAiGateway` 换成 AiModule(@Global)导出的
+`LlmPreGradeGateway`——这正是 A5 README 预留的唯一接线点,消费端/调用方零改动。
+`[photo:{ossKey}]` 占位由 OCR 接口(`OCR_SERVICE`,当前 LocalOcrStub)解析;LLM 输出按
+JSON Schema(`{ai_score, steps[], error_tags[]}`,§8.2)严格校验后映射回 A5 契约。
+mock 预批规则与原 stub 完全一致(第 1 步恒 ok、其余看 `√{step}` 标记),A5 既有 23 个用例分值不变。
+
+## 真实 provider 接 key 步骤(C3 时只填 env)
+
+1. `.env` 填三项:`LLM_API_KEY` / `LLM_BASE_URL`(OpenAI 兼容地址)/ `LLM_MODEL`(默认模型名);
+2. 切路由(不重启):`redis-cli SET a7:ai:routes '{"routes":{"qa":{"provider":"openai_compatible","model":"env","fallback":{"provider":"mock","model":"mock-chat-v1"}}}}'`
+   (`model:"env"` 表示取 LLM_MODEL;也可写显式模型名;建议配 mock fallback 兜底);
+3. `pricing` 按供应商报价补进覆盖键或默认表;`GET /ai/health` 确认 healthy=true。
+   适配器用原生 fetch(SSE 解析 + stream_options.include_usage 取 usage,缺失按字符估算),
+   全仓库无任何 LLM 供应商 SDK 依赖。当前无真实 key,e2e 只验请求构造,不发真实网络。
+
+## 验收项 ↔ 测试映射(npm test 131 用例全绿 = 既有 117 + A7 14,test/a7.e2e-spec.ts,连跑两次绿)
+
+| 任务卡验收项 | 测试 |
+|---|---|
+| mock 下计量字段完整且费用=单价×token 可手算 | `验收:mock 下 ai_calls 计量字段完整,费用 = 单价 × token 可手算,Redis 当月成本同步累加` |
+| 限流第 7 次返回 4501 | `验收:限流 6 次/分/学生 —— 第 7 次返回业务码 4501(HTTP 429)` |
+| 预批输出 JSON schema 校验通过 | `验收:预批走 A5 BullMQ 链路 → LlmPreGradeGateway(mock)→ grading_records 结构严格符合 Schema`(含校验器负例自证)+ `预批 photo 占位 → OCR 接口(local stub …)` |
+| 切路由表不重启生效 | `验收:切路由表不重启生效 —— Redis 覆盖键写入后 /ai/health 与计量即时反映,删除即回滚` |
+| 业务模块 grep 不到供应商 SDK import | 静态检查:`grep -rE "openai|anthropic|langchain|…" src/{admin,question,attempt,grading,classroom,…}` 为空;package.json 无 LLM SDK 依赖(适配器原生 fetch) |
+| 超额按 over_policy;达 alert_threshold 写 audit_logs | `验收:达 alert_threshold 写一条 audit_logs(仅一次);超额 over_policy=disable_qa 关答疑、保预批` |
+| 引导模式(配置提示词 + 输出审查拦截重写) | `引导模式:检出"最终答案"模式 → 拦截并重写为配置文件中的引导话术` + `QA 对话尾部(最近 6 条)…` |
+| fallback 路由 | `fallback:主路由供应商故障 → 自动切 fallback,计量记实际命中的 provider/model` |
+| 真实 provider 适配器(env 读 key,不写死厂商) | `openai_compatible:env 读 LLM_API_KEY/LLM_BASE_URL/LLM_MODEL,OpenAI 兼容请求构造正确`(无网络) |
+| diagnosis/伴学旁白模板 + LLM 开关 | `伴学旁白:模板实现(≤80 字)…计量 feature=class_companion`、`学情诊断:模板摘要含薄弱点与建议…` |
+| 门禁/跨租户(宪法 §7) | `上下文与门禁:…跨租户 questionId → 404;teacher → 403;超长 message → 400`、`/ai/health:…student → 403` |
+
+测试夹具:`test/fixtures/a7.fixtures.ts` 自建两机构(手机号 **1396** 开头),afterAll 逆依赖清库
+(含 ai_calls/ai_quotas/audit_logs)并按前缀清 `a7:ai:*`;beforeAll 防御性清残留;seed 数据只读。
+
+## 口径约定与边界声明
+
+- AI 配置目录解析:`AI_CONFIG_DIR` env → `<cwd>/src/ai/config` → `__dirname/config`
+  (nest build 不拷贝资产文件,生产从 `<cwd>/src/ai/config` 读,源码随仓库分发;提示词类配置进程内缓存,
+  改动需重启或换 AI_CONFIG_DIR;**路由表不受此限**,热更新走 Redis)。
+- JSON Schema 校验器为内置极简子集实现(`features/json-schema.ts`):package.json 不在 A7 可改范围,
+  不引第三方校验库;子集(type/required/properties/additionalProperties/items/minimum)覆盖预批契约足够。
+- classroom 的 `class:ai_ask` 仍走 A6 现有模板链路(本卡不改 classroom);
+  `CompanionService/DiagnosisService/QaService` 已导出,后续接线只换调用方。
+- 遗留:(question_id,hint_level) 提示语缓存(§8.3,非本卡验收);ai_quotas.used_cost 列不回写
+  (额度实时执行以 Redis 为准、报表以 ai_calls 聚合为准,避免双账本);限流为固定窗口非滑动窗口。
