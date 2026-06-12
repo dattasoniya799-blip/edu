@@ -100,7 +100,17 @@ export function CoursePage() {
               <LessonTimeline items={timeline} correctionByLesson={correctionByLesson}
                 onReplay={openReplay}
                 onCorrect={(id) => navigate(`/homework/${id}`)}
-                onEnterClass={() => toast('课堂模式由 B6 任务交付')} />
+                onEnterClass={async () => {
+                  // 会话 id 经 /student/today 下发(契约口径);未开课 → 提示
+                  try {
+                    const r = await api.get('/student/today');
+                    const sid = (r.data as { todayLesson: { sessionId: number | null } | null }).todayLesson?.sessionId;
+                    if (sid != null) navigate(`/classroom/${sid}`);
+                    else toast('课堂还没开始,开课后再进入吧');
+                  } catch {
+                    toast('课堂信息获取失败,请稍后重试');
+                  }
+                }} />
             )}
           </div>
         </div>

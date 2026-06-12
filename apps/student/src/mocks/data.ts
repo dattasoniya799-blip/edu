@@ -286,7 +286,8 @@ export const adminDashboard = {
 export const studentTodayLesson = {
   lessonId: 4, courseName: '初二数学提高班', title: '第4讲 · 一次函数的图象平移',
   startAt: '2026-06-13T06:00:00.000Z', endAt: '2026-06-13T08:00:00.000Z',
-  canEnterAt: '2026-06-13T05:50:00.000Z', sessionId: null,
+  // B6:课堂 mock 会话已开(WS 假服务 class-data.CLASS_SESSION_ID = 401)
+  canEnterAt: '2026-06-13T05:50:00.000Z', sessionId: 401,
 };
 
 /** 周数据(wrongOpenCount 由 student-store 按错题实况覆盖) */
