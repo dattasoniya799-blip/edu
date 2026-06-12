@@ -5,6 +5,7 @@
 import { http, HttpResponse, type HttpResponseResolver } from 'msw';
 import type { MeDto } from '@qiming/contracts';
 import * as D from './data';
+import * as S from './student-store';
 
 // 通配任意 origin:浏览器 Service Worker 与 node(冒烟脚本)都能匹配
 const BASE = '*/api/v1';
@@ -20,6 +21,19 @@ const ok = (data: unknown) => HttpResponse.json({ code: 0, message: 'ok', data }
 const okVoid = () => HttpResponse.json({ code: 0, message: 'ok', data: null });
 const err = (status: number, code: number, message: string) =>
   HttpResponse.json({ code, message }, { status });
+
+/** student-store 业务错误 → HTTP(4040→404,4000→400,其余 409,与 A5 错误码模式一致) */
+function fromStore(fn: () => unknown) {
+  try {
+    return ok(fn());
+  } catch (e) {
+    if (e instanceof S.StoreError) {
+      const status = e.code === 4040 ? 404 : e.code === 4000 ? 400 : 409;
+      return err(status, e.code, e.message);
+    }
+    throw e;
+  }
+}
 
 function currentUser(req: Request): MeDto | null {
   const auth = req.headers.get('Authorization') ?? '';
@@ -247,49 +261,39 @@ export const handlers = [
   http.post(`${BASE}/grading/assignments/:id/adopt-ai`, authed(() => okVoid())),
   http.post(`${BASE}/grading/assignments/:id/finalize`, authed(() => okVoid())),
 
-  // ================= 学生 =================
-  http.get(`${BASE}/student/today`, authed(() => ok(D.studentToday))),
-  http.get(`${BASE}/student/courses`, authed(() => ok([D.courses[0]]))),
-  http.get(`${BASE}/student/courses/:id/lessons`, authed(({ params }) =>
-    Number(params.id) === 1
-      ? ok(D.lessons.map((lesson) => ({
-          lesson,
-          myHomework: lesson.id === 3 ? { assignmentId: 1, score: 25, wrongCount: 1 } : null,
-        })))
-      : ok([]))),
+  // ================= 学生(B5:有状态 store,attempt 进度持续保存,刷新可断点续答) =================
+  http.get(`${BASE}/student/today`, authed(() => ok(S.todayView()))),
+  http.get(`${BASE}/student/courses`, authed(() => ok(D.courses))),
+  http.get(`${BASE}/student/courses/:id/lessons`, authed(({ params }) => ok(S.lessonTimeline(Number(params.id))))),
   http.get(`${BASE}/student/assignments`, authed(({ request }) => {
-    const status = new URL(request.url).searchParams.get('status') ?? 'pending';
-    return ok(status === 'pending' ? [] : D.assignments);
+    const status = (new URL(request.url).searchParams.get('status') ?? 'pending') as 'pending' | 'done' | 'all';
+    return ok(S.listAssignments(status));
   })),
-  http.post(`${BASE}/student/attempts`, authed(async () => ok({ ...D.attempt, status: 'in_progress', submittedAt: null }))),
-  http.get(`${BASE}/student/attempts/:id`, authed(() => ok(D.attempt))),
-  http.put(`${BASE}/student/attempts/:id/answers/:qid`, authed(async ({ params }) => {
-    const q = D.questions.find((x) => x.id === Number(params.qid));
-    if (!q) return err(404, 4040, '题目不存在');
-    if (q.type === 'solution') return ok({ judged: false, isCorrect: null, correctAnswer: null, analysisLatex: null });
-    return ok({ judged: true, isCorrect: true, correctAnswer: null, analysisLatex: q.analysisLatex });
+  http.post(`${BASE}/student/attempts`, authed(async ({ request }) => {
+    const body = (await request.json()) as { assignmentId: number };
+    return fromStore(() => S.startAttempt(body.assignmentId));
   })),
-  http.post(`${BASE}/student/attempts/:id/submit`, authed(() => ok({ ...D.attempt, status: 'submitted' }))),
+  http.get(`${BASE}/student/attempts/:id`, authed(({ params }) => fromStore(() => S.getAttempt(Number(params.id))))),
+  http.put(`${BASE}/student/attempts/:id/answers/:qid`, authed(async ({ params, request }) => {
+    const body = (await request.json()) as { response: never; flagged?: boolean };
+    return fromStore(() => S.putAnswer(Number(params.id), Number(params.qid), body));
+  })),
+  http.post(`${BASE}/student/attempts/:id/submit`, authed(({ params }) => fromStore(() => S.submitAttempt(Number(params.id))))),
   http.get(`${BASE}/student/wrong-book`, authed(({ request }) => {
     const url = new URL(request.url);
-    const status = url.searchParams.get('status');
-    let list = D.wrongBook;
-    if (status) list = list.filter((w) => w.status === status);
-    return ok(paginate(list, url));
+    return ok(paginate(S.listWrongBook(url.searchParams.get('status') ?? undefined), url));
   })),
-  http.post(`${BASE}/student/wrong-book/:id/redo`, authed(() =>
-    ok({ ...D.assignments[0], id: 700, kind: 'wrong_redo', scoreCounted: false, questionCount: 1 }))),
-  http.post(`${BASE}/student/wrong-book/redo-all`, authed(() =>
-    ok({ ...D.assignments[0], id: 701, kind: 'wrong_redo', scoreCounted: false, questionCount: D.wrongBook.length }))),
-  http.get(`${BASE}/student/report`, authed(() => ok(D.studentReport))),
+  http.post(`${BASE}/student/wrong-book/:id/redo`, authed(({ params }) => fromStore(() => S.redoOne(Number(params.id))))),
+  http.post(`${BASE}/student/wrong-book/redo-all`, authed(() => fromStore(() => S.redoAll()))),
+  http.get(`${BASE}/student/report`, authed(() => ok(S.reportView()))),
   http.get(`${BASE}/student/resources/:id/view`, authed(({ params }) =>
-    ok({ url: `https://oss.example.com/view/${params.id}?sig=mock`, expiresAt: '2026-06-11T23:59:59.000Z' }))),
+    ok({ url: `https://oss.example.com/view/${params.id}?sig=mock`, expiresAt: new Date(Date.now() + 10 * 60e3).toISOString() }))),
 
   // ================= 学情(教师) =================
   http.get(`${BASE}/analytics/courses/:id/mastery`, authed(() => ok(D.courseMasteryHeat))),
   http.get(`${BASE}/analytics/courses/:id/attention`, authed(() => ok(D.courseAttention))),
   http.get(`${BASE}/analytics/students/:id`, authed(() =>
-    ok({ mastery: D.mastery, wrongOpenCount: D.wrongBook.length, attempts30d: 6 }))),
+    ok({ mastery: D.mastery, wrongOpenCount: S.listWrongBook('open').length, attempts30d: 6 }))),
 
   // ================= AI =================
   http.post(`${BASE}/ai/qa`, authed(() => {

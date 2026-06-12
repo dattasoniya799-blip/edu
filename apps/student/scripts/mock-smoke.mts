@@ -59,7 +59,23 @@ try {
   const today = await api.get('/student/today');
   assert(!!today.data.todayLesson, '/student/today 返回今日课程');
   const wrong = await api.get('/student/wrong-book', { query: { page: 1, size: 20 } });
-  assert(wrong.data.total === 2, '错题本 2 条');
+  assert(wrong.data.total === 6, '错题本 6 条(B5 seed 口径)');
+
+  // B5:作业全流程冒烟(开始 → 答题 → 幂等续答 → 交卷)
+  const started = await api.post('/student/attempts', { body: { assignmentId: 2 } });
+  const at = started.data as typeof started.data & { questions: { questionId: number; type: string }[] };
+  assert(at.status === 'in_progress' && at.questions.length === 3, '开始订正作答:in_progress,题面 3 题随 attempt 下发');
+  const r1 = await api.put('/student/attempts/{id}/answers/{qid}', {
+    params: { id: at.id, qid: at.questions[0].questionId },
+    body: { response: { choice: 'A' } as never },
+  });
+  assert(r1.data.judged === true && r1.data.isCorrect === false && !!r1.data.analysisLatex, '单选判错:即时判分并下发解析');
+  const again = await api.post('/student/attempts', { body: { assignmentId: 2 } });
+  assert(again.data.id === at.id, '再次 POST 返回同一 in_progress(断点续答)');
+  await api.put('/student/attempts/{id}/answers/{qid}', { params: { id: at.id, qid: at.questions[1].questionId }, body: { response: { texts: ['x'] } as never } });
+  await api.put('/student/attempts/{id}/answers/{qid}', { params: { id: at.id, qid: at.questions[2].questionId }, body: { response: { photoOssKey: 'mock/up.jpg' } as never } });
+  const submitted = await api.post('/student/attempts/{id}/submit', { params: { id: at.id } });
+  assert(submitted.data.status === 'submitted', '交卷:含解答题 → submitted 待复核');
 
   // 错误密码
   token = null;
