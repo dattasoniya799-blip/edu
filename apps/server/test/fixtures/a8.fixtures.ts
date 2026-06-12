@@ -57,15 +57,16 @@ export async function createA8Org(): Promise<A8Fixture> {
     },
   });
   const orgId = org.id;
-  const [admin, teacher, s1, s2, s3, s4, s5] = await Promise.all([
-    raw.user.create({ data: { orgId, role: 'admin', name: 'A8管理员', phone: '13970000001', passwordHash: hash } }),
-    raw.user.create({ data: { orgId, role: 'teacher', name: 'A8教师', phone: '13970000002', passwordHash: hash } }),
-    raw.user.create({ data: { orgId, role: 'student', name: 'A8学生一', phone: '13970000011', studentNo: 'A8-S001' } }),
-    raw.user.create({ data: { orgId, role: 'student', name: 'A8学生二', phone: '13970000012', studentNo: 'A8-S002' } }),
-    raw.user.create({ data: { orgId, role: 'student', name: 'A8学生三', phone: '13970000013', studentNo: 'A8-S003' } }),
-    raw.user.create({ data: { orgId, role: 'student', name: 'A8学生四', phone: '13970000014', studentNo: 'A8-S004' } }),
-    raw.user.create({ data: { orgId, role: 'student', name: 'A8学生五', phone: '13970000015', studentNo: 'A8-S005' } }),
-  ]);
+  // [FIX1 报备的最小修复] 原 Promise.all 并发建用户导致 id 分配顺序不确定:
+  // 关注列表契约按 studentId 升序,s2.id < s1.id 时 a8 套件断言随机翻车(全量跑必现过)。
+  // 改为顺序创建保证 s1.id < s2.id < …,手算账本语义零变化。
+  const admin = await raw.user.create({ data: { orgId, role: 'admin', name: 'A8管理员', phone: '13970000001', passwordHash: hash } });
+  const teacher = await raw.user.create({ data: { orgId, role: 'teacher', name: 'A8教师', phone: '13970000002', passwordHash: hash } });
+  const s1 = await raw.user.create({ data: { orgId, role: 'student', name: 'A8学生一', phone: '13970000011', studentNo: 'A8-S001' } });
+  const s2 = await raw.user.create({ data: { orgId, role: 'student', name: 'A8学生二', phone: '13970000012', studentNo: 'A8-S002' } });
+  const s3 = await raw.user.create({ data: { orgId, role: 'student', name: 'A8学生三', phone: '13970000013', studentNo: 'A8-S003' } });
+  const s4 = await raw.user.create({ data: { orgId, role: 'student', name: 'A8学生四', phone: '13970000014', studentNo: 'A8-S004' } });
+  const s5 = await raw.user.create({ data: { orgId, role: 'student', name: 'A8学生五', phone: '13970000015', studentNo: 'A8-S005' } });
 
   // ---- 课程:C1(s1/s2/s5 active,s3 quit)+ C2 空课程 ----
   const course = await raw.course.create({

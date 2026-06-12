@@ -29,6 +29,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { QuestionModule } from './question/question.module';
 import { RedisModule } from './redis/redis.module';
 import { ResourceModule } from './resource/resource.module';
+import { StudentMiscModule } from './student/student-misc.module';
 import { UploadModule } from './upload/upload.module';
 
 @Module({
@@ -81,6 +82,7 @@ import { UploadModule } from './upload/upload.module';
     AttemptModule,
     ClassroomModule,
     AnalyticsModule,
+    StudentMiscModule,
   ],
   controllers: [AppController],
   providers: [
