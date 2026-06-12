@@ -29,7 +29,9 @@ export function Shell() {
   const location = useLocation();
   if (!ready) return <div className="flex min-h-screen items-center justify-center text-ink-3">加载中…</div>;
   if (!me) return <Navigate to="/login" replace />;
-  const current = NAV_ITEMS.find((n) => (n.to === '/' ? location.pathname === '/' : location.pathname.startsWith(n.to)))?.label ?? '';
+  const current = NAV_ITEMS.find((n) => (n.to === '/' ? location.pathname === '/' : location.pathname.startsWith(n.to)))?.label
+    // B4 子页面(讲次编排/组卷/监控/批改)归属「我的课程」面包屑
+    ?? (/^\/(lessons|grading)/.test(location.pathname) ? '我的课程' : '');
 
   return (
     <div className="flex min-h-screen bg-bg font-sans text-ink">
@@ -91,7 +93,7 @@ export function Shell() {
 }
 
 /** 页面头(原型 page-head:21px/800 标题 + sub + 右侧 actions) */
-export function PageHead({ title, sub, actions }: { title: string; sub?: string; actions?: React.ReactNode }) {
+export function PageHead({ title, sub, actions }: { title: React.ReactNode; sub?: React.ReactNode; actions?: React.ReactNode }) {
   return (
     <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
       <div>

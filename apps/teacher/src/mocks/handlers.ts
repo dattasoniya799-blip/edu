@@ -4,8 +4,10 @@
  */
 import { http, HttpResponse, type HttpResponseResolver } from 'msw';
 import type {
-  MeDto, QuestionAnswer, QuestionDto, QuestionOptionDto, QuestionType, RubricStep,
+  AssignmentDto, AssignmentKind, LessonSegmentDto, MeDto, PaperDto, PaperType,
+  QuestionAnswer, QuestionDto, QuestionOptionDto, QuestionType, RubricStep,
 } from '@qiming/contracts';
+import { CHECKLIST_KEYS, computeChecklist } from '../pages/lesson/lib/segments';
 import * as D from './data';
 
 /** /questions 写接口的请求体(形状 = openapi QuestionInput,字段类型全部复用 contracts) */
@@ -37,6 +39,20 @@ function questionFromInput(
     rubric: body.rubric ?? [], analysisLatex: body.analysisLatex ?? null,
     difficulty: body.difficulty ?? 2, tags,
   };
+}
+
+/** 试卷状态索引(B4 编排 checklist 用,口径同 A4:practice/homework 需挂 published 卷) */
+const paperStatusById = () => new Map(D.papers.map((p) => [p.id, p.status]));
+
+/** PaperInput.questions → Paper.questions(题序=数组顺序;引用不存在返回 null → 404) */
+function resolvePaperQuestions(input: { questionId: number; score: number }[]): PaperDto['questions'] | null {
+  const out: PaperDto['questions'] = [];
+  for (const [i, pq] of input.entries()) {
+    const q = D.questions.find((x) => x.id === pq.questionId);
+    if (!q) return null;
+    out.push({ seq: i + 1, questionId: q.id, score: pq.score, type: q.type, stemLatex: q.stemLatex });
+  }
+  return out;
 }
 
 // 通配任意 origin:浏览器 Service Worker 与 node(冒烟脚本)都能匹配
@@ -277,7 +293,7 @@ export const handlers = [
   http.put(`${BASE}/resources/:id`, authed(() => okVoid())),
   http.delete(`${BASE}/resources/:id`, authed(() => okVoid())),
 
-  // ============ 教师 · 课程/讲次/编排/组卷/发布 ============
+  // ============ 教师 · 课程/讲次/编排/组卷/发布(B4:有状态 mock,口径同 A4 服务端) ============
   http.get(`${BASE}/teacher/courses`, authed(() => ok(D.courses))),
   http.get(`${BASE}/courses/:id/lessons`, authed(({ params }) =>
     Number(params.id) === 1 ? ok(D.lessons) : ok([]))),
@@ -287,11 +303,29 @@ export const handlers = [
   })),
   http.put(`${BASE}/lessons/:id`, authed(() => okVoid())),
   http.get(`${BASE}/lessons/:id/segments`, authed(({ params }) => ok(D.segments[Number(params.id)] ?? []))),
-  http.put(`${BASE}/lessons/:id/segments`, authed(() => okVoid())),
-  http.post(`${BASE}/lessons/:id/publish`, authed(({ params }) =>
-    Number(params.id) === 4
-      ? HttpResponse.json({ code: 4201, message: '备课检查未通过', detail: { missing: ['homework'] } }, { status: 422 })
-      : okVoid())),
+  // 全量替换编排 + 同步重算 prep_checklist(A4 口径)
+  http.put(`${BASE}/lessons/:id/segments`, authed(async ({ request, params }) => {
+    const lesson = D.lessons.find((x) => x.id === Number(params.id));
+    if (!lesson) return err(404, 4040, '讲次不存在');
+    if (lesson.status === 'in_progress' || lesson.status === 'finished') return err(409, 4090, '讲次已开课/已结课,无法编排');
+    const body = (await request.json()) as LessonSegmentDto[];
+    D.segments[lesson.id] = body.map((s, i) => ({ ...s, id: s.id ?? i + 1, seq: i + 1 }));
+    lesson.prepChecklist = computeChecklist(D.segments[lesson.id], paperStatusById());
+    return okVoid();
+  })),
+  // 发布:缺失 → 4201 + detail=缺失项键数组(同 A4:HTTP 409,checklist 同步落库);通过 → ready
+  http.post(`${BASE}/lessons/:id/publish`, authed(({ params }) => {
+    const lesson = D.lessons.find((x) => x.id === Number(params.id));
+    if (!lesson) return err(404, 4040, '讲次不存在');
+    if (lesson.status === 'in_progress' || lesson.status === 'finished') return err(409, 4090, '讲次已开课/已结课,无法发布');
+    const checklist = computeChecklist(D.segments[lesson.id] ?? [], paperStatusById());
+    lesson.prepChecklist = checklist;
+    const missing = CHECKLIST_KEYS.filter((k) => !checklist[k]);
+    if (missing.length)
+      return HttpResponse.json({ code: 4201, message: '备课检查未通过,存在缺失项', detail: missing }, { status: 409 });
+    lesson.status = 'ready';
+    return okVoid();
+  })),
   http.get(`${BASE}/papers`, authed(({ request }) => {
     const url = new URL(request.url);
     const type = url.searchParams.get('type');
@@ -299,25 +333,92 @@ export const handlers = [
     if (type) list = list.filter((p) => p.type === type);
     return ok(paginate(list, url));
   })),
+  // 创建即 published(A4 口径:契约无 /papers/:id/publish);totalScore 服务端重算
   http.post(`${BASE}/papers`, authed(async ({ request }) => {
-    const body = (await request.json()) as { name: string; type: string };
-    return ok({ ...D.papers[0], id: 600, name: body.name, type: body.type, status: 'draft' });
+    const body = (await request.json()) as { name: string; type: PaperType; questions: { questionId: number; score: number }[] };
+    const questions = resolvePaperQuestions(body.questions);
+    if (!questions) return err(404, 4040, '引用的题目不存在');
+    const paper: PaperDto = {
+      id: Math.max(0, ...D.papers.map((p) => p.id)) + 1,
+      name: body.name, type: body.type, status: 'published',
+      totalScore: questions.reduce((s, q) => s + q.score, 0), questions,
+    };
+    D.papers.push(paper);
+    return ok(paper);
   })),
   http.get(`${BASE}/papers/:id`, authed(({ params }) => {
     const p = D.papers.find((x) => x.id === Number(params.id));
     return p ? ok(p) : err(404, 4040, '试卷不存在');
   })),
-  http.put(`${BASE}/papers/:id`, authed(() => okVoid())),
-  http.post(`${BASE}/assignments`, authed(async () => ok(D.assignments[0]))),
-  http.get(`${BASE}/assignments/:id/progress`, authed(() =>
-    ok({ submitted: 12, totalStudents: 12, gradedSubjective: 8, pendingSubjective: 4 }))),
+  // 改题/调分:被 assignment 引用 → 4302(A4 口径)
+  http.put(`${BASE}/papers/:id`, authed(async ({ request, params }) => {
+    const paper = D.papers.find((x) => x.id === Number(params.id));
+    if (!paper) return err(404, 4040, '试卷不存在');
+    if (D.assignments.some((a) => a.paperId === paper.id)) return err(409, 4302, '试卷已被作业引用,禁止修改');
+    const body = (await request.json()) as { name: string; type: PaperType; questions: { questionId: number; score: number }[] };
+    const questions = resolvePaperQuestions(body.questions);
+    if (!questions) return err(404, 4040, '引用的题目不存在');
+    Object.assign(paper, { name: body.name, type: body.type, questions, totalScore: questions.reduce((s, q) => s + q.score, 0) });
+    return okVoid();
+  })),
+  http.post(`${BASE}/assignments`, authed(async ({ request }) => {
+    const body = (await request.json()) as {
+      paperId: number; lessonId?: number; kind: AssignmentKind;
+      target: { courseId?: number; studentIds?: number[] }; dueAt?: string;
+    };
+    const paper = D.papers.find((p) => p.id === body.paperId);
+    if (!paper) return err(404, 4040, '试卷不存在');
+    const assignment: AssignmentDto = {
+      id: Math.max(0, ...D.assignments.map((a) => a.id)) + 1,
+      paperId: paper.id, paperName: paper.name, lessonId: body.lessonId ?? null,
+      kind: body.kind, target: body.target, publishAt: new Date().toISOString(),
+      dueAt: body.dueAt ?? null,
+      scoreCounted: body.kind !== 'correction' && body.kind !== 'wrong_redo',
+      questionCount: paper.questions.length, totalScore: paper.totalScore,
+    };
+    D.assignments.push(assignment);
+    return ok(assignment);
+  })),
+  http.get(`${BASE}/assignments/:id/progress`, authed(({ params }) => {
+    if (Number(params.id) !== 1) return ok({ submitted: 0, totalStudents: 12, gradedSubjective: 0, pendingSubjective: 0 });
+    const pending = D.gradingAnswers.filter((g) => g.finalScore == null).length;
+    return ok({ submitted: 12, totalStudents: 12, gradedSubjective: 12 - pending, pendingSubjective: pending });
+  })),
 
-  // ================= 批改 =================
-  http.get(`${BASE}/grading/pending`, authed(() => ok(D.gradingPending))),
-  http.get(`${BASE}/grading/answers/:id`, authed(() => ok(D.gradingItem))),
-  http.put(`${BASE}/grading/answers/:id/review`, authed(() => okVoid())),
-  http.post(`${BASE}/grading/assignments/:id/adopt-ai`, authed(() => okVoid())),
-  http.post(`${BASE}/grading/assignments/:id/finalize`, authed(() => okVoid())),
+  // ================= 批改(B4:有状态 mock,口径同 A5 服务端) =================
+  http.get(`${BASE}/grading/pending`, authed(() => {
+    if (D.gradingState.finalized) return ok([]);
+    const aiScores = D.gradingAnswers.map((g) => g.aiScore).filter((s): s is number => s != null);
+    return ok([{
+      assignmentId: 1, paperName: '第3讲课后作业 · 待定系数法',
+      pendingCount: D.gradingAnswers.filter((g) => g.finalScore == null).length,
+      aiAvgScore: aiScores.length ? Math.round((aiScores.reduce((a, b) => a + b, 0) / aiScores.length) * 10) / 10 : null,
+    }]);
+  })),
+  http.get(`${BASE}/grading/answers/:id`, authed(({ params }) => {
+    const g = D.gradingAnswers.find((x) => x.answerId === Number(params.id));
+    return g ? ok(g) : err(404, 4040, '答卷不存在');
+  })),
+  http.put(`${BASE}/grading/answers/:id/review`, authed(async ({ request, params }) => {
+    const g = D.gradingAnswers.find((x) => x.answerId === Number(params.id));
+    if (!g) return err(404, 4040, '答卷不存在');
+    const body = (await request.json()) as { finalScore: number; comment?: string };
+    g.finalScore = body.finalScore;
+    g.comment = body.comment ?? null;
+    return okVoid();
+  })),
+  http.post(`${BASE}/grading/assignments/:id/adopt-ai`, authed(() => {
+    for (const g of D.gradingAnswers) if (g.finalScore == null) g.finalScore = g.aiScore ?? 0;
+    return okVoid();
+  })),
+  // 出分:仍有未复核 → 4501 + detail=pendingAnswerIds(A5 口径)
+  http.post(`${BASE}/grading/assignments/:id/finalize`, authed(() => {
+    const pendingIds = D.gradingAnswers.filter((g) => g.finalScore == null).map((g) => g.answerId);
+    if (pendingIds.length)
+      return HttpResponse.json({ code: 4501, message: '仍有未复核的主观题,无法出分', detail: pendingIds }, { status: 409 });
+    D.gradingState.finalized = true;
+    return okVoid();
+  })),
 
   // ================= 学生 =================
   http.get(`${BASE}/student/today`, authed(() => ok(D.studentToday))),

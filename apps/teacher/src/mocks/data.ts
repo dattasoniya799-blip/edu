@@ -76,6 +76,8 @@ export const courses: CourseDto[] = [
 ];
 
 const LESSON_TITLES = ['一次函数的概念', '函数的图象与性质', '待定系数法求解析式', '一次函数的图象平移', '一次函数与方程、不等式', '单元复习与测验'];
+// B4:第 4 讲初始 status=draft(seed 落库为 ready,但与其 checklist.homework=false 互斥;
+// 按 A4 publish 语义「检查通过才 ready」取 draft,使「发布后讲次状态变 ready」可演示,其余口径同 seed)
 export const lessons: LessonDto[] = LESSON_TITLES.map((t, i) => {
   const start = new Date(Date.UTC(2026, 4, 23, 6, 0));
   start.setUTCDate(start.getUTCDate() + i * 7);
@@ -83,8 +85,8 @@ export const lessons: LessonDto[] = LESSON_TITLES.map((t, i) => {
     id: i + 1, courseId: 1, seq: i + 1, title: `第${i + 1}讲 · ${t}`,
     scheduledStart: start.toISOString(),
     scheduledEnd: new Date(start.getTime() + 2 * 3600e3).toISOString(),
-    status: i < 3 ? 'finished' as const : i === 3 ? 'ready' as const : 'draft' as const,
-    prepChecklist: (i === 3 ? { warmup: true, lecture: true, practice: true, homework: false } : {}) as Record<string, boolean>,
+    status: i < 3 ? 'finished' as const : 'draft' as const,
+    prepChecklist: (i === 3 ? { warmup: true, lecture: true, practice: true, summary: true, homework: false } : {}) as Record<string, boolean>,
   };
 });
 
@@ -215,17 +217,75 @@ export const attempt: AttemptDto = {
   })),
 };
 
-export const gradingPending = [
-  { assignmentId: 1, paperName: '第3讲课后作业 · 待定系数法', pendingCount: 4, aiAvgScore: 8.2 },
+// ================= B4 · 批改复核链(seed 口径:第 3 讲作业,4 份解答题待复核) =================
+// 题 = questions[3](解答,rubric 3+4+3=10 分;k=5,b'=4,正确还原为 y=5x+8)
+
+/** 作答照片占位(内联 SVG,免外网;真实环境为 OSS 签名 URL,字段形状一致;不写色值,底色由页面 bg-card 提供) */
+function scriptPhoto(lines: string[]): string {
+  const rows = lines.map((l, i) => `<text x="24" y="${44 + i * 34}" font-size="17" font-family="serif" font-style="italic">${l}</text>`).join('');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="560" height="${60 + lines.length * 34}">${rows}</svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+/** 4 份待复核解答题(有状态:review/adopt-ai 实改 finalScore/comment) */
+export const gradingAnswers: GradingItemDto[] = [
+  {
+    answerId: 41, studentId: 8, studentName: '许诺', questionId: 4,
+    stemLatex: questions[3].stemLatex, rubric: questions[3].rubric,
+    photoUrl: scriptPhoto([
+      '解:设平移后的直线为 y = kx + b\'',
+      '代入 A(1,9):k + b\' = 9;代入 B(-1,-1):-k + b\' = -1',
+      '解得 k = 5,b\' = 4,平移后:y = 5x + 4',
+      '所以原直线 y = 5x + 4 - 4 = 5x',
+    ]),
+    textResponse: '设平移后的直线为 y=kx+b\';代入 A(1,9) 得 k+b\'=9,代入 B(-1,-1) 得 -k+b\'=-1;解得 k=5,b\'=4,平移后 y=5x+4;所以原直线 y=5x+4-4=5x。',
+    aiScore: 7,
+    aiSteps: [
+      { step: 1, ok: true },
+      { step: 2, ok: true },
+      { step: 3, ok: false, comment: '还原方向错误 —— 向下平移过的直线要把 b 加回去,应为 $b=4+4=8$,学生写成 $4-4$' },
+    ],
+    aiErrorTags: ['还原平移方向'], finalScore: null, comment: null,
+  },
+  {
+    answerId: 42, studentId: 5, studentName: '周子航', questionId: 4,
+    stemLatex: questions[3].stemLatex, rubric: questions[3].rubric,
+    photoUrl: null,
+    textResponse: '设平移后直线 y=kx+b\';代入两点:k+b\'=9,-k+b\'=-1;解得 k=4,b\'=5(解方程出错);平移后 y=4x+5,原直线 y=4x+5。',
+    aiScore: 3,
+    aiSteps: [
+      { step: 1, ok: true },
+      { step: 2, ok: false, comment: '两式相加应得 $2b\'=8$,学生解出 $k=4,b\'=5$,求解错误' },
+      { step: 3, ok: false, comment: '未做还原,直接把平移后直线当作原直线' },
+    ],
+    aiErrorTags: ['二元一次方程组求解', '还原平移方向'], finalScore: null, comment: null,
+  },
+  {
+    answerId: 43, studentId: 4, studentName: '林小满', questionId: 4,
+    stemLatex: questions[3].stemLatex, rubric: questions[3].rubric,
+    photoUrl: null,
+    textResponse: '设平移后直线 y=kx+b\';代入 A、B 两点解得 k=5,b\'=4,平移后 y=5x+4;原直线 y=5x。',
+    aiScore: 7,
+    aiSteps: [
+      { step: 1, ok: true },
+      { step: 2, ok: true },
+      { step: 3, ok: false, comment: '还原时少加了平移量,应为 $y=5x+8$' },
+    ],
+    aiErrorTags: ['还原平移方向'], finalScore: null, comment: null,
+  },
+  {
+    answerId: 44, studentId: 7, studentName: '郑一鸣', questionId: 4,
+    stemLatex: questions[3].stemLatex, rubric: questions[3].rubric,
+    photoUrl: null,
+    textResponse: '设平移后直线 y=kx+b\';代入 A(1,9)、B(-1,-1) 解得 k=5,b\'=4;向下平移了 4 个单位,还原 b=4+4=8;原直线 y=5x+8。',
+    aiScore: 10,
+    aiSteps: [{ step: 1, ok: true }, { step: 2, ok: true }, { step: 3, ok: true }],
+    aiErrorTags: [], finalScore: null, comment: null,
+  },
 ];
 
-export const gradingItem: GradingItemDto = {
-  answerId: 41, studentId: 4, studentName: '林小满', questionId: 4,
-  stemLatex: questions[3].stemLatex, rubric: questions[3].rubric,
-  photoUrl: null, textResponse: '设平移后直线 y=kx+b\',代入 A、B 两点解得 k=2, b\'=1;所以原直线 y=2x-2。',
-  aiScore: 7, aiSteps: [{ step: 1, ok: true }, { step: 2, ok: true }, { step: 3, ok: false, comment: '还原方向错误' }],
-  aiErrorTags: ['还原平移方向'], finalScore: null, comment: null,
-};
+/** 出分状态(finalize 置 true 后 /grading/pending 不再返回该作业) */
+export const gradingState = { finalized: false };
 
 export const wrongBook: WrongBookItemDto[] = [11, 9].map((qid, i) => {
   const q = questions[qid - 1];
