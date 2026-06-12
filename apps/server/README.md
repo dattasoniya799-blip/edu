@@ -543,3 +543,64 @@ mock 预批规则与原 stub 完全一致(第 1 步恒 ok、其余看 `√{step}
   `CompanionService/DiagnosisService/QaService` 已导出,后续接线只换调用方。
 - 遗留:(question_id,hint_level) 提示语缓存(§8.3,非本卡验收);ai_quotas.used_cost 列不回写
   (额度实时执行以 Redis 为准、报表以 ai_calls 聚合为准,避免双账本);限流为固定窗口非滑动窗口。
+
+---
+
+# FIX1 交付 · 学生端只读 5 端点(契约缝隙补漏)
+
+负责目录:`src/student/` + `test/fix1-student.e2e-spec.ts`、`test/fixtures/fix1.fixtures.ts`;
+`app.module.ts` 仅追加 StudentMiscModule 的 import 与挂载。响应逐字段以 openapi 为唯一规格。
+
+## 5 端点 ↔ 落点 ↔ 验收映射(npm test 150 用例全绿 = 既有 139 + FIX1 11,连跑两次)
+
+| openapi 端点 [student] | 落点 | 验收测试(test/fix1-student.e2e-spec.ts) |
+|---|---|---|
+| GET /student/today | `student-misc.service.ts#today` | `验收:today = 夹具手算 ……tasks 三态 progress` + `today:多课程取今日最早讲次……` |
+| GET /student/courses | `#myCourses`(口径=A2/A4 课程聚合,逐字段一致) | `验收:courses = 夹具手算……` |
+| GET /student/courses/{id}/lessons | `#lessonTimeline` | `验收:讲次时间线 = 夹具手算……` + `讲次时间线门禁……404` |
+| GET /student/report | `#report`(mastery 复用 A8 AnalyticsService) | `验收:report = 夹具手算……周窗口` |
+| GET /student/resources/{id}/view | `#resourceViewUrl` + `resource-view.service.ts` | `验收:resources/view —— 签名 URL(一次性 token)……` + 门禁用例 |
+| (seed 对账,全部读端点) | — | `验收:seed 学生四个读端点 → 与测试内独立重算逐字段一致` |
+| (宪法 §7 / 角色门禁) | — | `跨租户互查 → 404……` + `角色门禁:teacher/admin → 403;无 token → 401` |
+
+## 复用与口径(契约未明说处;来源在代码注释逐处标注)
+
+- 作业可见性(target 解析)唯一口径 = A4 `AssignmentService.listForStudent`(已 export,直接复用);
+  mastery / wrongOpenCount 复用 A8 `AnalyticsService.studentReport`(已 export)。
+  CourseModule/LessonService 未 export(纪律:不改他人模块)→ 课程聚合与 Lesson 映射在本模块内
+  按 README A2/A4 同口径实现。
+- `today.todayLesson`:本 UTC 日窗口内 scheduledStart 最早且起止齐全的讲次(无 → null);
+  `canEnterAt = startAt - 10min`(对齐 A6"scheduled→live 限 ≥提前 10min");`sessionId` = 该讲次
+  最新未结束(≠ended)session,无 → null。`tasks` = 全部对我可见作业(与 B5 mock 口径一致),
+  progress 取最新 attempt:无 → `not_started`,有 → 已答题数 + attempt.status。
+- `lessons[].myHomework`:该讲次最新一条可见 homework;score = 我最新 attempt 总分(出分前 null);
+  wrongCount 按 A5 错题口径(客观 isCorrect=false;主观已出分且 score<卷面满分);无 attempt → 0。
+- `report.weekStats`:近 7 日 UTC 日对齐窗口(同 A2 weekStudySec)—— answeredCount=窗口内 answers 数,
+  correctRate=客观题正确占比(0-1,round2,无样本 null),studySec=attempts.duration_sec 求和。
+- `/student/courses/{id}/lessons` 与 `/student/resources/{id}/view`:课程未选(含 quit)/课件未被
+  "我 active 选课课程"的讲次环节引用 → 404(同租户越权与跨租户同形,宪法 §7)。
+
+## resources/view 的签名 URL 机制(与 A3 storage 适配器对称)
+
+- A3 local 驱动没有 GET 下载端点(A5 报告提过此缺口),且 UploadModule 未 export STORAGE_ADAPTER
+  → 下载侧在本模块 `resource-view.service.ts` 按 A3 同口径补齐,形状与 sts 上传端点完全对称:
+  - 签发:`GET /student/resources/{id}/view` → 一次性 token(Redis `view:token:{token}`,TTL 600s,
+    同 A5 手写原稿 10 分钟口径)→ `{url, expiresAt}`,url = `{UPLOAD_PUBLIC_BASE}/api/v1/student/resources/local/{token}`;
+  - 消费:`GET /student/resources/local/:token`(`@Public`,token 即凭证,GETDEL 原子一次性,
+    复用 → 403;文件读取限定 UPLOAD_ROOT 之内防穿越,缺失 → 404)。该端点等价于 OSS 的外部
+    回看地址,不属于 openapi 契约(同 A3 的 `PUT /uploads/local/:token` 定位)。
+- 环境变量全部复用 A3:`STORAGE_DRIVER=local` / `UPLOAD_ROOT` / `UPLOAD_PUBLIC_BASE`(默认值一致,
+  未新增 env);`STORAGE_DRIVER=oss` 时签发即报错占位(同 A3 OssStorageAdapter 策略),
+  接入真实 OSS 时仅替换 `presignGet` 实现,响应字段形状不变。
+
+## 边界声明与报备
+
+- 未触碰 packages/contracts、prisma、src 其余模块;`.env.example` 无新增(并行隔离用的
+  `BULLMQ_PREFIX` A7 已支持,本地 `.env` 配 `fix1` 即可)。
+- **跨任务边界改动报备(非契约文件)**:`test/fixtures/a8.fixtures.ts` 的用户创建由 `Promise.all`
+  改为顺序 await —— 并发插入导致 id 分配顺序不确定,s2.id < s1.id 时 A8"重点关注"断言
+  (列表契约按 studentId 升序)随机翻车(全量跑已复现);手算账本语义零变化。
+- B5 的 msw mock 给 `/student/courses/{id}/lessons` 的条目加了 `resources` 字段(契约变更申请
+  B5-1,仲裁中)。本实现严格按当前契约(条目仅 `lesson`+`myHomework`);若 B5-1 获批,
+  在 `lessonTimeline` 返回值补该字段即可,联调时注意此差异。
+- 测试夹具:1398 号段自建两机构,afterAll 逆依赖全量清理;seed 数据只读对账;套件可重复执行。
