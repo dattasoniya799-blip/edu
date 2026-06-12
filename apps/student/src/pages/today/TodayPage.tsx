@@ -61,7 +61,11 @@ export function TodayPage() {
             </span>
           </div>
           <Button variant="secondary" className="min-h-touch shrink-0 !border-0 !bg-card !text-primary"
-            onClick={() => toast('课堂模式由 B6 任务交付')}>
+            onClick={() => {
+              const sid = data.todayLesson?.sessionId;
+              if (sid != null) navigate(`/classroom/${sid}`);
+              else toast('课堂还没开始,开课后再进入吧');
+            }}>
             进入课堂
           </Button>
         </div>
