@@ -1,0 +1,7 @@
+{
+  "summary": "近{days}天共练习{attemptCount}次,新增错题{wrongCount}道。{weakText}",
+  "weak": "薄弱知识点:{weakList},建议优先安排针对性练习。",
+  "noWeak": "各知识点掌握均衡,继续保持。",
+  "weakItem": "「{name}」(掌握度{mastery}%)",
+  "suggestion": "建议:每天完成 5 道「{topNode}」专项练习,并复盘错题本中的同类错因。"
+}

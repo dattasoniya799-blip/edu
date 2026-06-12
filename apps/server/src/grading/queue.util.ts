@@ -20,6 +20,8 @@ export function bullConnection(cfg: ConfigService): ConnectionOptions {
  * 共享 Redis 纪律:本任务全部队列键加 a5: 前缀。
  * BullMQ 队列名禁止含冒号 → 用 prefix 选项实现,实际键形如 a5:pre_grading:*、a5:mastery:*。
  */
-export const QUEUE_PREFIX = 'a5';
+// [2026-06-12 整合修复] 支持环境变量覆盖:多工作区并行测试共享 Redis 时,同名队列会被他库
+// worker 抢任务(A8/A7 均踩坑)。各工作区设 BULLMQ_PREFIX=<独立值> 即隔离;默认行为不变。
+export const QUEUE_PREFIX = process.env.BULLMQ_PREFIX ?? 'a5';
 export const PRE_GRADING_QUEUE = 'pre_grading';
 export const MASTERY_QUEUE = 'mastery';
