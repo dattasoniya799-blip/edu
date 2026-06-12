@@ -379,3 +379,58 @@ ws-protocol.ts 只定义了 S→C `class:control`,**教师下发控制的 C→S 
 测试夹具:`test/fixtures/a6.fixtures.ts` 自建两机构(手机号 **1395** 开头;20 名选课学生 + 1 名未选课 + 机构B 教师),
 afterAll 断开全部 socket、按前缀清 `a6:cls:*`、逆依赖清库;seed 数据只读;套件可重复执行(全套件连跑 12 次全绿)。
 e2e 用 `app.listen(0)` 临时端口,socket.io-client 仅 websocket 传输。
+
+---
+
+# A8 交付 · 学情聚合(/analytics/*)与 AI 账单边界结论
+
+负责目录:`src/analytics/` + `test/a8.e2e-spec.ts`、`test/fixtures/a8.fixtures.ts`;`app.module.ts` 仅追加 AnalyticsModule 的 import 与挂载。无新增依赖、无 Redis 键(本任务最终不含异步任务,见下)。
+
+## 实现概览
+
+| 要求(任务卡 A8) | 落点 |
+|---|---|
+| 课程掌握热力(active 选课学生聚合 mastery_snapshots,**只取 curriculum 维度**) | `analytics.service.ts#courseMastery`(节点过滤 `node.graph.graphType=curriculum_knowledge`;avgMastery=round(均值),studentCount=该节点有快照的学生数,按 nodeId 升序) |
+| 重点关注(任一 curriculum 节点 mastery<60 或 7 日未活跃,reason 文案化) | `analytics.service.ts#courseAttention` |
+| 单生 30 天报告(mastery 全维度 + wrongOpenCount + attempts30d) | `analytics.service.ts#studentReport`(mastery 口径与 A2 学生档案一致:全部快照 + graphType,nodeId 升序) |
+| POST /analytics/courses/:id/ai-report(异步任务) | **openapi 无此端点 → 按任务卡“不在则不做”不实现**(/analytics/* 契约仅 3 个 GET);若后续契约补充,挂回本模块并接 A7 LLM 开关即可 |
+| ai-usage summary/daily/breakdown | **不动 A2**,边界结论见下 |
+
+## ai-usage 边界结论(发包方裁定:先对照,满足则不动)
+
+逐条对照 `src/admin/insights.service.ts` 与 openapi /admin/ai-usage/* + 任务卡:
+
+- summary:按 ai_calls 本月(UTC)聚合 totalTokens=Σ(tokensIn+tokensOut)、totalCost,monthlyLimit 取 ai_quotas 当期,usedPercent、avgCostPerLesson(去重 lessonId)→ **与 AiUsageSummary 契约逐字段一致**;
+- daily:days 参数(默认 14、≤31,DTO 校验)零填充逐日曲线 → 与契约一致;
+- breakdown:按 feature 分组、label 文案化、percent 按 cost 占比 → 与 AiUsageBreakdown 契约一致;
+- 门禁 [admin]、与 seed 8 条 ai_calls 对账的 e2e 已在 admin.e2e-spec 通过(13480 tokens / ¥0.18)。
+
+**结论:A2 实现完整且对账通过,无缺口 → 未改 `src/admin/` 任何代码,analytics 模块亦不重复实现(避免双口径)。** 任务卡“与 A2 的占位实现对接替换”一句已过时,无需契约变更。
+
+## 重点关注规则口径(契约未明说处,文案确定性可测)
+
+- 候选 = 该课程 status=active 的选课学生(quit / 未选课不入);
+- 规则一:任一 **curriculum** 节点 mastery<60(能力/策略维度不触发);
+- 规则二:近 7 日未活跃。**活跃 = 近 7 日(UTC 日对齐窗口)内有任一 attempt 开始或交卷**;
+- reason 文案:单节点 → `「节点名」掌握度 {m},低于 60`;多节点 → `「最低分节点名」等 {n} 个知识点掌握度低于 60(最低 {m})`;未活跃 → `近 7 日未活跃`;两类原因以 `;` 叠加;列表按 studentId 升序;
+- `attempts30d` = 近 30 天(UTC 日对齐)内开始的 attempts 总数(不限状态);
+- 空数据(无学生 / 无快照 / 无关注对象)一律返回 `[]`;课程/学生不存在、跨租户、以非 student id 查报告 → 404。
+
+## 验收项 ↔ 测试映射(npm test 125 用例全绿 = A1 18 + A2 25 + A3 17 + A4 19 + A5 23 + A6 15 + A8 8,test/a8.e2e-spec.ts)
+
+| 验收项 | 测试 |
+|---|---|
+| 聚合数字 = seed+测试数据手算(测试内独立重算对账,模式同 A5 computeExpectedMastery) | `验收:课程热力 = 手算账本(N1 avg70/3人,N2 avg45/1人)…`(夹具手算 + raw 独立重算双对账)、`验收:seed 课程「初二数学提高班」热力/关注/学生报告 → 与测试内独立重算逐项一致` |
+| 只取 curriculum 维度 | 热力用例断言 ability 节点(M1)不出现;关注用例断言 M1=30 不触发规则 |
+| 重点关注规则 + reason 文案化 | `验收:重点关注 —— s1(curriculum 节点<60)、s2(<60 且 7 日未活跃,双原因叠加),s5 不入列…` |
+| 单生 30 天报告 | `验收:单生 30 天报告 —— mastery 全维度 3 条 + wrongOpenCount=2 + attempts30d=1(40 天前的不计)` |
+| 空数据课程返回空数组而非报错 | `验收:空数据课程 → mastery/attention 均返回空数组而非报错` |
+| 跨租户 404(宪法 §7) | `跨租户互查 → 404…双向全覆盖` |
+| 角色门禁(openapi 标注:热力/关注 [teacher],报告 [teacher/admin]) | `角色门禁:student 全部 403;admin 调课程热力/关注 → 403;无 token → 401` + 报告用例内 admin 200 断言 |
+| 响应结构与 openapi 逐字段一致 | 全部用例 exactKeys(热力/关注/报告/MasteryItem) |
+
+测试夹具:`test/fixtures/a8.fixtures.ts` 自建两机构(手机号 **1397** 开头),直插快照/作答/错题构成手算账本,afterAll 逆依赖全量清理;seed 数据只读对账;套件可重复执行(全套件连跑两次全绿)。
+
+## 已知环境风险(非本任务代码问题,报备)
+
+多工作区并行开发时共享 Redis 会导致 **A5 BullMQ 队列跨库串扰**:各 worktree 的 worker 监听同名队列 `a5:pre_grading`/`a5:mastery`(host:port 相同即同队列),任务会被他库 worker 抢走执行,表现为 a5 套件 waitFor 超时。本地验证时给本工作区配独立 Redis(`.env` 的 REDIS_URL 指向专属实例)即可规避;集成(串行)环境不受影响。若需根治,建议仲裁后在 A5 的 `queue.util.ts` 支持按环境变量覆盖 BullMQ prefix(本任务未越界改动)。

@@ -4,6 +4,7 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { LoggerModule } from 'nestjs-pino';
 import { AdminModule } from './admin/admin.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 import { AppController } from './app.controller';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
@@ -77,6 +78,7 @@ import { UploadModule } from './upload/upload.module';
     GradingModule,
     AttemptModule,
     ClassroomModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [
