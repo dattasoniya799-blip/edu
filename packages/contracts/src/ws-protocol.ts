@@ -16,6 +16,8 @@ export interface C2SEvents {
   'class:ai_ask': (p: { questionId: number | null; message: string }) => void; // 回复以 class:ai_chunk 流式下发
   'class:hand_up': (p: Record<string, never>) => void;
   'class:heartbeat': (p: { currentQuestion: number | null; idleSec: number }) => void;
+  /** 教师下发课堂控制(服务端校验仅本课教师)。[契约变更#2,2026-06-12 批准:设计文档 7.3 写明教师可下发,原契约漏写 C2S 条目] */
+  'class:control': (p: ClassControl) => void;
 }
 
 // ---------------- Server → Client(学生) ----------------

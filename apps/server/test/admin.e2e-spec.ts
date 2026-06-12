@@ -521,8 +521,11 @@ describe('管理员域(A2)', () => {
         expect(items[i].tokens).toBe(dayCalls.reduce((s, c) => s + c.tokensIn + c.tokensOut, 0));
         expect(items[i].cost).toBeCloseTo(dayCalls.reduce((s, c) => s + Number(c.cost), 0), 4);
       }
-      // seed 的 ai_calls 都产生在"今天"(seed 执行日)→ 末日应非零
-      expect(items[days - 1].tokens).toBeGreaterThan(0);
+      // 防日期翻页 flaky:按 seed ai_calls 的"实际发生日"断言对应桶非零(seed 日不一定是测试执行日)
+      const seedCall = await raw.aiCall.findFirst({ where: { orgId: org1Id }, orderBy: { createdAt: 'asc' } });
+      const seedDay = dayKey(seedCall!.createdAt);
+      const seedBucket = items.find((it) => it.date === seedDay);
+      if (seedBucket) expect(seedBucket.tokens).toBeGreaterThan(0); // 窗口外则零填充已由上方循环对账
       await get('/admin/ai-usage/daily?days=40', adminAt).expect(400); // 契约 max 31
     });
 
