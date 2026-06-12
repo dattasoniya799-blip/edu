@@ -177,6 +177,14 @@ export const papers: PaperDto[] = [
       return { seq: j + 1, questionId: q.id, score: j === 4 ? 10 : 5, type: q.type, stemLatex: q.stemLatex };
     }),
   },
+  // 第 3 讲作业链(seed 口径):作业判出 3 道错题 → 老师下发订正卷(单选 q13 + 填空 q11 + 解答 q4)
+  {
+    id: 3, name: '第3讲课后作业 · 订正', type: 'homework', totalScore: 20, status: 'published',
+    questions: [13, 11, 4].map((qid, j) => {
+      const q = questions[qid - 1];
+      return { seq: j + 1, questionId: q.id, score: j === 2 ? 10 : 5, type: q.type, stemLatex: q.stemLatex };
+    }),
+  },
 ];
 
 export const assignments: AssignmentDto[] = [
@@ -185,17 +193,23 @@ export const assignments: AssignmentDto[] = [
     target: { courseId: 1 }, publishAt: '2026-06-06T08:10:00.000Z', dueAt: '2026-06-10T14:00:00.000Z',
     scoreCounted: true, questionCount: 5, totalScore: 35,
   },
+  {
+    id: 2, paperId: 3, paperName: '第3讲课后作业 · 订正', lessonId: 3, kind: 'correction',
+    target: { studentIds: [4] }, publishAt: '2026-06-10T12:30:00.000Z', dueAt: '2026-06-13T13:00:00.000Z',
+    scoreCounted: false, questionCount: 3, totalScore: 20,
+  },
 ];
 
+/** 第 3 讲课后作业的已批改作答:q11(填空)/q13(单选)答错,解答 q4 得 6/10(未满分=错,A5 口径) */
 export const attempt: AttemptDto = {
   id: 1, assignmentId: 1, status: 'graded', attemptNo: 1,
   startedAt: '2026-06-07T10:00:00.000Z', submittedAt: '2026-06-07T10:24:00.000Z',
-  score: 25, objectiveScore: 15, subjectiveScore: 10,
+  score: 16, objectiveScore: 10, subjectiveScore: 6,
   answers: [9, 10, 11, 13, 4].map((qid, j) => ({
     questionId: qid,
-    response: j === 4 ? { photoOssKey: 'demo/answers/1-4.jpg' } : { choice: j === 2 ? 'A' : 'B' },
-    isCorrect: j === 4 ? null : j !== 2,
-    score: j === 4 ? 10 : j !== 2 ? 5 : 0,
+    response: j === 4 ? { photoOssKey: 'demo/answers/1-4.jpg' } : j === 2 ? { texts: ['y=2x+1'] } : { choice: j === 3 ? 'A' : 'B' },
+    isCorrect: j === 4 ? null : j !== 2 && j !== 3,
+    score: j === 4 ? 6 : j === 2 || j === 3 ? 0 : 5,
     flagged: false,
   })),
 };
@@ -212,12 +226,21 @@ export const gradingItem: GradingItemDto = {
   aiErrorTags: ['还原平移方向'], finalScore: null, comment: null,
 };
 
-export const wrongBook: WrongBookItemDto[] = [11, 9].map((qid, i) => {
-  const q = questions[qid - 1];
+/** 6 条错题(seed 口径):3 条来自第 3 讲作业链 + 3 条历史讲次 */
+const WRONG_SEED: { qid: number; wrongCount: number; tags: string[]; source: string; at: string }[] = [
+  { qid: 13, wrongCount: 1, tags: ['图象平移符号'], source: '第3讲课后作业 · 待定系数法', at: '2026-06-07T10:30:00.000Z' },
+  { qid: 11, wrongCount: 1, tags: ['待定系数代入'], source: '第3讲课后作业 · 待定系数法', at: '2026-06-07T10:30:00.000Z' },
+  { qid: 4, wrongCount: 1, tags: ['还原平移方向'], source: '第3讲课后作业 · 待定系数法', at: '2026-06-07T10:30:00.000Z' },
+  { qid: 1, wrongCount: 2, tags: ['图象平移符号'], source: '第2讲随堂练', at: '2026-05-30T07:40:00.000Z' },
+  { qid: 7, wrongCount: 1, tags: ['计算失误'], source: '第2讲课后作业', at: '2026-06-01T11:05:00.000Z' },
+  { qid: 17, wrongCount: 1, tags: ['概念辨析'], source: '第1讲随堂练', at: '2026-05-23T07:20:00.000Z' },
+];
+export const wrongBook: WrongBookItemDto[] = WRONG_SEED.map((w, i) => {
+  const q = questions[w.qid - 1];
   return {
     id: i + 1, questionId: q.id, type: q.type, stemLatex: q.stemLatex, analysisLatex: q.analysisLatex,
-    wrongCount: 1 + i, correctRedoCount: 0, errorTags: ['图象平移符号'], status: 'open',
-    sourceName: '第3讲课后作业 · 待定系数法', createdAt: '2026-06-07T10:30:00.000Z',
+    wrongCount: w.wrongCount, correctRedoCount: 0, errorTags: w.tags, status: 'open',
+    sourceName: w.source, createdAt: w.at,
   };
 });
 
@@ -260,24 +283,14 @@ export const adminDashboard = {
   ],
 };
 
-export const studentToday = {
-  todayLesson: {
-    lessonId: 4, courseName: '初二数学提高班', title: '第4讲 · 一次函数的图象平移',
-    startAt: '2026-06-13T06:00:00.000Z', endAt: '2026-06-13T08:00:00.000Z',
-    canEnterAt: '2026-06-13T05:50:00.000Z', sessionId: null,
-  },
-  tasks: [
-    {
-      assignmentId: 1, kind: 'homework' as const, title: '第3讲课后作业 · 待定系数法', questionCount: 5,
-      dueAt: '2026-06-10T14:00:00.000Z', progress: { answered: 5, total: 5, status: 'graded' },
-    },
-  ],
+export const studentTodayLesson = {
+  lessonId: 4, courseName: '初二数学提高班', title: '第4讲 · 一次函数的图象平移',
+  startAt: '2026-06-13T06:00:00.000Z', endAt: '2026-06-13T08:00:00.000Z',
+  canEnterAt: '2026-06-13T05:50:00.000Z', sessionId: null,
 };
 
-export const studentReport = {
-  mastery,
-  weekStats: { answeredCount: 38, correctRate: 78, studySec: 24120, wrongOpenCount: wrongBook.length },
-};
+/** 周数据(wrongOpenCount 由 student-store 按错题实况覆盖) */
+export const studentWeekStats = { answeredCount: 38, correctRate: 78, studySec: 24120, wrongOpenCount: wrongBook.length };
 
 export const courseRoster = students.map((s) => ({
   studentId: s.id, name: s.name, attendance: '3/3', homeworkAvg: 70 + (s.id % 25), status: 'active',
