@@ -56,7 +56,9 @@ try {
   const kpNodes = await api.get('/kp/nodes', { query: { graphId: 1 } });
   assert(kpNodes.data.length === 6, '/kp/nodes 教材图谱 6 节点');
   const ablNodes = await api.get('/kp/nodes', { query: { graphId: 2 } });
-  assert(ablNodes.data.length === 4, '/kp/nodes 能力图谱 4 节点');
+  assert(ablNodes.data.length === 41, '/kp/nodes 能力图谱 41 节点(FIX2:对齐真实图谱)');
+  const strNodes = await api.get('/kp/nodes', { query: { graphId: 3 } });
+  assert(strNodes.data.length === 35, '/kp/nodes 策略图谱 35 节点(FIX2:对齐真实图谱)');
   const gradeNodes = await api.get('/kp/nodes', { query: { graphId: 1, grade: '初二' } });
   assert(gradeNodes.data.length === 6, '/kp/nodes 按年级筛选');
 
