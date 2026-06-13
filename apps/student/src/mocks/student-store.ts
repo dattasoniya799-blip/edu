@@ -16,6 +16,7 @@ import type {
 } from '@qiming/contracts';
 // 错题项视图含 subject(FIX3 问题5,WrongBookItem 契约暂无,mock 先行)
 import type { WrongBookItemView } from './data';
+import { CLASS_SESSION_ID } from './class-data';
 import type { AttemptQuestionView, AttemptWithQuestions } from '../pages/homework/types';
 import * as D from './data';
 
@@ -416,6 +417,8 @@ export function lessonTimeline(courseId: number) {
   return D.lessons.map((lesson) => ({
     lesson,
     myHomework: lesson.id === 3 ? { assignmentId: 1, score: hw?.score ?? null, wrongCount: hwWrong } : null,
+    // 发布即建会话:已发布(ready/in_progress)讲次带 sessionId,前端据此进课堂;未发布(draft)/已结课为 null
+    sessionId: lesson.status === 'ready' || lesson.status === 'in_progress' ? CLASS_SESSION_ID : null,
     resources: lesson.id === 3
       ? [{ id: 2, name: D.resources[1].name, type: D.resources[1].type }]
       : lesson.id === 4

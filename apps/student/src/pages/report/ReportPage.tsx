@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import type { MasteryItemDto } from '@qiming/contracts';
 import { Card, EmptyState, ProgressBar, Skeleton, StatCard } from '@qiming/ui';
 import { api } from '../../api';
+import { formatCorrectRate } from '../../lib/format';
 
 interface ReportData {
   mastery: MasteryItemDto[];
@@ -28,7 +29,7 @@ export function ReportPage() {
 
       <div className="mb-5 grid grid-cols-4 gap-4">
         <StatCard ribbon="primary" label="本周答题" value={data?.weekStats.answeredCount ?? '—'} />
-        <StatCard ribbon="green" label="本周正确率" value={data?.weekStats.correctRate != null ? `${data.weekStats.correctRate}%` : '—'} />
+        <StatCard ribbon="green" label="本周正确率" value={data ? formatCorrectRate(data.weekStats.correctRate) : '—'} />
         <StatCard ribbon="violet" label="学习时长" value={data ? `${Math.round(data.weekStats.studySec / 360) / 10} h` : '—'} />
         <StatCard ribbon="orange" label="待消灭错题" value={data?.weekStats.wrongOpenCount ?? '—'} />
       </div>

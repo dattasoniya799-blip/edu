@@ -90,3 +90,33 @@ npm test     # e2e 14 套件 / 179 用例;连跑两次全绿
 验收用例(`test/admin.e2e-spec.ts`、`test/auth.e2e-spec.ts`):教师 reset-password 返回明文且可登录、
 停用不写 deletedAt + 列表仍可见 + `?status` 过滤 + enable 复活、入班候选/名单口径(`/students?courseId`
 与 roster 同为"在册 active"= 排除集)、学生 enable + 跨租户 404。
+
+## C3-front-other(管理员入班 bug + 学生端两项前端修复)
+
+范围:`apps/admin/src`、`apps/student/src`(不改 contracts/server/teacher/schema)。两端 `npm run build`、
+`vitest`(admin 40、student 115)、`test:mock` 冒烟均绿。
+
+1. **管理员入班「添加学生」加不进**(真因:候选请求 `size=100` 超后端单页上限 50 → 真实后端 400 被吞成空候选 +
+   误导文案「机构内学生都已在本课程」)。修复 `apps/admin/src/components/RosterModal.tsx` 的 `AddStudentsModal`:
+   - 候选请求 `size` 改为合法值 50;
+   - 改服务端**关键字搜索 + 分页**(`GET /admin/students` 带 `page/size/keyword`),使 >50 学生也能搜到/翻页选到;
+   - 加载失败显示**真实错误态 + 重新加载**按钮,不再伪装成「没有可加的人」;仅候选确实为空(单页已含全部学生且都在课)
+     才显示「都已在课程」,多页时显示「本页都已在课程,翻页查看」。
+   - 候选过滤仍走纯函数 `lib/roster.candidateStudents`(本页学生 − 该课 active 名单)。
+   - 测试:`apps/admin/src/mocks/__tests__/roster-add.spec.ts`(以「严格后端」复现 size>50→400、size=50 正常、
+     关键字命中、分页候选过滤)。
+2. **学生正确率 ×100 显示**(后端 `weekStats.correctRate` 为 0–1 比值,原渲染 `${correctRate}%` → 0.75 误显 0.75%)。
+   新增纯函数 `apps/student/src/lib/format.ts#formatCorrectRate`(`Math.round(ratio*100)%`,与 mastery 0–100 口径区分),
+   `TodayPage`/`ReportPage` 改用之;mock `studentWeekStats.correctRate` 同步为 0–1 比值(0.78)。
+   测试:`apps/student/src/lib/__tests__/format.spec.ts` + student-store.spec「C3 #2」断言 `reportView` → "78%"。
+3. **进课堂文案/入口**(后端本波「发布即建会话」:已发布讲次带 `sessionId`)。
+   - `TodayPage`:hero 文案与按钮按 `todayLesson.sessionId` 区分——有会话→「课堂已开放/进入课堂」,无→「尚未发布/讲次未发布」,
+     去掉原「稍后再试」的误导承诺。
+   - `CoursePage` `onEnterClass`:改为用**该讲自己的 `sessionId`**(经 `TimelineItem.sessionId` 传入),
+     不再借用全局 `/student/today` 的会话(修原 L1 缺陷);未发布讲次给「尚未发布」准确文案。
+   - mock `student-store.lessonTimeline` 让已发布(ready/in_progress)讲次带 `sessionId`(= 课堂会话 401),未发布/已结课为 null。
+   测试:student-store.spec「C3 #3」断言 ready 带会话、draft/finished 为 null、todayLesson 带会话。
+
+> 顺带(非本三项,解除构建阻塞):base 分支 `c3-contract` 给 `Resource` 增 `kpNodeId/kpNodeName`、给 `KpNode` 增 `content`
+> 为必填,但两端 `src/mocks/data.ts` 未补字段导致 `tsc` 红。已在 mock 数据补齐(纯展示字段,Resource 关联其知识点、
+> KpNode `content:null`),使两端 build 恢复绿。
