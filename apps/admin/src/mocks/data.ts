@@ -219,6 +219,7 @@ export const wrongBook: WrongBookItemDto[] = [11, 9].map((qid, i) => {
     id: i + 1, questionId: q.id, type: q.type, stemLatex: q.stemLatex, analysisLatex: q.analysisLatex,
     wrongCount: 1 + i, correctRedoCount: 0, errorTags: ['图象平移符号'], status: 'open',
     sourceName: '第3讲课后作业 · 待定系数法', createdAt: '2026-06-07T10:30:00.000Z',
+    subject: q.subject ?? '数学', // 契约 2026-06-13 新增必填 subject
   };
 });
 
