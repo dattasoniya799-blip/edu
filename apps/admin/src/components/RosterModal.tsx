@@ -1,5 +1,5 @@
 /** 班级名单弹窗(原型 modalRoster):到课 / 作业均分 / 状态 / 档案入口 + 入班(添加/移出) */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { CourseDto, StudentDto } from '@qiming/contracts';
 import { Button, EmptyState, Modal, Skeleton, Table, Tag, useToast } from '@qiming/ui';
 import { api } from '../api';
@@ -153,8 +153,6 @@ function AddStudentsModal({
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [busy, setBusy] = useState(false);
   const { toast } = useToast();
-  // 仅在打开瞬间快照名单,避免父级重渲染反复重算候选
-  const rosterRef = useRef(roster);
 
   const load = useCallback(async (p: number, kw: string) => {
     setItems(null);
@@ -173,10 +171,9 @@ function AddStudentsModal({
     }
   }, []);
 
-  // 打开时重置并快照名单、拉第一页
+  // 打开时重置、拉第一页(候选用实时 roster 计算,见下)
   useEffect(() => {
     if (!open) return;
-    rosterRef.current = roster;
     setSelected(new Set());
     setKeyword('');
     setPage(1);
@@ -194,8 +191,8 @@ function AddStudentsModal({
 
   const goPage = (p: number) => { setPage(p); void load(p, keyword); };
 
-  // 候选 = 本页学生 − 当前课程 active 名单(纯函数 candidateStudents,见 lib/roster)
-  const candidates = items ? candidateStudents(items, rosterRef.current) : null;
+  // 候选 = 本页学生 − 当前课程 active 名单(用实时 roster,避免「名单尚未加载完」时漏算把在册生当候选)
+  const candidates = items ? candidateStudents(items, roster) : null;
 
   const toggle = (id: number) =>
     setSelected((prev) => {

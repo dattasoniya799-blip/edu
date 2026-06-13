@@ -12,6 +12,7 @@ import type { KpContentPackDto, KpGraphDto, KpNodeDto, PaperDto, ResourceDto } f
 import { Button, Card, EmptyState, Modal, Skeleton, Tag, TexText, useToast } from '@qiming/ui';
 import { api } from '../../api';
 import { PageHead } from '../Shell';
+import { filterNodesByKeyword, pickKnowledgeGraph } from './lib/knowledge';
 
 const LINK_CLS = 'text-[13px] font-semibold text-primary hover:underline';
 
@@ -47,26 +48,38 @@ export function KnowledgePage() {
   const paperById = useMemo(() => new Map(papers.map((p) => [p.id, p])), [papers]);
   const selectedNode = useMemo(() => nodes.find((n) => n.id === selectedId) ?? null, [nodes, selectedId]);
 
-  // 初始:教材图谱节点 + 已维护内容包集合 + 资源/卷候选
+  // 初始:先独立加载教材知识点树(主数据);内容包/资源/卷为次要数据,各自容错,
+  // 任一失败都不再拖垮整棵树(此前同放一个 Promise.all,内容包 404 → 整页空)。
   useEffect(() => {
+    let alive = true;
     setLoading(true);
     api.get('/kp/graphs')
       .then(async (g) => {
-        const graph = (g.data as KpGraphDto[]).find((x) => x.graphType === 'curriculum_knowledge') ?? g.data[0];
-        const [n, packs, r, p] = await Promise.all([
-          graph ? api.get('/kp/nodes', { query: { graphId: graph.id } }) : Promise.resolve({ data: [] as KpNodeDto[] }),
-          graph ? api.get('/knowledge/content-packs', { query: { graphId: graph.id } }) : Promise.resolve({ data: [] as KpContentPackDto[] }),
-          api.get('/resources', { query: { page: 1, size: 50 } }),
-          api.get('/papers', { query: { page: 1, size: 50 } }),
-        ]);
+        const graph = pickKnowledgeGraph(g.data as KpGraphDto[]);
+        const n = graph
+          ? await api.get('/kp/nodes', { query: { graphId: graph.id } })
+          : { data: [] as KpNodeDto[] };
+        if (!alive) return;
         const list = n.data as KpNodeDto[];
         setNodes(list);
-        setPacked(new Set((packs.data as KpContentPackDto[]).map((x) => x.kpNodeId)));
-        setResources(r.data.items as ResourceDto[]);
-        setPapers(p.data.items as PaperDto[]);
         if (list[0]) setSelectedId(list[0].id);
+        setLoading(false); // 树就绪即渲染,不等次要数据
+
+        // 次要数据:并行、各自 catch,失败仅令对应区缺省,不影响知识点树/搜索
+        if (graph) {
+          api.get('/knowledge/content-packs', { query: { graphId: graph.id } })
+            .then((r) => { if (alive) setPacked(new Set((r.data as KpContentPackDto[]).map((x) => x.kpNodeId))); })
+            .catch(() => undefined);
+        }
+        api.get('/resources', { query: { page: 1, size: 50 } })
+          .then((r) => { if (alive) setResources(r.data.items as ResourceDto[]); })
+          .catch(() => undefined);
+        api.get('/papers', { query: { page: 1, size: 50 } })
+          .then((r) => { if (alive) setPapers(r.data.items as PaperDto[]); })
+          .catch(() => undefined);
       })
-      .finally(() => setLoading(false));
+      .catch(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
   }, []);
 
   // 选中知识点 → 拉内容包
@@ -138,7 +151,7 @@ export function KnowledgePage() {
     );
   }
 
-  const filtered = nodes.filter((n) => !keyword.trim() || n.name.includes(keyword.trim()));
+  const filtered = filterNodesByKeyword(nodes, keyword);
 
   return (
     <div>

@@ -1,8 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import type { QuestionDto } from '@qiming/contracts';
 import {
-  emptyForm, formToInput, formatDateCn, normalizeOptionLatex, questionToForm,
+  canPublishQuestion, emptyForm, formToInput, formatDateCn, normalizeOptionLatex, questionToForm,
 } from '../transform';
+
+describe('canPublishQuestion(round3 #3:仅草稿/新题可"提交入库")', () => {
+  it('新题(status=null)→ 可入库', () => {
+    expect(canPublishQuestion(null)).toBe(true);
+  });
+  it('草稿 → 可入库', () => {
+    expect(canPublishQuestion('draft')).toBe(true);
+  });
+  it('已入库(published)→ 不可再入库(否则后端 400)', () => {
+    expect(canPublishQuestion('published')).toBe(false);
+  });
+  it('已下架(retired)→ 不可入库', () => {
+    expect(canPublishQuestion('retired')).toBe(false);
+  });
+});
 
 describe('normalizeOptionLatex', () => {
   it('裸 LaTeX 自动包 $..$(原型 renderOpt 行为)', () => {

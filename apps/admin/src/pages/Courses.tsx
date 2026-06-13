@@ -38,18 +38,6 @@ export function Courses() {
       .catch(() => undefined);
   }, []);
 
-  /** 一对一课程直接打开唯一学生的档案;其余打开名单 */
-  const openRosterOrProfile = async (course: CourseDto) => {
-    if (course.classType === 'one_on_one') {
-      try {
-        const r = await api.get('/admin/courses/{id}/roster', { params: { id: course.id } });
-        const first = (r.data as { studentId: number }[])[0];
-        if (first) { setProfileId(first.studentId); return; }
-      } catch { /* 落回名单弹窗 */ }
-    }
-    setRosterCourse(course);
-  };
-
   return (
     <div>
       <PageHead
@@ -93,9 +81,9 @@ export function Courses() {
                 <button
                   type="button"
                   className="flex-1 rounded-[10px] border-[1.5px] border-line py-[9px] text-[12.5px] font-bold text-ink-2 transition-colors hover:border-ink-3"
-                  onClick={() => void openRosterOrProfile(c)}
+                  onClick={() => setRosterCourse(c)}
                 >
-                  {c.classType === 'one_on_one' ? '学生档案' : '学生名单'}
+                  学生名单
                 </button>
                 <button
                   type="button"

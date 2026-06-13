@@ -7,13 +7,13 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import type { KpGraphDto, QuestionType } from '@qiming/contracts';
+import type { KpGraphDto, QuestionDto, QuestionType } from '@qiming/contracts';
 import { Button, EmptyState, Skeleton, TexText, useToast } from '@qiming/ui';
 import { api } from '../../api';
 import { TagPickerModal } from './components/TagPickerModal';
 import { TEX_SNIPPETS, insertSnippet } from './lib/snippets';
 import {
-  DIFF_LABEL, TYPE_LABEL, emptyForm, formToInput, normalizeOptionLatex, questionToForm,
+  DIFF_LABEL, TYPE_LABEL, canPublishQuestion, emptyForm, formToInput, normalizeOptionLatex, questionToForm,
   type FigureAnchor, type FigureItem, type QuestionForm, type TagPick,
 } from './lib/transform';
 import { validateQuestion, type FieldError } from './lib/validate';
@@ -135,6 +135,7 @@ export function EditorPage() {
   const { toast } = useToast();
 
   const [form, setForm] = useState<QuestionForm>(emptyForm);
+  const [status, setStatus] = useState<QuestionDto['status'] | null>(null);
   const [graphs, setGraphs] = useState<KpGraphDto[]>([]);
   const [chapters, setChapters] = useState<string[]>([]);
   const [loading, setLoading] = useState(editId != null);
@@ -148,6 +149,8 @@ export function EditorPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const patch = (p: Partial<QuestionForm>) => setForm((f) => ({ ...f, ...p }));
+  // 已入库题不可再 publish(后端 400):只显示"保存修改";新题/草稿 → 可入库
+  const allowPublish = canPublishQuestion(editId == null ? null : status);
 
   useEffect(() => {
     api.get('/kp/graphs').then(async (r) => {
@@ -164,7 +167,7 @@ export function EditorPage() {
     if (editId == null) return;
     setLoading(true);
     api.get('/questions/{id}', { params: { id: editId } })
-      .then((r) => setForm(questionToForm(r.data)))
+      .then((r) => { setForm(questionToForm(r.data)); setStatus(r.data.status); })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [editId]);
@@ -231,7 +234,11 @@ export function EditorPage() {
         await api.put('/questions/{id}', { params: { id: editId }, body });
       }
       if (mode === 'publish' && qid != null) await api.post('/questions/{id}/publish', { params: { id: qid } });
-      toast(mode === 'publish' ? '题目已提交入库,可在组卷时使用' : '草稿已保存,可在题库「草稿」中找到');
+      toast(
+        mode === 'publish' ? '题目已提交入库,可在组卷时使用'
+        : allowPublish ? '草稿已保存,可在题库「草稿」中找到'
+        : '修改已保存', // 已入库题:只做 PUT 更新,保持入库态
+      );
       navigate('/bank');
     } catch (e) {
       toast(e instanceof Error ? e.message : '保存失败');
@@ -252,10 +259,16 @@ export function EditorPage() {
     return <div className="space-y-4"><Skeleton className="h-20 w-full" /><Skeleton lines={2} className="h-60 w-full" /></div>;
   }
 
-  const actions = (
+  const actions = allowPublish ? (
     <>
       <Button disabled={saving} onClick={() => save('draft')}>保存草稿</Button>
       <Button variant="primary" disabled={saving} onClick={() => save('publish')}>{saving ? '提交中…' : '提交入库'}</Button>
+    </>
+  ) : (
+    // 已入库题:只允许保存修改(PUT),不再调 publish(否则后端 400)
+    <>
+      <span className="inline-flex items-center gap-1 self-center rounded-md bg-green-soft px-2.5 py-1 text-[12.5px] font-bold text-green">✓ 已入库</span>
+      <Button variant="primary" disabled={saving} onClick={() => save('draft')}>{saving ? '保存中…' : '保存修改'}</Button>
     </>
   );
 
