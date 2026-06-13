@@ -29,7 +29,7 @@ const SEGMENT_KEYS = ['id', 'seq', 'type', 'durationMin', 'config', 'resourceId'
 const PAPER_KEYS = ['id', 'name', 'type', 'totalScore', 'status', 'questions'];
 const PAPER_QUESTION_KEYS = ['seq', 'questionId', 'score', 'type', 'stemLatex'];
 const ASSIGNMENT_KEYS = ['id', 'paperId', 'paperName', 'lessonId', 'kind', 'target', 'publishAt', 'dueAt', 'scoreCounted', 'questionCount', 'totalScore'];
-const RESOURCE_KEYS = ['id', 'type', 'name', 'ossKey', 'size', 'meta', 'usedByLessons', 'createdAt'];
+const RESOURCE_KEYS = ['id', 'type', 'name', 'ossKey', 'size', 'meta', 'usedByLessons', 'kpNodeId', 'kpNodeName', 'createdAt'];
 const PROGRESS_KEYS = ['submitted', 'totalStudents', 'gradedSubjective', 'pendingSubjective'];
 
 describe('课程/讲次/编排/试卷/作业(A4)', () => {

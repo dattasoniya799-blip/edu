@@ -169,6 +169,10 @@ export async function dropA4Org(orgId: bigint): Promise<void> {
   await raw.answer.deleteMany({ where: { orgId } });
   await raw.attempt.deleteMany({ where: { orgId } });
   await raw.assignment.deleteMany({ where: { orgId } });
+  // C3-back #B:publish 现在会自动建 class_session,清理须先删会话再删讲次(FK)
+  await raw.sessionEvent.deleteMany({ where: { orgId } });
+  await raw.sessionParticipant.deleteMany({ where: { orgId } });
+  await raw.classSession.deleteMany({ where: { orgId } });
   await raw.lessonSegment.deleteMany({ where: { orgId } });
   await raw.paperQuestion.deleteMany({ where: { orgId } });
   await raw.paper.deleteMany({ where: { orgId } });

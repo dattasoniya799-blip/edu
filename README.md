@@ -90,3 +90,34 @@ npm test     # e2e 14 套件 / 179 用例;连跑两次全绿
 验收用例(`test/admin.e2e-spec.ts`、`test/auth.e2e-spec.ts`):教师 reset-password 返回明文且可登录、
 停用不写 deletedAt + 列表仍可见 + `?status` 过滤 + enable 复活、入班候选/名单口径(`/students?courseId`
 与 roster 同为"在册 active"= 排除集)、学生 enable + 跨租户 404。
+
+## C3-back(发布后三项后端:知识点内容库 / 发布即建课堂会话 / 作业总览)
+
+实现范围:`apps/server/src/{knowledge(新),kp,lesson,classroom,assignment,resource}` 及 e2e
+(`test/c3.e2e-spec.ts`、`test/fixtures/c3.fixtures.ts`);`app.module` 仅加 `KnowledgeModule` 一行。
+不改 contracts/schema;契约新增形状(KpContentPack / Resource.kpNodeId / KpNode.content /
+GET·PUT `/knowledge/content-packs*` / GET `/assignments`)由 `c3-contract` 提供。
+
+1. **#A 知识点内容库**(`src/knowledge`)
+   - `GET /knowledge/content-packs?graphId=` 列该图谱下已维护内容包(join kpNodeName/resourceName/paperName)。
+   - `GET /knowledge/content-packs/{kpNodeId}` 单个;**未维护返回空包**(lecture/practice 为 null、summaryConfig `{}`),不 404。
+   - `PUT /knowledge/content-packs/{kpNodeId}` 按 orgId+kpNodeId upsert;缺省字段不改、显式 `null` 清空;校验 kpNode/resource/paper 同 org(跨租户经租户注入天然 404)。
+   - `GET /kp/nodes` 透出 `content`(DB 既有列);Resource 的 list/create/update 支持 `kpNodeId`(可空)并 join 回填 `kpNodeName`。
+2. **#B 发布即建课堂会话**(`src/lesson`)
+   - 讲次 `publish`(status→ready)时**自动建一条 `class_session`**(`status='scheduled'`,mode 取自 practice 编排:`ai_guide→guideOnly`、`stuck_alert_min→stuckAlertMin`)。
+   - 幂等:该讲已有未结束会话则复用,重复 publish 不重复建。修复"学生 sessionId 恒 null 进不去课堂"——`/student/today.todayLesson.sessionId` 非 null,学生 `class:join` 即进入(scheduled→live,A6 网关)。
+3. **#C 作业总览列表**(`src/assignment`)
+   - `GET /assignments?courseId=&lessonId=&status=` [teacher] → AssignmentBriefDto[](仅本教师课程的作业;submitted/totalStudents/graded 进度;`status=ongoing/finished` 由"已提交且全部出分"判定)。
+
+跑通(库 `qiming_c3`,Redis 队列前缀 `BULLMQ_PREFIX=c3`、课堂键前缀 `CLS_REDIS_PREFIX=c3:`,禁碰其他库/FLUSHALL):
+```bash
+cd apps/server && cp .env.example .env   # DATABASE_URL → .../qiming_c3;加 BULLMQ_PREFIX=c3 与 CLS_REDIS_PREFIX=c3:
+npm install && npx prisma generate
+cat prisma/migrations/0001_init/migration.sql | docker exec -i <pg> psql -U qiming -d qiming_c3
+npm run db:seed:base && npm run db:import-kp && npm run db:seed:business
+npm test     # e2e 15 套件 / 200 用例;连跑两次全绿
+```
+验收用例(`test/c3.e2e-spec.ts`,16 项):内容包 upsert→回读 / 未维护空包 / 列表 / Resource 挂 kpNode 存读清空 /
+kpNode.content 透出 / 内容包·Resource 引用不存在节点 404 / [teacher] 门禁 + 跨租户 404;publish 建 scheduled 会话 +
+today.sessionId 非 null + 幂等 + draft 无会话 + 学生 `class:join` 进入;作业总览 seed 第3讲对账(finished)+
+夹具 ongoing/finished + status/lessonId 过滤 + 门禁/他师·跨租户不可见。夹具用 **13910 号段**自建自清。

@@ -54,6 +54,7 @@ export class KpService {
       difficulty: n.difficulty,
       examWeight: n.examWeight === null ? null : Number(n.examWeight),
       summary: n.summary,
+      content: n.content, // C3-back #A:DB 既有 content 列透出(教材正文)
     }));
   }
 }

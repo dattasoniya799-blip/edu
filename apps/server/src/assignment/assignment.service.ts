@@ -1,9 +1,9 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import type { AssignmentDto } from '@qiming/contracts';
+import type { AssignmentBriefDto, AssignmentDto } from '@qiming/contracts';
 import { iso, num } from '../admin/helpers';
 import type { JwtUser } from '../auth/auth.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { AssignmentInputDto } from './assignment.dto';
+import { AssignmentInputDto, AssignmentListQueryDto } from './assignment.dto';
 
 export interface AssignmentProgress {
   submitted: number;
@@ -115,6 +115,99 @@ export class AssignmentService {
       pendingSubjective = totalSubjAnswers - graded;
     }
     return { submitted, totalStudents, gradedSubjective, pendingSubjective };
+  }
+
+  /**
+   * GET /assignments 作业总览(C3-back #C,[teacher]):教师布置过的全部作业 + 进度概览。
+   * 归属:作业的 lesson.course 或 target.courseId 属于本教师课程(他师/跨租户天然不出现)。
+   * - submitted = 已交学生数(attempt status∈{submitted,graded},按学生去重)
+   * - graded    = 已出分学生数(attempt status=graded 去重)
+   * - status    = finished(已有提交且全部出分,即 finalize 完成)/ ongoing(其余)
+   */
+  async briefList(user: JwtUser, q: AssignmentListQueryDto): Promise<AssignmentBriefDto[]> {
+    const myCourses = await this.prisma.client.course.findMany({
+      where: { teacherId: BigInt(user.uid), deletedAt: null },
+      select: { id: true },
+    });
+    const myCourseIds = new Set(myCourses.map((c) => String(c.id)));
+    if (!myCourseIds.size) return [];
+
+    const rows = await this.prisma.client.assignment.findMany({
+      where: { ...(q.lessonId != null ? { lessonId: BigInt(q.lessonId) } : {}) },
+      include: {
+        paper: { select: { name: true } },
+        lesson: { select: { id: true, title: true, courseId: true } },
+        attempts: { select: { studentId: true, status: true } },
+      },
+      orderBy: { id: 'desc' },
+    });
+
+    const owned = rows.filter((a) => {
+      const t = a.target as { courseId?: number; studentIds?: number[] };
+      const lessonCourseId = a.lesson ? String(a.lesson.courseId) : null;
+      const targetCourseId = t.courseId != null ? String(t.courseId) : null;
+      const mine =
+        (lessonCourseId != null && myCourseIds.has(lessonCourseId)) ||
+        (targetCourseId != null && myCourseIds.has(targetCourseId));
+      if (!mine) return false;
+      if (q.courseId != null) {
+        const cid = String(q.courseId);
+        return lessonCourseId === cid || targetCourseId === cid;
+      }
+      return true;
+    });
+
+    // totalStudents:整班 → active 选课数(批量 groupBy 避免 N+1);studentIds → 数组长度
+    const courseTargetIds = [
+      ...new Set(
+        owned
+          .map((a) => (a.target as { courseId?: number }).courseId)
+          .filter((v): v is number => v != null),
+      ),
+    ];
+    const courseCounts = new Map<string, number>();
+    if (courseTargetIds.length) {
+      const grouped = await this.prisma.client.courseStudent.groupBy({
+        by: ['courseId'],
+        where: { courseId: { in: courseTargetIds.map(BigInt) }, status: 'active' },
+        _count: { _all: true },
+      });
+      for (const g of grouped) courseCounts.set(String(g.courseId), g._count._all);
+    }
+
+    const briefs: AssignmentBriefDto[] = owned.map((a) => {
+      const t = a.target as { courseId?: number; studentIds?: number[] };
+      const totalStudents =
+        t.courseId != null
+          ? courseCounts.get(String(t.courseId)) ?? 0
+          : (t.studentIds ?? []).length;
+      const submittedSet = new Set<string>();
+      const gradedSet = new Set<string>();
+      for (const at of a.attempts) {
+        if (at.status === 'submitted' || at.status === 'graded')
+          submittedSet.add(String(at.studentId));
+        if (at.status === 'graded') gradedSet.add(String(at.studentId));
+      }
+      const submitted = submittedSet.size;
+      const graded = gradedSet.size;
+      const status: 'ongoing' | 'finished' =
+        submitted > 0 && graded === submitted ? 'finished' : 'ongoing';
+      return {
+        id: num(a.id),
+        paperName: a.paper.name,
+        lessonId: a.lessonId == null ? null : num(a.lessonId),
+        lessonTitle: a.lesson?.title ?? null,
+        kind: a.kind,
+        publishAt: iso(a.publishAt),
+        dueAt: iso(a.dueAt),
+        submitted,
+        totalStudents,
+        graded,
+        status,
+      };
+    });
+
+    return q.status ? briefs.filter((b) => b.status === q.status) : briefs;
   }
 
   /**
