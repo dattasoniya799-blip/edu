@@ -1524,6 +1524,119 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/knowledge/content-packs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 某图谱下已维护的知识点内容包列表 [teacher] */
+        get: {
+            parameters: {
+                query: {
+                    graphId: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: number;
+                            message: string;
+                            data: components["schemas"]["KpContentPack"][];
+                        };
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/knowledge/content-packs/{kpNodeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 单个知识点内容包(未维护则返回空包:lecture/practice 为 null、summaryConfig 为 {}) [teacher] */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    kpNodeId: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: number;
+                            message: string;
+                            data: components["schemas"]["KpContentPack"];
+                        };
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        /** upsert 知识点内容包(写讲解/练/小结) [teacher] */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    kpNodeId: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["KpContentPackInput"];
+                };
+            };
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OkVoid"];
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/questions": {
         parameters: {
             query?: never;
@@ -1846,6 +1959,8 @@ export interface paths {
                         meta?: {
                             [key: string]: unknown;
                         };
+                        /** @description 可选:按知识点归档 */
+                        kpNodeId?: null | number;
                     };
                 };
             };
@@ -1897,6 +2012,8 @@ export interface paths {
                         meta?: {
                             [key: string]: unknown;
                         };
+                        /** @description 可选:按知识点归档,null 清除 */
+                        kpNodeId?: null | number;
                     };
                 };
             };
@@ -2369,7 +2486,36 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** 作业总览(教师布置过的全部作业,非仅待复核) [teacher] */
+        get: {
+            parameters: {
+                query?: {
+                    courseId?: number;
+                    lessonId?: number;
+                    status?: "ongoing" | "finished";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: number;
+                            message: string;
+                            data: components["schemas"]["AssignmentBrief"][];
+                        };
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
         put?: never;
         /** 发布作业 [teacher] */
         post: {
@@ -3737,8 +3883,32 @@ export interface components {
                 lessonId: number;
                 lessonTitle: string;
             }[];
+            /** @description 归档知识点(只读) */
+            kpNodeId: null | number;
+            /** @description 知识点名称(只读) */
+            kpNodeName: null | string;
             /** Format: date-time */
             createdAt: string;
+        };
+        /** @description 知识点内容包(可复用)。未维护时 lecture/practice 为 null,summaryConfig 为 {}。 */
+        KpContentPack: {
+            kpNodeId: number;
+            kpNodeName: string;
+            lectureResourceId: null | number;
+            lectureResourceName: null | string;
+            practicePaperId: null | number;
+            practicePaperName: null | string;
+            summaryConfig: {
+                [key: string]: unknown;
+            };
+        };
+        /** @description 内容包 upsert 入参;字段缺省=不改,显式 null=清空。 */
+        KpContentPackInput: {
+            lectureResourceId?: null | number;
+            practicePaperId?: null | number;
+            summaryConfig?: {
+                [key: string]: unknown;
+            };
         };
         KpGraph: {
             id: number;
@@ -3761,6 +3931,8 @@ export interface components {
             difficulty: null | number;
             examWeight: null | number;
             summary: null | string;
+            /** @description 教材正文 */
+            content: null | string;
         };
         RubricStep: {
             step: number;
@@ -3888,6 +4060,22 @@ export interface components {
             scoreCounted: boolean;
             questionCount: number;
             totalScore: number;
+        };
+        /** @description 作业总览项(教师视角)。status 由 finalize 是否完成判定;submitted/totalStudents/graded 为进度概览。 */
+        AssignmentBrief: {
+            id: number;
+            paperName: string;
+            lessonId: null | number;
+            lessonTitle: null | string;
+            kind: components["schemas"]["AssignmentKind"];
+            /** Format: date-time */
+            publishAt: string;
+            dueAt: null | string;
+            submitted: number;
+            totalStudents: number;
+            graded: number;
+            /** @enum {string} */
+            status: "ongoing" | "finished";
         };
         AssignmentInput: {
             paperId: number;

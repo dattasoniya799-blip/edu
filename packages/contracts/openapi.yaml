@@ -183,7 +183,7 @@ components:
         unitSeq: { oneOf: [{ type: 'null' }, { type: integer }], description: 知识点单元序号(可空,读写);同 unitSeq 且 kpNodeId 相同的环节属同一单元,null=开场白等单元外环节 }
     Resource:
       type: object
-      required: [id, type, name, ossKey, size, meta, usedByLessons, createdAt]
+      required: [id, type, name, ossKey, size, meta, usedByLessons, kpNodeId, kpNodeName, createdAt]
       properties:
         id: { type: integer }
         type: { $ref: '#/components/schemas/ResourceType' }
@@ -197,7 +197,28 @@ components:
             type: object
             required: [lessonId, lessonTitle]
             properties: { lessonId: { type: integer }, lessonTitle: { type: string } }
+        kpNodeId: { oneOf: [{ type: 'null' }, { type: integer }], description: 归档知识点(只读) }
+        kpNodeName: { oneOf: [{ type: 'null' }, { type: string }], description: 知识点名称(只读) }
         createdAt: { type: string, format: date-time }
+    KpContentPack:
+      type: object
+      description: 知识点内容包(可复用)。未维护时 lecture/practice 为 null,summaryConfig 为 {}。
+      required: [kpNodeId, kpNodeName, lectureResourceId, lectureResourceName, practicePaperId, practicePaperName, summaryConfig]
+      properties:
+        kpNodeId: { type: integer }
+        kpNodeName: { type: string }
+        lectureResourceId: { oneOf: [{ type: 'null' }, { type: integer }] }
+        lectureResourceName: { oneOf: [{ type: 'null' }, { type: string }] }
+        practicePaperId: { oneOf: [{ type: 'null' }, { type: integer }] }
+        practicePaperName: { oneOf: [{ type: 'null' }, { type: string }] }
+        summaryConfig: { type: object, additionalProperties: true }
+    KpContentPackInput:
+      type: object
+      description: 内容包 upsert 入参;字段缺省=不改,显式 null=清空。
+      properties:
+        lectureResourceId: { oneOf: [{ type: 'null' }, { type: integer }] }
+        practicePaperId: { oneOf: [{ type: 'null' }, { type: integer }] }
+        summaryConfig: { type: object, additionalProperties: true }
     KpGraph:
       type: object
       required: [id, code, graphType, subject, nodeCount]
@@ -209,7 +230,7 @@ components:
         nodeCount: { type: integer }
     KpNode:
       type: object
-      required: [id, graphId, code, name, parentCode, level, category, grade, chapter, section, difficulty, examWeight, summary]
+      required: [id, graphId, code, name, parentCode, level, category, grade, chapter, section, difficulty, examWeight, summary, content]
       properties:
         id: { type: integer }
         graphId: { type: integer }
@@ -224,6 +245,7 @@ components:
         difficulty: { oneOf: [{ type: 'null' }, { type: integer }] }
         examWeight: { oneOf: [{ type: 'null' }, { type: number }] }
         summary: { oneOf: [{ type: 'null' }, { type: string }] }
+        content: { oneOf: [{ type: 'null' }, { type: string }], description: 教材正文 }
     RubricStep:
       type: object
       required: [step, desc, score]
@@ -364,6 +386,22 @@ components:
         scoreCounted: { type: boolean }
         questionCount: { type: integer }
         totalScore: { type: number }
+    AssignmentBrief:
+      type: object
+      description: 作业总览项(教师视角)。status 由 finalize 是否完成判定;submitted/totalStudents/graded 为进度概览。
+      required: [id, paperName, lessonId, lessonTitle, kind, publishAt, dueAt, submitted, totalStudents, graded, status]
+      properties:
+        id: { type: integer }
+        paperName: { type: string }
+        lessonId: { oneOf: [{ type: 'null' }, { type: integer }] }
+        lessonTitle: { oneOf: [{ type: 'null' }, { type: string }] }
+        kind: { $ref: '#/components/schemas/AssignmentKind' }
+        publishAt: { type: string, format: date-time }
+        dueAt: { oneOf: [{ type: 'null' }, { type: string, format: date-time }] }
+        submitted: { type: integer }
+        totalStudents: { type: integer }
+        graded: { type: integer }
+        status: { type: string, enum: [ongoing, finished] }
     AssignmentInput:
       type: object
       required: [paperId, kind, target]
@@ -771,6 +809,27 @@ paths:
       responses:
         '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {$ref: '#/components/schemas/KpNode'}}}}}}}
         default: {$ref: '#/components/responses/Err'}
+  /knowledge/content-packs:
+    get:
+      summary: 某图谱下已维护的知识点内容包列表 [teacher]
+      parameters: [{name: graphId, in: query, required: true, schema: {type: integer}}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {$ref: '#/components/schemas/KpContentPack'}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /knowledge/content-packs/{kpNodeId}:
+    get:
+      summary: 单个知识点内容包(未维护则返回空包:lecture/practice 为 null、summaryConfig 为 {}) [teacher]
+      parameters: [{name: kpNodeId, in: path, required: true, schema: {type: integer}}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/KpContentPack'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+    put:
+      summary: upsert 知识点内容包(写讲解/练/小结) [teacher]
+      parameters: [{name: kpNodeId, in: path, required: true, schema: {type: integer}}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/KpContentPackInput'}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
 
   # ================= 题库 =================
   /questions:
@@ -831,7 +890,7 @@ paths:
         default: {$ref: '#/components/responses/Err'}
     post:
       summary: 登记已直传的资源 [teacher]
-      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [type, name, ossKey, size], properties: {type: {$ref: '#/components/schemas/ResourceType'}, name: {type: string}, ossKey: {type: string}, size: {type: integer}, meta: {type: object, additionalProperties: true}}}}}}
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [type, name, ossKey, size], properties: {type: {$ref: '#/components/schemas/ResourceType'}, name: {type: string}, ossKey: {type: string}, size: {type: integer}, meta: {type: object, additionalProperties: true}, kpNodeId: {oneOf: [{type: 'null'}, {type: integer}], description: '可选:按知识点归档'}}}}}}
       responses:
         '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/Resource'}}}}}}
         default: {$ref: '#/components/responses/Err'}
@@ -839,7 +898,7 @@ paths:
     put:
       summary: 重命名/更新元信息 [teacher]
       parameters: [{$ref: '#/components/parameters/idPath'}]
-      requestBody: {required: true, content: {application/json: {schema: {type: object, properties: {name: {type: string}, meta: {type: object, additionalProperties: true}}}}}}
+      requestBody: {required: true, content: {application/json: {schema: {type: object, properties: {name: {type: string}, meta: {type: object, additionalProperties: true}, kpNodeId: {oneOf: [{type: 'null'}, {type: integer}], description: '可选:按知识点归档,null 清除'}}}}}}
       responses:
         '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
         default: {$ref: '#/components/responses/Err'}
@@ -927,6 +986,12 @@ paths:
         '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
         default: {$ref: '#/components/responses/Err'}
   /assignments:
+    get:
+      summary: 作业总览(教师布置过的全部作业,非仅待复核) [teacher]
+      parameters: [{name: courseId, in: query, schema: {type: integer}}, {name: lessonId, in: query, schema: {type: integer}}, {name: status, in: query, schema: {type: string, enum: [ongoing, finished]}}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {$ref: '#/components/schemas/AssignmentBrief'}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
     post:
       summary: 发布作业 [teacher]
       requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/AssignmentInput'}}}}
