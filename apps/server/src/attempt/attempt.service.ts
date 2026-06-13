@@ -66,7 +66,8 @@ export class AttemptService {
   /** POST /student/attempts(幂等开始) */
   async start(user: JwtUser, assignmentId: number): Promise<AttemptDto> {
     const visible = await this.assignments.listForStudent(user, 'all');
-    if (!visible.some((a) => a.id === assignmentId)) throw new NotFoundException('作业不存在');
+    const assignment = visible.find((a) => a.id === assignmentId);
+    if (!assignment) throw new NotFoundException('作业不存在');
 
     const sid = BigInt(user.uid);
     const aid = BigInt(assignmentId);
@@ -75,6 +76,16 @@ export class AttemptService {
       orderBy: { attemptNo: 'desc' },
     });
     if (inProgress) return this.toDto(inProgress.id); // 断点续答
+
+    // 作业 / 课堂练习(homework / in_class)一次性:已存在交卷或已出分的作答则不得再开新作答;
+    // 订正 / 错题重做 / 巩固(correction / wrong_redo / consolidation)仍允许多次重做。
+    if (assignment.kind === 'homework' || assignment.kind === 'in_class') {
+      const done = await this.prisma.client.attempt.findFirst({
+        where: { assignmentId: aid, studentId: sid, status: { in: ['submitted', 'graded'] } },
+        select: { id: true },
+      });
+      if (done) throw new BizException(ERR_ATTEMPT_STATE, '该作业已完成,不可重复作答');
+    }
 
     const last = await this.prisma.client.attempt.findFirst({
       where: { assignmentId: aid, studentId: sid },

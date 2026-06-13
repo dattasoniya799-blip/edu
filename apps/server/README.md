@@ -890,3 +890,35 @@ mock 预批规则与原 stub 完全一致(第 1 步恒 ok、其余看 `√{step}
 - `GET /uploads/view-url` 与 `@Public GET /storage/*` 不在 openapi 契约;若契约校验工具开启 strict 模式需登记,见"契约外端点"。
 - `/storage` 仅 `local` 驱动用;切 `STORAGE_DRIVER=oss` 后应由对象存储直签,本端点不接管(与 A3/FIX1 同口径)。
 - #4 仅在作业挂了讲次时校验一致性;不挂讲次的定向作业(`studentIds` 无 `lessonId`)不约束课程归属,沿用原行为。
+
+## REV-back(代码审核确认的 7 个后端真问题修复)
+
+修复范围:`src/{admin,auth,common,paper,upload,attempt,lesson,grading}` 及 e2e(不改 contracts/schema)。专属库 `qiming_rev`,`.env` 设 `BULLMQ_PREFIX=rev`(Redis 队列键 `rev:` 前缀,随既有 globalTeardown 自清,禁 FLUSHALL)。
+
+| # | 真问题 | 处置 |
+|---|---|---|
+| 1 | 学生重置密码不吊销会话(旧 refresh 仍可用) | `admin/students.service.ts` 注入 Redis,`resetPassword` 后 `revokeRefreshTokens(uid)`(与 `teachers.service` 同 `rt:{jti}`/`rtu:{uid}` 口径)→ 旧 refresh 401 |
+| 2 | 缺 Prisma 异常映射致 500 | `common/filters/all-exceptions.filter.ts` 识别 `PrismaClientKnownRequestError`:P2002→409、P2025→404、P2003→400、P2000/22003 数值溢出→400;其余仍 500,响应体仍 `{code,message}` |
+| 3 | 试卷分值无上界→DB 溢出 500 | `paper/paper.dto.ts` 单题 `score` 加 `@Max(9999.9)`(= `Decimal(5,1)` 列上限),并加自定义约束校验全卷总分 ≤ 99999.9(= `attempts.score Decimal(6,1)`)→ 越界 400 |
+| 4 | `/uploads/view-url` 签名越权(任意 ossKey 换签名 URL) | `upload/upload.controller.ts` `viewUrl` 注入 `CurrentUser`,校验 ossKey 形如 `${purpose}/${orgId}/…` 且 `orgId` = 调用者机构、`purpose` 合法 → 非法 403(保持已登录要求) |
+| 5 | 已完成作业(homework/in_class)可无限重作 | `attempt/attempt.service.ts` `start`:对 `kind∈{homework,in_class}` 若已存在 `submitted/graded` attempt 则拒绝(`4502`);`correction/wrong_redo/consolidation` 仍可重做 |
+| 6 | 环节时长 `durationMin` 强制 ≥1,homework/break_time 传 0 被拒 | `lesson/lesson.dto.ts` 改自定义约束:`homework/break_time` 允许 0,其余仍 ≥1 |
+| 7 | review 改分不回写 attempt 分数(批改详情分与成绩分叉) | `grading/grading.service.ts` `review`:对已 `graded` 的作答回写 `answers.score`(blank 同步 `is_correct`)并重算 `attempt.subjective/score`(口径同 `settleAttempt`)。最小修:不重跑错题入账/掌握度(仅消除分数分叉) |
+
+### 验收 ↔ 测试(`test/rev-back.e2e-spec.ts`,7 项均覆盖)
+
+| 验收项 | 断言要点 |
+|---|---|
+| #1 | s1 refresh 正常 200;重置 s2 密码后其旧 refresh → 401 |
+| #2 | 直测 `AllExceptionsFilter`:P2002/P2025/P2003/P2000/22003 → 409/404/400/400/400,普通错误 → 500 |
+| #3 | 单题 `score=100000` → 400;`[10,10]` 正常建卷 `totalScore=20` |
+| #4 | 本机构 `answer_photo/<org>/…` → 200;他机构前缀/非法 purpose → 403;缺参/穿越 → 400;未登录 → 401 |
+| #5 | homework 交卷后再开 → 4502;consolidation 完成后再开 → 新 attempt(`attemptNo=2`) |
+| #6 | `homework/break_time` `durationMin=0` → 200;`lecture=0` → 400,`lecture=1` → 200 |
+| #7 | 复核 5 分 finalize 后 `attempt.score=15`;已 graded 再复核 8 分 → `answers.score=8`、`attempt.score=18` |
+
+既有 `fix4-back.e2e` 的 view-url 用例随 #4 收紧:`PHOTO_OSS_KEY` 改为本机构 `answer_photo/<org>/…` 格式,并新增"他机构前缀/非法 purpose → 403"断言。
+
+夹具:`test/fixtures/rev.fixtures.ts`(**13912** 号段自建自清)+ 一节 draft 讲次 + 单选/解答题 + 客观卷(homework/consolidation)/主观卷;`afterAll` 逆依赖全量清理;seed 数据只读;`npm test` 17 套件 213 用例连跑两次全绿。
+
+> 遗留风险:#4 采"org 前缀绑定"口径(契约允许的两种之一),同机构内仍可凭随机 12 字节 ossKey 互访(不可枚举,跨租户越权已封堵);#7 为最小修,仅同步分数,不重算错题本/掌握度快照(如需完全一致可在 review 后重跑 `settleAttempt` 的入账段,改动面更大故未纳入)。

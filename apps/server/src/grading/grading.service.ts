@@ -265,7 +265,18 @@ export class GradingService {
   async review(user: JwtUser, id: number, dto: ReviewDto): Promise<null> {
     const ans = await this.prisma.client.answer.findFirst({
       where: { id: BigInt(id) },
-      select: { id: true, questionId: true, attempt: { select: { assignment: { select: { paperId: true } } } } },
+      select: {
+        id: true,
+        questionId: true,
+        attempt: {
+          select: {
+            id: true,
+            status: true,
+            objectiveScore: true,
+            assignment: { select: { paperId: true } },
+          },
+        },
+      },
     });
     if (!ans) throw new NotFoundException('作答不存在');
     const question = await this.prisma.client.question.findFirst({
@@ -297,7 +308,59 @@ export class GradingService {
         reviewedAt: new Date(),
       } as never,
     });
+
+    // 对已出分(graded)的作答再次 review:回写 answers.score 并重算 attempt 分数,
+    // 避免「批改详情分」与「学生成绩分」分叉(尚未 finalize 的 submitted 态仍由 finalize 统一出分)。
+    if (ans.attempt.status === 'graded') {
+      await this.resyncGradedAnswer(
+        ans.id,
+        question.type,
+        dto.finalScore,
+        fullScore,
+        ans.attempt.id,
+        ans.attempt.assignment.paperId,
+        dec(ans.attempt.objectiveScore) ?? 0,
+      );
+    }
     return null;
+  }
+
+  /**
+   * 已 graded 作答的复核分回写 + attempt 重算(口径同 settleAttempt):
+   * - 该作答:answers.score = finalScore;公式填空(blank)同步回填 is_correct(满分=对);
+   * - 该 attempt:subjective = 各需复核题复核分之和,score = objective + subjective。
+   * 注:不重跑错题入账 / 掌握度(最小修正,见 README · REV-back #7);仅消除分数分叉。
+   */
+  private async resyncGradedAnswer(
+    answerId: bigint,
+    type: string,
+    finalScore: number,
+    fullScore: number,
+    attemptId: bigint,
+    paperId: bigint,
+    objective: number,
+  ): Promise<void> {
+    const data: { score: number; isCorrect?: boolean } = { score: finalScore };
+    if (type === 'blank') data.isCorrect = finalScore >= fullScore;
+    await this.prisma.client.answer.update({ where: { id: answerId }, data });
+
+    const meta = await this.paperMeta(paperId);
+    const answers = await this.prisma.client.answer.findMany({
+      where: { attemptId },
+      select: { questionId: true, grading: { select: { finalScore: true } } },
+    });
+    const hasReview = [...meta.values()].some((m) => m.needsReview);
+    let subjective: number | null = null;
+    for (const a of answers) {
+      if (!meta.get(String(a.questionId))?.needsReview) continue;
+      const fs = dec(a.grading?.finalScore);
+      if (fs != null) subjective = round1((subjective ?? 0) + fs);
+    }
+    if (hasReview && subjective == null) subjective = 0;
+    await this.prisma.client.attempt.update({
+      where: { id: attemptId },
+      data: { subjectiveScore: subjective, score: round1(objective + (subjective ?? 0)) },
+    });
   }
 
   /** POST /grading/assignments/:id/adopt-ai:全部采纳 AI 分(仅未复核且有 AI 分的) */

@@ -23,7 +23,7 @@ import { CurrentUser, Public } from '../common/decorators';
 import { LocalStorageAdapter } from './storage/local-storage.adapter';
 import { signStorageUrl, verifyStorageSig } from './storage/storage-sign.util';
 import { STORAGE_ADAPTER, StorageAdapter } from './storage/storage.adapter';
-import { StsRequestDto } from './upload.dto';
+import { StsRequestDto, UPLOAD_PURPOSES } from './upload.dto';
 import { UploadService } from './upload.service';
 
 /** 单文件上限(本地模拟 OSS;答题照片/题图/课件足够) */
@@ -50,9 +50,17 @@ export class UploadController {
    * (指向 #2 的 @Public GET /storage/*)。签名 secret 在后端,故必须经此端点换取。
    */
   @Get('view-url')
-  viewUrl(@Query('ossKey') ossKey?: string): { url: string } {
+  viewUrl(
+    @CurrentUser() user: { orgId: number },
+    @Query('ossKey') ossKey?: string,
+  ): { url: string } {
     if (!ossKey || ossKey.includes('..'))
       throw new BadRequestException('ossKey 必填且不得含路径穿越');
+    // 归属校验:ossKey 形如 `${purpose}/${orgId}/${ym}/${rand}${ext}`(见 UploadService.createSts)。
+    // 仅放行属于调用者机构前缀的 key,杜绝凭任意 ossKey 换取签名 URL 的越权(跨租户读取他人原稿/题图)。
+    const [purpose, orgSeg] = ossKey.split('/');
+    if (!UPLOAD_PURPOSES.includes(purpose as never) || orgSeg !== String(user.orgId))
+      throw new ForbiddenException('无权访问该资源');
     const base = this.cfg.get<string>(
       'UPLOAD_PUBLIC_BASE',
       `http://127.0.0.1:${this.cfg.get('PORT', '3000')}`,
