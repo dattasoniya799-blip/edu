@@ -7,7 +7,10 @@
  */
 import type { KpNodeDto } from '@qiming/contracts';
 
-export const abilityNodes: KpNodeDto[] = [
+/** 能力/策略维度无教材正文(content);统一补 null,满足契约 KpNodeDto.content。 */
+const withContent = (n: Omit<KpNodeDto, 'content'>): KpNodeDto => ({ ...n, content: null });
+
+const abilityNodesRaw: Omit<KpNodeDto, 'content'>[] = [
   {
     "id": 201,
     "graphId": 2,
@@ -625,7 +628,7 @@ export const abilityNodes: KpNodeDto[] = [
   }
 ];
 
-export const strategyNodes: KpNodeDto[] = [
+const strategyNodesRaw: Omit<KpNodeDto, 'content'>[] = [
   {
     "id": 301,
     "graphId": 3,
@@ -1152,3 +1155,6 @@ export const strategyNodes: KpNodeDto[] = [
     "summary": "检查分类讨论、几何存在性或方程求解中是否漏解。"
   }
 ];
+
+export const abilityNodes: KpNodeDto[] = abilityNodesRaw.map(withContent);
+export const strategyNodes: KpNodeDto[] = strategyNodesRaw.map(withContent);

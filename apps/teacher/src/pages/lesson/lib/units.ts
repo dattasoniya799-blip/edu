@@ -105,6 +105,23 @@ export function unitsToSegments(units: KpUnit[]): LessonSegmentDto[] {
   return out;
 }
 
+/**
+ * 「单元外」段(C3 #P0-2 关键 bug 修复):type ∉ {lecture,practice,summary} 的段
+ * (开场回顾 warmup / 课后作业 homework / 休息 break_time)。这些段不进入知识点单元模型,
+ * 但全量 PUT segments 时必须一并写回,否则保存编排会把它们删掉(尤其课后作业卷会丢)。
+ */
+export function outsideSegments(segments: LessonSegmentDto[]): LessonSegmentDto[] {
+  return segments.filter((s) => !UNIT_SLOT_TYPES.includes(s.type as UnitSlotType));
+}
+
+/**
+ * 合并单元段与单元外段为整页 segments(全量 PUT 用):单元段在前、单元外段在后,
+ * 统一按数组顺序重排 seq。保证保存时不丢 warmup/homework/break_time。
+ */
+export function mergeSegments(unitSegs: LessonSegmentDto[], outside: LessonSegmentDto[]): LessonSegmentDto[] {
+  return [...unitSegs, ...outside].map((s, i) => ({ ...s, seq: i + 1 }));
+}
+
 /** 单元软提示(建议齐全;缺则提示不强制) */
 export function unitWarnings(u: KpUnit): string[] {
   const w: string[] = [];

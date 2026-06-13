@@ -90,6 +90,42 @@ export function missingLabels(detail: unknown): string[] {
     .map((k) => CHECKLIST_LABEL[k]);
 }
 
+/**
+ * 4201 detail 键 → 完整中文提示(C3 #P2)。
+ * 含 empty=空讲次(发布空讲次时服务端 detail=['empty']);practice/homework=挂卷未就绪。
+ * 与 missingLabels(只给短标签,供旧弹窗拼接)区分:本函数给整句,弹窗直接展示。
+ */
+export const MISSING_MESSAGE: Record<string, string> = {
+  empty: '讲次为空,请先添加环节',
+  practice: '随堂练需挂一份「已发布」试卷',
+  homework: '课后作业需挂一份「已发布」试卷',
+};
+
+/** 4201 detail → 完整中文提示清单(兼容裸数组与 {missing:[…]} 包装;未知键忽略) */
+export function missingMessages(detail: unknown): string[] {
+  const arr = Array.isArray(detail)
+    ? detail
+    : detail && typeof detail === 'object' && Array.isArray((detail as { missing?: unknown }).missing)
+      ? ((detail as { missing: unknown[] }).missing)
+      : [];
+  return arr
+    .filter((k): k is string => typeof k === 'string' && k in MISSING_MESSAGE)
+    .map((k) => MISSING_MESSAGE[k]);
+}
+
+/**
+ * 4501 detail → 待复核 answerId 列表(C3 #P2)。
+ * 服务端口径 detail 为对象 {pendingAnswerIds:number[]};兼容历史裸数组形状。
+ */
+export function pendingAnswerIds(detail: unknown): number[] {
+  const arr = Array.isArray(detail)
+    ? detail
+    : detail && typeof detail === 'object' && Array.isArray((detail as { pendingAnswerIds?: unknown }).pendingAnswerIds)
+      ? ((detail as { pendingAnswerIds: unknown[] }).pendingAnswerIds)
+      : [];
+  return arr.filter((x): x is number => typeof x === 'number');
+}
+
 /** 业务错误(createClient 抛 ApiError:含 code/detail)的安全提取 */
 export function bizError(e: unknown): { code: number; message: string; detail?: unknown } | null {
   if (e instanceof Error && typeof (e as { code?: unknown }).code === 'number') {

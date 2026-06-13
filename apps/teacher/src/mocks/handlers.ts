@@ -4,7 +4,8 @@
  */
 import { http, HttpResponse, type HttpResponseResolver } from 'msw';
 import type {
-  AssignmentDto, AssignmentKind, LessonSegmentDto, MeDto, PaperDto, PaperType,
+  AssignmentBriefDto, AssignmentDto, AssignmentKind, KpContentPackDto,
+  LessonSegmentDto, MeDto, PaperDto, PaperType,
   QuestionAnswer, QuestionDto, QuestionOptionDto, QuestionType, RubricStep,
 } from '@qiming/contracts';
 import { CHECKLIST_KEYS, computeChecklist } from '../pages/lesson/lib/segments';
@@ -57,6 +58,45 @@ function resolvePaperQuestions(input: { questionId: number; score: number }[]): 
     out.push({ seq: i + 1, questionId: q.id, score: pq.score, type: q.type, stemLatex: q.stemLatex });
   }
   return out;
+}
+
+/** 内容包存储 → KpContentPackDto(resource/paper 名按 id 解析回填,口径同服务端只读名) */
+function contentPackDto(kpNodeId: number): KpContentPackDto {
+  const node = D.kpNodes.find((n) => n.id === kpNodeId);
+  const stored = D.contentPacks[kpNodeId];
+  const lectureResourceId = stored?.lectureResourceId ?? null;
+  const practicePaperId = stored?.practicePaperId ?? null;
+  return {
+    kpNodeId, kpNodeName: node?.name ?? '',
+    lectureResourceId,
+    lectureResourceName: lectureResourceId != null ? (D.resources.find((r) => r.id === lectureResourceId)?.name ?? null) : null,
+    practicePaperId,
+    practicePaperName: practicePaperId != null ? (D.papers.find((p) => p.id === practicePaperId)?.name ?? null) : null,
+    summaryConfig: stored?.summaryConfig ?? {},
+  };
+}
+
+/** AssignmentDto → AssignmentBriefDto(作业总览:作业 1 进度随批改链动态算,其余取种子/默认) */
+function assignmentBrief(a: AssignmentDto): AssignmentBriefDto {
+  const lesson = D.lessons.find((l) => l.id === a.lessonId);
+  const base = {
+    id: a.id, paperName: a.paperName, lessonId: a.lessonId,
+    lessonTitle: lesson?.title ?? null, kind: a.kind, publishAt: a.publishAt, dueAt: a.dueAt,
+  };
+  if (a.id === 1) {
+    const submitted = 12;
+    const pending = D.gradingAnswers.filter((g) => g.finalScore == null).length;
+    return {
+      ...base, submitted, totalStudents: 12,
+      graded: D.gradingState.finalized ? submitted : submitted - pending,
+      status: D.gradingState.finalized ? 'finished' : 'ongoing',
+    };
+  }
+  const seed = D.assignmentBriefSeed[a.id];
+  if (seed) return { ...base, ...seed };
+  const totalStudents = a.target.studentIds?.length
+    ?? D.courses.find((c) => c.id === a.target.courseId)?.studentCount ?? 12;
+  return { ...base, submitted: 0, totalStudents, graded: 0, status: 'ongoing' };
 }
 
 // 通配任意 origin:浏览器 Service Worker 与 node(冒烟脚本)都能匹配
@@ -216,6 +256,32 @@ export const handlers = [
       && (!kw || n.name.includes(kw))));
   })),
 
+  // ============ 知识点内容库(C3 #5:每知识点一份可复用内容包,有状态 mock) ============
+  // 某图谱下已维护的内容包列表(只返回有内容的知识点)
+  http.get(`${BASE}/knowledge/content-packs`, authed(({ request }) => {
+    const graphId = Number(new URL(request.url).searchParams.get('graphId'));
+    const list = D.kpNodes
+      .filter((n) => n.graphId === graphId && D.contentPacks[n.id])
+      .map((n) => contentPackDto(n.id));
+    return ok(list);
+  })),
+  // 单个知识点内容包(未维护 → 空包:lecture/practice 为 null、summaryConfig 为 {})
+  http.get(`${BASE}/knowledge/content-packs/:kpNodeId`, authed(({ params }) =>
+    ok(contentPackDto(Number(params.kpNodeId))))),
+  // upsert 内容包:字段缺省=不改,显式 null=清空(契约 KpContentPackInput 口径)
+  http.put(`${BASE}/knowledge/content-packs/:kpNodeId`, authed(async ({ request, params }) => {
+    const id = Number(params.kpNodeId);
+    const body = (await request.json()) as {
+      lectureResourceId?: number | null; practicePaperId?: number | null; summaryConfig?: Record<string, unknown>;
+    };
+    const cur = D.contentPacks[id] ?? { lectureResourceId: null, practicePaperId: null, summaryConfig: {} };
+    if ('lectureResourceId' in body) cur.lectureResourceId = body.lectureResourceId ?? null;
+    if ('practicePaperId' in body) cur.practicePaperId = body.practicePaperId ?? null;
+    if ('summaryConfig' in body) cur.summaryConfig = body.summaryConfig ?? {};
+    D.contentPacks[id] = cur;
+    return okVoid();
+  })),
+
   // ================= 题库(B3:有状态 mock,提交后列表可回显) =================
   http.get(`${BASE}/questions`, authed(({ request }) => {
     const url = new URL(request.url);
@@ -336,7 +402,11 @@ export const handlers = [
     const lesson = D.lessons.find((x) => x.id === Number(params.id));
     if (!lesson) return err(404, 4040, '讲次不存在');
     if (lesson.status === 'in_progress' || lesson.status === 'finished') return err(409, 4090, '讲次已开课/已结课,无法发布');
-    const checklist = computeChecklist(D.segments[lesson.id] ?? [], paperStatusById());
+    const segs = D.segments[lesson.id] ?? [];
+    // 空讲次:无任何环节 → 4201 detail=['empty'](放宽门槛下 checklist 全 true,故需先拦空讲次)
+    if (segs.length === 0)
+      return HttpResponse.json({ code: 4201, message: '讲次为空,无法发布', detail: ['empty'] }, { status: 409 });
+    const checklist = computeChecklist(segs, paperStatusById());
     lesson.prepChecklist = checklist;
     const missing = CHECKLIST_KEYS.filter((k) => !checklist[k]);
     if (missing.length)
@@ -378,6 +448,21 @@ export const handlers = [
     if (!questions) return err(404, 4040, '引用的题目不存在');
     Object.assign(paper, { name: body.name, type: body.type, questions, totalScore: questions.reduce((s, q) => s + q.score, 0) });
     return okVoid();
+  })),
+  // 作业总览(C3 #4:教师布置过的全部作业 → AssignmentBrief[];支持 courseId/lessonId/status 过滤)
+  http.get(`${BASE}/assignments`, authed(({ request }) => {
+    const url = new URL(request.url);
+    const courseId = url.searchParams.get('courseId');
+    const lessonId = url.searchParams.get('lessonId');
+    const status = url.searchParams.get('status');
+    let list = D.assignments;
+    if (courseId) list = list.filter((a) => a.target.courseId === Number(courseId));
+    if (lessonId) list = list.filter((a) => a.lessonId === Number(lessonId));
+    let briefs = list.map(assignmentBrief);
+    if (status === 'ongoing' || status === 'finished') briefs = briefs.filter((b) => b.status === status);
+    // 最近发布在前
+    briefs.sort((a, b) => (a.publishAt < b.publishAt ? 1 : -1));
+    return ok(briefs);
   })),
   http.post(`${BASE}/assignments`, authed(async ({ request }) => {
     const body = (await request.json()) as {
@@ -449,8 +534,9 @@ export const handlers = [
   // 出分:仍有未复核 → 4501 + detail=pendingAnswerIds(A5 口径)
   http.post(`${BASE}/grading/assignments/:id/finalize`, authed(() => {
     const pendingIds = D.gradingAnswers.filter((g) => g.finalScore == null).map((g) => g.answerId);
+    // detail 为对象 {pendingAnswerIds}(A5 服务端口径,非裸数组);批改页兼容对象形状取 ids
     if (pendingIds.length)
-      return HttpResponse.json({ code: 4501, message: '仍有未复核的主观题,无法出分', detail: pendingIds }, { status: 409 });
+      return HttpResponse.json({ code: 4501, message: '仍有未复核的主观题,无法出分', detail: { pendingAnswerIds: pendingIds } }, { status: 409 });
     D.gradingState.finalized = true;
     return okVoid();
   })),

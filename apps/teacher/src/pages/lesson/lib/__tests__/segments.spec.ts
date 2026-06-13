@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { LessonSegmentDto } from '@qiming/contracts';
 import {
-  CHECKLIST_KEYS, bizError, computeChecklist, missingLabels,
+  CHECKLIST_KEYS, bizError, computeChecklist, missingLabels, missingMessages, pendingAnswerIds,
   moveSegment, newSegment, pendingPaperKeys, removeSegment, reseq, totalDuration,
 } from '../segments';
 
@@ -83,6 +83,32 @@ describe('missingLabels(4201 发布校验提示)', () => {
   });
   it('CHECKLIST_KEYS 全键可映射', () => {
     expect(missingLabels([...CHECKLIST_KEYS])).toHaveLength(CHECKLIST_KEYS.length);
+  });
+});
+
+describe('missingMessages(C3 #P2:含空讲次 empty)', () => {
+  it('empty → 空讲次整句;practice/homework → 挂卷整句', () => {
+    expect(missingMessages(['empty'])).toEqual(['讲次为空,请先添加环节']);
+    expect(missingMessages(['practice', 'homework'])).toEqual(['随堂练需挂一份「已发布」试卷', '课后作业需挂一份「已发布」试卷']);
+  });
+  it('兼容 {missing:[…]} 包装;未知键忽略;非法 → 空', () => {
+    expect(missingMessages({ missing: ['empty', 'bogus'] })).toEqual(['讲次为空,请先添加环节']);
+    expect(missingMessages(undefined)).toEqual([]);
+    expect(missingMessages('empty')).toEqual([]);
+  });
+});
+
+describe('pendingAnswerIds(C3 #P2:4501 detail 兼容对象/数组)', () => {
+  it('对象 {pendingAnswerIds} → ids(服务端口径)', () => {
+    expect(pendingAnswerIds({ pendingAnswerIds: [41, 42, 43] })).toEqual([41, 42, 43]);
+  });
+  it('裸数组 → ids(历史形状兼容)', () => {
+    expect(pendingAnswerIds([41, 42])).toEqual([41, 42]);
+  });
+  it('非法 detail → 空数组', () => {
+    expect(pendingAnswerIds(undefined)).toEqual([]);
+    expect(pendingAnswerIds({ foo: 1 })).toEqual([]);
+    expect(pendingAnswerIds({ pendingAnswerIds: 'x' })).toEqual([]);
   });
 });
 

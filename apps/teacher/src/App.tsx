@@ -12,6 +12,8 @@ import { GradingHomePage } from './pages/grading/GradingHomePage';
 import { GradingReviewPage } from './pages/grading/GradingReviewPage';
 import { MonitorPage } from './pages/monitor/MonitorPage';
 import { ResourcesPage } from './pages/resources/ResourcesPage';
+import { KnowledgePage } from './pages/knowledge/KnowledgePage';
+import { AssignmentsPage } from './pages/assignments/AssignmentsPage';
 import { Placeholder } from './pages/Placeholder';
 
 export function App() {
@@ -25,11 +27,13 @@ export function App() {
           <Route path="/lessons/:id/arrange" element={<LessonArrangePage />} />
           <Route path="/lessons/:id/paper" element={<PaperBuilderPage />} />
           <Route path="/lessons/:id/monitor" element={<MonitorPage />} />
+          <Route path="/assignments" element={<AssignmentsPage />} />
           <Route path="/grading" element={<GradingHomePage />} />
           <Route path="/grading/:assignmentId" element={<GradingReviewPage />} />
           <Route path="/bank" element={<BankList />} />
           <Route path="/bank/new" element={<EditorPage />} />
           <Route path="/bank/:id/edit" element={<EditorPage />} />
+          <Route path="/knowledge" element={<KnowledgePage />} />
           <Route path="/resources" element={<ResourcesPage />} />
           <Route path="/analytics" element={<Placeholder title="学情分析" sub="知识点掌握热力 + 待关注名单(MVP 口径)" hint="B4 任务接 /analytics/*" />} />
           <Route path="*" element={<Placeholder title="页面不存在" />} />

@@ -193,3 +193,36 @@ B4 期间「按作业列主观题答卷」缺端点,批改页学生切换条经 
 ### 与后端对接假设(C2)
 - **openingConfig 写入**:契约 `Lesson.openingConfig` 标注「读写」,但 `PUT /lessons/{id}` 的 body schema 暂未含该字段(契约 gap)。前端按读写语义下发(代码处 `as unknown` 绕过类型,mock 已落库);后端需在 `PUT /lessons/{id}` 接受并持久化 `openingConfig`。
 - 编排发布沿用既有放宽门槛(4201 detail 仅 practice/homework 键);单元三段的 lecture/summary 缺失不拦截发布,仅前端软提示。
+
+## C3-front-teacher · 修教师端 5 项 + 知识点内容库页(契约已落地 2026-06-13·C3)
+
+契约本轮新增 `GET/PUT /knowledge/content-packs*`、`GET /assignments → AssignmentBrief[]`、`KpNodeDto.content`(教材正文)、`ResourceDto.kpNodeId`(资源归档知识点)。教师端据此修五项 + 建内容库页(负责目录仅 `apps/teacher/src`,不改 contracts/server/其他 app/schema)。
+
+### 六项处置
+
+1. **组卷/发作业入口(孤儿页接上,P0-1)**:`/lessons/:id/paper`(PaperBuilder)原先无任何导航可达。编排页新增**讲次级「课后作业」区**(独立于知识点单元),「去组卷 / 新建试卷」→ 跳 PaperBuilder(`goToPaper`:有未保存改动先 `save()` 再跳,避免编排丢失);「选择已有卷」→ 弹窗挂一份已发布 homework 卷。整条「我的课程 → 讲次 → 编排 → 去组卷 → 发布作业(POST /assignments)」可走通。
+2. **编排保存丢段(关键 bug,P0-2)**:`segmentsToUnits` 只取 lecture/practice/summary,旧实现保存时 `PUT unitsToSegments(units)` 把 warmup/homework/break_time **删掉**(尤其课后作业卷会丢)。新增 `units.ts` 的 `outsideSegments`/`mergeSegments`:编排页加载时把单元外段存入 `extras` state,保存时 `mergeSegments(unitsToSegments(units), extras)` 一并写回,**不丢段**。
+3. **课后作业(homework)入口(P0/P1)**:编排页新增讲次级「课后作业」卡(挂一份卷,独立于知识点单元),与发布门槛一致;右侧「发布门槛」预览改用合并后的整页 segments(`mergeSegments`),homework 未挂已发布卷会一并提示/拦截。
+4. **作业总览页(P1)**:新增 `/assignments`(`pages/assignments/AssignmentsPage.tsx`,侧栏「作业」入口),走 `GET /assignments → AssignmentBrief[]` 显示 作业名/讲次/截止/提交进度(双进度条:提交、已批)/状态(进行中·已结束),支持 全部/进行中/已结束 过滤;点「去批改」→ 复核页,「回编排」→ 讲次编排。
+5. **知识点内容库页(核心,P1 #5)**:新增 `/knowledge`(`pages/knowledge/KnowledgePage.tsx`,侧栏「知识点内容库」入口)。左:教材知识点树(`/kp/graphs`+`/kp/nodes`,显示 `KpNodeDto.content` 教材正文,已建包绿标);选一个知识点 → 右:维护其**内容包**(`GET/PUT /knowledge/content-packs/{kpNodeId}`),挂讲解课件(resource,按 `ResourceDto.kpNodeId` 置顶本知识点资源)/ 随堂练卷(practice paper)/ 小结模板(个性化巩固题量区间)。**编排页复用**:编排某讲选知识点单元的 kpNode 后,`selectKp` 自动拉该 kpNode 的内容包预填讲解/随堂练/小结(可覆盖);讲解挂课件弹窗按 `ResourceDto.kpNodeId` 过滤/置顶。
+6. **文案(P2)**:① 发布空讲次 → 后端 `4201 detail=['empty']`,`segments.ts` 新增 `missingMessages` 映射为「讲次为空,请先添加环节」(弹窗整句展示,不再硬拼「需挂试卷」后缀);② 出分 `4501 detail` 为对象 `{pendingAnswerIds}`(非裸数组),`segments.ts` 新增 `pendingAnswerIds` 兼容对象/数组两种形状取 ids,批改页据此计数。
+
+### 证据 / 测试 / 构建
+- 纯函数单测:`lesson/lib/__tests__/units.spec.ts`(`outsideSegments`/`mergeSegments` + homework 不丢段回归)、`lesson/lib/__tests__/segments.spec.ts`(`missingMessages` 含 empty、`pendingAnswerIds` 对象/数组兼容)。
+- mock 全链路:`src/mocks/__tests__/knowledge-assignments.spec.ts`(内容包 GET/PUT 往返/空包/缺省不改·显式 null 清空/列表、作业总览进度·过滤·新发布、空讲次 4201 empty、4501 对象形状)。
+- `scripts/mock-smoke.mts` 补 C3 段自检(内容包往返 + 资源 kpNodeId、作业总览、空讲次 empty、4501 对象形状)。
+- `npm run build` 绿;`npm run test` 110/110 绿;`npm run test:mock` 绿。
+
+### mock 口径(`src/mocks/`)
+- `data.ts`:教材 6 个知识点补 `content`(教材正文);两条资源补 `kpNodeId`(资源 1→102、资源 2→103);新增 `contentPacks`(知识点 102 预置 讲解资源 1 + 随堂练卷 1 + 小结模板)、`assignmentBriefSeed`(种子作业 2 已结束)、种子作业 2(第 2 讲);能力/策略节点经 `kpAbilityStrategyNodes.ts` 统一补 `content:null`。
+- `handlers.ts`:新增 `GET/PUT /knowledge/content-packs*`(PUT 字段缺省=不改、显式 null=清空,只读名按 id 回填)、`GET /assignments`(AssignmentBrief,作业 1 进度随批改链动态算,其余取种子/默认);`publish` 空讲次先拦为 `4201 detail=['empty']`;`finalize` 的 `4501 detail` 改对象 `{pendingAnswerIds}`。
+
+### 与后端对接假设
+- 内容包 PUT 入参 `KpContentPackInput` 按契约「字段缺省=不改、显式 null=清空」语义;只读名(resource/paper 名)由服务端按 id 回填,前端 PUT 后回读取名。
+- `AssignmentBrief.submitted/graded/status`:总览进度概览口径——`status` 由作业是否 finalize 完成判定(ongoing/finished);`graded` 为已批份数。mock 仅作业 1 动态、其余种子/默认,后端需保证 courseId/lessonId/status 三种过滤一致。
+- `KpNodeDto.content`/`ResourceDto.kpNodeId` 均为只读透出;资源按 kpNode 过滤仅前端「置顶+标注」(paper 无 kpNodeId 字段,不参与过滤)。
+
+### 遗留风险
+- 内容包小结模板仅维护「个性化巩固题量区间」(`personal_consolidation.{min,max}`),其余 summaryConfig 自定义字段透传但无 UI。
+- 编排页 homework 段在 `extras` 中本地管理,新挂卷在保存前无 `id`(由服务端分配);PaperBuilder 仍是 homework 段/assignment 的权威创建路径,二者对同一讲的 homework 段以「数组顺序 + 后写覆盖」收敛。
+- 作业总览「去批改」对无主观题的作业会进入空名单复核页(沿用 C1 既有空态);进度为概览口径,非逐生明细。
