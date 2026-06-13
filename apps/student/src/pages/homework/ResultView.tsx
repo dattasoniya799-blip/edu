@@ -1,7 +1,7 @@
 /**
  * 交卷结果 / 看解析(展示组件):得分汇总 + 逐题判定 + 正确答案与解析(TexText)
  */
-import { QuestionFigures, Tag, TexText } from '@qiming/ui';
+import { AnalysisView, QuestionFigures, Tag, TexText } from '@qiming/ui';
 import type { AnswerResponse, AssignmentDto, QuestionAnswer } from '@qiming/contracts';
 import { TYPE_LABEL } from './QuestionPanel';
 import type { AttemptWithQuestions } from './types';
@@ -81,13 +81,13 @@ export function ResultView({ attempt, assignment }: { attempt: AttemptWithQuesti
                 </span>
               )}
             </div>
-            {q.analysisLatex && (
-              <div className="mt-3 rounded-md bg-bg/60 p-3.5 text-[13px] leading-7 text-ink-2">
-                <b className="mr-1 text-ink">解析</b>
-                <TexText src={q.analysisLatex} />
-                <QuestionFigures figures={q.figures} target="analysis" />
-              </div>
-            )}
+            <AnalysisView
+              className="mt-3"
+              brief={(q as typeof q & { analysisBriefLatex?: string | null }).analysisBriefLatex}
+              normal={q.analysisLatex}
+              detail={(q as typeof q & { analysisDetailLatex?: string | null }).analysisDetailLatex}
+              extra={<QuestionFigures figures={q.figures} target="analysis" />}
+            />
           </div>
         );
       })}

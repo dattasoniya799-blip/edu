@@ -48,7 +48,9 @@ export interface QuestionForm {
   blankAnswers: string[];      // blank
   referenceLatex: string;      // solution
   rubric: RubricStep[];        // solution
-  analysisLatex: string;
+  analysisBriefLatex: string;  // 简单解析(C2 #7)
+  analysisLatex: string;       // 正常解析
+  analysisDetailLatex: string; // 详细解析(C2 #7)
   difficulty: number;
   tags: TagPick[];
 }
@@ -64,7 +66,7 @@ export function emptyForm(): QuestionForm {
     stemLatex: '', figures: [],
     options: DEFAULT_OPTIONS.map((o) => ({ ...o })),
     blankAnswers: [''], referenceLatex: '', rubric: [],
-    analysisLatex: '', difficulty: 2, tags: [],
+    analysisBriefLatex: '', analysisLatex: '', analysisDetailLatex: '', difficulty: 2, tags: [],
   };
 }
 
@@ -84,7 +86,8 @@ export interface QuestionInputBody {
   answer:
     | { choice: string } | { choices: string[] }
     | { texts: string[] } | { referenceLatex: string };
-  rubric?: RubricStep[]; analysisLatex?: string;
+  rubric?: RubricStep[];
+  analysisBriefLatex?: string; analysisLatex?: string; analysisDetailLatex?: string;
   difficulty?: number; tagNodeIds?: number[];
 }
 
@@ -113,7 +116,9 @@ export function formToInput(f: QuestionForm): QuestionInputBody {
     options: usedOptions,
     answer,
     rubric: f.type === 'solution' ? f.rubric : [],
+    analysisBriefLatex: f.analysisBriefLatex.trim() || undefined,
     analysisLatex: f.analysisLatex.trim() || undefined,
+    analysisDetailLatex: f.analysisDetailLatex.trim() || undefined,
     difficulty: f.difficulty,
     tagNodeIds: f.tags.map((t) => t.nodeId),
   };
@@ -138,7 +143,9 @@ export function questionToForm(q: QuestionDto): QuestionForm {
     else if ('referenceLatex' in a) f.referenceLatex = a.referenceLatex;
   }
   f.rubric = q.rubric.map((r) => ({ ...r }));
+  f.analysisBriefLatex = q.analysisBriefLatex ?? '';
   f.analysisLatex = q.analysisLatex ?? '';
+  f.analysisDetailLatex = q.analysisDetailLatex ?? '';
   f.difficulty = q.difficulty;
   f.tags = q.tags.map((t) => ({ ...t }));
   return f;

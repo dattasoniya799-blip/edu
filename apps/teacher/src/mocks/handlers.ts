@@ -16,7 +16,8 @@ interface QuestionInput {
   textbookVersion?: string; chapter?: string;
   stemLatex: string; figures?: { ossKey: string; position: number }[];
   options?: QuestionOptionDto[]; answer: QuestionAnswer;
-  rubric?: RubricStep[]; analysisLatex?: string;
+  rubric?: RubricStep[];
+  analysisBriefLatex?: string; analysisLatex?: string; analysisDetailLatex?: string;
   difficulty?: number; tagNodeIds?: number[];
 }
 
@@ -36,7 +37,10 @@ function questionFromInput(
     textbookVersion: body.textbookVersion ?? null, chapter: body.chapter ?? null,
     stemLatex: body.stemLatex, figures: body.figures ?? [],
     options: body.options ?? [], answer: body.answer,
-    rubric: body.rubric ?? [], analysisLatex: body.analysisLatex ?? null,
+    rubric: body.rubric ?? [],
+    analysisBriefLatex: body.analysisBriefLatex ?? null,
+    analysisLatex: body.analysisLatex ?? null,
+    analysisDetailLatex: body.analysisDetailLatex ?? null,
     difficulty: body.difficulty ?? 2, tags,
   };
 }
@@ -301,7 +305,15 @@ export const handlers = [
     const l = D.lessons.find((x) => x.id === Number(params.id));
     return l ? ok(l) : err(404, 4040, '讲次不存在');
   })),
-  http.put(`${BASE}/lessons/:id`, authed(() => okVoid())),
+  // C2 #5:讲次 patch(开场白 openingConfig 等)落库,供编排页读回往返
+  http.put(`${BASE}/lessons/:id`, authed(async ({ request, params }) => {
+    const lesson = D.lessons.find((x) => x.id === Number(params.id));
+    if (!lesson) return err(404, 4040, '讲次不存在');
+    const body = (await request.json()) as Partial<{ openingConfig: Record<string, unknown> | null; title: string }>;
+    if ('openingConfig' in body) lesson.openingConfig = body.openingConfig ?? null;
+    if (typeof body.title === 'string') lesson.title = body.title;
+    return okVoid();
+  })),
   http.get(`${BASE}/lessons/:id/segments`, authed(({ params }) => ok(D.segments[Number(params.id)] ?? []))),
   // 全量替换编排 + 同步重算 prep_checklist(A4 口径)
   http.put(`${BASE}/lessons/:id/segments`, authed(async ({ request, params }) => {

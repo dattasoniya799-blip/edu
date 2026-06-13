@@ -10,6 +10,7 @@ import { Button, EmptyState, Skeleton, Tag } from '@qiming/ui';
 import { api } from '../../api';
 import { PageHead } from '../Shell';
 import { CHECKLIST_KEYS, CHECKLIST_LABEL } from '../lesson/lib/segments';
+import { nextArrangeLessonId } from './lib/nav';
 import { fmtDate, fmtDateTime } from './lib/format';
 
 const CLASS_TYPE_LABEL = { group: '班课', one_on_one: '一对一', one_on_three: '一对三' } as const;
@@ -72,10 +73,18 @@ export function CourseLessonsPage() {
   }, [courseId]);
 
   /** 下一讲 = 按 seq 第一个未结课讲次 */
-  const nextLessonId = useMemo(
-    () => lessons.find((l) => l.status === 'draft' || l.status === 'ready')?.id ?? null,
-    [lessons],
-  );
+  const nextLessonId = useMemo(() => nextArrangeLessonId(lessons), [lessons]);
+
+  // C2 #8:工作台「编排课堂」带 go=arrange → 讲次载入后直接进下一讲编排页(落点区别于「讲次列表」)
+  useEffect(() => {
+    if (loading || searchParams.get('go') !== 'arrange') return;
+    if (nextLessonId != null) {
+      navigate(`/lessons/${nextLessonId}/arrange`);
+    } else {
+      // 无可编排讲次:停留时间线并清除标记
+      setSearchParams({ courseId: String(courseId) }, { replace: true });
+    }
+  }, [loading, searchParams, nextLessonId, navigate, courseId, setSearchParams]);
 
   return (
     <div>

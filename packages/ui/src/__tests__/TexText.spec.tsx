@@ -87,6 +87,65 @@ describe('renderMix · 25 条公式用例', () => {
   });
 });
 
+describe('renderMix · 标准 Markdown(C2 #6)', () => {
+  it('M1 加粗 **text** → <strong>', () => {
+    const html = renderMix('这是 **重点内容** 哦');
+    expect(html).toContain('<strong>重点内容</strong>');
+  });
+  it('M2 加粗 __text__ → <strong>', () => {
+    expect(renderMix('__关键__')).toContain('<strong>关键</strong>');
+  });
+  it('M3 斜体 *text* → <em>', () => {
+    const html = renderMix('注意 *斜体* 部分');
+    expect(html).toContain('<em>斜体</em>');
+  });
+  it('M4 斜体 _text_(词边界)→ <em>', () => {
+    expect(renderMix('值 _x_ 变化')).toContain('<em>x</em>');
+  });
+  it('M5 行内代码 `code`', () => {
+    expect(renderMix('调用 `useState` 即可')).toContain('<code class="qm-md-code">useState</code>');
+  });
+  it('M6 无序列表 → <ul><li>', () => {
+    const html = renderMix('要点:\n- 第一点\n- 第二点');
+    expect(html).toContain('<ul class="qm-md-ul">');
+    expect(html).toContain('<li>第一点</li>');
+    expect(html).toContain('<li>第二点</li>');
+  });
+  it('M7 有序列表 → <ol><li>', () => {
+    const html = renderMix('1. 设式\n2. 代入\n3. 求解');
+    expect(html).toContain('<ol class="qm-md-ol">');
+    expect(html.match(/<li>/g)?.length).toBe(3);
+  });
+  it('M8 Markdown + 行内公式混排', () => {
+    const html = renderMix('**结论**:函数为 $y=2x+1$,*斜率* 为 2');
+    expect(html).toContain('<strong>结论</strong>');
+    expect(html).toContain('<em>斜率</em>');
+    expect(html).toContain('class="katex"');
+  });
+  it('M9 列表项内含行内公式', () => {
+    const html = renderMix('- 当 $x=1$ 时 $y=3$\n- 当 $x=-1$ 时 $y=-1$');
+    expect(html).toContain('<li>');
+    expect(html.match(/class="katex"/g)?.length).toBeGreaterThanOrEqual(2);
+  });
+  it('M10 加粗内含行间公式', () => {
+    const html = renderMix('强调:$$a^2+b^2=c^2$$ 是勾股定理');
+    expect(html).toContain('katex-display');
+    expect(html).toContain('是勾股定理');
+  });
+  it('M11 公式内的 * 与 _ 不被 Markdown 解析', () => {
+    const html = renderMix('$a_1 \\cdot b_2$');
+    expect(html).toContain('class="katex"');
+    expect(html).not.toContain('<em>');
+    expect(html).not.toContain('<strong>');
+  });
+  it('M12 错误公式仍红色提示,Markdown 正常', () => {
+    const html = renderMix('**注意** $\\frac{1}{$ 语法错误');
+    expect(html).toContain('<strong>注意</strong>');
+    expect(html).toContain('[公式语法错误]');
+    expect(html).toContain('qm-tex-error');
+  });
+});
+
 describe('TexText 组件', () => {
   it('渲染公式且错误提示挂红色类', () => {
     const ok = renderToStaticMarkup(<TexText src="掌握 $y=kx+b$ 即可" />);

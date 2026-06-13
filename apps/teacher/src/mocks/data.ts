@@ -87,16 +87,20 @@ export const lessons: LessonDto[] = LESSON_TITLES.map((t, i) => {
     scheduledStart: start.toISOString(),
     scheduledEnd: new Date(start.getTime() + 2 * 3600e3).toISOString(),
     status: i < 3 ? 'finished' as const : 'draft' as const,
-    prepChecklist: (i === 3 ? { warmup: true, lecture: true, practice: true, summary: true, homework: false } : {}) as Record<string, boolean>,
+    prepChecklist: (i === 3 ? { practice: true, homework: false } : {}) as Record<string, boolean>,
+    // C2 #5:开场白配置(可空);第 4 讲 seed 带一段开场引导,验证 openingConfig 读写往返
+    openingConfig: i === 3
+      ? { enabled: true, text: '上节课我们认识了一次函数的图象,这节课一起研究图象的平移规律。', resourceId: null }
+      : null,
   };
 });
 
+// C2 #5:知识点单元式编排 —— 同 unitSeq + kpNodeId 的 lecture/practice/summary 三段为一个知识点单元。
 export const segments: Record<number, LessonSegmentDto[]> = {
   4: [
-    { id: 1, seq: 1, type: 'warmup', durationMin: 10, config: { source: 'auto_wrong', count: 3 }, resourceId: null, paperId: null, kpNodeId: null, kpNodeName: null },
-    { id: 2, seq: 2, type: 'lecture', durationMin: 35, config: { checkpoints: [3, 8, 12, 18, 22] }, resourceId: 1, paperId: null, kpNodeId: 102, kpNodeName: '一次函数的图象' },
-    { id: 3, seq: 3, type: 'practice', durationMin: 30, config: { ai_guide: true, stuck_alert_min: 3 }, resourceId: null, paperId: 1, kpNodeId: 104, kpNodeName: '图象的平移' },
-    { id: 4, seq: 4, type: 'summary', durationMin: 25, config: { personal_consolidation: { min: 2, max: 4 } }, resourceId: null, paperId: null, kpNodeId: null, kpNodeName: null },
+    { id: 2, seq: 1, type: 'lecture', durationMin: 35, config: { checkpoints: [3, 8, 12, 18, 22] }, resourceId: 1, paperId: null, kpNodeId: 102, kpNodeName: '一次函数的图象', unitSeq: 1 },
+    { id: 3, seq: 2, type: 'practice', durationMin: 30, config: { ai_guide: true, stuck_alert_min: 3 }, resourceId: null, paperId: 1, kpNodeId: 102, kpNodeName: '一次函数的图象', unitSeq: 1 },
+    { id: 4, seq: 3, type: 'summary', durationMin: 25, config: { personal_consolidation: { min: 2, max: 4 } }, resourceId: null, paperId: null, kpNodeId: 102, kpNodeName: '一次函数的图象', unitSeq: 1 },
   ],
 };
 
@@ -164,7 +168,9 @@ function genQuestions(): QuestionDto[] {
       rubric: type === 'solution'
         ? [{ step: 1, desc: '设式并代入两点', score: 3 }, { step: 2, desc: '求出平移后直线', score: 4 }, { step: 3, desc: '正确还原平移方向', score: 3 }]
         : [],
+      analysisBriefLatex: `**上加下减**:平移只改 $b$,本题 $b$ 变 $${d}$ 个单位。`,
       analysisLatex: `平移口诀:上加下减(改 $b$)。本题 $b$ 由 $${b}$ 变化 $${d}$ 个单位。`,
+      analysisDetailLatex: `**详细解析**\n1. 平移只改变截距 $b$,斜率 $k$ 不变。\n2. 向下平移 $${d}$ 个单位:$b \\to b-${d}$。\n3. 代回即得新的解析式。`,
       difficulty: 1 + (i % 3), status: 'published',
       tags: [
         { nodeId: 101 + (i % 6), graphType: 'curriculum_knowledge', code: `PEP-19-${(i % 6) + 1}`, name: KP_NAMES[i % 6] },
