@@ -48,6 +48,9 @@ function rosterRows(courseId: number) {
     .map((s) => ({ studentId: s.id, name: s.name, attendance: '3/3', homeworkAvg: 70 + (s.id % 25), status: s.status }));
 }
 
+/** 明文临时密码(满足复杂度;mock 随机生成,管理员当面告知本人) */
+const genTempPassword = () => `Qm${Math.random().toString(36).slice(2, 6)}@${Math.floor(1000 + Math.random() * 9000)}`;
+
 const tokenFor = (me: MeDto) => `mock-token-${me.role}${me.role === 'student' && me.id !== D.ME_STUDENT.id ? `-${me.id}` : ''}`;
 
 export const handlers = [
@@ -110,17 +113,30 @@ export const handlers = [
   })),
   http.delete(`${BASE}/admin/teachers/:id`, authed(({ params }) => {
     const t = D.teachers.find((x) => x.id === Number(params.id));
-    if (t) t.status = 'disabled';
+    if (t) t.status = 'disabled'; // 停用(后端已改:不再软删,仍可在「已停用」筛选看到)
     return okVoid();
   })),
-  http.post(`${BASE}/admin/teachers/:id/reset-password`, authed(() => okVoid())),
+  http.post(`${BASE}/admin/teachers/:id/reset-password`, authed(({ params }) => {
+    // 重置 → 返回明文临时密码(管理员当面告知教师);取代旧的短信发码
+    const t = D.teachers.find((x) => x.id === Number(params.id));
+    if (!t) return err(404, 4040, '教师不存在');
+    return ok({ password: genTempPassword() });
+  })),
+  http.post(`${BASE}/admin/teachers/:id/enable`, authed(({ params }) => {
+    const t = D.teachers.find((x) => x.id === Number(params.id));
+    if (!t) return err(404, 4040, '教师不存在');
+    t.status = 'active'; // 有状态 mock:恢复启用后列表刷新可见
+    return okVoid();
+  })),
 
   http.get(`${BASE}/admin/students`, authed(({ request }) => {
     const url = new URL(request.url);
     const kw = url.searchParams.get('keyword') ?? '';
+    const status = url.searchParams.get('status');
     const courseId = url.searchParams.get('courseId');
     const deviceBound = url.searchParams.get('deviceBound');
     let list = D.students.filter((s) => !kw || s.name.includes(kw) || s.studentNo.includes(kw));
+    if (status) list = list.filter((s) => s.status === status);
     if (courseId) list = list.filter((s) => s.courses.some((c) => c.id === Number(courseId)));
     if (deviceBound !== null && deviceBound !== undefined && deviceBound !== '')
       list = list.filter((s) => (deviceBound === 'true' ? !!s.device : !s.device));
@@ -151,8 +167,13 @@ export const handlers = [
     // 重置 → 返回明文临时密码(管理员当面告知学生);mock 随机生成,满足复杂度
     const s = D.students.find((x) => x.id === Number(params.id));
     if (!s) return err(404, 4040, '学生不存在');
-    const password = `Qm${Math.random().toString(36).slice(2, 6)}@${Math.floor(1000 + Math.random() * 9000)}`;
-    return ok({ password });
+    return ok({ password: genTempPassword() });
+  })),
+  http.post(`${BASE}/admin/students/:id/enable`, authed(({ params }) => {
+    const s = D.students.find((x) => x.id === Number(params.id));
+    if (!s) return err(404, 4040, '学生不存在');
+    s.status = 'active'; // 有状态 mock:恢复启用后列表刷新可见
+    return okVoid();
   })),
   http.delete(`${BASE}/admin/students/:id/device`, authed(({ params }) => {
     const s = D.students.find((x) => x.id === Number(params.id));

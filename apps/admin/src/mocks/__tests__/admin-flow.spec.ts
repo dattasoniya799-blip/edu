@@ -58,3 +58,38 @@ describe('课程入班(添加/移出)', () => {
     await api.del('/admin/courses/{id}/students/{studentId}', { params: { id: 2, studentId: 6 } });
   });
 });
+
+describe('重置教师密码(IMPL #1:明文,无短信)', () => {
+  it('返回非空明文临时密码', async () => {
+    const r = await api.post('/admin/teachers/{id}/reset-password', { params: { id: 2 } });
+    expect(typeof r.data.password).toBe('string');
+    expect(r.data.password.length).toBeGreaterThanOrEqual(6);
+  });
+  it('未知教师 → 4040', async () => {
+    await expect(api.post('/admin/teachers/{id}/reset-password', { params: { id: 99999 } }))
+      .rejects.toMatchObject({ code: 4040 });
+  });
+});
+
+describe('状态筛选 + 停用/恢复启用(IMPL #3)', () => {
+  it('学生:已停用筛选能看到停用项,enable 后回到正常', async () => {
+    const disabled = (await api.get('/admin/students', { query: { page: 1, size: 50, status: 'disabled' } })).data;
+    expect(disabled.total).toBeGreaterThan(0);
+    expect(disabled.items.every((s) => s.status === 'disabled')).toBe(true);
+
+    const target = disabled.items[0];
+    await api.post('/admin/students/{id}/enable', { params: { id: target.id } });
+    const active = (await api.get('/admin/students', { query: { page: 1, size: 50, status: 'active' } })).data;
+    expect(active.items.some((s) => s.id === target.id)).toBe(true);
+  });
+
+  it('教师:停用后在已停用筛选可见,enable 后恢复在职', async () => {
+    await api.del('/admin/teachers/{id}', { params: { id: 3 } });
+    const disabled = (await api.get('/admin/teachers', { query: { page: 1, size: 50, status: 'disabled' } })).data;
+    expect(disabled.items.some((t) => t.id === 3)).toBe(true);
+
+    await api.post('/admin/teachers/{id}/enable', { params: { id: 3 } });
+    const active = (await api.get('/admin/teachers', { query: { page: 1, size: 50, status: 'active' } })).data;
+    expect(active.items.some((t) => t.id === 3)).toBe(true);
+  });
+});

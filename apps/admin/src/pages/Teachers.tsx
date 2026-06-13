@@ -7,6 +7,7 @@ import { api } from '../api';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { LinkButton, Select, TextInput, Toolbar } from '../components/controls';
 import { Pager } from '../components/Pager';
+import { ResetPasswordModal, type ResetPasswordTarget } from '../components/ResetPasswordModal';
 import { TeacherFormModal } from '../components/TeacherFormModal';
 import { SUBJECT_TONE, TEACHER_STATUS } from '../lib/labels';
 import { PageHead } from './Shell';
@@ -23,7 +24,7 @@ export function Teachers() {
   // 弹窗状态
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<TeacherDto | null>(null);
-  const [resetTarget, setResetTarget] = useState<TeacherDto | null>(null);
+  const [resetTarget, setResetTarget] = useState<ResetPasswordTarget | null>(null);
   const [disableTarget, setDisableTarget] = useState<TeacherDto | null>(null);
   const { toast } = useToast();
   const location = useLocation();
@@ -61,19 +62,22 @@ export function Teachers() {
   const openAdd = () => { setEditing(null); setFormOpen(true); };
   const openEdit = (t: TeacherDto) => { setEditing(t); setFormOpen(true); };
 
-  const resetPassword = async () => {
-    if (!resetTarget) return;
-    await api.post('/admin/teachers/{id}/reset-password', { params: { id: resetTarget.id } });
-    toast('已重置密码并短信通知');
-    setResetTarget(null);
-  };
-
   const disableTeacher = async () => {
     if (!disableTarget) return;
     await api.del('/admin/teachers/{id}', { params: { id: disableTarget.id } });
     toast(`已停用 ${disableTarget.name} 的账号`);
     setDisableTarget(null);
     await load();
+  };
+
+  const enableTeacher = async (t: TeacherDto) => {
+    try {
+      await api.post('/admin/teachers/{id}/enable', { params: { id: t.id } });
+      toast(`已恢复启用 ${t.name}`);
+      await load();
+    } catch {
+      toast('启用失败,请重试');
+    }
   };
 
   return (
@@ -118,9 +122,11 @@ export function Teachers() {
               render: (t) => (
                 <span className="flex gap-3">
                   <LinkButton onClick={() => openEdit(t)}>编辑</LinkButton>
-                  {t.status !== 'disabled' && (
+                  {t.status === 'disabled' ? (
+                    <LinkButton onClick={() => void enableTeacher(t)}>恢复启用</LinkButton>
+                  ) : (
                     <>
-                      <LinkButton onClick={() => setResetTarget(t)}>重置密码</LinkButton>
+                      <LinkButton onClick={() => setResetTarget({ id: t.id, name: t.name, no: t.teacherNo, role: 'teacher' })}>重置密码</LinkButton>
                       <LinkButton danger onClick={() => setDisableTarget(t)}>停用</LinkButton>
                     </>
                   )}
@@ -132,16 +138,17 @@ export function Teachers() {
         {!loading && <Pager page={page} size={SIZE} total={total} onChange={setPage} />}
       </Card>
 
-      <TeacherFormModal open={formOpen} initial={editing} onClose={() => setFormOpen(false)} onSaved={() => void load()} />
-      <ConfirmModal
-        open={!!resetTarget}
-        title="重置密码"
-        confirmText="重置并短信通知"
-        onConfirm={resetPassword}
-        onClose={() => setResetTarget(null)}
-      >
-        将为 <b className="text-ink">{resetTarget?.name}</b>({resetTarget?.teacherNo})生成新的初始密码并短信发送至其手机,旧密码立即失效。
-      </ConfirmModal>
+      <TeacherFormModal
+        open={formOpen}
+        initial={editing}
+        onClose={() => setFormOpen(false)}
+        onSaved={(created) => {
+          void load();
+          // 新建教师后直接进入重置密码,管理员当场拿到首登临时密码当面告知教师
+          if (created) setResetTarget({ id: created.id, name: created.name, no: created.teacherNo, role: 'teacher' });
+        }}
+      />
+      <ResetPasswordModal target={resetTarget} onClose={() => setResetTarget(null)} />
       <ConfirmModal
         open={!!disableTarget}
         title="停用教师账号"

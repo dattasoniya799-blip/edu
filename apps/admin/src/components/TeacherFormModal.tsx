@@ -12,7 +12,8 @@ export interface TeacherFormModalProps {
   /** 传入则为编辑,否则为新增 */
   initial?: TeacherDto | null;
   onClose: () => void;
-  onSaved: () => void;
+  /** 编辑时无参;新增时回传创建的教师,供调用方接续「重置密码」拿临时密码 */
+  onSaved: (created?: TeacherDto) => void;
 }
 
 const EMPTY = { name: '', teacherNo: '', phone: '', stage: '初中', subject: '数学' };
@@ -43,11 +44,12 @@ export function TeacherFormModal({ open, initial, onClose, onSaved }: TeacherFor
       if (initial) {
         await api.put('/admin/teachers/{id}', { params: { id: initial.id }, body });
         toast('教师信息已保存');
+        onSaved();
       } else {
-        await api.post('/admin/teachers', { body });
-        toast('教师账号已创建,初始密码已短信发送');
+        const created = await api.post('/admin/teachers', { body });
+        toast('教师账号已创建');
+        onSaved(created.data);
       }
-      onSaved();
       onClose();
     } catch (e) {
       toast(e instanceof Error ? e.message : '保存失败,请重试');
@@ -79,7 +81,7 @@ export function TeacherFormModal({ open, initial, onClose, onSaved }: TeacherFor
         </FormRow>
         <FormRow>
           <Field label="手机号" error={errors.phone}>
-            <TextInput placeholder="用于登录与接收初始密码" value={form.phone} onChange={(e) => set('phone')(e.target.value)} />
+            <TextInput placeholder="用于电脑端登录" value={form.phone} onChange={(e) => set('phone')(e.target.value)} />
           </Field>
           <Field label="学段" error={errors.stage}>
             <Select value={form.stage} onChange={(e) => set('stage')(e.target.value)}>
@@ -95,7 +97,7 @@ export function TeacherFormModal({ open, initial, onClose, onSaved }: TeacherFor
           </Field>
           <div className="flex-1" />
         </FormRow>
-        {!initial && <RoleNote>创建后系统将通过短信发送初始密码,教师首次登录需修改密码。</RoleNote>}
+        {!initial && <RoleNote>创建后请点「重置密码」生成临时密码并当面告知教师;教师用电脑端首次登录后自行修改。</RoleNote>}
       </div>
     </Modal>
   );
