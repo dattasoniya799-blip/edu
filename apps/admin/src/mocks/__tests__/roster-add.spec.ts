@@ -73,3 +73,55 @@ describe('候选 = 本页学生 − 当前课程 active 名单', () => {
     expect(cands.length).toBe(page.length - 1);
   });
 });
+
+/**
+ * C1 round3 #1:任意"有可选学生"的课程都能正确列候选并入班。
+ * 三种课按真实流程(GET 名单 → GET 学生页 → 候选 = 页 − active 名单)分别验收:
+ *  ① group 满班(course 1):候选为空(都已在课);移出一人后该人重新成为候选并可加回。
+ *  ② 一对一(course 2,已含 1 生):其余学生均为候选,可入班(此前卡片直跳档案、入班 UI 不可达)。
+ *  ③ 新建课程:名单空 → 候选 = 全部学生,可入班。
+ */
+async function candidatesOf(courseId: number) {
+  const roster = (await api.get('/admin/courses/{id}/roster', { params: { id: courseId } })).data;
+  const page = (await api.get('/admin/students', { query: { page: 1, size: 50 } })).data.items;
+  return { roster, cands: candidateStudents(page, roster), pageSize: page.length };
+}
+
+describe('三种课都能正确列候选并入班(round3 #1)', () => {
+  it('group 班:active 在册生不在候选;移出后可重新入班,加回后不再是候选', async () => {
+    const full = await candidatesOf(1);
+    const victim = full.roster.find((r) => r.status === 'active')!.studentId;
+    expect(full.cands.some((s) => s.id === victim)).toBe(false); // active 在册 → 非候选
+    await api.del('/admin/courses/{id}/students/{studentId}', { params: { id: 1, studentId: victim } });
+    const after = await candidatesOf(1);
+    expect(after.cands.some((s) => s.id === victim)).toBe(true); // 移出后重新成为候选
+    await api.post('/admin/courses/{id}/students', { params: { id: 1 }, body: { studentIds: [victim] } });
+    const back = await candidatesOf(1);
+    expect(back.cands.some((s) => s.id === victim)).toBe(false); // 加回后不再是候选
+  });
+
+  it('一对一(course 2,已含 1 生):其余学生为候选且可入班', async () => {
+    const before = await candidatesOf(2);
+    expect(before.roster.length).toBeGreaterThanOrEqual(1);
+    expect(before.cands.length).toBe(before.pageSize - before.roster.filter((r) => r.status === 'active').length);
+    expect(before.cands.length).toBeGreaterThan(0);
+    const pick = before.cands[0].id;
+    await api.post('/admin/courses/{id}/students', { params: { id: 2 }, body: { studentIds: [pick] } });
+    const roster = (await api.get('/admin/courses/{id}/roster', { params: { id: 2 } })).data;
+    expect(roster.some((r) => r.studentId === pick)).toBe(true);
+    await api.del('/admin/courses/{id}/students/{studentId}', { params: { id: 2, studentId: pick } }); // 清理
+  });
+
+  it('新建课程:名单空 → 候选为全部学生,可入班', async () => {
+    const created = await api.post('/admin/courses', {
+      body: { name: 'round3 新课', classType: 'group', subject: '数学', stage: '初中', teacherId: 2, totalLessons: 10 },
+    });
+    const nid = created.data.id;
+    const fresh = await candidatesOf(nid);
+    expect(fresh.roster).toHaveLength(0);
+    expect(fresh.cands.length).toBe(fresh.pageSize); // 全部学生可选
+    await api.post('/admin/courses/{id}/students', { params: { id: nid }, body: { studentIds: [fresh.cands[0].id] } });
+    const roster = (await api.get('/admin/courses/{id}/roster', { params: { id: nid } })).data;
+    expect(roster.some((r) => r.studentId === fresh.cands[0].id)).toBe(true);
+  });
+});

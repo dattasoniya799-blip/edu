@@ -17,6 +17,15 @@ export const DIFF_LABEL: Record<number, string> = { 1: '容易', 2: '中等', 3:
 export const STATUS_LABEL: Record<QuestionDto['status'], string> = {
   draft: '草稿', published: '已入库', retired: '已下架',
 };
+
+/**
+ * 是否允许"提交入库"(调用 /questions/:id/publish)。
+ * 后端仅允许草稿入库(已 published/retired 再 publish → 400)。
+ * 新题(status=null,尚未创建)按草稿处理:草稿 → 可入库;已入库题只能保存修改。
+ */
+export function canPublishQuestion(status: QuestionDto['status'] | null): boolean {
+  return status == null || status === 'draft';
+}
 export const GRAPH_LABEL: Record<GraphType, string> = {
   curriculum_knowledge: '教材知识点',
   problem_solving_ability: '解题能力',
