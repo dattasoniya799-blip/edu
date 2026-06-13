@@ -730,3 +730,58 @@ mock 预批规则与原 stub 完全一致(第 1 步恒 ok、其余看 `√{step}
 
 - `studentNo` 仅 org 内唯一,登录不带 org;跨 org 撞号且**密码也相同**时,`findMany` 顺序取首个匹配,理论上可能登成同号他校学生。生产中 studentNo 命名通常含机构前缀,撞号概率极低;若需根治可在契约层为学生登录补 orgCode/机构选择(需契约变更,未自行改)。
 - `login_tickets` / `devices` 表保留未用,`StudentDto.device` 恒 null;后续若彻底下线设备模型再行迁移。
+
+---
+
+# C1GAP 交付 · C1 两项联调缺口后端(题面 + 批改名单)
+
+负责目录:`src/attempt/`、`src/grading/` + `test/c1gap.e2e-spec.ts`、`test/fixtures/c1gap.fixtures.ts`。契约+SDK 已在 `c1gap-contract` 改好(本卡不改 `packages/contracts` 与 `schema.prisma`)。专属库 `qiming_c1gap`,`.env` 设 `BULLMQ_PREFIX=c1gap`,Redis 队列键 `c1gap:` 前缀(禁 FLUSHALL)。
+
+## #A `AttemptDto.questions`(作答题面)
+
+所有返回 `AttemptDto` 的入口(`POST /student/attempts` 开始/断点续答、`GET /student/attempts/:id`、交卷返回)统一在 `attempt.service.ts#toDto` 一处补 `questions: AttemptQuestionView[]`,按试卷 `paper_questions.seq` 顺序逐题:
+
+| 字段 | 来源 |
+|---|---|
+| `seq` / `score` | `paper_questions.seq` / `paper_questions.score`(本卷该题分值) |
+| `questionId` / `type` / `stemLatex` | 题目本体 |
+| `figures` | 题目级 Json **原样下发(含 anchor)** |
+| `options` | 学生视图选项 `{label, contentLatex}` —— **不含 `isCorrect`**(沿用题目域学生序列化口径) |
+| `correctAnswer` | `QuestionAnswer \| null`(题目 `answer` 原样) |
+| `analysisLatex` | `string \| null` |
+
+**防作弊规则**:`correctAnswer` 与 `analysisLatex` 仅在「**该题已判定**(`answer.isCorrect` 非空,即客观题即时判分后,无论对错)**或 attempt 已交卷/已出分**(status=submitted/graded)」时下发,否则恒为 `null`。即 `in_progress` 且该题未判 → 两者 `null`;solution / 公式填空在 `in_progress` 期间 `isCorrect` 恒 null,故交卷前不下发,交卷后随全卷下发。
+
+## #B `GET /grading/assignments/:id/answers`(批改名单)
+
+`grading.service.ts#assignmentAnswers`(`[teacher]` 门禁,经租户注入,跨租户作业 → 404)。返回该作业**所有走复核管线的逐题作答**(口径与 `/grading/pending`、`/grading/answers/:id` 一致 —— 仅 `solution` + 公式填空,经 `questionNeedsReview` 判定),统计 `submitted`/`graded` 两态 attempt。每项 `GradingAnswerBriefDto`:
+
+```
+{ answerId, studentId, studentName, questionId, seq,
+  status: 'pending'|'graded', aiScore: number|null, finalScore: number|null }
+```
+
+- `status='graded'` ⟺ `grading_records.final_score` 已写(review 后)**或**该作答已出分(`answers.score` 非空,finalize 后);否则 `pending`。
+- `aiScore` ← `grading_records.ai_score`;`finalScore` ← `grading_records.final_score`。
+- `?status=pending|graded` 过滤;排序按 `seq` 再按 `studentId`。
+- **pendingCount 与 `/grading/pending` 对齐**:本端点 `status='pending'` 项数 = `/grading/pending` 该作业 `pendingCount`(同一批"isCorrect=null 且未复核"的复核题)。
+
+## 验收 ↔ 测试(`test/c1gap.e2e-spec.ts`,10 用例;`npm test` 14 套件 177 用例全绿,连跑两次)
+
+| 验收项 | 测试名 |
+|---|---|
+| #A 开始作答 questions 含全部题面、未答 correctAnswer=null | `#A 开始作答:questions 含全部 5 道题面(seq 序),未答题 correctAnswer/analysis 均为 null` |
+| #A 答对一道客观题 → 该题下发答案+解析 | `#A 答对一道客观题:该题 correctAnswer + analysis 下发,其余仍为 null` |
+| #A 已判定(含答错)即下发;主观题未判不下发 | `#A 答错客观题也算「已判定」…`、`#A 主观题/公式填空作答(in_progress 待判)→ 仍不下发正确答案` |
+| #A 交卷后全部下发 | `#A 交卷后:全部题面 correctAnswer + analysis 下发(含未作答的 q3)` |
+| #A 跨租户/他人 attempt 404 | `#A 跨租户 / 他人 attempt → 404(宪法 §7)` |
+| #B 待复核题列出、pendingCount 对齐 | `#B 批改名单:列出 2 道待复核题(solution + 公式填空),pendingCount 与 /grading/pending 对齐` |
+| #B review 后 status→graded、?status 过滤 | `#B review 一题(q4)→ 该项 status 变 graded;?status 过滤正确` |
+| #B [teacher] 门禁 + 跨租户 404 | `#B [teacher] 门禁:学生访问 → 403;跨租户作业 → 404` |
+
+测试夹具:`test/fixtures/c1gap.fixtures.ts` 自建两机构(手机号 **13901** 开头,机构B 专用跨租户),5 题覆盖 single/multi/简单填空/solution/公式填空;`afterAll` 先停 worker 再逆依赖清理并删除 `c1gap:pre_grading:*` / `c1gap:mastery:*` 队列键;seed 数据只读。
+
+## 遗留风险
+
+- 批改名单统计 `submitted`+`graded` 两态 attempt:同一学生对同一作业多次 attempt(如重做新开)时,各 attempt 的复核题作答都会作为独立项列出(answerId 唯一区分),前端复核页若需"仅最新一次"需自行按 attempt 去重;现行口径与 `/grading/pending`(亦不去重)一致。
+- `correctAnswer` 下发以"整道 attempt 交卷"或"该题 isCorrect 非空"为闸:公式填空/solution 在交卷前即便 AI 已预批也不下发(isCorrect 仍为 null),符合防作弊但意味着学生交卷前看不到主观题参考答案——为既定口径。
