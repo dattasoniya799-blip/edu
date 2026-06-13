@@ -42,13 +42,15 @@ describe('FIX4-back · 代码审查修复六项', () => {
     return u.pathname + u.search;
   };
 
-  const PHOTO_OSS_KEY = 'fix4/answers/photo.jpg';
+  // REV-back #4:view-url 加归属校验后,ossKey 必须形如 `${purpose}/${orgId}/...` 且属本机构
+  let PHOTO_OSS_KEY: string;
   const PHOTO_CONTENT = 'FIX4 手写原稿字节样本 0123456789 αβγ';
 
   beforeAll(async () => {
     app = await createApp();
     http = app.getHttpServer();
     fx = await createFix4Org();
+    PHOTO_OSS_KEY = `answer_photo/${Number(fx.orgId)}/202506/fix4photo.jpg`;
     // 落盘一个对象,模拟上传完成
     const target = join(UPLOAD_ROOT, PHOTO_OSS_KEY);
     mkdirSync(dirname(target), { recursive: true });
@@ -119,11 +121,14 @@ describe('FIX4-back · 代码审查修复六项', () => {
   });
 
   // ===================== #3 view-url 端点 =====================
-  it('#3 view-url:返回签名 URL;缺 ossKey / 路径穿越入参 → 400;未登录 → 401', async () => {
+  it('#3 view-url:本机构 ossKey 返回签名 URL;跨租户/非法 purpose → 403;缺 ossKey / 路径穿越 → 400;未登录 → 401', async () => {
     const ok = await get(`/uploads/view-url?ossKey=${encodeURIComponent(PHOTO_OSS_KEY)}`, teacher).expect(200);
     expect(ok.body.data).toEqual({ url: expect.stringContaining(`/api/v1/storage/${PHOTO_OSS_KEY}?exp=`) });
-    // 学生也可换(figures 展示是学生侧需求)
+    // 学生也可换(figures 展示是学生侧需求),但仅限本机构前缀
     await get(`/uploads/view-url?ossKey=${encodeURIComponent(PHOTO_OSS_KEY)}`, s1).expect(200);
+    // REV-back #4:他机构前缀 / 非法 purpose → 403(杜绝凭任意 ossKey 越权换签名 URL)
+    await get(`/uploads/view-url?ossKey=${encodeURIComponent(`answer_photo/${Number(fx.orgId) + 1}/202506/x.jpg`)}`, teacher).expect(403);
+    await get(`/uploads/view-url?ossKey=${encodeURIComponent('fix4/answers/photo.jpg')}`, teacher).expect(403);
     await get('/uploads/view-url', teacher).expect(400); // 缺 ossKey
     await get('/uploads/view-url?ossKey=a/../b', teacher).expect(400); // 含穿越
     await request(http).get(`/api/v1/uploads/view-url?ossKey=${PHOTO_OSS_KEY}`).expect(401); // 未登录

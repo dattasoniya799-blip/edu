@@ -1,9 +1,11 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import type Redis from 'ioredis';
 import type { MasteryItemDto, PageResp, StudentDto } from '@qiming/contracts';
 import { AuditService } from '../audit/audit.service';
 import type { JwtUser } from '../auth/auth.service';
 import { hashPassword, randomReadablePassword } from '../auth/password.util';
 import { PrismaService } from '../prisma/prisma.service';
+import { REDIS } from '../redis/redis.module';
 import { StudentInputDto, StudentListQueryDto } from './admin.dto';
 import { daysAgoUtc, iso, num, profileField } from './helpers';
 
@@ -12,6 +14,7 @@ export class StudentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    @Inject(REDIS) private readonly redis: Redis,
   ) {}
 
   // ---------------- 列表 ----------------
@@ -138,11 +141,19 @@ export class StudentsService {
       where: { id: s.id },
       data: { passwordHash: await hashPassword(password) },
     });
+    await this.revokeRefreshTokens(id); // 重置后旧刷新令牌全部作废(与 TeachersService 同口径)
     await this.audit.log({
       actorId: user.uid, orgId: user.orgId, action: 'admin.student.reset_password',
       targetType: 'user', targetId: id, ip,
     });
     return { password };
+  }
+
+  /** 与 A1 AuthService 的 Redis 键约定一致(rt:{jti} / rtu:{uid}) */
+  private async revokeRefreshTokens(uid: number) {
+    const jtis = await this.redis.smembers(`rtu:${uid}`);
+    if (jtis.length) await this.redis.del(...jtis.map((j) => `rt:${j}`));
+    await this.redis.del(`rtu:${uid}`);
   }
 
   // ---------------- 启用(置 status=active) ----------------
