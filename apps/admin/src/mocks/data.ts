@@ -208,6 +208,15 @@ export const attempt: AttemptDto = {
     score: j === 4 ? 10 : j !== 2 ? 5 : 0,
     flagged: false,
   })),
+  // 契约 2026-06-13·C1 新增必填:作答题面(admin 仅档案只读展示,题面取自题库,已判故下发答案/解析)
+  questions: [9, 10, 11, 13, 4].map((qid, j) => {
+    const q = questions[qid - 1];
+    return {
+      seq: j + 1, questionId: qid, score: j === 4 ? 10 : 5, type: q.type,
+      stemLatex: q.stemLatex, figures: q.figures, options: q.options,
+      correctAnswer: q.answer, analysisLatex: q.analysisLatex,
+    };
+  }),
 };
 
 export const gradingPending = [
