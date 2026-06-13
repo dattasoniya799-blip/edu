@@ -1068,7 +1068,7 @@ paths:
       summary: 讲次时间线(回看/订正入口) [student]
       parameters: [{$ref: '#/components/parameters/idPath'}]
       responses:
-        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {type: object, required: [lesson, myHomework], properties: {lesson: {$ref: '#/components/schemas/Lesson'}, myHomework: {oneOf: [{type: 'null'}, {type: object, required: [assignmentId, score, wrongCount], properties: {assignmentId: {type: integer}, score: {oneOf: [{type: 'null'}, {type: number}]}, wrongCount: {type: integer}}}]}}}}}}}}}
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {type: object, required: [lesson, sessionId, myHomework], properties: {lesson: {$ref: '#/components/schemas/Lesson'}, sessionId: {oneOf: [{type: 'null'}, {type: integer}]}, myHomework: {oneOf: [{type: 'null'}, {type: object, required: [assignmentId, score, wrongCount], properties: {assignmentId: {type: integer}, score: {oneOf: [{type: 'null'}, {type: number}]}, wrongCount: {type: integer}}}]}}}}}}}}}
         default: {$ref: '#/components/responses/Err'}
   /student/assignments:
     get:

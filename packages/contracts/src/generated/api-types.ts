@@ -2996,6 +2996,7 @@ export interface paths {
                             message: string;
                             data: {
                                 lesson: components["schemas"]["Lesson"];
+                                sessionId: null | number;
                                 myHomework: null | {
                                     assignmentId: number;
                                     score: null | number;

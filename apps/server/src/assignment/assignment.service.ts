@@ -48,13 +48,18 @@ export class AssignmentService {
 
     const target = await this.resolveTarget(dto);
 
+    let lessonCourseId: bigint | null = null;
     if (dto.lessonId != null) {
       const lesson = await this.prisma.client.lesson.findFirst({
         where: { id: BigInt(dto.lessonId) },
-        select: { id: true },
+        select: { id: true, courseId: true },
       });
       if (!lesson) throw new NotFoundException('讲次不存在');
+      lessonCourseId = lesson.courseId;
     }
+
+    // FIX4 · #4:讲次与目标必须一致 —— 讲次属于目标课程 / 目标学生在该讲次所属课程在册
+    await this.assertTargetConsistency(target, lessonCourseId);
 
     const created = await this.prisma.client.assignment.create({
       data: {
@@ -281,6 +286,33 @@ export class AssignmentService {
     });
     if (found !== ids.length) throw new NotFoundException('学生不存在');
     return { studentIds: ids };
+  }
+
+  /**
+   * FIX4 · #4:作业一致性校验(仅当挂了讲次才有"目标课程"可比对):
+   * - target.courseId:必须等于讲次所属课程(挂 A 课讲次却发给 B 课 → 400);
+   * - target.studentIds:每个学生都须为讲次所属课程的 active 在册学生(否则 → 400)。
+   * 业务错误,统一 400(BadRequestException);无讲次时不约束(沿用原行为)。
+   */
+  private async assertTargetConsistency(
+    target: { courseId: number } | { studentIds: number[] },
+    lessonCourseId: bigint | null,
+  ): Promise<void> {
+    if (lessonCourseId == null) return;
+    if ('courseId' in target) {
+      if (BigInt(target.courseId) !== lessonCourseId)
+        throw new BadRequestException('讲次不属于目标课程');
+      return;
+    }
+    const enrolled = await this.prisma.client.courseStudent.count({
+      where: {
+        courseId: lessonCourseId,
+        studentId: { in: target.studentIds.map(BigInt) },
+        status: 'active',
+      },
+    });
+    if (enrolled !== target.studentIds.length)
+      throw new BadRequestException('目标学生不在该讲次所属课程在册');
   }
 
   private toDto(a: AssignmentRow): AssignmentDto {

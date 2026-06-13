@@ -158,8 +158,12 @@ export class QuestionService {
         })) as never,
       });
     }
+    // FIX4 · #6:tagNodeIds 先去重再插入,避免 [x,x] 触发 (question_id,node_id) 唯一约束 → 500
     await tx.questionTag.createMany({
-      data: (dto.tagNodeIds ?? []).map((nodeId) => ({ questionId, nodeId: BigInt(nodeId) })) as never,
+      data: [...new Set(dto.tagNodeIds ?? [])].map((nodeId) => ({
+        questionId,
+        nodeId: BigInt(nodeId),
+      })) as never,
     });
   }
 

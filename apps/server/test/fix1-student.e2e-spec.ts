@@ -39,7 +39,7 @@ const COURSE_KEYS = [
   'id', 'name', 'classType', 'subject', 'stage', 'teacherId', 'teacherName', 'totalLessons',
   'currentLesson', 'studentCount', 'status', 'nextLessonAt', 'attendanceRate', 'homeworkRate',
 ];
-const TIMELINE_KEYS = ['lesson', 'myHomework'];
+const TIMELINE_KEYS = ['lesson', 'sessionId', 'myHomework'];
 const LESSON_KEYS = ['id', 'courseId', 'seq', 'title', 'scheduledStart', 'scheduledEnd', 'status', 'prepChecklist', 'openingConfig'];
 const MYHW_KEYS = ['assignmentId', 'score', 'wrongCount'];
 const REPORT_KEYS = ['mastery', 'weekStats'];
@@ -128,7 +128,7 @@ async function expectedToday(orgId: bigint, sid: bigint) {
     where: { studentId: sid, status: 'active' },
     select: { courseId: true },
   });
-  const lesson = await raw.lesson.findFirst({
+  const todayLessons = await raw.lesson.findMany({
     where: {
       courseId: { in: enrolls.map((e) => e.courseId) },
       scheduledStart: { gte: dayStart, lt: dayEnd },
@@ -138,12 +138,23 @@ async function expectedToday(orgId: bigint, sid: bigint) {
     orderBy: { scheduledStart: 'asc' },
     include: { course: { select: { name: true } } },
   });
-  let todayLesson = null;
-  if (lesson) {
-    const session = await raw.classSession.findFirst({
-      where: { lessonId: lesson.id, status: { not: 'ended' } },
+  // FIX4 · #5:升序后优先"已发布"(status≠draft 或有未结束会话),全草稿则回退最早一条
+  const openSession = async (lid: bigint) =>
+    raw.classSession.findFirst({
+      where: { lessonId: lid, status: { not: 'ended' } },
       orderBy: { id: 'desc' },
     });
+  let lesson: (typeof todayLessons)[number] | undefined;
+  for (const l of todayLessons) {
+    if (l.status !== 'draft' || (await openSession(l.id))) {
+      lesson = l;
+      break;
+    }
+  }
+  if (!lesson) lesson = todayLessons[0];
+  let todayLesson = null;
+  if (lesson) {
+    const session = await openSession(lesson.id);
     todayLesson = {
       lessonId: Number(lesson.id), courseName: lesson.course.name, title: lesson.title,
       startAt: lesson.scheduledStart!.toISOString(), endAt: lesson.scheduledEnd!.toISOString(),
@@ -177,6 +188,10 @@ async function expectedTimeline(orgId: bigint, sid: bigint, courseId: bigint) {
   const visible = (await visibleAssignments(orgId, sid)).filter((a) => a.kind === 'homework');
   const items = [];
   for (const l of lessons) {
+    const session = await raw.classSession.findFirst({
+      where: { lessonId: l.id, status: { not: 'ended' } },
+      orderBy: { id: 'desc' },
+    });
     const hws = visible
       .filter((a) => a.lessonId != null && String(a.lessonId) === String(l.id))
       .sort((a, b) => Number(a.id - b.id));
@@ -210,6 +225,7 @@ async function expectedTimeline(orgId: bigint, sid: bigint, courseId: bigint) {
         status: l.status, prepChecklist: (l.prepChecklist ?? {}) as Record<string, boolean>,
         openingConfig: (l.openingConfig ?? null) as Record<string, unknown> | null,
       },
+      sessionId: session ? Number(session.id) : null,
       myHomework,
     });
   }
@@ -378,6 +394,8 @@ describe('学生端只读杂项(FIX1)', () => {
     const res = await get(`/student/courses/${fx.course1Id}/lessons`, s1).expect(200);
     const data = res.body.data;
     expect(data.map((x: any) => x.lesson.seq)).toEqual([1, 2, 3]);
+    // FIX4 · #1:L2(已发布,有未结束会话)sessionId 非 null;L1(finished 无会话)/L3(draft)为 null
+    expect(data.map((x: any) => x.sessionId)).toEqual([null, Number(fx.sessionId), null]);
     expect(data[0].myHomework).toEqual({
       assignmentId: Number(fx.hwAssignmentId),
       score: 10,

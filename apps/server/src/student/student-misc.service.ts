@@ -59,6 +59,8 @@ export interface StudentTodayData {
 
 export interface LessonTimelineItem {
   lesson: LessonDto;
+  // FIX4 · #1:该讲未结束 class_session(口径同 /student/today),无则 null;契约已含该字段
+  sessionId: number | null;
   myHomework: { assignmentId: number; score: number | null; wrongCount: number } | null;
 }
 
@@ -99,7 +101,7 @@ export class StudentMiscService {
   private async findTodayLesson(sid: bigint): Promise<TodayLessonView | null> {
     const dayStart = utcDayStart();
     const dayEnd = new Date(dayStart.getTime() + DAY_MS);
-    const lesson = await this.prisma.client.lesson.findFirst({
+    const lessons = await this.prisma.client.lesson.findMany({
       where: {
         scheduledStart: { gte: dayStart, lt: dayEnd },
         scheduledEnd: { not: null },
@@ -108,12 +110,16 @@ export class StudentMiscService {
       orderBy: { scheduledStart: 'asc' },
       include: { course: { select: { name: true } } },
     });
-    if (!lesson) return null;
-    const session = await this.prisma.client.classSession.findFirst({
-      where: { lessonId: lesson.id, status: { not: 'ended' } },
-      orderBy: { id: 'desc' },
-      select: { id: true },
-    });
+    if (!lessons.length) return null;
+
+    // FIX4 · #5:当天讲次按开课时间升序后,优先"已发布"(status≠draft 或已建未结束会话)的一条,
+    // 避免上午的草稿讲次挡住下午已发布的讲次;全为草稿时回退到最早一条(保持原行为)。
+    const sessionByLesson = await this.latestOpenSessions(lessons.map((l) => l.id));
+    const isPublished = (l: (typeof lessons)[number]) =>
+      l.status !== 'draft' || sessionByLesson.has(String(l.id));
+    const lesson = lessons.find(isPublished) ?? lessons[0];
+
+    const session = sessionByLesson.get(String(lesson.id)) ?? null;
     return {
       lessonId: num(lesson.id),
       courseName: lesson.course.name,
@@ -121,8 +127,27 @@ export class StudentMiscService {
       startAt: iso(lesson.scheduledStart!),
       endAt: iso(lesson.scheduledEnd!),
       canEnterAt: iso(new Date(lesson.scheduledStart!.getTime() - ENTER_AHEAD_MIN * 60_000)),
-      sessionId: session ? num(session.id) : null,
+      sessionId: session,
     };
+  }
+
+  /**
+   * 一批讲次各自"最新未结束 class_session"的 id(口径同 /student/today.sessionId):
+   * lessonId(string)→ sessionId(number);无会话的讲次不入表。FIX4 · #1/#5 共用。
+   */
+  private async latestOpenSessions(lessonIds: bigint[]): Promise<Map<string, number>> {
+    const map = new Map<string, number>();
+    if (!lessonIds.length) return map;
+    const sessions = await this.prisma.client.classSession.findMany({
+      where: { lessonId: { in: lessonIds }, status: { not: 'ended' } },
+      orderBy: { id: 'desc' }, // 倒序 → 每讲首次写入即最新一条
+      select: { id: true, lessonId: true },
+    });
+    for (const s of sessions) {
+      const key = String(s.lessonId);
+      if (!map.has(key)) map.set(key, num(s.id));
+    }
+    return map;
   }
 
   private async buildTasks(user: JwtUser, sid: bigint): Promise<TodayTaskView[]> {
@@ -271,6 +296,9 @@ export class StudentMiscService {
     });
     if (!lessons.length) return [];
 
+    // FIX4 · #1:每讲未结束 class_session(口径同 /student/today),无则 null
+    const sessionByLesson = await this.latestOpenSessions(lessons.map((l) => l.id));
+
     // 该课程各讲次的 homework 作业,可见性仍走 A4 唯一口径;每讲取最新一条(id 最大)
     const visible = await this.assignments.listForStudent(user, 'all');
     const lessonIds = new Set(lessons.map((l) => num(l.id)));
@@ -342,6 +370,7 @@ export class StudentMiscService {
           prepChecklist: (l.prepChecklist ?? {}) as Record<string, boolean>,
           openingConfig: (l.openingConfig ?? null) as Record<string, unknown> | null,
         },
+        sessionId: sessionByLesson.get(String(l.id)) ?? null,
         myHomework: hw
           ? {
               assignmentId: hw.id,
