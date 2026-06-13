@@ -270,13 +270,14 @@ export const gradingAnswers: GradingItemDto[] = [
     ],
     aiErrorTags: ['还原平移方向'], finalScore: null, comment: null,
   },
+  // 公式填空(含 LaTeX 参考答案)→ 与解答题同管线进待复核列表;作答用 TexText 渲染
   {
-    answerId: 44, studentId: 7, studentName: '郑一鸣', questionId: 4,
-    stemLatex: questions[3].stemLatex, rubric: questions[3].rubric,
+    answerId: 44, studentId: 7, studentName: '郑一鸣', questionId: questions[6].id,
+    stemLatex: questions[6].stemLatex, rubric: [{ step: 1, desc: '解析式正确(含分数系数)', score: 5 }],
     photoUrl: null,
-    textResponse: '设平移后直线 y=kx+b\';代入 A(1,9)、B(-1,-1) 解得 k=5,b\'=4;向下平移了 4 个单位,还原 b=4+4=8;原直线 y=5x+8。',
-    aiScore: 10,
-    aiSteps: [{ step: 1, ok: true }, { step: 2, ok: true }, { step: 3, ok: true }],
+    textResponse: '由两点得 $k=\\dfrac{1}{2}$,$b=1$,故 $y=\\dfrac{1}{2}x+1$。',
+    aiScore: 5,
+    aiSteps: [{ step: 1, ok: true, comment: '$y=\\dfrac{1}{2}x+1$,与参考答案一致' }],
     aiErrorTags: [], finalScore: null, comment: null,
   },
 ];
@@ -290,6 +291,7 @@ export const wrongBook: WrongBookItemDto[] = [11, 9].map((qid, i) => {
     id: i + 1, questionId: q.id, type: q.type, stemLatex: q.stemLatex, analysisLatex: q.analysisLatex,
     wrongCount: 1 + i, correctRedoCount: 0, errorTags: ['图象平移符号'], status: 'open',
     sourceName: '第3讲课后作业 · 待定系数法', createdAt: '2026-06-07T10:30:00.000Z',
+    subject: q.subject, // [2026-06-13 批准] WrongBookItem 含 subject(源自题目学科)
   };
 });
 

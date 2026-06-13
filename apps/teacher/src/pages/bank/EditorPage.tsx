@@ -14,7 +14,7 @@ import { TagPickerModal } from './components/TagPickerModal';
 import { TEX_SNIPPETS, insertSnippet } from './lib/snippets';
 import {
   DIFF_LABEL, TYPE_LABEL, emptyForm, formToInput, normalizeOptionLatex, questionToForm,
-  type QuestionForm, type TagPick,
+  type FigureAnchor, type FigureItem, type QuestionForm, type TagPick,
 } from './lib/transform';
 import { validateQuestion, type FieldError } from './lib/validate';
 import { ACCEPT_FIGURE, checkFigureFile, uploadFigure } from './lib/upload';
@@ -24,27 +24,70 @@ const SUBJECTS = ['数学', '物理', '化学', '语文', '英语'];
 const VERSIONS = ['人教版', '北师大版'];
 
 const EM_SELECT = 'rounded-[9px] border-[1.5px] border-line bg-card px-3 py-2 text-[13px] focus:border-primary focus:outline-none';
+const ANCHOR_LABEL: Record<FigureAnchor['target'], string> = {
+  stem: '题干', option: '选项', analysis: '解析', reference: '参考答案', rubric: '评分要点',
+};
 const TAG_TONE_BY_GRAPH = {
   curriculum_knowledge: 'bg-primary-soft text-primary',
   problem_solving_ability: 'bg-violet-soft text-violet',
   problem_solving_strategy: 'bg-orange-soft text-orange',
 } as const;
 
-// FIX2 问题1:题干插图已支持(figures);选项/解析/参考答案/rubric 插图需 schema 新增字段(见 README 契约变更申请 FIX2-CR-01)。
-// 契约未就绪前,此处仅放占位按钮提示「待后端支持」,不伪造数据结构。
-const FIGURE_TODO_MSG = '该位置插图需后端字段支持,已提契约变更申请(FIX2-CR-01);当前仅题干支持插图';
+// 方案 A(2026-06-13 批准):figures[] 带 anchor,选项/解析/参考答案/评分要点均可插图。
+// 录题时各位置走与题干同款两步直传(/uploads/sts → PUT),成功后写入 figures(带 anchor)。
 
-/** 待后端支持的插图占位按钮(不写入任何数据,仅提示) */
-function FigureTodoButton({ label, onClick }: { label: string; onClick: () => void }) {
+/** 某锚点(target+ref)下属于本控件的插图 */
+function figuresOfAnchor(figures: FigureItem[], target: FigureAnchor['target'], anchorRef?: string): FigureItem[] {
+  return figures.filter((f) => (f.anchor?.target ?? 'stem') === target && (f.anchor?.ref ?? undefined) === (anchorRef ?? undefined));
+}
+
+/**
+ * 插图锚点控件:小号「⛶ 插图」按钮 + 已挂缩略图 + 删除。
+ * 点击走两步直传(由父级 onUpload 实现),成功后把 {ossKey, position, anchor} 写入 figures。
+ */
+function FigureAnchorControl({
+  label, target, anchorRef, figures, uploading, onUpload, onRemove,
+}: {
+  label: string;
+  target: FigureAnchor['target'];
+  anchorRef?: string;
+  figures: FigureItem[];
+  uploading: boolean;
+  onUpload: (file: File, anchor: FigureAnchor) => void;
+  onRemove: (fig: FigureItem) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const mine = figuresOfAnchor(figures, target, anchorRef);
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={FIGURE_TODO_MSG}
-      className="inline-flex items-center gap-1 rounded-[7px] border border-dashed border-line px-2 py-1 text-[11.5px] text-ink-3 transition-colors hover:border-primary hover:text-primary"
-    >
-      ⛶ {label}
-    </button>
+    <span className="inline-flex flex-wrap items-center gap-1.5">
+      <input
+        ref={inputRef}
+        type="file"
+        accept={ACCEPT_FIGURE}
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onUpload(file, anchorRef != null ? { target, ref: anchorRef } : { target });
+          e.target.value = '';
+        }}
+      />
+      <button
+        type="button"
+        disabled={uploading}
+        onClick={() => inputRef.current?.click()}
+        className="inline-flex items-center gap-1 rounded-[7px] border border-dashed border-line px-2 py-1 text-[11.5px] text-ink-3 transition-colors hover:border-primary hover:text-primary disabled:opacity-60"
+      >
+        ⛶ {uploading ? '上传中…' : mine.length > 0 ? `${label}(${mine.length})` : label}
+      </button>
+      {mine.map((fig, i) => (
+        <span key={fig.ossKey + i} className="inline-flex items-center gap-1 rounded-[7px] border border-line bg-card px-1.5 py-0.5 text-[11px] text-ink-2">
+          {fig.previewUrl
+            ? <img src={fig.previewUrl} alt={`${label}缩略图`} className="h-6 w-9 rounded object-contain" />
+            : <span className="text-ink-3" aria-hidden>⛶</span>}
+          <button type="button" aria-label={`删除${label}`} className="font-semibold text-red" onClick={() => onRemove(fig)}>✕</button>
+        </span>
+      ))}
+    </span>
   );
 }
 
@@ -121,7 +164,8 @@ export function EditorPage() {
     });
   };
 
-  const onPickFile = async (file: File) => {
+  /** 两步直传 → 把 {ossKey, position, anchor} 写入 figures(题干/选项/解析/参考答案/评分要点) */
+  const uploadToAnchor = async (file: File, anchor: FigureAnchor) => {
     const bad = checkFigureFile(file);
     if (bad) { toast(bad); return; }
     setUploading(true);
@@ -130,17 +174,19 @@ export function EditorPage() {
       setForm((f) => ({
         ...f,
         figures: [...f.figures, {
-          ossKey, position: f.figures.length + 1,
+          ossKey, position: f.figures.length + 1, anchor,
           previewUrl: URL.createObjectURL(file), fileName: file.name,
         }],
       }));
-      toast('插图已上传并插入题干');
+      toast(`插图已上传 · ${ANCHOR_LABEL[anchor.target]}${anchor.ref ? ` ${anchor.ref}` : ''}`);
     } catch (e) {
       toast(e instanceof Error ? e.message : '上传失败');
     } finally {
       setUploading(false);
     }
   };
+  const removeFigure = (fig: FigureItem) =>
+    setForm((f) => ({ ...f, figures: f.figures.filter((x) => x !== fig).map((x, j) => ({ ...x, position: j + 1 })) }));
 
   const toggleCorrect = (label: string) => {
     setForm((f) => ({
@@ -195,6 +241,8 @@ export function EditorPage() {
       <Button variant="primary" disabled={saving} onClick={() => save('publish')}>{saving ? '提交中…' : '提交入库'}</Button>
     </>
   );
+
+  const stemFigures = figuresOfAnchor(form.figures, 'stem');
 
   return (
     <div>
@@ -305,7 +353,7 @@ export function EditorPage() {
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) void onPickFile(file);
+              if (file) void uploadToAnchor(file, { target: 'stem' });
               e.target.value = '';
             }}
           />
@@ -321,19 +369,15 @@ export function EditorPage() {
               <small className="block text-[11.5px] text-ink-3">支持函数图象、几何图形、实验装置图等 · png / jpg / svg ≤ 2MB</small>
             </span>
           </button>
-          {form.figures.length > 0 && (
+          {stemFigures.length > 0 && (
             <div className="mx-4 mb-4 flex flex-wrap gap-2.5">
-              {form.figures.map((fig, i) => (
+              {stemFigures.map((fig, i) => (
                 <div key={fig.ossKey + i} className="flex flex-col items-center gap-1.5 rounded-[10px] border border-line bg-card p-2 text-[11px] text-ink-2">
                   {fig.previewUrl
                     ? <img src={fig.previewUrl} alt={fig.fileName ?? fig.ossKey} className="h-[84px] w-[120px] rounded-md object-contain" />
                     : <span className="flex h-[84px] w-[120px] items-center justify-center rounded-md bg-bg text-[20px] text-ink-3">⛶</span>}
                   <span className="max-w-[120px] truncate">{fig.fileName ?? fig.ossKey.split('/').pop()} · 已插入题干</span>
-                  <button
-                    type="button"
-                    className="text-[12px] font-semibold text-red"
-                    onClick={() => patch({ figures: form.figures.filter((_, j) => j !== i).map((x, j) => ({ ...x, position: j + 1 })) })}
-                  >
+                  <button type="button" className="text-[12px] font-semibold text-red" onClick={() => removeFigure(fig)}>
                     删除
                   </button>
                 </div>
@@ -344,12 +388,12 @@ export function EditorPage() {
         <div className="flex flex-col overflow-hidden rounded-lg border border-line bg-card shadow-card">
           <PaneHead color="green">实时预览 · 学生端呈现效果</PaneHead>
           <div className="min-h-[190px] flex-1 p-5 text-[15px] leading-[2]">
-            {form.stemLatex.trim() === '' && form.figures.length === 0
+            {form.stemLatex.trim() === '' && stemFigures.length === 0
               ? <span className="text-[13px] text-ink-3">预览将在此显示…(公式语法错误会以红色提示)</span>
               : (
                 <>
                   <TexText src={form.stemLatex} />
-                  {form.figures.map((fig, i) => (
+                  {stemFigures.map((fig, i) => (
                     <div key={fig.ossKey + i} className="mt-3">
                       {fig.previewUrl
                         ? <img src={fig.previewUrl} alt={`图 ${i + 1}`} className="max-h-[180px] rounded-md border border-line" />
@@ -390,14 +434,22 @@ export function EditorPage() {
                 <span className="min-w-0 flex-1 px-1.5 text-sm">
                   {o.contentLatex.trim() !== '' && <TexText src={normalizeOptionLatex(o.contentLatex)} />}
                 </span>
-                <FigureTodoButton label="插图" onClick={() => toast(FIGURE_TODO_MSG)} />
+                <FigureAnchorControl
+                  label="插图" target="option" anchorRef={o.label}
+                  figures={form.figures} uploading={uploading} onUpload={uploadToAnchor} onRemove={removeFigure}
+                />
               </div>
             ))}
             <FieldErrors errors={errors} field="options" />
           </div>
         ) : (
           <div className="flex flex-col overflow-hidden rounded-lg border border-line bg-card shadow-card">
-            <PaneHead color="orange" action={<FigureTodoButton label="插图" onClick={() => toast(FIGURE_TODO_MSG)} />}>参考答案{form.type === 'solution' && '与评分要点'} · AI 预批将按要点逐步给分</PaneHead>
+            <PaneHead color="orange" action={(
+              <FigureAnchorControl
+                label="插图" target="reference"
+                figures={form.figures} uploading={uploading} onUpload={uploadToAnchor} onRemove={removeFigure}
+              />
+            )}>参考答案{form.type === 'solution' && '与评分要点'} · AI 预批将按要点逐步给分</PaneHead>
             {form.type === 'blank' ? (
               <div className="flex flex-col gap-2 p-4">
                 {form.blankAnswers.map((t, i) => (
@@ -461,6 +513,10 @@ export function EditorPage() {
                         className="w-16 rounded-[9px] border-[1.5px] border-line px-2 py-2 text-[12.5px] tabular-nums focus:border-primary focus:outline-none"
                       />
                       <span className="text-xs text-ink-3">分</span>
+                      <FigureAnchorControl
+                        label="插图" target="rubric" anchorRef={String(r.step)}
+                        figures={form.figures} uploading={uploading} onUpload={uploadToAnchor} onRemove={removeFigure}
+                      />
                       <button
                         type="button"
                         className="text-[12px] font-semibold text-red"
@@ -486,7 +542,12 @@ export function EditorPage() {
         )}
 
         <div className="flex flex-col overflow-hidden rounded-lg border border-line bg-card shadow-card">
-          <PaneHead color="violet" action={<FigureTodoButton label="插图" onClick={() => toast(FIGURE_TODO_MSG)} />}>解析(学生答错后可见,同样支持 LaTeX)</PaneHead>
+          <PaneHead color="violet" action={(
+            <FigureAnchorControl
+              label="插图" target="analysis"
+              figures={form.figures} uploading={uploading} onUpload={uploadToAnchor} onRemove={removeFigure}
+            />
+          )}>解析(学生答错后可见,同样支持 LaTeX)</PaneHead>
           <textarea
             value={form.analysisLatex}
             onChange={(e) => patch({ analysisLatex: e.target.value })}

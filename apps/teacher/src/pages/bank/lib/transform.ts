@@ -1,7 +1,10 @@
 /**
  * 编辑器表单 ↔ 契约数据 的纯变换(类型全部来自 @qiming/contracts,便于单测)
  */
-import type { GraphType, QuestionDto, QuestionType, RubricStep } from '@qiming/contracts';
+import type { GraphType, QuestionDto, QuestionFigure, QuestionType, RubricStep } from '@qiming/contracts';
+
+/** 插图锚点(方案 A,2026-06-13 批准):缺省=题干 */
+export type FigureAnchor = NonNullable<QuestionFigure['anchor']>;
 
 // ---------- 展示用映射 ----------
 export const TYPE_LABEL: Record<QuestionType, string> = {
@@ -30,6 +33,7 @@ export function formatDateCn(iso: string): string {
 export interface TagPick { nodeId: number; graphType: GraphType; code: string; name: string }
 export interface FigureItem {
   ossKey: string; position: number;
+  /** 插图归属位置(方案 A);缺省=题干,向后兼容旧数据 */ anchor?: FigureAnchor;
   /** 本地预览(objectURL,仅前端态,不入库) */ previewUrl?: string; fileName?: string;
 }
 export interface OptionRow { label: string; contentLatex: string; isCorrect: boolean }
@@ -75,7 +79,7 @@ export function normalizeOptionLatex(raw: string): string {
 export interface QuestionInputBody {
   type: QuestionType; stage: string; subject: string;
   textbookVersion?: string; chapter?: string;
-  stemLatex: string; figures?: { ossKey: string; position: number }[];
+  stemLatex: string; figures?: QuestionFigure[];
   options?: { label: string; contentLatex: string; isCorrect?: boolean }[];
   answer:
     | { choice: string } | { choices: string[] }
@@ -101,7 +105,11 @@ export function formToInput(f: QuestionForm): QuestionInputBody {
     textbookVersion: f.textbookVersion || undefined,
     chapter: f.chapter || undefined,
     stemLatex: f.stemLatex,
-    figures: f.figures.map((x, i) => ({ ossKey: x.ossKey, position: i + 1 })),
+    // 写库:保留 anchor(选项/解析/参考答案/评分要点);题干图 anchor 缺省=stem
+    figures: f.figures.map((x, i) => ({
+      ossKey: x.ossKey, position: i + 1,
+      ...(x.anchor && x.anchor.target !== 'stem' ? { anchor: x.anchor } : {}),
+    })),
     options: usedOptions,
     answer,
     rubric: f.type === 'solution' ? f.rubric : [],
@@ -117,7 +125,7 @@ export function questionToForm(q: QuestionDto): QuestionForm {
   f.type = q.type; f.stage = q.stage; f.subject = q.subject;
   f.textbookVersion = q.textbookVersion ?? ''; f.chapter = q.chapter ?? '';
   f.stemLatex = q.stemLatex;
-  f.figures = q.figures.map((x) => ({ ossKey: x.ossKey, position: x.position }));
+  f.figures = q.figures.map((x) => ({ ossKey: x.ossKey, position: x.position, anchor: x.anchor }));
   if (q.options.length > 0) {
     f.options = q.options.map((o) => ({ label: o.label, contentLatex: o.contentLatex, isCorrect: o.isCorrect === true }));
     while (f.options.length < 4) f.options.push({ label: 'ABCDEFGH'[f.options.length], contentLatex: '', isCorrect: false });

@@ -141,7 +141,7 @@ export function GradingReviewPage() {
       <div>
         <PageHead title="解答题复核" />
         <div className="rounded-lg border border-line bg-card shadow-card">
-          <EmptyState icon="✓" text="该作业没有待复核的解答题" action={<Button onClick={() => navigate('/grading')}>返回批改列表</Button>} />
+          <EmptyState icon="✓" text="该作业没有待复核的主观题" action={<Button onClick={() => navigate('/grading')}>返回批改列表</Button>} />
         </div>
       </div>
     );
@@ -155,10 +155,10 @@ export function GradingReviewPage() {
         title={(
           <span>
             <Link className="text-[15px] font-semibold text-primary hover:underline" to="/grading">← 批改</Link>
-            <span className="text-ink-3"> / </span>{paperName || '课后作业'} · 解答题复核
+            <span className="text-ink-3"> / </span>{paperName || '课后作业'} · 主观题复核
           </span>
         )}
-        sub={`客观题已自动批改完成 · ${items.length} 份解答题 AI 已预批,逐份复核后出分(剩余 ${pendingCount} 份)`}
+        sub={`客观题已自动批改完成 · ${items.length} 份待复核(解答题 / 公式填空)AI 已预批,逐份复核后出分(剩余 ${pendingCount} 份)`}
         actions={(
           <>
             <Button onClick={adoptAll} disabled={busy || pendingCount === 0}>全部采纳 AI 分</Button>
@@ -195,16 +195,17 @@ export function GradingReviewPage() {
 
       {current && (
         <div className="grid items-start gap-4" style={{ gridTemplateColumns: 'minmax(0,1fr) 360px' }}>
-          {/* 左:原稿 */}
-          <Card title={`${current.studentName} 的作答 · 手写板原稿`}>
+          {/* 左:原稿(解答题=拍照/手写;公式填空=文字 LaTeX) */}
+          <Card title={`${current.studentName} 的作答 · ${current.photoUrl ? '手写板原稿' : '文字 / 公式作答'}`}>
             <div className="mb-3 rounded-md border border-line bg-bg px-4 py-3 text-sm leading-[1.9]">
               <TexText src={`${current.stemLatex}(${full} 分)`} />
             </div>
             {current.photoUrl ? (
               <img src={current.photoUrl} alt={`${current.studentName} 的作答照片`} className="w-full rounded-md border border-line bg-card" />
             ) : current.textResponse ? (
-              <div className="whitespace-pre-wrap rounded-md border border-line px-5 py-4 text-[14.5px] italic leading-[2.1] text-ink">
-                {current.textResponse}
+              // 文字/公式作答(解答题誊录 + 公式填空 LaTeX)→ TexText 混排渲染($..$ 公式)
+              <div className="whitespace-pre-wrap rounded-md border border-line px-5 py-4 text-[14.5px] leading-[2.1] text-ink">
+                <TexText src={current.textResponse} />
               </div>
             ) : (
               <EmptyState icon="✎" text="未找到作答原稿" />

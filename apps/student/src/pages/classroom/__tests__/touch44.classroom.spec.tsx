@@ -40,7 +40,7 @@ const wrongItems: WrongBookItemDto[] = [1, 2, 3].map((i) => ({
   stemLatex: `直线 $y=3x-${i}$ 与 $y$ 轴的交点坐标是 ________。`,
   analysisLatex: '令 $x=0$,交点为 $(0, b)$。',
   wrongCount: i, correctRedoCount: 0, errorTags: ['图象平移符号'], status: 'open',
-  sourceName: '第3讲课后作业', createdAt: '2026-06-07T10:30:00.000Z',
+  sourceName: '第3讲课后作业', createdAt: '2026-06-07T10:30:00.000Z', subject: '数学',
 }));
 
 const noop = () => undefined;

@@ -21,3 +21,11 @@ export { MathInput, type MathInputProps } from './MathInput';
 export { QrCode, type QrCodeProps } from './QrCode';
 export { Switch, type SwitchProps } from './Switch';
 export { Skeleton, type SkeletonProps } from './Skeleton';
+export {
+  QuestionFigures,
+  selectFigures,
+  hasFigureAt,
+  defaultResolveSrc,
+  type QuestionFiguresProps,
+  type FigureTarget,
+} from './QuestionFigure';

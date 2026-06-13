@@ -1,7 +1,7 @@
 /**
  * 交卷结果 / 看解析(展示组件):得分汇总 + 逐题判定 + 正确答案与解析(TexText)
  */
-import { Tag, TexText } from '@qiming/ui';
+import { QuestionFigures, Tag, TexText } from '@qiming/ui';
 import type { AnswerResponse, AssignmentDto } from '@qiming/contracts';
 import { TYPE_LABEL } from './QuestionPanel';
 import type { AttemptWithQuestions } from './types';
@@ -61,18 +61,23 @@ export function ResultView({ attempt, assignment }: { attempt: AttemptWithQuesti
               </span>
             </div>
             <div className="text-sm leading-7 text-ink"><TexText src={q.stemLatex} /></div>
+            <QuestionFigures figures={q.figures} target="stem" />
             <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[13px]">
               <span className={a?.isCorrect === false ? 'text-red' : 'text-ink-2'}>
                 我的答案:{my.isPhoto ? my.text : <TexText src={my.text} />}
               </span>
               {q.correctAnswer != null && q.type !== 'solution' && (
-                <span className="text-green">正确答案:<TexText src={q.correctAnswer} /></span>
+                <span className="text-green">
+                  正确答案:<TexText src={q.correctAnswer} />
+                  <QuestionFigures figures={q.figures} target="reference" compact />
+                </span>
               )}
             </div>
             {q.analysisLatex && (
               <div className="mt-3 rounded-md bg-bg/60 p-3.5 text-[13px] leading-7 text-ink-2">
                 <b className="mr-1 text-ink">解析</b>
                 <TexText src={q.analysisLatex} />
+                <QuestionFigures figures={q.figures} target="analysis" />
               </div>
             )}
           </div>

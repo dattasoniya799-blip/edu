@@ -5,7 +5,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import * as D from '../data';
 import {
-  StoreError, formatCorrectAnswer, getAttempt, judge, listAssignments, listWrongBook,
+  StoreError, formatCorrectAnswer, getAttempt, isFormulaBlank, judge, listAssignments, listWrongBook,
   normalizeBlank, putAnswer, redoAll, redoOne, resetStore, startAttempt, submitAttempt, todayView,
 } from '../student-store';
 
@@ -211,5 +211,39 @@ describe('今日任务进度联动', () => {
   it('assignments 列表 pending/done 过滤', () => {
     expect(listAssignments('pending').map((a) => a.id)).toContain(2);
     expect(listAssignments('done').map((a) => a.id)).toContain(1); // 第3讲作业已 graded
+  });
+});
+
+describe('公式填空混合判分(2026-06-13 行为约定)', () => {
+  it('isFormulaBlank:参考答案含 LaTeX 控制符判为公式填空;简单填空/单选为否', () => {
+    expect(isFormulaBlank(D.questions[6])).toBe(true);  // qid 7:y=\dfrac{1}{2}x+1
+    expect(isFormulaBlank(D.questions[10])).toBe(false); // qid 11:y=2x-3(简单)
+    expect(isFormulaBlank(D.questions[12])).toBe(false); // qid 13:单选
+  });
+
+  it('公式填空提交:不即时判分(judged=false、isCorrect=null、不泄漏正确答案/解析)', () => {
+    const a = startAttempt(3); // 自检卷:[13 单选, 11 简单填空, 7 公式填空]
+    const r = putAnswer(a.id, 7, { response: { texts: ['y=\\dfrac{1}{2}x+1'] } });
+    expect(r).toMatchObject({ judged: false, isCorrect: null, correctAnswer: null, analysisLatex: null });
+    // 快照里该空 isCorrect 仍为 null、score 为 null(待复核)
+    const slot = getAttempt(a.id).answers.find((x) => x.questionId === 7)!;
+    expect(slot.isCorrect).toBeNull();
+    expect(slot.score).toBeNull();
+  });
+
+  it('简单填空仍即时判分(同卷对照,口径不变)', () => {
+    const a = startAttempt(3);
+    const r = putAnswer(a.id, 11, { response: { texts: ['y=2x-3'] } });
+    expect(r).toMatchObject({ judged: true, isCorrect: true });
+  });
+
+  it('含公式填空 → 交卷置 submitted(待教师复核),客观题分照常结算', () => {
+    const a = startAttempt(3);
+    putAnswer(a.id, 13, { response: { choice: 'B' } });           // 单选对 5
+    putAnswer(a.id, 11, { response: { texts: ['y=2x-3'] } });     // 简单填空对 5
+    putAnswer(a.id, 7, { response: { texts: ['y=\\dfrac{1}{2}x+1'] } }); // 公式填空 → 待批改
+    const done = submitAttempt(a.id);
+    expect(done.status).toBe('submitted'); // 无解答题,仍因公式填空进复核
+    expect(done.objectiveScore).toBe(10);  // 仅两道客观题计分,公式填空不计入
   });
 });

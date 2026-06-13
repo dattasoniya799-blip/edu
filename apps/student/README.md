@@ -177,3 +177,25 @@ ws-protocol 的 `ClassSnapshot` 不含任何可渲染内容:`me.answers` 仅 que
 ## 覆盖的验收项(B1)
 
 - mock 模式输入登录码可进入工作台,4 个主 Tab 全部可点;`npm run build` 通过。
+
+## IMPL-front · 插图渲染 + 公式填空待批改 + 错题本学科(契约已落地 2026-06-13)
+
+三项契约变更已批准并重新生成 SDK,本轮把学生端/课堂接成真功能。
+
+### 处置
+- **题目插图按 anchor 渲染**:新增 `@qiming/ui` 的 `QuestionFigures`(`selectFigures`/`hasFigureAt`),按 `figures[].anchor` 把图落到 题干/选项/解析/参考答案 各位置(缺省 anchor=题干);`QuestionPanel`(作业 + 课堂随堂练/大题共用)渲染题干、选项内联、解析插图,`ResultView` 渲染题干/参考答案/解析插图;`AttemptQuestionView.figures` 改为契约 `QuestionFigure[]`,题面经 `student-store` 原样下发。错题本同口径已就绪,但 `WrongBookItemDto` 无 figures 字段,错题卡暂不渲染插图(见遗留)。
+- **公式填空作答反馈**:`student-store.isFormulaBlank`(参考答案含 LaTeX 控制符即判公式填空,与后端口径一致)→ `putAnswer` 返回 `isCorrect=null / judged=false`,交卷置 `submitted`(待教师复核),客观题分照常结算;`QuestionPanel` 的 `FeedbackPanel` 对 `judged=false` 的填空显示「已提交 · 待批改」(与解答题待批改同视觉),简单填空即时判分不变。前端不自判公式对错,一律以后端 `isCorrect` 为准。
+- **错题本学科**:`WrongBookItemDto.subject` 已是契约正式字段;`pages/wrong/subjects.ts` 的 view 直接读真实字段(去掉「契约暂无」容错说明),mock 形状对齐;单科优雅退化(学科集合 ≤1 不渲染筛选)不变。
+
+### mock 口径(`src/mocks/`)
+- `data.ts`:部分题目挂 anchor 插图(qid 13 题干/选项 A/解析、qid 9 题干、qid 4 题干/rubric)用于自检;qid 7 改造为「含公式填空」(参考答案 `y=\dfrac{1}{2}x+1`),简单填空 qid 11 保持即时判分;新增自检卷(assignment id 3 / paper id 4:单选 + 简单填空 + 公式填空)演示混合判分;`wrongBook` 产出契约 `subject` 字段。
+- `student-store.ts`:公式填空 `isCorrect=null` 待批改;交卷 `hasManualReview = 解答题 || 公式填空`。
+
+### 测试 / 构建
+- `packages/ui` `QuestionFigure.spec.tsx`(anchor 过滤 / ref 匹配 / 占位与 img 渲染);`pages/homework/__tests__/QuestionPanel.render.spec.tsx`(三处插图就位 + 公式填空「待批改」、简单填空「回答正确」);`mocks/__tests__/student-store.spec.ts`(isFormulaBlank、公式填空 judged=false/isCorrect=null、交卷 submitted、客观题分照常)。
+- `npm run build` 绿;`npm run test` 95/95 绿;`npm run test:mock` 绿。
+
+### 与后端对接假设
+- figures 形状:`QuestionFigure = { ossKey, position, anchor?: { target: stem|option|analysis|reference|rubric, ref? } }`;ossKey 经 `QuestionFigures` 的 `resolveSrc` 解析为签名 URL(mock 无 URL → 占位框)。
+- 公式填空:交卷后该空 `answer.isCorrect=null`(像解答题待批改),由 AI 预批 + 教师复核出分;检测规则由后端实现(参考答案含 LaTeX 即视为公式填空)。
+- 遗留风险:错题本 / 课堂大题渲染口径已抽到同一 `QuestionFigures` 组件,但 `WrongBookItemDto` 无 figures 字段,错题卡当前不显示题目插图(契约未含,未自行扩展)。

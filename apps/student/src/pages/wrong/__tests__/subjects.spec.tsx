@@ -12,9 +12,10 @@ import { WrongItemCard } from '../WrongItemCard';
 const base: WrongBookItemDto = {
   id: 1, questionId: 1, type: 'single', stemLatex: '题 $x$', analysisLatex: null,
   wrongCount: 1, correctRedoCount: 0, errorTags: ['错因A'], status: 'open',
-  sourceName: '练习', createdAt: '2026-06-07T10:30:00.000Z',
+  sourceName: '练习', createdAt: '2026-06-07T10:30:00.000Z', subject: '数学',
 };
-const mk = (id: number, subject?: string, errorTags = ['错因A']): WrongBookItemView => ({ ...base, id, subject, errorTags });
+// subject 现为契约必填字段;「缺失」场景用空串/空白表示(后端学科未知时回空串)
+const mk = (id: number, subject = '', errorTags = ['错因A']): WrongBookItemView => ({ ...base, id, subject, errorTags });
 
 describe('学科派生', () => {
   it('去重保序,忽略缺失/空白', () => {
