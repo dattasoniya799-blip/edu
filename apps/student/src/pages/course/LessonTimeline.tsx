@@ -10,6 +10,8 @@ export interface TimelineItem {
   myHomework: { assignmentId: number; score: number | null; wrongCount: number } | null;
   /** 契约变更申请 B5-1:回看入口需要资源 id(mock 已按该形状下发) */
   resources?: { id: number; name: string; type: string }[];
+  /** 发布即建会话:已发布讲次带自己的课堂会话 id(契约前瞻,mock 已按该形状下发);未发布为 null */
+  sessionId?: number | null;
 }
 
 export interface LessonTimelineProps {
@@ -18,7 +20,8 @@ export interface LessonTimelineProps {
   correctionByLesson: Record<number, number>;
   onReplay: (resourceId: number, name: string) => void;
   onCorrect: (assignmentId: number) => void;
-  onEnterClass: (lesson: LessonDto) => void;
+  /** 进课堂:用该讲自己的 sessionId(不再借用全局 today 的会话) */
+  onEnterClass: (lesson: LessonDto, sessionId: number | null) => void;
 }
 
 const fmtDate = (iso: string | null) =>
@@ -29,7 +32,7 @@ const isToday = (iso: string | null) => iso != null && new Date(iso).toDateStrin
 export function LessonTimeline({ items, correctionByLesson, onReplay, onCorrect, onEnterClass }: LessonTimelineProps) {
   return (
     <div>
-      {items.map(({ lesson, myHomework, resources }, i) => {
+      {items.map(({ lesson, myHomework, resources, sessionId }, i) => {
         const today = isToday(lesson.scheduledStart);
         const finished = lesson.status === 'finished';
         // C2 #9:进课堂以「已发布」为准(ready/in_progress),不再按上课时间拦截
@@ -70,7 +73,7 @@ export function LessonTimeline({ items, correctionByLesson, onReplay, onCorrect,
               {(enterable || (finished && ((resources?.length ?? 0) > 0 || correctionId != null))) && (
                 <div className="mt-2.5 flex flex-wrap gap-2">
                   {enterable && (
-                    <Button variant="primary" className="min-h-touch" onClick={() => onEnterClass(lesson)}>{enterClassLabel(lesson)}</Button>
+                    <Button variant="primary" className="min-h-touch" onClick={() => onEnterClass(lesson, sessionId ?? null)}>{enterClassLabel(lesson)}</Button>
                   )}
                   {finished && resources?.map((r) => (
                     <Button key={r.id} className="min-h-touch" onClick={() => onReplay(r.id, r.name)}>▶ 回看课件</Button>

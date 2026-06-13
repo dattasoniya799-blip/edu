@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button, Card, EmptyState, Skeleton, useToast } from '@qiming/ui';
 import { api } from '../../api';
 import { useAuth } from '../../auth/AuthProvider';
+import { formatCorrectRate } from '../../lib/format';
 import { TaskRow, type TodayTask } from './TaskRow';
 
 interface TodayData {
@@ -46,7 +47,13 @@ export function TodayPage() {
       <div className="mb-5">
         <h2 className="text-[21px] font-extrabold">{greet},{me?.name ?? ''} 👋</h2>
         <p className="mt-1 text-[13px] text-ink-2">
-          {data == null ? '正在加载今天的安排…' : data.todayLesson ? '今天有课,课堂已发布即可进入' : '今天没有排课,完成任务列表里的练习吧'}
+          {data == null
+            ? '正在加载今天的安排…'
+            : data.todayLesson
+              ? data.todayLesson.sessionId != null
+                ? '今天有课,课堂已开放,点击进入吧'
+                : '今天有课,课堂尚未发布,老师发布后即可进入'
+              : '今天没有排课,完成任务列表里的练习吧'}
         </p>
       </div>
 
@@ -63,10 +70,11 @@ export function TodayPage() {
           <Button variant="secondary" className="min-h-touch shrink-0 !border-0 !bg-card !text-primary"
             onClick={() => {
               const sid = data.todayLesson?.sessionId;
+              // 发布即建会话:有 sessionId 才进课堂;无则讲次未发布(不再承诺「稍后再试」)
               if (sid != null) navigate(`/classroom/${sid}`);
-              else toast('课堂尚未开放,请稍后再试');
+              else toast('该讲次尚未发布,老师发布后即可进入课堂');
             }}>
-            进入课堂
+            {data.todayLesson.sessionId != null ? '进入课堂' : '讲次未发布'}
           </Button>
         </div>
       )}
@@ -98,7 +106,7 @@ export function TodayPage() {
                 <small className="text-xs text-ink-3">完成题目</small>
               </div>
               <div className="rounded-md bg-bg/70 p-3 text-center">
-                <b className="block text-[19px] tabular-nums text-green">{week.correctRate != null ? `${week.correctRate}%` : '—'}</b>
+                <b className="block text-[19px] tabular-nums text-green">{formatCorrectRate(week.correctRate)}</b>
                 <small className="text-xs text-ink-3">平均正确率</small>
               </div>
               <div className="rounded-md bg-bg/70 p-3 text-center">

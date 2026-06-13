@@ -91,33 +91,32 @@ npm test     # e2e 14 套件 / 179 用例;连跑两次全绿
 停用不写 deletedAt + 列表仍可见 + `?status` 过滤 + enable 复活、入班候选/名单口径(`/students?courseId`
 与 roster 同为"在册 active"= 排除集)、学生 enable + 跨租户 404。
 
-## C3-back(发布后三项后端:知识点内容库 / 发布即建课堂会话 / 作业总览)
+## C3-front-other(管理员入班 bug + 学生端两项前端修复)
 
-实现范围:`apps/server/src/{knowledge(新),kp,lesson,classroom,assignment,resource}` 及 e2e
-(`test/c3.e2e-spec.ts`、`test/fixtures/c3.fixtures.ts`);`app.module` 仅加 `KnowledgeModule` 一行。
-不改 contracts/schema;契约新增形状(KpContentPack / Resource.kpNodeId / KpNode.content /
-GET·PUT `/knowledge/content-packs*` / GET `/assignments`)由 `c3-contract` 提供。
+范围:`apps/admin/src`、`apps/student/src`(不改 contracts/server/teacher/schema)。两端 `npm run build`、
+`vitest`(admin 40、student 115)、`test:mock` 冒烟均绿。
 
-1. **#A 知识点内容库**(`src/knowledge`)
-   - `GET /knowledge/content-packs?graphId=` 列该图谱下已维护内容包(join kpNodeName/resourceName/paperName)。
-   - `GET /knowledge/content-packs/{kpNodeId}` 单个;**未维护返回空包**(lecture/practice 为 null、summaryConfig `{}`),不 404。
-   - `PUT /knowledge/content-packs/{kpNodeId}` 按 orgId+kpNodeId upsert;缺省字段不改、显式 `null` 清空;校验 kpNode/resource/paper 同 org(跨租户经租户注入天然 404)。
-   - `GET /kp/nodes` 透出 `content`(DB 既有列);Resource 的 list/create/update 支持 `kpNodeId`(可空)并 join 回填 `kpNodeName`。
-2. **#B 发布即建课堂会话**(`src/lesson`)
-   - 讲次 `publish`(status→ready)时**自动建一条 `class_session`**(`status='scheduled'`,mode 取自 practice 编排:`ai_guide→guideOnly`、`stuck_alert_min→stuckAlertMin`)。
-   - 幂等:该讲已有未结束会话则复用,重复 publish 不重复建。修复"学生 sessionId 恒 null 进不去课堂"——`/student/today.todayLesson.sessionId` 非 null,学生 `class:join` 即进入(scheduled→live,A6 网关)。
-3. **#C 作业总览列表**(`src/assignment`)
-   - `GET /assignments?courseId=&lessonId=&status=` [teacher] → AssignmentBriefDto[](仅本教师课程的作业;submitted/totalStudents/graded 进度;`status=ongoing/finished` 由"已提交且全部出分"判定)。
+1. **管理员入班「添加学生」加不进**(真因:候选请求 `size=100` 超后端单页上限 50 → 真实后端 400 被吞成空候选 +
+   误导文案「机构内学生都已在本课程」)。修复 `apps/admin/src/components/RosterModal.tsx` 的 `AddStudentsModal`:
+   - 候选请求 `size` 改为合法值 50;
+   - 改服务端**关键字搜索 + 分页**(`GET /admin/students` 带 `page/size/keyword`),使 >50 学生也能搜到/翻页选到;
+   - 加载失败显示**真实错误态 + 重新加载**按钮,不再伪装成「没有可加的人」;仅候选确实为空(单页已含全部学生且都在课)
+     才显示「都已在课程」,多页时显示「本页都已在课程,翻页查看」。
+   - 候选过滤仍走纯函数 `lib/roster.candidateStudents`(本页学生 − 该课 active 名单)。
+   - 测试:`apps/admin/src/mocks/__tests__/roster-add.spec.ts`(以「严格后端」复现 size>50→400、size=50 正常、
+     关键字命中、分页候选过滤)。
+2. **学生正确率 ×100 显示**(后端 `weekStats.correctRate` 为 0–1 比值,原渲染 `${correctRate}%` → 0.75 误显 0.75%)。
+   新增纯函数 `apps/student/src/lib/format.ts#formatCorrectRate`(`Math.round(ratio*100)%`,与 mastery 0–100 口径区分),
+   `TodayPage`/`ReportPage` 改用之;mock `studentWeekStats.correctRate` 同步为 0–1 比值(0.78)。
+   测试:`apps/student/src/lib/__tests__/format.spec.ts` + student-store.spec「C3 #2」断言 `reportView` → "78%"。
+3. **进课堂文案/入口**(后端本波「发布即建会话」:已发布讲次带 `sessionId`)。
+   - `TodayPage`:hero 文案与按钮按 `todayLesson.sessionId` 区分——有会话→「课堂已开放/进入课堂」,无→「尚未发布/讲次未发布」,
+     去掉原「稍后再试」的误导承诺。
+   - `CoursePage` `onEnterClass`:改为用**该讲自己的 `sessionId`**(经 `TimelineItem.sessionId` 传入),
+     不再借用全局 `/student/today` 的会话(修原 L1 缺陷);未发布讲次给「尚未发布」准确文案。
+   - mock `student-store.lessonTimeline` 让已发布(ready/in_progress)讲次带 `sessionId`(= 课堂会话 401),未发布/已结课为 null。
+   测试:student-store.spec「C3 #3」断言 ready 带会话、draft/finished 为 null、todayLesson 带会话。
 
-跑通(库 `qiming_c3`,Redis 队列前缀 `BULLMQ_PREFIX=c3`、课堂键前缀 `CLS_REDIS_PREFIX=c3:`,禁碰其他库/FLUSHALL):
-```bash
-cd apps/server && cp .env.example .env   # DATABASE_URL → .../qiming_c3;加 BULLMQ_PREFIX=c3 与 CLS_REDIS_PREFIX=c3:
-npm install && npx prisma generate
-cat prisma/migrations/0001_init/migration.sql | docker exec -i <pg> psql -U qiming -d qiming_c3
-npm run db:seed:base && npm run db:import-kp && npm run db:seed:business
-npm test     # e2e 15 套件 / 200 用例;连跑两次全绿
-```
-验收用例(`test/c3.e2e-spec.ts`,16 项):内容包 upsert→回读 / 未维护空包 / 列表 / Resource 挂 kpNode 存读清空 /
-kpNode.content 透出 / 内容包·Resource 引用不存在节点 404 / [teacher] 门禁 + 跨租户 404;publish 建 scheduled 会话 +
-today.sessionId 非 null + 幂等 + draft 无会话 + 学生 `class:join` 进入;作业总览 seed 第3讲对账(finished)+
-夹具 ongoing/finished + status/lessonId 过滤 + 门禁/他师·跨租户不可见。夹具用 **13910 号段**自建自清。
+> 顺带(非本三项,解除构建阻塞):base 分支 `c3-contract` 给 `Resource` 增 `kpNodeId/kpNodeName`、给 `KpNode` 增 `content`
+> 为必填,但两端 `src/mocks/data.ts` 未补字段导致 `tsc` 红。已在 mock 数据补齐(纯展示字段,Resource 关联其知识点、
+> KpNode `content:null`),使两端 build 恢复绿。

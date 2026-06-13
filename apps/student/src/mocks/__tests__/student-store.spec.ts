@@ -5,9 +5,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import * as D from '../data';
 import {
-  StoreError, formatCorrectAnswer, getAttempt, isFormulaBlank, judge, listAssignments, listWrongBook,
-  normalizeBlank, putAnswer, redoAll, redoOne, resetStore, startAttempt, submitAttempt, todayView,
+  StoreError, formatCorrectAnswer, getAttempt, isFormulaBlank, judge, lessonTimeline, listAssignments, listWrongBook,
+  normalizeBlank, putAnswer, redoAll, redoOne, reportView, resetStore, startAttempt, submitAttempt, todayView,
 } from '../student-store';
+import { CLASS_SESSION_ID } from '../class-data';
+import { formatCorrectRate } from '../../lib/format';
 
 beforeEach(() => resetStore());
 
@@ -245,5 +247,31 @@ describe('公式填空混合判分(2026-06-13 行为约定)', () => {
     const done = submitAttempt(a.id);
     expect(done.status).toBe('submitted'); // 无解答题,仍因公式填空进复核
     expect(done.objectiveScore).toBe(10);  // 仅两道客观题计分,公式填空不计入
+  });
+});
+
+describe('C3 #2:周正确率 0–1 比值 ×100 展示', () => {
+  it('mock weekStats.correctRate 为 0–1 比值(非百分数)', () => {
+    expect(D.studentWeekStats.correctRate).toBeGreaterThan(0);
+    expect(D.studentWeekStats.correctRate).toBeLessThanOrEqual(1);
+  });
+  it('reportView 周数据经 formatCorrectRate → 整数百分比(78% 而非 0.78%/7800%)', () => {
+    const rate = reportView().weekStats.correctRate;
+    expect(formatCorrectRate(rate)).toBe('78%');
+  });
+});
+
+describe('C3 #3:进课堂用该讲自己的 sessionId(发布即建会话)', () => {
+  it('已发布讲次(ready)带 sessionId,可进课堂', () => {
+    const ready = lessonTimeline(1).find((t) => t.lesson.status === 'ready')!;
+    expect(ready.sessionId).toBe(CLASS_SESSION_ID);
+  });
+  it('未发布(draft)/已结课(finished)讲次 sessionId 为 null,不进课堂', () => {
+    const tl = lessonTimeline(1);
+    expect(tl.filter((t) => t.lesson.status === 'draft').every((t) => t.sessionId == null)).toBe(true);
+    expect(tl.filter((t) => t.lesson.status === 'finished').every((t) => t.sessionId == null)).toBe(true);
+  });
+  it('todayLesson(发布即建会话)带 sessionId 指向课堂会话', () => {
+    expect(todayView().todayLesson.sessionId).toBe(CLASS_SESSION_ID);
   });
 });
