@@ -9,6 +9,7 @@ import type {
   MeDto, TeacherDto, StudentDto, CourseDto, LessonDto, LessonSegmentDto, ResourceDto,
   KpGraphDto, KpNodeDto, QuestionDto, PaperDto, AssignmentDto, AttemptDto,
   WrongBookItemDto, MasteryItemDto, AiUsageSummaryDto, AiUsageBreakdownDto, GradingItemDto,
+  QuestionFigure,
 } from '@qiming/contracts';
 
 const ORG = '启明演示机构';
@@ -122,6 +123,25 @@ export const kpNodes: KpNodeDto[] = KP_NAMES.map((name, i) => ({
   difficulty: 1 + (i % 3), examWeight: 0.6 + i * 0.05, summary: null,
 }));
 
+/**
+ * 演示用题目插图(方案 A:figures 带 anchor,多位置插图)。
+ * mock 阶段 ossKey 无可签名 URL → 学生端渲染为占位缩略框(与录题预览一致),
+ * 验证 anchor 把图正确落到 题干/选项/解析/参考答案 各位置。
+ */
+function demoFigures(id: number): QuestionFigure[] {
+  if (id === 13) return [
+    { ossKey: 'demo/figures/q13-stem.png', position: 1, anchor: { target: 'stem' } },
+    { ossKey: 'demo/figures/q13-optA.png', position: 2, anchor: { target: 'option', ref: 'A' } },
+    { ossKey: 'demo/figures/q13-analysis.png', position: 3, anchor: { target: 'analysis' } },
+  ];
+  if (id === 9) return [{ ossKey: 'demo/figures/q9-stem.png', position: 1, anchor: { target: 'stem' } }];
+  if (id === 4) return [
+    { ossKey: 'demo/figures/q4-stem.png', position: 1, anchor: { target: 'stem' } },
+    { ossKey: 'demo/figures/q4-rubric2.png', position: 2, anchor: { target: 'rubric', ref: '2' } },
+  ];
+  return [];
+}
+
 /** 30 道题:与 seed 同一确定性生成逻辑(单选/单选/填空/解答 循环) */
 function genQuestions(): QuestionDto[] {
   const out: QuestionDto[] = [];
@@ -145,7 +165,7 @@ function genQuestions(): QuestionDto[] {
       : [];
     out.push({
       id: i + 1, type, stage: '初中', subject: '数学', textbookVersion: '人教版', chapter: '第十九章 一次函数',
-      stemLatex: stem, figures: [], options,
+      stemLatex: stem, figures: demoFigures(i + 1), options,
       answer,
       rubric: type === 'solution'
         ? [{ step: 1, desc: '设式并代入两点', score: 3 }, { step: 2, desc: '求出平移后直线', score: 4 }, { step: 3, desc: '正确还原平移方向', score: 3 }]
@@ -164,6 +184,18 @@ function genQuestions(): QuestionDto[] {
   return out;
 }
 export const questions: QuestionDto[] = genQuestions();
+
+/**
+ * 演示「含公式填空」(2026-06-13 行为约定):参考答案为 LaTeX(含控制符)的填空,
+ * 交卷后不即时判分,后端置 isCorrect=null 走 AI 预批+教师复核。
+ * 取一道未被流程测试占用的填空题(qid 7)改造为公式填空,简单填空(如 qid 11)保持即时判分。
+ */
+const formulaBlankQ = questions[6]; // qid 7
+if (formulaBlankQ && formulaBlankQ.type === 'blank') {
+  formulaBlankQ.stemLatex = '一次函数 $y=kx+b$ 的图象经过点 $(0,1)$ 与 $(2,2)$,则该函数的解析式为 ________。';
+  formulaBlankQ.answer = { texts: ['y=\\dfrac{1}{2}x+1'] };
+  formulaBlankQ.analysisLatex = '代入两点得 $k=\\dfrac{1}{2},\\,b=1$,故 $y=\\dfrac{1}{2}x+1$。';
+}
 
 export const papers: PaperDto[] = [
   {
@@ -185,6 +217,14 @@ export const papers: PaperDto[] = [
       return { seq: j + 1, questionId: q.id, score: j === 2 ? 10 : 5, type: q.type, stemLatex: q.stemLatex };
     }),
   },
+  // 自检卷:单选(即时判分)+ 简单填空(即时判分)+ 公式填空(待批改),验证混合判分口径
+  {
+    id: 4, name: '混合判分 · 自检练', type: 'practice', totalScore: 15, status: 'published',
+    questions: [13, 11, 7].map((qid, j) => {
+      const q = questions[qid - 1];
+      return { seq: j + 1, questionId: q.id, score: 5, type: q.type, stemLatex: q.stemLatex };
+    }),
+  },
 ];
 
 export const assignments: AssignmentDto[] = [
@@ -197,6 +237,11 @@ export const assignments: AssignmentDto[] = [
     id: 2, paperId: 3, paperName: '第3讲课后作业 · 订正', lessonId: 3, kind: 'correction',
     target: { studentIds: [4] }, publishAt: '2026-06-10T12:30:00.000Z', dueAt: '2026-06-13T13:00:00.000Z',
     scoreCounted: false, questionCount: 3, totalScore: 20,
+  },
+  {
+    id: 3, paperId: 4, paperName: '混合判分 · 自检练', lessonId: null, kind: 'homework',
+    target: { courseId: 1 }, publishAt: '2026-06-11T08:00:00.000Z', dueAt: '2026-06-20T14:00:00.000Z',
+    scoreCounted: true, questionCount: 3, totalScore: 15,
   },
 ];
 
@@ -236,11 +281,10 @@ const WRONG_SEED: { qid: number; wrongCount: number; tags: string[]; source: str
   { qid: 17, wrongCount: 1, tags: ['概念辨析'], source: '第1讲随堂练', at: '2026-05-23T07:20:00.000Z' },
 ];
 /**
- * 错题项视图(FIX3 问题5):WrongBookItem 契约暂无 subject(见「契约变更申请 FIX3-1」),
- * mock 先按申请形状附带 subject(取自题目 subject),前端据此做学科分组/筛选;
- * 当前 seed 为数学单科 → 学科筛选优雅退化(不显示)。契约落地后字段即对齐。
+ * 错题项视图(FIX3 问题5):WrongBookItem 已正式含 `subject: string`(2026-06-13 批准,
+ * 源自题目学科)。mock 直接产出契约字段;当前 seed 为数学单科 → 学科筛选优雅退化(不显示)。
  */
-export type WrongBookItemView = WrongBookItemDto & { subject: string };
+export type WrongBookItemView = WrongBookItemDto;
 export const wrongBook: WrongBookItemView[] = WRONG_SEED.map((w, i) => {
   const q = questions[w.qid - 1];
   return {

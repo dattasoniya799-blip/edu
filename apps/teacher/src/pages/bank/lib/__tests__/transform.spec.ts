@@ -125,3 +125,38 @@ describe('questionToForm ↔ formToInput 往返(编辑回填)', () => {
     expect(questionToForm(blank).blankAnswers).toEqual(['36']);
   });
 });
+
+describe('图片插图 anchor(方案 A)往返', () => {
+  it('formToInput:非题干 anchor 保留(option 带 ref),题干 anchor 省略', () => {
+    const f = emptyForm();
+    f.stemLatex = '题干';
+    f.tags = [{ nodeId: 101, graphType: 'curriculum_knowledge', code: 'X', name: 'x' }];
+    f.figures = [
+      { ossKey: 'k/stem.png', position: 1, anchor: { target: 'stem' }, previewUrl: 'blob:s' },
+      { ossKey: 'k/optA.png', position: 2, anchor: { target: 'option', ref: 'A' } },
+      { ossKey: 'k/analysis.png', position: 3, anchor: { target: 'analysis' } },
+      { ossKey: 'k/rubric2.png', position: 4, anchor: { target: 'rubric', ref: '2' } },
+    ];
+    const out = formToInput(f).figures!;
+    expect(out[0]).toEqual({ ossKey: 'k/stem.png', position: 1 }); // 题干:anchor 省略(向后兼容)
+    expect(out[1]).toEqual({ ossKey: 'k/optA.png', position: 2, anchor: { target: 'option', ref: 'A' } });
+    expect(out[2]).toEqual({ ossKey: 'k/analysis.png', position: 3, anchor: { target: 'analysis' } });
+    expect(out[3]).toEqual({ ossKey: 'k/rubric2.png', position: 4, anchor: { target: 'rubric', ref: '2' } });
+  });
+
+  it('questionToForm:anchor 原样回填(选项/解析)', () => {
+    const q: QuestionDto = {
+      id: 9, type: 'single', stage: '初中', subject: '数学', textbookVersion: '人教版', chapter: null,
+      stemLatex: '题', figures: [
+        { ossKey: 'k/optA.png', position: 1, anchor: { target: 'option', ref: 'A' } },
+        { ossKey: 'k/stem.png', position: 2 },
+      ],
+      options: [{ label: 'A', contentLatex: '$1$' }], answer: { choice: 'A' }, rubric: [],
+      analysisLatex: null, difficulty: 2, status: 'published', tags: [],
+      stats: { correctRate: null, usedInPapers: 0 }, ownerName: '张明', createdAt: '2026-06-02T03:00:00.000Z',
+    };
+    const form = questionToForm(q);
+    expect(form.figures[0].anchor).toEqual({ target: 'option', ref: 'A' });
+    expect(form.figures[1].anchor).toBeUndefined(); // 缺省=题干
+  });
+});

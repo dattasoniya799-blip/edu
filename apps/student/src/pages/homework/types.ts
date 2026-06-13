@@ -9,7 +9,7 @@
  * correctAnswer/analysisLatex 仅在 status != 'in_progress' 时下发)。
  * mock 先按该形状实现;若申请被否决,改造点集中在 useAttempt 的取题逻辑。
  */
-import type { AttemptDto, QuestionType } from '@qiming/contracts';
+import type { AttemptDto, QuestionFigure, QuestionType } from '@qiming/contracts';
 
 /** 学生视角的卷面题目(契约变更申请 B5-1 的形状) */
 export interface AttemptQuestionView {
@@ -19,7 +19,8 @@ export interface AttemptQuestionView {
   score: number;
   type: QuestionType;
   stemLatex: string;
-  figures: { ossKey: string; position: number }[];
+  /** 题目插图(带 anchor;缺省=题干),渲染走 @qiming/ui 的 QuestionFigures */
+  figures: QuestionFigure[];
   /** 选择题选项,不含 isCorrect */
   options: { label: string; contentLatex: string }[];
   /** 仅 status != 'in_progress' 时下发 */

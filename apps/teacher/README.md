@@ -112,3 +112,23 @@ mock 说明:`src/mocks/` 中 `/questions*` 为**有状态** mock(POST/PUT/DELETE
   - 方案 B:`QuestionOption` 增 `figureOssKey String?`、`analysisLatex` 旁增 `analysisFigures Json`、`RubricStep` 增 `figureOssKey?`——字段直观但改动面更大(schema 多列 + DTO 多处)。
 - **影响任务**:A3(题库 schema/DTO/校验/无损读写)、B3(编辑器补对应插图 UI 与直传)、A5/B5(学生端题目渲染需消费新字段)、A6/B6(课堂题目展示)。
 - **前端现状**:占位按钮已就位,契约落地前不写入任何数据;落地后仅在 `EditorPage.tsx` + 渲染处接字段,占位替换为真实直传。
+
+## IMPL-front · 题目插图 anchor + 公式填空复核接线(契约已落地 2026-06-13)
+
+FIX2-CR-01 的「方案 A」已批准并重新生成 SDK(`QuestionFigure.anchor?: { target: stem|option|analysis|reference|rubric, ref? }`),本轮把教师端从占位接成真功能。
+
+### 处置
+- **录题编辑器多位置插图**(`pages/bank/EditorPage.tsx`):删除 FIX2 的「待后端支持」占位按钮,改为 `FigureAnchorControl`——选项行 / 参考答案头 / 评分要点每步 / 解析头各一个「⛶ 插图」,点击走与题干同款两步直传(`/uploads/sts` → PUT,`lib/upload.ts`),成功后把 `{ ossKey, position, anchor:{target, ref} }` 写入 `form.figures`(option/rubric 带 `ref`=选项 label / step),带缩略图预览 + 删除;题干插图保持原样(anchor 缺省=stem,写库时省略以向后兼容)。`lib/transform.ts` 的 `FigureItem`/`formToInput`/`questionToForm` 同步带 anchor 无损往返。
+- **主观题复核扩到公式填空**(`pages/grading/GradingReviewPage.tsx`):公式填空(参考答案含 LaTeX)与解答题同管线进待复核列表;`textResponse` 改用 `<TexText/>` 混排渲染(`$..$` 公式),复核界面(AI 预批 / 改分 / 评语)与解答题一致;页面措辞由「解答题复核」改为「主观题复核(解答题 / 公式填空)」。
+
+### mock 口径(`src/mocks/data.ts`)
+- `WrongBookItem` 已含契约正式字段 `subject`(源自题目学科)。
+- `gradingAnswers` 中 answerId 44 改为公式填空待复核样例(LaTeX 作答 `$y=\dfrac{1}{2}x+1$`,单步 rubric 5 分),验证 TexText 渲染与改分;`/grading/pending` 待复核计数维持 4(冒烟口径不变)。
+
+### 测试 / 构建
+- `pages/bank/lib/__tests__/transform.spec.ts`:新增 anchor 往返用例(非题干 anchor 保留、题干 anchor 省略、回填原样)。
+- `npm run build` 绿;`npm run test` 68/68 绿;`npm run test:mock` 绿。
+
+### 与后端对接假设
+- figures 形状:`QuestionFigure = { ossKey, position, anchor?: { target, ref? } }`;缺省 anchor=题干。渲染统一走 `@qiming/ui` 的 `QuestionFigures`(ossKey 经 `resolveSrc` 解析为签名 URL;mock 无 URL 时降级占位框)。
+- 遗留:`GradingItemDto` 无 figures 字段,复核页暂不渲染题目插图(仅题面 LaTeX);`/grading/assignments/{id}/answers` 列举端点仍缺(沿用 `pages/grading/source.ts` 适配层)。

@@ -48,7 +48,7 @@ const wrongItem: WrongBookItemDto = {
   stemLatex: '将直线 $y=-x+2$ 向上平移 $4$ 个单位长度(  )',
   analysisLatex: '「上加下减」:$b$ 由 $2$ 变为 $6$。',
   wrongCount: 2, correctRedoCount: 1, errorTags: ['图象平移符号'], status: 'open',
-  sourceName: '第3讲课后作业', createdAt: '2026-06-07T10:30:00.000Z',
+  sourceName: '第3讲课后作业', createdAt: '2026-06-07T10:30:00.000Z', subject: '数学',
 };
 
 const timelineItems = [

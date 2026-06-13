@@ -4,7 +4,7 @@
  */
 import { useId } from 'react';
 import type { AnswerResponse } from '@qiming/contracts';
-import { MathInput, Tag, TexText } from '@qiming/ui';
+import { MathInput, QuestionFigures, Tag, TexText } from '@qiming/ui';
 import type { ItemState } from './machine';
 import type { AttemptQuestionView } from './types';
 
@@ -33,6 +33,8 @@ export function QuestionPanel({ q, item, draft, onDraft, redoKind }: QuestionPan
       <div className="text-[15px] leading-8 text-ink">
         <TexText src={q.stemLatex} />
       </div>
+      {/* 题干插图(anchor=stem,缺省锚点) */}
+      <QuestionFigures figures={q.figures} target="stem" />
 
       <div className="mt-4">
         {(q.type === 'single' || q.type === 'multi') && (
@@ -42,7 +44,7 @@ export function QuestionPanel({ q, item, draft, onDraft, redoKind }: QuestionPan
         {q.type === 'solution' && <SolutionPad item={item} draft={draft} onDraft={onDraft} locked={locked} />}
       </div>
 
-      <FeedbackPanel item={item} />
+      <FeedbackPanel item={item} q={q} />
     </div>
   );
 }
@@ -92,7 +94,11 @@ function OptionList({ q, item, draft, onDraft, locked }: QuestionPanelProps & { 
             <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-pill border text-xs font-bold ${badge}`}>
               {o.label}
             </span>
-            <TexText src={o.contentLatex} />
+            <span className="min-w-0">
+              <TexText src={o.contentLatex} />
+              {/* 选项插图(anchor=option,ref=选项 label) */}
+              <QuestionFigures figures={q.figures} target="option" anchorRef={o.label} compact />
+            </span>
           </button>
         );
       })}
@@ -183,13 +189,16 @@ function SolutionPad({ item, draft, onDraft, locked }: Pick<QuestionPanelProps, 
 }
 
 // ---------------- 即时判分反馈 ----------------
-function FeedbackPanel({ item }: { item: ItemState }) {
+function FeedbackPanel({ item, q }: { item: ItemState; q: AttemptQuestionView }) {
   const fb = item.feedback;
   if (!fb) return null;
+  // 待批改(judged=false):解答题拍照 + 含公式的填空(后端 isCorrect=null,不即时判分)
   if (!fb.judged) {
     return (
       <div className="mt-4 rounded-md bg-violet-soft px-4 py-3 text-[13px] leading-6 text-violet">
-        ✓ 解答已提交:AI 预批后由老师复核,最终得分以老师复核为准。
+        {q.type === 'solution'
+          ? '✓ 解答已提交:AI 预批后由老师复核,最终得分以老师复核为准。'
+          : '✓ 已提交 · 待批改:含公式的作答由 AI 预批后老师复核,得分以复核为准。'}
       </div>
     );
   }
@@ -215,6 +224,7 @@ function FeedbackPanel({ item }: { item: ItemState }) {
         <div className="mt-1 text-ink-2">
           <b className="mr-1 text-ink">解析</b>
           <TexText src={fb.analysisLatex} />
+          <QuestionFigures figures={q.figures} target="analysis" />
         </div>
       )}
     </div>

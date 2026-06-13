@@ -118,6 +118,17 @@ export function normalizeBlank(s: string): string {
     .replace(/\s+/g, '');
 }
 
+/**
+ * 含公式的填空(2026-06-13 行为约定):参考答案为 LaTeX(含控制符 `\`)→ 视为公式填空,
+ * 不即时判分,交卷后走 AI 预批+教师复核(answer.isCorrect 置 null,与解答题同管线)。
+ * 检测口径与后端一致:参考答案任一空含反斜杠即判定为公式填空。
+ */
+export function isFormulaBlank(q: QuestionDto): boolean {
+  if (q.type !== 'blank') return false;
+  const ans = q.answer;
+  return !!ans && 'texts' in ans && ans.texts.some((t) => /\\/.test(t));
+}
+
 /** 客观题判定;solution 返回 null(不即时判) */
 export function judge(q: QuestionDto, r: AnswerResponse): boolean | null {
   const ans = q.answer;
@@ -235,7 +246,9 @@ export function putAnswer(attemptId: number, qid: number, body: { response: Answ
 
   const paper = paperOf(at.assignmentId);
   const full = paper.questions.find((p) => p.questionId === qid)?.score ?? 5;
-  const isCorrect = judge(q, body.response);
+  // 公式填空与解答题一样不即时判分:isCorrect=null、judged=false(前端显示「待批改」)
+  const formulaBlank = isFormulaBlank(q);
+  const isCorrect = formulaBlank ? null : judge(q, body.response);
   slot.response = body.response;
   slot.isCorrect = isCorrect;
   slot.score = isCorrect == null ? null : isCorrect ? full : 0;
@@ -244,7 +257,7 @@ export function putAnswer(attemptId: number, qid: number, body: { response: Answ
 
   const wrong = isCorrect === false;
   return {
-    judged: q.type !== 'solution',
+    judged: q.type !== 'solution' && !formulaBlank,
     isCorrect,
     correctAnswer: wrong ? formatCorrectAnswer(q) : null,
     analysisLatex: wrong ? q.analysisLatex : null,
@@ -256,11 +269,15 @@ export function submitAttempt(id: number): AttemptWithQuestions {
   const at = state.attempts.find((a) => a.id === id);
   if (!at) throw new StoreError(4040, '作答不存在');
   if (at.status !== 'in_progress') throw new StoreError(4502, '重复交卷');
-  const hasSolution = at.answers.some((a) => questionById(a.questionId)!.type === 'solution');
+  // 待复核 = 解答题 + 公式填空(均 isCorrect=null,走教师复核管线)
+  const hasManualReview = at.answers.some((a) => {
+    const q = questionById(a.questionId)!;
+    return q.type === 'solution' || isFormulaBlank(q);
+  });
   at.submittedAt = new Date().toISOString();
   at.objectiveScore = at.answers.reduce((s, a) => s + (a.isCorrect != null ? (a.score ?? 0) : 0), 0);
-  if (hasSolution) {
-    at.status = 'submitted'; // 含主观题 → 教师 finalize 后出分(mock 不批)
+  if (hasManualReview) {
+    at.status = 'submitted'; // 含主观题/公式填空 → 教师 finalize 后出分(mock 不批)
   } else {
     at.status = 'graded';
     at.subjectiveScore = 0;
