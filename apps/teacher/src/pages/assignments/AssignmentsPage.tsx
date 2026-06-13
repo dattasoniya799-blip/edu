@@ -26,14 +26,18 @@ export function AssignmentsPage() {
   const navigate = useNavigate();
   const [list, setList] = useState<AssignmentBriefDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false); // REV-front #2:加载失败(可重试)区别于空态
+  const [reload, setReload] = useState(0);
   const [filter, setFilter] = useState<StatusFilter>('all');
 
   useEffect(() => {
     setLoading(true);
+    setError(false);
     api.get('/assignments', { query: filter === 'all' ? undefined : { status: filter } })
       .then((r) => setList(r.data as AssignmentBriefDto[]))
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, [filter]);
+  }, [filter, reload]);
 
   return (
     <div>
@@ -56,6 +60,11 @@ export function AssignmentsPage() {
 
       {loading ? (
         <Skeleton lines={3} className="h-24 w-full" />
+      ) : error ? (
+        <div className="rounded-lg border border-line bg-card shadow-card">
+          <EmptyState icon="⚠" text="作业加载失败" hint="可能是网络波动,请重试"
+            action={<Button variant="primary" onClick={() => setReload((n) => n + 1)}>重新加载</Button>} />
+        </div>
       ) : list.length === 0 ? (
         <div className="rounded-lg border border-line bg-card shadow-card">
           <EmptyState icon="✦" text="还没有布置作业" hint="进入讲次编排「课后作业」区,从题库组卷并发布作业" />

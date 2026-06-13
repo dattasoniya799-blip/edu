@@ -56,21 +56,25 @@ export function CourseLessonsPage() {
   const [courses, setCourses] = useState<CourseDto[]>([]);
   const [lessons, setLessons] = useState<LessonDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false); // REV-front #2:讲次加载失败(可重试)区别于空态
+  const [reload, setReload] = useState(0);
 
   const courseId = Number(searchParams.get('courseId')) || courses[0]?.id || 0;
   const course = courses.find((c) => c.id === courseId);
 
   useEffect(() => {
-    api.get('/teacher/courses').then((r) => setCourses(r.data as CourseDto[]));
+    api.get('/teacher/courses').then((r) => setCourses(r.data as CourseDto[])).catch(() => undefined);
   }, []);
 
   useEffect(() => {
     if (!courseId) return;
     setLoading(true);
+    setError(false);
     api.get('/courses/{id}/lessons', { params: { id: courseId } })
       .then((r) => setLessons(r.data as LessonDto[]))
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, [courseId]);
+  }, [courseId, reload]);
 
   /** 下一讲 = 按 seq 第一个未结课讲次 */
   const nextLessonId = useMemo(() => nextArrangeLessonId(lessons), [lessons]);
@@ -111,6 +115,11 @@ export function CourseLessonsPage() {
 
       {loading ? (
         <Skeleton lines={4} className="h-24 w-full" />
+      ) : error ? (
+        <div className="rounded-lg border border-line bg-card shadow-card">
+          <EmptyState icon="⚠" text="讲次加载失败" hint="可能是网络波动,请重试"
+            action={<Button variant="primary" onClick={() => setReload((n) => n + 1)}>重新加载</Button>} />
+        </div>
       ) : lessons.length === 0 ? (
         <div className="rounded-lg border border-line bg-card shadow-card">
           <EmptyState icon="▦" text="该课程还没有讲次" hint="请联系管理员排课后再来备课" />

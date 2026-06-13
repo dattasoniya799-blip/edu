@@ -147,3 +147,34 @@ base 分支 `task/fix4-contract` 已为 `/student/courses/{id}/lessons` 项补 `
 
 > `resolveOssUrl` 真实分支当前按「后端提供按 ossKey 直接返回(签名)图片、可直接放 `<img src>` 的 GET 端点」假设拼
 > `/api/v1/files/sign?ossKey=…`;若实际为异步取临时 URL 或路径/参数不同,改 `oss.ts` 一处即可,所有渲染处自动生效。
+
+## REV-front(代码审核确认的前端真问题修复)
+
+范围:`apps/admin/src`、`apps/teacher/src`、`apps/student/src`、`packages/ui`(不改 contracts/server/schema)。
+三端 `npm run build`、`vitest`(ui 77 / admin 43 / teacher 123 / student 115)、`test:mock` 冒烟均绿。
+
+1. **真实模式题目插图全裂 → 异步两跳取签名直链(P1,核心)**。FIX4 的 `resolveOssUrl` 同步拼了不存在的
+   `/api/v1/files/sign?ossKey=`。真实端点是 `GET /api/v1/uploads/view-url?ossKey=`(需 Bearer,返回 JSON `{url}`,
+   url 指向 `@Public /storage` 签名直链),是**异步两跳**,故同步拼接必然裂图。改法:
+   - `packages/ui/src/oss.ts` 新增 `resolveOssUrlAsync(ossKey, fetchViewUrl)`:已是直链 / mock 占位 → 立即 resolve;
+     真实模式经注入的 `fetchViewUrl` 换签名直链并**按 ossKey 缓存**(in-flight 复用),失败 resolve(null) 不抛、不长期缓存(可重试)。
+     `resolveOssUrl`(同步)保留,仅处理「已是直链 / mock 占位」,真实非直链返回 null 交异步路径。
+   - `fetchViewUrl` 由各端在 `api.ts` 提供(`apps/{student,teacher}/src/api.ts#resolveFigureSrc`):仍走该端 `createClient`
+     实例(带 token + 统一 401),仅因该端点不属 openapi 契约而在路径处做类型放宽 —— **不是手写 fetch**。
+   - `packages/ui` 新增 `<OssImage>`(异步解析 + loading 脉冲占位 → 出图 / 失败降级占位框;同步解析仍即时出图,SSR 友好);
+     `<QuestionFigures>` 改用 `OssImage`,`resolveSrc` 类型放宽为可同步可异步(`FigureSrcResolver`)。
+   - 调用点统一走异步解析器:学生 `QuestionPanel`/`ResultView`(`resolveSrc={resolveFigureSrc}`)、教师 `EditorPage`
+     存图回显(三处直接 `<img>` 改 `<OssImage resolveSrc={resolveFigureSrc}>`,刚上传的本地 `blob:` 预览经 `isLoadable`
+     短路即时显示)。mock 下仍返回占位 SVG `data:` URL,无任何网络请求。补 vitest:`oss.spec`(异步缓存/失败重试)、`OssImage.spec`。
+   - **QuestionFigures 异步化兼容**:对外 props 形状不变,`resolveSrc` 由 `(k)=>string|null` 拓宽为也接受
+     `Promise<string|null>`(旧同步解析器仍可用,`renderToStaticMarkup` 占位/出图断言不破),无需改动调用方签名。
+
+2. **列表加载失败被吞成空态/误导文案 → 区分错误态(可重试)与空态(P2)**。给以下页的加载补 `.catch`,失败显示
+   「加载失败 + 重新加载」按钮(区别于真正的空态):teacher `Dashboard`、`CourseLessonsPage`、`AssignmentsPage`、
+   `GradingHomePage`、`ResourcesPage`;student `WrongBookPage`(失败不再停在骨架)。`ResourcesPage` 删除失败改为按后端
+   返回的 `message` 显示(如被引用约束),不再硬编码「被引用需先解除」。
+
+3. **admin 停用教师无错误处理(P2)**。`apps/admin/src/pages/Teachers.tsx#disableTeacher` 加 `try/catch` + 失败提示
+   (与 `enableTeacher` 一致),失败不再静默。
+
+> 不在本次范围(留待专项):在线课堂真实模式无讲义/随堂题、教师监控真实源空 —— 属契约/WS 缺口,本次未动。

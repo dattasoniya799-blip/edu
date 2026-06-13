@@ -8,8 +8,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { KpGraphDto, QuestionDto, QuestionType } from '@qiming/contracts';
-import { Button, EmptyState, resolveOssUrl, Skeleton, TexText, useToast } from '@qiming/ui';
-import { api } from '../../api';
+import { Button, EmptyState, OssImage, Skeleton, TexText, useToast } from '@qiming/ui';
+import { api, resolveFigureSrc } from '../../api';
 import { TagPickerModal } from './components/TagPickerModal';
 import { TEX_SNIPPETS, insertSnippet } from './lib/snippets';
 import {
@@ -97,9 +97,14 @@ function FigureAnchorControl({
       </button>
       {mine.map((fig, i) => (
         <span key={fig.ossKey + i} className="inline-flex items-center gap-1 rounded-[7px] border border-line bg-card px-1.5 py-0.5 text-[11px] text-ink-2">
-          {(fig.previewUrl ?? resolveOssUrl(fig.ossKey))
-            ? <img src={fig.previewUrl ?? resolveOssUrl(fig.ossKey)!} alt={`${label}缩略图`} className="h-6 w-9 rounded object-contain" />
-            : <span className="text-ink-3" aria-hidden>⛶</span>}
+          <OssImage
+            ossKey={fig.previewUrl ?? fig.ossKey}
+            alt={`${label}缩略图`}
+            resolveSrc={resolveFigureSrc}
+            className="h-6 w-9 rounded object-contain"
+            boxClassName="h-6 w-9"
+            compact
+          />
           <button type="button" aria-label={`删除${label}`} className="font-semibold text-red" onClick={() => onRemove(fig)}>✕</button>
         </span>
       ))}
@@ -419,9 +424,13 @@ export function EditorPage() {
             <div className="mx-4 mb-4 flex flex-wrap gap-2.5">
               {stemFigures.map((fig, i) => (
                 <div key={fig.ossKey + i} className="flex flex-col items-center gap-1.5 rounded-[10px] border border-line bg-card p-2 text-[11px] text-ink-2">
-                  {(fig.previewUrl ?? resolveOssUrl(fig.ossKey))
-                    ? <img src={fig.previewUrl ?? resolveOssUrl(fig.ossKey)!} alt={fig.fileName ?? fig.ossKey} className="h-[84px] w-[120px] rounded-md object-contain" />
-                    : <span className="flex h-[84px] w-[120px] items-center justify-center rounded-md bg-bg text-[20px] text-ink-3">⛶</span>}
+                  <OssImage
+                    ossKey={fig.previewUrl ?? fig.ossKey}
+                    alt={fig.fileName ?? fig.ossKey}
+                    resolveSrc={resolveFigureSrc}
+                    className="h-[84px] w-[120px] rounded-md object-contain"
+                    boxClassName="h-[84px] w-[120px]"
+                  />
                   <span className="max-w-[120px] truncate">{fig.fileName ?? fig.ossKey.split('/').pop()} · 已插入题干</span>
                   <button type="button" className="text-[12px] font-semibold text-red" onClick={() => removeFigure(fig)}>
                     删除
@@ -441,9 +450,12 @@ export function EditorPage() {
                   <TexText src={form.stemLatex} />
                   {stemFigures.map((fig, i) => (
                     <div key={fig.ossKey + i} className="mt-3">
-                      {(fig.previewUrl ?? resolveOssUrl(fig.ossKey))
-                        ? <img src={fig.previewUrl ?? resolveOssUrl(fig.ossKey)!} alt={`图 ${i + 1}`} className="max-h-[180px] rounded-md border border-line" />
-                        : <span className="inline-flex items-center gap-1.5 rounded-[7px] bg-primary-soft px-2 py-1 text-xs text-primary">⛶ 图 {i + 1} · {fig.ossKey}</span>}
+                      <OssImage
+                        ossKey={fig.previewUrl ?? fig.ossKey}
+                        alt={`图 ${i + 1}`}
+                        resolveSrc={resolveFigureSrc}
+                        className="max-h-[180px] rounded-md border border-line"
+                      />
                     </div>
                   ))}
                 </>

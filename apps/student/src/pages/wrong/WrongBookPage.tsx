@@ -14,6 +14,8 @@ export function WrongBookPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [items, setItems] = useState<WrongBookItemView[] | null>(null);
+  const [error, setError] = useState(false); // REV-front #2:加载失败别停在骨架(可重试)
+  const [reload, setReload] = useState(0);
   const [subject, setSubject] = useState<string | null>(null); // FIX3 问题5:学科筛选(null=全部)
   const [filter, setFilter] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -21,8 +23,12 @@ export function WrongBookPage() {
 
   useEffect(() => {
     // 契约 WrongBookItem 暂无 subject(见 README 契约变更申请 FIX3-1);view 容忍缺失,mock 先行附带
-    api.get('/student/wrong-book', { query: { page: 1, size: 50 } }).then((r) => setItems(r.data.items as WrongBookItemView[]));
-  }, []);
+    setItems(null);
+    setError(false);
+    api.get('/student/wrong-book', { query: { page: 1, size: 50 } })
+      .then((r) => setItems(r.data.items as WrongBookItemView[]))
+      .catch(() => setError(true));
+  }, [reload]);
 
   const open = useMemo(() => (items ?? []).filter((w) => w.status === 'open'), [items]);
   const cleared = useMemo(() => (items ?? []).filter((w) => w.status === 'cleared'), [items]);
@@ -69,7 +75,7 @@ export function WrongBookPage() {
         <div>
           <h2 className="text-[21px] font-extrabold">错题本</h2>
           <p className="mt-1 text-[13px] text-ink-2">
-            {items ? `共 ${open.length} 道待消灭 · 重做对 2 次自动移出错题本` : '加载中…'}
+            {error ? '加载失败' : items ? `共 ${open.length} 道待消灭 · 重做对 2 次自动移出错题本` : '加载中…'}
           </p>
         </div>
         {open.length > 0 && (
@@ -79,7 +85,12 @@ export function WrongBookPage() {
         )}
       </div>
 
-      {!items ? (
+      {error ? (
+        <Card>
+          <EmptyState icon="⚠" text="错题本加载失败" hint="可能是网络波动,请重试"
+            action={<Button variant="primary" className="min-h-touch" onClick={() => setReload((n) => n + 1)}>重新加载</Button>} />
+        </Card>
+      ) : !items ? (
         <Skeleton className="h-32" lines={3} />
       ) : open.length === 0 ? (
         <Card>
