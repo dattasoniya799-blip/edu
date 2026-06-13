@@ -36,7 +36,10 @@ export function LessonTimeline({ items, correctionByLesson, onReplay, onCorrect,
         const today = isToday(lesson.scheduledStart);
         const finished = lesson.status === 'finished';
         // C2 #9:进课堂以「已发布」为准(ready/in_progress),不再按上课时间拦截
-        const enterable = canEnterClassroom(lesson);
+        const published = canEnterClassroom(lesson);
+        // FIX4 #1(P1-2):必须拿到该讲自己的 sessionId 才可进、跳对应课堂;
+        // 已发布但会话尚未就绪(sessionId=null)→ 不给进,显示「课堂未开放」。
+        const enterable = published && sessionId != null;
         const dot = finished
           ? 'bg-green-soft text-green'
           : enterable
@@ -68,7 +71,9 @@ export function LessonTimeline({ items, correctionByLesson, onReplay, onCorrect,
                     ? <span>本讲无作业</span>
                     : enterable
                       ? <span>AI 伴学课堂已开放 · 约 100 分钟</span>
-                      : <span>老师发布后即可进入课堂</span>}
+                      : published
+                        ? <span>课堂未开放,请稍候</span>
+                        : <span>老师发布后即可进入课堂</span>}
               </div>
               {(enterable || (finished && ((resources?.length ?? 0) > 0 || correctionId != null))) && (
                 <div className="mt-2.5 flex flex-wrap gap-2">

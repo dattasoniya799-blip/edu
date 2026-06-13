@@ -150,8 +150,8 @@ export function Students() {
         onClose={() => setAddOpen(false)}
         onSaved={(created) => {
           void load();
-          // 创建后直接进入重置密码,管理员可当场拿到首登临时密码当面告知学生
-          setResetStudent({ id: created.id, name: created.name, no: created.studentNo, role: 'student' });
+          // 创建后自动取首登明文密码(auto),直接弹窗展示,免去手动再点「重置密码」(P2-12)
+          setResetStudent({ id: created.id, name: created.name, no: created.studentNo, role: 'student', auto: true });
         }}
       />
       <StudentProfileModal

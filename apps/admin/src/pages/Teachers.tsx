@@ -144,8 +144,8 @@ export function Teachers() {
         onClose={() => setFormOpen(false)}
         onSaved={(created) => {
           void load();
-          // 新建教师后直接进入重置密码,管理员当场拿到首登临时密码当面告知教师
-          if (created) setResetTarget({ id: created.id, name: created.name, no: created.teacherNo, role: 'teacher' });
+          // 新建教师后自动取首登明文密码(auto),直接弹窗展示,免去手动再点「重置密码」(P2-12)
+          if (created) setResetTarget({ id: created.id, name: created.name, no: created.teacherNo, role: 'teacher', auto: true });
         }}
       />
       <ResetPasswordModal target={resetTarget} onClose={() => setResetTarget(null)} />

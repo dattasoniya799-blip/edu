@@ -1,4 +1,5 @@
 import { Route, Routes } from 'react-router-dom';
+import { MockBadge } from '@qiming/ui';
 import { AuthProvider } from './auth/AuthProvider';
 import { LoginPage } from './pages/LoginPage';
 import { Shell } from './pages/Shell';
@@ -25,6 +26,7 @@ export function App() {
           <Route path="*" element={<Placeholder title="页面不存在" />} />
         </Route>
       </Routes>
+      <MockBadge />
     </AuthProvider>
   );
 }

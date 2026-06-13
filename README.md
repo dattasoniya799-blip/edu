@@ -120,3 +120,30 @@ npm test     # e2e 14 套件 / 179 用例;连跑两次全绿
 > 顺带(非本三项,解除构建阻塞):base 分支 `c3-contract` 给 `Resource` 增 `kpNodeId/kpNodeName`、给 `KpNode` 增 `content`
 > 为必填,但两端 `src/mocks/data.ts` 未补字段导致 `tsc` 红。已在 mock 数据补齐(纯展示字段,Resource 关联其知识点、
 > KpNode `content:null`),使两端 build 恢复绿。
+
+## FIX4-front(代码审查发现的 5 个前端真实问题修复)
+
+范围:`apps/admin/src`、`apps/teacher/src`、`apps/student/src`、`packages/ui`(不改 contracts/server/schema)。
+base 分支 `task/fix4-contract` 已为 `/student/courses/{id}/lessons` 项补 `sessionId`。三端 `npm run build`、
+`vitest`(ui 70 / admin 43 / teacher 123 / student 115)、`test:mock` 冒烟均绿。
+
+1. **课程时间线进课堂用真实 sessionId(P1-2)**。`LessonTimeline`/`CoursePage` 进课堂改以该讲返回的 `sessionId`
+   为准:`sessionId != null` 才可进并跳 `/classroom/{sessionId}`;已发布但会话未就绪(sessionId=null)→ 不给进、
+   显示「课堂未开放,请稍候」,未发布显示「老师发布后即可进入课堂」。不再借用全局 `today` 的会话/本地占位。
+   mock `lessonTimeline` 已让已发布讲带 `sessionId`、草稿/已结课为 null。
+2. **题目插图真实可见(P1-4 前端侧)**。新增单点函数 `packages/ui/src/oss.ts#resolveOssUrl(ossKey)`:已是可加载
+   URL(http/data/blob)原样返回;mock 模式返回占位 SVG `data:` URL(使插图可见而非占位框);真实模式拼后端按 ossKey
+   取签名/直链的端点。学生作业/结果(`QuestionPanel`/`ResultView`)与教师录题(`EditorPage` 已保存图)的 figure 渲染
+   统一经 `<QuestionFigures resolveSrc={resolveOssUrl}>` / `resolveOssUrl`。**待对接**:真实端点形状(路径/参数,或是否需异步取
+   临时 URL)由协调者整合时给出 —— 只需改 `oss.ts` 一处(详见文件头注释)。
+3. **录题插图预览 objectURL 释放(P2-11)**。`EditorPage` 用 `previewUrls` ref 跟踪 `URL.createObjectURL` 产物,
+   删除该图、组件卸载时 `URL.revokeObjectURL` 释放,防内存泄漏。
+4. **新建教师/学生初始密码顺畅(P2-12)**。创建成功后给 `ResetPasswordModal` 传 `auto:true`,弹窗打开即自动调一次
+   `POST /admin/{teachers|students}/{id}/reset-password` 取明文初始密码直接展示(复制 +「当面告知」),省去管理员手动再点
+   「重置密码」;自动取码失败则提示「可点确认重试或稍后在列表手动重置」。
+5. **MOCK 角标(P2-9,防混淆)**。新增通用组件 `packages/ui/src/MockBadge.tsx`,三端 `App` 挂载;mock 模式
+   (`VITE_USE_MOCK !== 'false'`)在右下角显示不挡操作(`pointer-events-none`)的「MOCK 数据」角标(design-tokens 橙色),
+   真实模式不渲染。
+
+> `resolveOssUrl` 真实分支当前按「后端提供按 ossKey 直接返回(签名)图片、可直接放 `<img src>` 的 GET 端点」假设拼
+> `/api/v1/files/sign?ossKey=…`;若实际为异步取临时 URL 或路径/参数不同,改 `oss.ts` 一处即可,所有渲染处自动生效。
