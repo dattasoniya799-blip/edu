@@ -59,6 +59,9 @@ export class TeacherInputDto {
 
 // ---------------- 学生 ----------------
 export class StudentListQueryDto extends PageQueryDto {
+  @IsOptional() @IsIn(USER_STATUS)
+  status?: UserStatus;
+
   @IsOptional() @Type(() => Number) @IsInt()
   courseId?: number;
 

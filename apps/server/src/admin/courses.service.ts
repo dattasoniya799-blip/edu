@@ -154,8 +154,9 @@ export class CoursesService {
   // ---------------- 名单(到课/作业概览) ----------------
   async roster(id: number): Promise<RosterItem[]> {
     const course = await this.findCourseOr404(id);
+    // 名单 = 当前在册(active)学生;退班(quit)不计入,前端据此判定"可选学生"= 全体 − 在册 active
     const enrollments = await this.prisma.client.courseStudent.findMany({
-      where: { courseId: course.id },
+      where: { courseId: course.id, status: 'active' },
       include: { student: { select: { id: true, name: true } } },
       orderBy: { studentId: 'asc' },
     });

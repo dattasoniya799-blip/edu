@@ -78,6 +78,12 @@ export class AdminController {
     return this.teachers.resetPassword(user, id, ip);
   }
 
+  @Post('teachers/:id/enable')
+  @HttpCode(200)
+  enableTeacher(@CurrentUser() user: JwtUser, @Param('id', ParseIntPipe) id: number, @Ip() ip: string) {
+    return this.teachers.enable(user, id, ip);
+  }
+
   // ================= 学生 =================
   @Get('students')
   listStudents(@Query() q: StudentListQueryDto) {
@@ -110,6 +116,12 @@ export class AdminController {
   @HttpCode(200)
   resetStudentPassword(@CurrentUser() user: JwtUser, @Param('id', ParseIntPipe) id: number, @Ip() ip: string) {
     return this.students.resetPassword(user, id, ip);
+  }
+
+  @Post('students/:id/enable')
+  @HttpCode(200)
+  enableStudent(@CurrentUser() user: JwtUser, @Param('id', ParseIntPipe) id: number, @Ip() ip: string) {
+    return this.students.enable(user, id, ip);
   }
 
   @Delete('students/:id/device')

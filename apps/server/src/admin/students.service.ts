@@ -19,6 +19,7 @@ export class StudentsService {
     const where = {
       role: 'student' as const,
       deletedAt: null,
+      ...(q.status ? { status: q.status } : {}),
       ...(q.courseId
         ? { enrollments: { some: { courseId: BigInt(q.courseId), status: 'active' } } }
         : {}),
@@ -142,6 +143,20 @@ export class StudentsService {
       targetType: 'user', targetId: id, ip,
     });
     return { password };
+  }
+
+  // ---------------- 启用(置 status=active) ----------------
+  async enable(user: JwtUser, id: number, ip?: string): Promise<null> {
+    const s = await this.findStudentOr404(id);
+    await this.prisma.client.user.update({
+      where: { id: s.id },
+      data: { status: 'active' },
+    });
+    await this.audit.log({
+      actorId: user.uid, orgId: user.orgId, action: 'admin.student.enable',
+      targetType: 'user', targetId: id, ip,
+    });
+    return null;
   }
 
   // ---------------- 解绑设备(已无设备绑定,无绑定时恒成功) ----------------

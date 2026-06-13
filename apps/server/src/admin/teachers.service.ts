@@ -3,12 +3,11 @@ import type Redis from 'ioredis';
 import type { PageResp, TeacherDto } from '@qiming/contracts';
 import { AuditService } from '../audit/audit.service';
 import type { JwtUser } from '../auth/auth.service';
-import { hashPassword, randomToken } from '../auth/password.util';
+import { hashPassword, randomReadablePassword } from '../auth/password.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { REDIS } from '../redis/redis.module';
 import { TeacherInputDto, TeacherListQueryDto } from './admin.dto';
 import { num, profileField } from './helpers';
-import { SmsService } from './sms.service';
 
 type UserRow = {
   id: bigint;
@@ -24,7 +23,6 @@ export class TeachersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
-    private readonly sms: SmsService,
     @Inject(REDIS) private readonly redis: Redis,
   ) {}
 
@@ -56,13 +54,13 @@ export class TeachersService {
     return { items: await this.decorate(rows), total };
   }
 
-  // ---------------- 创建(短信发初始密码) ----------------
+  // ---------------- 创建(自动生成初始密码,active) ----------------
   async create(user: JwtUser, dto: TeacherInputDto, ip?: string): Promise<TeacherDto> {
     await this.assertPhoneFree(dto.phone);
     const teacherNo = dto.teacherNo ?? (await this.nextNo());
     await this.assertTeacherNoFree(teacherNo);
 
-    const initialPassword = `Qm${randomToken(5)}!`; // 仅短信(模拟)下发,不落日志
+    // 初始密码:创建即可登录;明文不入库不入响应,管理员经 reset-password 取回明文告知教师
     const created = await this.prisma.client.user.create({
       data: {
         orgId: BigInt(user.orgId),
@@ -70,12 +68,11 @@ export class TeachersService {
         name: dto.name,
         phone: dto.phone,
         teacherNo,
-        passwordHash: await hashPassword(initialPassword),
+        passwordHash: await hashPassword(randomReadablePassword()),
         status: 'active',
         profile: { stage: dto.stage, subject: dto.subject },
       },
     });
-    this.sms.sendInitialPassword(dto.phone);
     await this.audit.log({
       actorId: user.uid, orgId: user.orgId, action: 'admin.teacher.create',
       targetType: 'user', targetId: num(created.id), ip,
@@ -107,14 +104,14 @@ export class TeachersService {
     return null;
   }
 
-  // ---------------- 停用(软删) ----------------
+  // ---------------- 停用(仅置 status=disabled,非删除,不写 deletedAt) ----------------
   async disable(user: JwtUser, id: number, ip?: string): Promise<null> {
     const t = await this.findTeacherOr404(id);
     await this.prisma.client.user.update({
       where: { id: t.id },
-      data: { status: 'disabled', deletedAt: new Date() },
+      data: { status: 'disabled' },
     });
-    await this.revokeRefreshTokens(id);
+    await this.revokeRefreshTokens(id); // 停用即作废其全部刷新令牌
     await this.audit.log({
       actorId: user.uid, orgId: user.orgId, action: 'admin.teacher.disable',
       targetType: 'user', targetId: id, ip,
@@ -122,21 +119,34 @@ export class TeachersService {
     return null;
   }
 
-  // ---------------- 重置密码并短信通知 ----------------
-  async resetPassword(user: JwtUser, id: number, ip?: string): Promise<null> {
+  // ---------------- 启用(置 status=active) ----------------
+  async enable(user: JwtUser, id: number, ip?: string): Promise<null> {
     const t = await this.findTeacherOr404(id);
-    const newPassword = `Qm${randomToken(5)}!`;
     await this.prisma.client.user.update({
       where: { id: t.id },
-      data: { passwordHash: await hashPassword(newPassword) },
+      data: { status: 'active' },
+    });
+    await this.audit.log({
+      actorId: user.uid, orgId: user.orgId, action: 'admin.teacher.enable',
+      targetType: 'user', targetId: id, ip,
+    });
+    return null;
+  }
+
+  // ---------------- 重置密码(返回明文临时密码,无短信) ----------------
+  async resetPassword(user: JwtUser, id: number, ip?: string): Promise<{ password: string }> {
+    const t = await this.findTeacherOr404(id);
+    const password = randomReadablePassword();
+    await this.prisma.client.user.update({
+      where: { id: t.id },
+      data: { passwordHash: await hashPassword(password) },
     });
     await this.revokeRefreshTokens(id); // 重置后旧刷新令牌全部作废
-    if (t.phone) this.sms.sendPasswordReset(t.phone);
     await this.audit.log({
       actorId: user.uid, orgId: user.orgId, action: 'admin.teacher.reset_password',
       targetType: 'user', targetId: id, ip,
     });
-    return null;
+    return { password };
   }
 
   // ---------------- 内部 ----------------
