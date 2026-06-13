@@ -389,7 +389,7 @@ components:
         flagged: { type: boolean }
     Attempt:
       type: object
-      required: [id, assignmentId, status, attemptNo, startedAt, submittedAt, score, objectiveScore, subjectiveScore, answers]
+      required: [id, assignmentId, status, attemptNo, startedAt, submittedAt, score, objectiveScore, subjectiveScore, answers, questions]
       properties:
         id: { type: integer }
         assignmentId: { type: integer }
@@ -401,6 +401,33 @@ components:
         objectiveScore: { oneOf: [{ type: 'null' }, { type: number }] }
         subjectiveScore: { oneOf: [{ type: 'null' }, { type: number }] }
         answers: { type: array, items: { $ref: '#/components/schemas/Answer' } }
+        questions: { type: array, items: { $ref: '#/components/schemas/AttemptQuestionView' } }
+    AttemptQuestionView:
+      type: object
+      description: 作答题面(学生端渲染)。correctAnswer/analysisLatex 仅在该题已判定或交卷后下发,in_progress 期间为 null。
+      required: [seq, questionId, score, type, stemLatex, figures, options, correctAnswer, analysisLatex]
+      properties:
+        seq: { type: integer }
+        questionId: { type: integer }
+        score: { type: number }
+        type: { $ref: '#/components/schemas/QuestionType' }
+        stemLatex: { type: string }
+        figures: { type: array, items: { $ref: '#/components/schemas/QuestionFigure' } }
+        options: { type: array, items: { $ref: '#/components/schemas/QuestionOption' } }
+        correctAnswer: { oneOf: [{ type: 'null' }, { $ref: '#/components/schemas/QuestionAnswer' }] }
+        analysisLatex: { oneOf: [{ type: 'null' }, { type: string }] }
+    GradingAnswerBrief:
+      type: object
+      required: [answerId, studentId, studentName, questionId, seq, status, aiScore, finalScore]
+      properties:
+        answerId: { type: integer }
+        studentId: { type: integer }
+        studentName: { type: string }
+        questionId: { type: integer }
+        seq: { type: integer }
+        status: { type: string, enum: [pending, graded] }
+        aiScore: { oneOf: [{ type: 'null' }, { type: number }] }
+        finalScore: { oneOf: [{ type: 'null' }, { type: number }] }
     SubmitAnswerResult:
       type: object
       required: [judged, isCorrect, correctAnswer, analysisLatex]
@@ -900,6 +927,13 @@ paths:
       summary: 待复核列表(按作业聚合) [teacher]
       responses:
         '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {type: object, required: [assignmentId, paperName, pendingCount, aiAvgScore], properties: {assignmentId: {type: integer}, paperName: {type: string}, pendingCount: {type: integer}, aiAvgScore: {oneOf: [{type: 'null'}, {type: number}]}}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /grading/assignments/{id}/answers:
+    get:
+      summary: 某作业逐题作答名单(待复核/已复核,供教师切换) [teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}, {name: status, in: query, schema: {type: string, enum: [pending, graded]}}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {$ref: '#/components/schemas/GradingAnswerBrief'}}}}}}}
         default: {$ref: '#/components/responses/Err'}
   /grading/answers/{id}:
     get:
