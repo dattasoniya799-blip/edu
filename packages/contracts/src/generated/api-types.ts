@@ -2080,6 +2080,9 @@ export interface paths {
                         scheduledStart?: string;
                         /** Format: date-time */
                         scheduledEnd?: string;
+                        openingConfig?: null | {
+                            [key: string]: unknown;
+                        };
                     };
                 };
             };

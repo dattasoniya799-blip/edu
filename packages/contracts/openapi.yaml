@@ -874,7 +874,7 @@ paths:
     put:
       summary: 改标题/时间 [teacher]
       parameters: [{$ref: '#/components/parameters/idPath'}]
-      requestBody: {required: true, content: {application/json: {schema: {type: object, properties: {title: {type: string}, scheduledStart: {type: string, format: date-time}, scheduledEnd: {type: string, format: date-time}}}}}}
+      requestBody: {required: true, content: {application/json: {schema: {type: object, properties: {title: {type: string}, scheduledStart: {type: string, format: date-time}, scheduledEnd: {type: string, format: date-time}, openingConfig: {oneOf: [{type: 'null'}, {type: object, additionalProperties: true}]}}}}}}
       responses:
         '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
         default: {$ref: '#/components/responses/Err'}

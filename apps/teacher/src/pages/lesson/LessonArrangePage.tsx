@@ -106,11 +106,10 @@ export function LessonArrangePage() {
   const save = async (): Promise<boolean> => {
     if (!units) return false;
     try {
-      // 契约 gap:Lesson.openingConfig 标注「读写」,但 PUT /lessons/{id} 的 body schema 暂未含该字段;
-      // 按读写语义下发(mock 已落库,见 README 对接假设)。
+      // 开场白经 PUT /lessons/{id} 持久化(契约 body 已含 openingConfig,2026-06-13 整合补齐)
       await api.put('/lessons/{id}', {
         params: { id: lessonId },
-        body: { openingConfig: openingToConfig(opening) } as unknown as { title?: string },
+        body: { openingConfig: openingToConfig(opening) },
       });
       await api.put('/lessons/{id}/segments', { params: { id: lessonId }, body: unitsToSegments(units) });
       setDirty(false);

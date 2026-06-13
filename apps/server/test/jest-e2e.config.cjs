@@ -3,10 +3,7 @@ module.exports = {
   rootDir: '..',
   testEnvironment: 'node',
   testMatch: ['<rootDir>/test/**/*.e2e-spec.ts'],
-  // isolatedModules:e2e 走 transpile-only,与跨任务"契约先行、实现后补"的临时类型错位解耦
-  // (本分支基线 c2-contract 已加 unitSeq/openingConfig/analysis*Latex,其实现属 c2-back-redesign 域)。
-  // 生产代码类型安全仍由各域的 `nest build` / `tsc --noEmit` 守门,不在 e2e 重复 type-check。
-  transform: { '^.+\\.ts$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.json', isolatedModules: true }] },
+  transform: { '^.+\\.ts$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.json' }] },
   moduleNameMapper: {
     '^@qiming/contracts$': '<rootDir>/../../packages/contracts/src/index.ts',
   },
