@@ -6,6 +6,7 @@ import { api } from '../api';
 import { formatDay, formatDurationHM } from '../lib/format';
 import { CLASS_TYPE_LABEL } from '../lib/labels';
 import { ConfirmModal } from './ConfirmModal';
+import type { ResetPasswordTarget } from './ResetPasswordModal';
 
 interface Profile { student: StudentDto; mastery: MasteryItemDto[]; wrongOpenCount: number }
 
@@ -16,7 +17,7 @@ export interface StudentProfileModalProps {
   /** 档案内发生变更(如解绑)时通知父页面刷新列表 */
   onChanged?: () => void;
   /** 提供则显示「重置密码」入口 */
-  onResetPassword?: (s: { id: number; name: string; studentNo: string }) => void;
+  onResetPassword?: (target: ResetPasswordTarget) => void;
 }
 
 export function StudentProfileModal({ studentId, onClose, onChanged, onResetPassword }: StudentProfileModalProps) {
@@ -65,7 +66,7 @@ export function StudentProfileModal({ studentId, onClose, onChanged, onResetPass
           <>
             <Button onClick={onClose}>关闭</Button>
             {s && onResetPassword && (
-              <Button variant="primary" onClick={() => onResetPassword({ id: s.id, name: s.name, studentNo: s.studentNo })}>
+              <Button variant="primary" onClick={() => onResetPassword({ id: s.id, name: s.name, no: s.studentNo, role: 'student' })}>
                 重置密码
               </Button>
             )}

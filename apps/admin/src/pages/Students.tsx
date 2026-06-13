@@ -1,10 +1,10 @@
 /** 学生管理(原型 a-students):筛选 + 列表 + 添加 + 档案 + 重置密码 + 解绑(档案内) */
 import { useCallback, useEffect, useState } from 'react';
-import type { CourseDto, StudentDto } from '@qiming/contracts';
+import type { CourseDto, StudentDto, UserStatus } from '@qiming/contracts';
 import { Button, Card, Table, Tag, useToast } from '@qiming/ui';
 import { api } from '../api';
 import { Select, TextInput, Toolbar, LinkButton } from '../components/controls';
-import { ResetPasswordModal, type ResetPasswordStudent } from '../components/ResetPasswordModal';
+import { ResetPasswordModal, type ResetPasswordTarget } from '../components/ResetPasswordModal';
 import { Pager } from '../components/Pager';
 import { StudentFormModal } from '../components/StudentFormModal';
 import { StudentProfileModal } from '../components/StudentProfileModal';
@@ -20,13 +20,14 @@ export function Students() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState('');
+  const [status, setStatus] = useState('');
   const [courseId, setCourseId] = useState('');
   const [deviceBound, setDeviceBound] = useState('');
   const [courses, setCourses] = useState<CourseDto[]>([]);
   // 弹窗状态
   const [addOpen, setAddOpen] = useState(false);
   const [profileId, setProfileId] = useState<number | null>(null);
-  const [resetStudent, setResetStudent] = useState<ResetPasswordStudent | null>(null);
+  const [resetStudent, setResetStudent] = useState<ResetPasswordTarget | null>(null);
   const { toast } = useToast();
 
   const load = useCallback(async () => {
@@ -36,6 +37,7 @@ export function Students() {
         query: {
           page, size: SIZE,
           ...(keyword.trim() ? { keyword: keyword.trim() } : {}),
+          ...(status ? { status: status as UserStatus } : {}),
           ...(courseId ? { courseId: Number(courseId) } : {}),
           ...(deviceBound ? { deviceBound: deviceBound === 'true' } : {}),
         },
@@ -47,7 +49,17 @@ export function Students() {
     } finally {
       setLoading(false);
     }
-  }, [page, keyword, courseId, deviceBound, toast]);
+  }, [page, keyword, status, courseId, deviceBound, toast]);
+
+  const enableStudent = async (s: StudentDto) => {
+    try {
+      await api.post('/admin/students/{id}/enable', { params: { id: s.id } });
+      toast(`已恢复启用 ${s.name}`);
+      await load();
+    } catch {
+      toast('启用失败,请重试');
+    }
+  };
 
   useEffect(() => { void load(); }, [load]);
 
@@ -73,6 +85,12 @@ export function Students() {
             value={keyword}
             onChange={(e) => { setKeyword(e.target.value); setPage(1); }}
           />
+          <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
+            <option value="">全部状态</option>
+            <option value="active">正常</option>
+            <option value="disabled">已停用</option>
+            <option value="pending">待激活</option>
+          </Select>
           <Select value={courseId} onChange={(e) => { setCourseId(e.target.value); setPage(1); }}>
             <option value="">全部课程</option>
             {courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -111,9 +129,13 @@ export function Students() {
               render: (s) => (
                 <span className="flex gap-3">
                   <LinkButton onClick={() => setProfileId(s.id)}>详情</LinkButton>
-                  <LinkButton onClick={() => setResetStudent({ id: s.id, name: s.name, studentNo: s.studentNo })}>
-                    重置密码
-                  </LinkButton>
+                  {s.status === 'disabled' ? (
+                    <LinkButton onClick={() => void enableStudent(s)}>恢复启用</LinkButton>
+                  ) : (
+                    <LinkButton onClick={() => setResetStudent({ id: s.id, name: s.name, no: s.studentNo, role: 'student' })}>
+                      重置密码
+                    </LinkButton>
+                  )}
                 </span>
               ),
             },
@@ -129,16 +151,16 @@ export function Students() {
         onSaved={(created) => {
           void load();
           // 创建后直接进入重置密码,管理员可当场拿到首登临时密码当面告知学生
-          setResetStudent({ id: created.id, name: created.name, studentNo: created.studentNo });
+          setResetStudent({ id: created.id, name: created.name, no: created.studentNo, role: 'student' });
         }}
       />
       <StudentProfileModal
         studentId={profileId}
         onClose={() => setProfileId(null)}
         onChanged={() => void load()}
-        onResetPassword={(s) => setResetStudent(s)}
+        onResetPassword={(t) => setResetStudent(t)}
       />
-      <ResetPasswordModal student={resetStudent} onClose={() => setResetStudent(null)} />
+      <ResetPasswordModal target={resetStudent} onClose={() => setResetStudent(null)} />
     </div>
   );
 }

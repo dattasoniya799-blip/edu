@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { CourseDto, StudentDto } from '@qiming/contracts';
 import { Button, EmptyState, Modal, Skeleton, Table, Tag, useToast } from '@qiming/ui';
 import { api } from '../api';
+import { candidateStudents } from '../lib/roster';
 import { ConfirmModal } from './ConfirmModal';
 import { LinkButton, TextInput } from './controls';
 
@@ -105,7 +106,7 @@ export function RosterModal({ course, onClose, onOpenProfile, onChanged }: Roste
         <AddStudentsModal
           open={addOpen}
           course={course}
-          enrolledIds={rows.map((r) => r.studentId)}
+          roster={rows}
           onClose={() => setAddOpen(false)}
           onAdded={async () => {
             setAddOpen(false);
@@ -130,11 +131,11 @@ export function RosterModal({ course, onClose, onOpenProfile, onChanged }: Roste
 
 /** 添加学生子弹窗:列出未在本课程的学生,可多选后批量入班 */
 function AddStudentsModal({
-  open, course, enrolledIds, onClose, onAdded,
+  open, course, roster, onClose, onAdded,
 }: {
   open: boolean;
   course: CourseDto;
-  enrolledIds: number[];
+  roster: RosterRow[];
   onClose: () => void;
   onAdded: () => void | Promise<void>;
 }) {
@@ -149,9 +150,10 @@ function AddStudentsModal({
     setCandidates(null);
     setSelected(new Set());
     setKeyword('');
-    const enrolled = new Set(enrolledIds); // 仅在打开瞬间快照,避免父级重渲染反复拉取
+    const snapshot = roster; // 仅在打开瞬间快照,避免父级重渲染反复拉取
     api.get('/admin/students', { query: { page: 1, size: 100 } })
-      .then((r) => setCandidates((r.data.items as StudentDto[]).filter((s) => !enrolled.has(s.id))))
+      // 候选 = 全部学生 − 当前课程 active 名单(纯函数 candidateStudents,见 lib/roster)
+      .then((r) => setCandidates(candidateStudents(r.data.items as StudentDto[], snapshot)))
       .catch(() => { toast('学生列表加载失败'); setCandidates([]); });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, course.id, toast]);
