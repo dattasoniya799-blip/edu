@@ -4,6 +4,7 @@ import { dec, iso, num, round1 } from '../admin/helpers';
 import { AssignmentService } from '../assignment/assignment.service';
 import type { JwtUser } from '../auth/auth.service';
 import { BizException, ERR_ATTEMPT_STATE } from '../grading/business.exception';
+import { questionNeedsReview } from '../grading/formula-blank.util';
 import { GradingService } from '../grading/grading.service';
 import { PreGradingQueueService } from '../grading/pre-grading.queue';
 import { PrismaService } from '../prisma/prisma.service';
@@ -108,9 +109,11 @@ export class AttemptService {
 
     const response = this.validateResponse(question.type, dto.response);
     const fullScore = dec(pq.score) ?? 0;
+    // 公式填空(参考答案含 LaTeX)与 solution 同口径:不即时判分,走 AI 预批 + 教师复核
+    const needsReview = questionNeedsReview(question.type, question.answer);
     let isCorrect: boolean | null = null;
     let score: number | null = null;
-    if (question.type !== 'solution') {
+    if (!needsReview) {
       isCorrect = this.judge(question, response);
       score = isCorrect ? fullScore : 0;
     }
@@ -135,8 +138,8 @@ export class AttemptService {
       } as never,
     });
 
-    if (question.type === 'solution') {
-      // 主观题:投递 AI 预批任务(BullMQ,stub 网关)
+    if (needsReview) {
+      // 主观题 / 公式填空:投递 AI 预批任务(BullMQ,stub 网关),isCorrect=null 待复核
       await this.preGradingQueue.enqueue(user.orgId, num(saved.id));
       return { judged: false, isCorrect: null, correctAnswer: null, analysisLatex: null };
     }
@@ -172,12 +175,16 @@ export class AttemptService {
       },
     });
 
-    // 卷面无主观题(如错题重做)→ 自动出分:graded + 错题入账 + mastery 任务
-    const hasSolution = await this.prisma.client.paperQuestion.findFirst({
-      where: { paperId: at.assignment.paperId, question: { type: 'solution' } },
-      select: { id: true },
+    // 卷面无需复核题(无 solution 且无公式填空,如纯客观错题重做)→ 自动出分:
+    // graded + 错题入账 + mastery 任务;否则等教师复核后 finalize
+    const reviewables = await this.prisma.client.paperQuestion.findMany({
+      where: { paperId: at.assignment.paperId },
+      select: { question: { select: { type: true, answer: true } } },
     });
-    if (!hasSolution) await this.grading.finalizeAttempt(at.id);
+    const needsReview = reviewables.some((pq) =>
+      questionNeedsReview(pq.question.type, pq.question.answer),
+    );
+    if (!needsReview) await this.grading.finalizeAttempt(at.id);
     return this.toDto(at.id);
   }
 

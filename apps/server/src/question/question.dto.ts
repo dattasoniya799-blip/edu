@@ -22,9 +22,26 @@ import type { QuestionAnswer, QuestionStatus, QuestionType } from '@qiming/contr
 const QUESTION_TYPES = ['single', 'multi', 'blank', 'solution'] as const satisfies readonly QuestionType[];
 const QUESTION_STATUSES = ['draft', 'published', 'retired'] as const satisfies readonly QuestionStatus[];
 
+/** 题目插图 anchor 的 target 取值(IMPL-back · 2026-06-13 方案A 批准) */
+const FIGURE_ANCHOR_TARGETS = ['stem', 'option', 'analysis', 'reference', 'rubric'] as const;
+export type FigureAnchorTarget = (typeof FIGURE_ANCHOR_TARGETS)[number];
+
+export class FigureAnchorDto {
+  @IsIn(FIGURE_ANCHOR_TARGETS) target: FigureAnchorTarget;
+  /** option → 选项 label;rubric → rubric step;其余 target 无需 ref */
+  @IsOptional() @IsString() ref?: string;
+}
+
 export class FigureDto {
   @IsString() @IsNotEmpty() ossKey: string;
   @Type(() => Number) @IsInt() position: number;
+
+  /** 缺省视为题干(向后兼容);option/rubric 用 ref 指明归属(service 内做存在性校验) */
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => FigureAnchorDto)
+  anchor?: FigureAnchorDto;
 }
 
 export class QuestionOptionInputDto {

@@ -9,6 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AccountItem, WrongBookService } from '../wrongbook/wrongbook.service';
 import { AI_GATEWAY, AiGateway } from './ai/ai-gateway';
 import { BizException, ERR_GRADING_PENDING } from './business.exception';
+import { questionNeedsReview } from './formula-blank.util';
 import { ReviewDto } from './grading.dto';
 
 export interface PendingGroupDto {
@@ -32,6 +33,9 @@ type AnswerWithGrading = {
     comment: string | null;
   } | null;
 };
+
+/** 卷面单题元信息(题型 / 满分 / 是否需复核) */
+type PaperQMeta = { type: string; fullScore: number; needsReview: boolean };
 
 /**
  * 批改域(任务卡 A5):
@@ -61,13 +65,23 @@ export class GradingService {
       where: { id: ans.questionId },
       select: { type: true, answer: true, rubric: true },
     });
-    if (!question || question.type !== 'solution') return;
+    // solution 恒走预批;blank 仅公式填空(参考答案含 LaTeX)走预批
+    if (!question || !questionNeedsReview(question.type, question.answer)) return;
 
-    const resp = ans.response as { text?: string; photoOssKey?: string } | null;
+    const resp = ans.response as
+      | { text?: string; photoOssKey?: string; texts?: string[] }
+      | null;
+    // 公式填空:OCR 文本 = 学生各空作答;参考答案 = 题目各空参考(均按空拼接,供真实 OCR/AI 用)
     const ocrText =
-      typeof resp?.text === 'string' ? resp.text : `[photo:${resp?.photoOssKey ?? ''}]`;
+      question.type === 'blank'
+        ? (Array.isArray(resp?.texts) ? resp.texts : []).join(' | ')
+        : typeof resp?.text === 'string'
+          ? resp.text
+          : `[photo:${resp?.photoOssKey ?? ''}]`;
     const referenceAnswer =
-      ((question.answer as { referenceLatex?: string } | null)?.referenceLatex ?? '');
+      question.type === 'blank'
+        ? ((question.answer as { texts?: string[] } | null)?.texts ?? []).join(' | ')
+        : ((question.answer as { referenceLatex?: string } | null)?.referenceLatex ?? '');
     const out = await this.ai.preGrade(
       { ocrText, referenceAnswer, rubric: (question.rubric as unknown as RubricStep[]) ?? [] },
       { orgId, feature: 'pre_grading' },
@@ -99,20 +113,23 @@ export class GradingService {
         },
       },
     });
-    const solutionIds = new Set(
+    // 待复核题 = solution + 公式填空(均 isCorrect=null);需按题目 answer 判定公式填空
+    const reviewIds = new Set(
       (
         await this.prisma.client.question.findMany({
-          where: { id: { in: [...new Set(rows.map((r) => r.questionId))] }, type: 'solution' },
-          select: { id: true },
+          where: { id: { in: [...new Set(rows.map((r) => r.questionId))] } },
+          select: { id: true, type: true, answer: true },
         })
-      ).map((q) => String(q.id)),
+      )
+        .filter((q) => questionNeedsReview(q.type, q.answer))
+        .map((q) => String(q.id)),
     );
     const groups = new Map<
       string,
       { assignmentId: number; paperName: string; pendingCount: number; aiScores: number[] }
     >();
     for (const r of rows) {
-      if (!solutionIds.has(String(r.questionId))) continue;
+      if (!reviewIds.has(String(r.questionId))) continue;
       if (r.grading?.finalScore != null) continue; // 已复核
       const key = String(r.attempt.assignment.id);
       const g = groups.get(key) ?? {
@@ -153,7 +170,12 @@ export class GradingService {
       select: { stemLatex: true, rubric: true },
     });
     if (!question) throw new NotFoundException('题目不存在');
-    const resp = ans.response as { text?: string; photoOssKey?: string } | null;
+    const resp = ans.response as
+      | { text?: string; photoOssKey?: string; texts?: string[] }
+      | null;
+    // 公式填空无 photo/text,各空作答拼接到 textResponse 供教师查看
+    const textResponse =
+      resp?.text ?? (Array.isArray(resp?.texts) ? resp.texts.join(' | ') : null);
     return {
       answerId: num(ans.id),
       studentId: num(ans.attempt.student.id),
@@ -162,7 +184,7 @@ export class GradingService {
       stemLatex: question.stemLatex,
       rubric: (question.rubric as unknown as RubricStep[]) ?? [],
       photoUrl: resp?.photoOssKey ? this.signPhotoUrl(resp.photoOssKey) : null,
-      textResponse: resp?.text ?? null,
+      textResponse,
       aiScore: dec(ans.grading?.aiScore),
       aiSteps: (ans.grading?.aiSteps as GradingItemDto['aiSteps']) ?? [],
       aiErrorTags: (ans.grading?.aiErrorTags as string[]) ?? [],
@@ -180,10 +202,10 @@ export class GradingService {
     if (!ans) throw new NotFoundException('作答不存在');
     const question = await this.prisma.client.question.findFirst({
       where: { id: ans.questionId },
-      select: { type: true },
+      select: { type: true, answer: true },
     });
-    if (!question || question.type !== 'solution')
-      throw new BadRequestException('仅主观题需要复核');
+    if (!question || !questionNeedsReview(question.type, question.answer))
+      throw new BadRequestException('仅主观题或公式填空需要复核');
     const pq = await this.prisma.client.paperQuestion.findFirst({
       where: { paperId: ans.attempt.assignment.paperId, questionId: ans.questionId },
       select: { score: true },
@@ -243,12 +265,12 @@ export class GradingService {
     const pendingAnswerIds: number[] = [];
     for (const at of attempts) {
       for (const a of at.answers) {
-        if (meta.get(String(a.questionId))?.type === 'solution' && dec(a.grading?.finalScore) == null)
+        if (meta.get(String(a.questionId))?.needsReview && dec(a.grading?.finalScore) == null)
           pendingAnswerIds.push(num(a.id));
       }
     }
     if (pendingAnswerIds.length)
-      throw new BizException(ERR_GRADING_PENDING, '仍有主观题未复核,请先 review 或 adopt-ai', {
+      throw new BizException(ERR_GRADING_PENDING, '仍有主观题/公式填空未复核,请先 review 或 adopt-ai', {
         pendingAnswerIds,
       });
 
@@ -281,35 +303,42 @@ export class GradingService {
   private async settleAttempt(
     at: { id: bigint; studentId: bigint; orgId: bigint; objectiveScore: unknown; answers: AnswerWithGrading[] },
     kind: AssignmentKind,
-    meta: Map<string, { type: string; fullScore: number }>,
+    meta: Map<string, PaperQMeta>,
   ): Promise<void> {
     let subjective: number | null = null;
-    const hasSolution = [...meta.values()].some((m) => m.type === 'solution');
+    const hasReview = [...meta.values()].some((m) => m.needsReview);
     const items: AccountItem[] = [];
 
     for (const a of at.answers) {
       const m = meta.get(String(a.questionId));
       if (!m) continue;
-      const finalScore = m.type === 'solution' ? dec(a.grading?.finalScore) : null;
-      if (m.type === 'solution' && finalScore != null) {
+      // 需复核题(solution / 公式填空)用复核分;否则客观题保持 null(用 isCorrect)
+      const finalScore = m.needsReview ? dec(a.grading?.finalScore) : null;
+      let isCorrect = a.isCorrect;
+      if (m.needsReview && finalScore != null) {
         subjective = round1((subjective ?? 0) + finalScore);
-        // 主观题成绩落到 answers.score(出分对学生可见)
-        await this.prisma.client.answer.update({
-          where: { id: a.id },
-          data: { score: finalScore },
-        });
+        // 复核分落到 answers.score(出分对学生可见)
+        const data: { score: number; isCorrect?: boolean } = { score: finalScore };
+        // 公式填空本质是客观题:回填 is_correct(满分=对)以纳入掌握度样本;
+        // solution 是主观题,is_correct 恒 NULL 不入掌握度样本(沿用 A5 口径)
+        if (m.type === 'blank') {
+          isCorrect = finalScore >= m.fullScore;
+          data.isCorrect = isCorrect;
+        }
+        await this.prisma.client.answer.update({ where: { id: a.id }, data });
       }
       items.push({
         answerId: a.id,
         questionId: a.questionId,
-        isCorrect: a.isCorrect,
+        isCorrect,
         finalScore,
         fullScore: m.fullScore,
         type: m.type,
+        needsReview: m.needsReview,
         errorTags: (a.grading?.aiErrorTags as string[]) ?? [],
       });
     }
-    if (hasSolution && subjective == null) subjective = 0;
+    if (hasReview && subjective == null) subjective = 0;
 
     const objective = dec(at.objectiveScore) ?? 0;
     await this.prisma.client.attempt.update({
@@ -324,16 +353,24 @@ export class GradingService {
     await this.masteryQueue.enqueue(num(at.orgId), num(at.studentId));
   }
 
-  /** 卷面题型/满分表 */
-  private async paperMeta(paperId: bigint): Promise<Map<string, { type: string; fullScore: number }>> {
+  /** 卷面题型/满分/是否需复核表(needsReview = solution 或 公式填空) */
+  private async paperMeta(paperId: bigint): Promise<Map<string, PaperQMeta>> {
     const pqs = await this.prisma.client.paperQuestion.findMany({
       where: { paperId },
-      select: { questionId: true, score: true, question: { select: { type: true } } },
+      select: {
+        questionId: true,
+        score: true,
+        question: { select: { type: true, answer: true } },
+      },
     });
     return new Map(
       pqs.map((pq) => [
         String(pq.questionId),
-        { type: pq.question.type, fullScore: dec(pq.score) ?? 0 },
+        {
+          type: pq.question.type,
+          fullScore: dec(pq.score) ?? 0,
+          needsReview: questionNeedsReview(pq.question.type, pq.question.answer),
+        },
       ]),
     );
   }
