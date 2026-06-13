@@ -2,13 +2,13 @@
  * 验收覆盖(任务卡 A1):
  * - 管理员登录(13800000001/Admin@123)→ /me 返回 org settings
  * - 无 token → 401
- * - 学生 ticket 兑换成功且第二次失效;设备重复绑定被拒
+ * - 学生账号密码登录(reset-password 取明文 → student/login);停用学生 → 403
  * - 刷新轮换(旧 refresh 重放 → 401);登出后 refresh 失效
  * - 修改密码(原密码错 → 401;改后新密码可登录);scrypt → argon2 静默升级
  */
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { createApp, createOrg2, dropOrg2, makeTicket, raw, Org2Fixture } from './fixtures/setup';
+import { createApp, createOrg2, dropOrg2, raw, Org2Fixture } from './fixtures/setup';
 
 const SEED_ADMIN = { phone: '13800000001', password: 'Admin@123' };
 
@@ -103,39 +103,61 @@ describe('认证(A1)', () => {
     await request(http).post('/api/v1/auth/refresh').send({ refreshToken }).expect(401);
   });
 
-  it('学生 ticket 兑换成功且第二次失效', async () => {
-    const token = await makeTicket(org2.orgId, org2.studentId);
-    const res = await request(http)
-      .post('/api/v1/auth/student/qr-exchange')
-      .send({ token, deviceFingerprint: 'pad-e2e-001', deviceName: 'iPad (e2e)' })
+  it('管理员重置学生密码 → 返回明文 → 学生账号密码登录成功;错误密码 → 401', async () => {
+    // 管理员登录 → 重置学生密码,拿到明文临时密码
+    const adminLogin = await request(http)
+      .post('/api/v1/auth/login')
+      .send({ phone: org2.adminPhone, password: org2.password })
       .expect(200);
-    expect(res.body.data.me.role).toBe('student');
-    expect(res.body.data.accessToken).toBeTruthy();
+    const adminAt = adminLogin.body.data.accessToken;
 
-    const device = await raw.device.findFirst({ where: { studentId: org2.studentId } });
-    expect(device?.deviceFingerprint).toBe('pad-e2e-001');
+    const reset = await request(http)
+      .post(`/api/v1/admin/students/${org2.studentId}/reset-password`)
+      .set('Authorization', `Bearer ${adminAt}`)
+      .expect(200);
+    const tempPassword = reset.body.data.password;
+    expect(typeof tempPassword).toBe('string');
+    expect(tempPassword.length).toBeGreaterThanOrEqual(8);
 
-    // 一次性:同一 token 第二次兑换 → 401
+    // 学生用学号 + 临时密码登录
+    const student = await raw.user.findFirstOrThrow({ where: { id: org2.studentId } });
+    const ok = await request(http)
+      .post('/api/v1/auth/student/login')
+      .send({ studentNo: student.studentNo, password: tempPassword })
+      .expect(200);
+    expect(ok.body.data.me.role).toBe('student');
+    expect(ok.body.data.accessToken).toBeTruthy();
+    expect(ok.body.data.refreshToken).toBeTruthy();
+
+    // 错误密码 → 401;未知学号 → 401
     await request(http)
-      .post('/api/v1/auth/student/qr-exchange')
-      .send({ token, deviceFingerprint: 'pad-e2e-001', deviceName: 'iPad (e2e)' })
+      .post('/api/v1/auth/student/login')
+      .send({ studentNo: student.studentNo, password: 'wrong-pass' })
+      .expect(401);
+    await request(http)
+      .post('/api/v1/auth/student/login')
+      .send({ studentNo: 'NO-SUCH-STUDENT', password: tempPassword })
       .expect(401);
   });
 
-  it('设备重复绑定被拒(已绑 A 机,新 ticket 换 B 机 → 403)', async () => {
-    const token = await makeTicket(org2.orgId, org2.studentId);
+  it('停用学生 → 账号密码登录被拒(403)', async () => {
+    const adminLogin = await request(http)
+      .post('/api/v1/auth/login')
+      .send({ phone: org2.adminPhone, password: org2.password })
+      .expect(200);
+    const reset = await request(http)
+      .post(`/api/v1/admin/students/${org2.studentId}/reset-password`)
+      .set('Authorization', `Bearer ${adminLogin.body.data.accessToken}`)
+      .expect(200);
+    const pwd = reset.body.data.password;
+    const student = await raw.user.findFirstOrThrow({ where: { id: org2.studentId } });
+
+    await raw.user.update({ where: { id: org2.studentId }, data: { status: 'disabled' } });
     await request(http)
-      .post('/api/v1/auth/student/qr-exchange')
-      .send({ token, deviceFingerprint: 'pad-e2e-OTHER', deviceName: 'iPad (其他)' })
+      .post('/api/v1/auth/student/login')
+      .send({ studentNo: student.studentNo, password: pwd })
       .expect(403);
-  });
-
-  it('过期 ticket → 401', async () => {
-    const token = await makeTicket(org2.orgId, org2.studentId, { expired: true });
-    await request(http)
-      .post('/api/v1/auth/student/qr-exchange')
-      .send({ token, deviceFingerprint: 'pad-e2e-001', deviceName: 'iPad (e2e)' })
-      .expect(401);
+    await raw.user.update({ where: { id: org2.studentId }, data: { status: 'active' } });
   });
 
   it('修改密码:原密码错 → 401;改成功后新密码可登录、旧密码失效', async () => {
@@ -176,9 +198,9 @@ describe('认证(A1)', () => {
       .expect(400);
   });
 
-  it('账号/密码/设备动作写入 audit_logs', async () => {
+  it('账号/密码/登录动作写入 audit_logs', async () => {
     const count = await raw.auditLog.count({
-      where: { orgId: org2.orgId, action: { in: ['auth.login', 'auth.qr_exchange', 'me.password_change', 'auth.logout'] } },
+      where: { orgId: org2.orgId, action: { in: ['auth.login', 'auth.student_login', 'me.password_change', 'auth.logout'] } },
     });
     expect(count).toBeGreaterThanOrEqual(4);
   });

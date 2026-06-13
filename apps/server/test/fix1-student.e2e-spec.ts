@@ -26,7 +26,7 @@ const UPLOAD_ROOT = mkdtempSync(join(tmpdir(), 'qiming-fix1-view-'));
 process.env.UPLOAD_ROOT = UPLOAD_ROOT;
 
 import { FIX1_PASSWORD, Fix1Fixture, createFix1Org, dropFix1Org } from './fixtures/fix1.fixtures';
-import { createApp, makeTicket, raw } from './fixtures/setup';
+import { createApp, loginStudentById, raw } from './fixtures/setup';
 
 const exactKeys = (obj: object, keys: string[]) =>
   expect(Object.keys(obj).sort()).toEqual([...keys].sort());
@@ -265,14 +265,8 @@ describe('学生端只读杂项(FIX1)', () => {
     const res = await request(http).post('/api/v1/auth/login').send({ phone, password }).expect(200);
     return res.body.data.accessToken as string;
   };
-  const studentLogin = async (orgId: bigint, sid: bigint, fp: string) => {
-    const ticket = await makeTicket(orgId, sid);
-    const res = await request(http)
-      .post('/api/v1/auth/student/qr-exchange')
-      .send({ token: ticket, deviceFingerprint: fp, deviceName: 'FIX1 测试平板' })
-      .expect(200);
-    return res.body.data.accessToken as string;
-  };
+  const studentLogin = async (_orgId: bigint, sid: bigint, _fp?: string) =>
+    loginStudentById(http, sid);
   /** 签名 URL 是绝对地址,e2e 不占固定端口 → 取 path 打到测试 server */
   const pathOf = (url: string) => {
     const u = new URL(url);

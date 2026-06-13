@@ -78,52 +78,45 @@ export class AuthService {
     return { ...tokens, me };
   }
 
-  // ---------------- 平板扫码兑换(student) ----------------
-  async qrExchange(token: string, deviceFingerprint: string, deviceName: string, ip?: string) {
+  // ---------------- 学生账号密码登录 ----------------
+  async studentLogin(studentNo: string, password: string, ip?: string) {
     return runWithoutTenant(async () => {
-      const ticket = await this.prisma.client.loginTicket.findFirst({ where: { token } });
-      if (!ticket || ticket.expiresAt < new Date()) throw new UnauthorizedException('登录码无效或已过期');
-
-      // 一次性:原子置 used_at,谁抢到算谁(防并发重放)
-      const claimed = await this.prisma.client.loginTicket.updateMany({
-        where: { id: ticket.id, usedAt: null },
-        data: { usedAt: new Date() },
+      // studentNo 仅 org 内唯一(schema @@unique([orgId, studentNo]));登录请求不带 org,
+      // 故取全部同号在读学生逐一用密码定位本人(跨 org 撞号时由密码区分)。
+      const candidates = await this.prisma.client.user.findMany({
+        where: { studentNo, role: 'student', deletedAt: null },
+        include: { org: true },
       });
-      if (claimed.count !== 1) throw new UnauthorizedException('登录码已被使用');
 
-      const student = await this.prisma.client.user.findFirst({
-        where: { id: ticket.studentId, role: 'student', deletedAt: null },
-        include: { org: true, device: true },
-      });
-      if (!student || student.status === 'disabled') throw new UnauthorizedException('学生账号不可用');
-      if (student.org.status !== 'active') throw new ForbiddenException('机构已停用');
-
-      // 设备绑定:一人一机;换设备需管理员先解绑
-      const settings = student.org.settings as Record<string, any>;
-      if (student.device) {
-        if (settings?.deviceBinding !== false && student.device.deviceFingerprint !== deviceFingerprint) {
-          throw new ForbiddenException('该学生已绑定其他设备,请联系管理员解绑后重试');
+      let matched: (typeof candidates)[number] | null = null;
+      let needsUpgrade = false;
+      for (const c of candidates) {
+        if (!c.passwordHash) continue;
+        const r = await verifyPassword(password, c.passwordHash);
+        if (r.ok) {
+          matched = c;
+          needsUpgrade = r.needsUpgrade;
+          break;
         }
-        await this.prisma.client.device.update({
-          where: { id: student.device.id },
-          data: { lastSeenAt: new Date(), deviceName },
-        });
-      } else {
-        await this.prisma.client.device.create({
-          data: { orgId: student.orgId, studentId: student.id, deviceFingerprint, deviceName },
+      }
+      if (!matched) throw new UnauthorizedException('学号或密码错误');
+      if (matched.status !== 'active') throw new ForbiddenException('学生账号未激活或已停用');
+      if (matched.org.status !== 'active') throw new ForbiddenException('机构已停用');
+
+      // seed/旧 scrypt 哈希 → 首次登录静默升级为 argon2
+      if (needsUpgrade) {
+        const upgraded = await hashPassword(password);
+        await this.prisma.client.user.update({
+          where: { id: matched.id },
+          data: { passwordHash: upgraded },
         });
       }
 
-      // 学生首次登录自动激活
-      if (student.status === 'pending') {
-        await this.prisma.client.user.update({ where: { id: student.id }, data: { status: 'active' } });
-      }
-
-      const me = this.buildMe(student, student.org);
+      const me = this.buildMe(matched, matched.org);
       const tokens = await this.issueTokens({ uid: me.id, orgId: me.orgId, role: 'student' });
       await this.audit.log({
-        actorId: me.id, orgId: me.orgId, action: 'auth.qr_exchange',
-        targetType: 'device', detail: { deviceName }, ip,
+        actorId: me.id, orgId: me.orgId, action: 'auth.student_login',
+        targetType: 'user', targetId: me.id, ip,
       });
       return { ...tokens, me };
     });

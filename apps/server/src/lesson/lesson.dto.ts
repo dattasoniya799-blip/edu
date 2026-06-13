@@ -39,4 +39,6 @@ export class SegmentInputDto {
   @IsOptional() @IsObject() config?: Record<string, unknown>;
   @IsOptional() @Type(() => Number) @IsInt() resourceId?: number | null;
   @IsOptional() @Type(() => Number) @IsInt() paperId?: number | null;
+  /** 关联知识点节点(可空,写);kpNodeName 为只读展示字段,写入忽略 */
+  @IsOptional() @Type(() => Number) @IsInt() kpNodeId?: number | null;
 }

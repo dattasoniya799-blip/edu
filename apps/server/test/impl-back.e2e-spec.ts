@@ -10,7 +10,7 @@ import Redis from 'ioredis';
 import request from 'supertest';
 import type { AttemptDto, GradingItemDto, QuestionDto, WrongBookItemDto } from '@qiming/contracts';
 import { IMPL_PASSWORD, ImplFixture, createImplOrg, dropImplOrg } from './fixtures/impl-back.fixtures';
-import { createApp, makeTicket, raw } from './fixtures/setup';
+import { createApp, loginStudentById, raw } from './fixtures/setup';
 
 const exactKeys = (obj: object, keys: string[]) =>
   expect(Object.keys(obj).sort()).toEqual([...keys].sort());
@@ -48,12 +48,7 @@ describe('IMPL-back · 插图 anchor / 填空混合判分 / 错题本 subject', 
     fx = await createImplOrg();
     const tRes = await request(http).post('/api/v1/auth/login').send({ phone: fx.teacherPhone, password: IMPL_PASSWORD }).expect(200);
     teacher = tRes.body.data.accessToken;
-    const ticket = await makeTicket(fx.orgId, fx.s1Id);
-    const sRes = await request(http)
-      .post('/api/v1/auth/student/qr-exchange')
-      .send({ token: ticket, deviceFingerprint: 'impl-fp-1', deviceName: 'IMPL 测试平板' })
-      .expect(200);
-    s1 = sRes.body.data.accessToken;
+    s1 = await loginStudentById(http, fx.s1Id);
   });
 
   afterAll(async () => {

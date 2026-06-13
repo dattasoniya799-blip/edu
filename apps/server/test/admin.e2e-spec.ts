@@ -242,15 +242,15 @@ describe('管理员域(A2)', () => {
   });
 
   // ================= 学生 =================
-  describe('students CRUD + 档案 + 登录码 + 解绑', () => {
-    it('创建学生:结构一致、自动学号、入班、自动生成登录码', async () => {
+  describe('students CRUD + 档案 + 重置密码 + 解绑', () => {
+    it('创建学生:结构一致、自动学号、入班、active 且自动生成初始密码', async () => {
       const res = await post('/admin/students', adminAt)
         .send({ name: 'A2测试学生', parentPhone: '13910000003', grade: '初二', courseIds: [Number(seedCourseId)] })
         .expect(200);
       const body = res.body as ApiResp<StudentDto>;
       exactKeys(body.data, STUDENT_KEYS);
       expect(body.data.studentNo).toMatch(/^S-\d{4}$/);
-      expect(body.data.status).toBe('pending');
+      expect(body.data.status).toBe('active'); // 账号密码登录:创建即激活
       expect(body.data.device).toBeNull();
       expect(body.data.weekStudySec).toBe(0);
       expect(body.data.courses).toEqual([
@@ -258,8 +258,9 @@ describe('管理员域(A2)', () => {
       ]);
       myStudentId = body.data.id;
       myUserIds.push(BigInt(myStudentId));
-      const tickets = await raw.loginTicket.count({ where: { studentId: BigInt(myStudentId) } });
-      expect(tickets).toBe(1);
+      // 自动生成初始密码:passwordHash 已写入(明文不入响应)
+      const created = await raw.user.findFirstOrThrow({ where: { id: BigInt(myStudentId) } });
+      expect(created.passwordHash).toBeTruthy();
     });
 
     it('列表过滤:courseId / deviceBound 与库一致', async () => {
@@ -323,21 +324,27 @@ describe('管理员域(A2)', () => {
       await get(`/admin/students/${seedStudent1Id}/profile`, teacherAt).expect(200);
     });
 
-    it('重发登录码:旧票作废、新票生效', async () => {
-      const res = await post(`/admin/students/${myStudentId}/login-ticket`, adminAt).expect(200);
-      exactKeys(res.body.data, ['token', 'expiresAt']);
-      expect(res.body.data.token).toMatch(/^tk_/);
-      expect(new Date(res.body.data.expiresAt).getTime()).toBeGreaterThan(Date.now());
+    it('重置学生密码:返回明文临时密码,可凭其登录;写 audit_logs', async () => {
+      const res = await post(`/admin/students/${myStudentId}/reset-password`, adminAt).expect(200);
+      exactKeys(res.body.data, ['password']);
+      const pwd = res.body.data.password as string;
+      expect(pwd.length).toBeGreaterThanOrEqual(8);
 
-      const tickets = await raw.loginTicket.findMany({ where: { studentId: BigInt(myStudentId) }, orderBy: { id: 'asc' } });
-      expect(tickets.length).toBe(2);
-      expect(tickets[0].usedAt).not.toBeNull(); // 创建时发的那张已被作废
-      expect(tickets[1].usedAt).toBeNull();
-      expect(tickets[1].token).toBe(res.body.data.token);
+      const student = await raw.user.findFirstOrThrow({ where: { id: BigInt(myStudentId) } });
+      await request(http)
+        .post('/api/v1/auth/student/login')
+        .send({ studentNo: student.studentNo, password: pwd })
+        .expect(200);
+
+      const audit = await raw.auditLog.count({
+        where: { orgId: org1Id, action: 'admin.student.reset_password', targetId: BigInt(myStudentId) },
+      });
+      expect(audit).toBeGreaterThanOrEqual(1);
     });
 
-    it('解绑设备:未绑定 → 404;绑定后解绑成功', async () => {
-      await del(`/admin/students/${myStudentId}/device`, adminAt).expect(404);
+    it('解绑设备:无绑定时恒成功(200);有绑定则清除', async () => {
+      // 已无设备绑定流程:无绑定时也返回 200
+      await del(`/admin/students/${myStudentId}/device`, adminAt).expect(200);
       await raw.device.create({
         data: { orgId: org1Id, studentId: BigInt(myStudentId), deviceFingerprint: 'fp-a2-e2e', deviceName: 'A2测试平板' },
       });
@@ -459,6 +466,32 @@ describe('管理员域(A2)', () => {
         }
       }
       await get(`/admin/courses/${seedCourseId}/roster`, teacherAt).expect(200);
+    });
+
+    it('入班 / 退班:POST 置 active(幂等),DELETE 置 quit;不存在学生 / 跨租户 → 404', async () => {
+      // 入班(幂等:两次 POST 仅一条 active 记录)
+      await post(`/admin/courses/${myCourseId}/students`, adminAt).send({ studentIds: [myStudentId] }).expect(200);
+      await post(`/admin/courses/${myCourseId}/students`, adminAt).send({ studentIds: [myStudentId] }).expect(200);
+      let cnt = await raw.courseStudent.count({ where: { courseId: BigInt(myCourseId), studentId: BigInt(myStudentId) } });
+      expect(cnt).toBe(1);
+      let cs = await raw.courseStudent.findFirstOrThrow({ where: { courseId: BigInt(myCourseId), studentId: BigInt(myStudentId) } });
+      expect(cs.status).toBe('active');
+
+      // 退班 → quit
+      await del(`/admin/courses/${myCourseId}/students/${myStudentId}`, adminAt).expect(200);
+      cs = await raw.courseStudent.findFirstOrThrow({ where: { courseId: BigInt(myCourseId), studentId: BigInt(myStudentId) } });
+      expect(cs.status).toBe('quit');
+
+      // 再次入班 → 复用记录置回 active(仍仅一条)
+      await post(`/admin/courses/${myCourseId}/students`, adminAt).send({ studentIds: [myStudentId] }).expect(200);
+      cnt = await raw.courseStudent.count({ where: { courseId: BigInt(myCourseId), studentId: BigInt(myStudentId) } });
+      expect(cnt).toBe(1);
+      cs = await raw.courseStudent.findFirstOrThrow({ where: { courseId: BigInt(myCourseId), studentId: BigInt(myStudentId) } });
+      expect(cs.status).toBe('active');
+
+      // 不存在学生 → 404;他租户(orgB admin 看不到本 org 课程) → 404
+      await post(`/admin/courses/${myCourseId}/students`, adminAt).send({ studentIds: [999999999] }).expect(404);
+      await post(`/admin/courses/${myCourseId}/students`, orgBAdminAt).send({ studentIds: [myStudentId] }).expect(404);
     });
   });
 

@@ -18,6 +18,7 @@ import {
 import { CurrentUser, Roles } from '../common/decorators';
 import type { JwtUser } from '../auth/auth.service';
 import {
+  AddStudentsDto,
   AiQuotaInputDto,
   CourseInputDto,
   CourseListQueryDto,
@@ -105,10 +106,10 @@ export class AdminController {
     return this.students.profile(id);
   }
 
-  @Post('students/:id/login-ticket')
+  @Post('students/:id/reset-password')
   @HttpCode(200)
-  studentLoginTicket(@CurrentUser() user: JwtUser, @Param('id', ParseIntPipe) id: number, @Ip() ip: string) {
-    return this.students.loginTicket(user, id, ip);
+  resetStudentPassword(@CurrentUser() user: JwtUser, @Param('id', ParseIntPipe) id: number, @Ip() ip: string) {
+    return this.students.resetPassword(user, id, ip);
   }
 
   @Delete('students/:id/device')
@@ -142,6 +143,27 @@ export class AdminController {
   @Roles('admin', 'teacher')
   courseRoster(@Param('id', ParseIntPipe) id: number) {
     return this.courses.roster(id);
+  }
+
+  @Post('courses/:id/students')
+  @HttpCode(200)
+  addCourseStudents(
+    @CurrentUser() user: JwtUser,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: AddStudentsDto,
+    @Ip() ip: string,
+  ) {
+    return this.courses.addStudents(user, id, dto.studentIds, ip);
+  }
+
+  @Delete('courses/:id/students/:studentId')
+  removeCourseStudent(
+    @CurrentUser() user: JwtUser,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('studentId', ParseIntPipe) studentId: number,
+    @Ip() ip: string,
+  ) {
+    return this.courses.removeStudent(user, id, studentId, ip);
   }
 
   // ================= 总览 / AI 用量 / 额度 =================

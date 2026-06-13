@@ -1,6 +1,7 @@
 /** A2 · /admin/* 请求 DTO(校验规则严格对齐 openapi.yaml,类型对齐 @qiming/contracts) */
 import { Transform, Type } from 'class-transformer';
 import {
+  ArrayNotEmpty,
   IsArray,
   IsBoolean,
   IsIn,
@@ -111,6 +112,12 @@ export class CourseInputDto {
 
   @IsOptional() @IsArray() @IsInt({ each: true })
   studentIds?: number[];
+}
+
+/** POST /admin/courses/:id/students(入班) */
+export class AddStudentsDto {
+  @IsArray() @ArrayNotEmpty() @IsInt({ each: true })
+  studentIds!: number[];
 }
 
 // ---------------- AI 用量 / 额度 ----------------

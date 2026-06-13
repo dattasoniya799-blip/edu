@@ -11,7 +11,7 @@ import Redis from 'ioredis';
 import request from 'supertest';
 import type { AssignmentDto, AttemptDto, GradingItemDto, WrongBookItemDto } from '@qiming/contracts';
 import { A5_PASSWORD, A5_RUBRIC, A5Fixture, createA5Org, dropA5Org } from './fixtures/a5.fixtures';
-import { createApp, makeTicket, raw } from './fixtures/setup';
+import { createApp, loginStudentById, raw } from './fixtures/setup';
 
 const exactKeys = (obj: object, keys: string[]) =>
   expect(Object.keys(obj).sort()).toEqual([...keys].sort());
@@ -102,14 +102,8 @@ describe('作答/自动批改/复核/错题/掌握度(A5)', () => {
     const res = await request(http).post('/api/v1/auth/login').send({ phone, password }).expect(200);
     return res.body.data.accessToken as string;
   };
-  const studentLogin = async (orgId: bigint, sid: bigint, fp: string) => {
-    const ticket = await makeTicket(orgId, sid);
-    const res = await request(http)
-      .post('/api/v1/auth/student/qr-exchange')
-      .send({ token: ticket, deviceFingerprint: fp, deviceName: 'A5 测试平板' })
-      .expect(200);
-    return res.body.data.accessToken as string;
-  };
+  const studentLogin = async (_orgId: bigint, sid: bigint, _fp?: string) =>
+    loginStudentById(http, sid);
   const qid = (i: number) => Number(fx.questionIds[i]);
 
   beforeAll(async () => {

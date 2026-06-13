@@ -24,6 +24,8 @@ export interface A4Fixture {
   lessonIds: bigint[]; // seq 1..3
   lesson1StartIso: string;
   questionIds: number[]; // [single, blank, solution, single]
+  kpNodeId: number; // 环节知识点标签(IMPL2)
+  kpNodeName: string;
 }
 
 export async function createA4Org(): Promise<A4Fixture> {
@@ -62,6 +64,15 @@ export async function createA4Org(): Promise<A4Fixture> {
   });
   await raw.courseStudent.createMany({
     data: [s1.id, s2.id].map((sid) => ({ orgId, courseId: course.id, studentId: sid })),
+  });
+
+  // 环节知识点标签:本 org 一张教材图谱 + 1 个节点
+  const kpGraph = await raw.kpGraph.create({
+    data: { orgId, code: 'a4_pep_mini', graphType: 'curriculum_knowledge', subject: '数学' },
+  });
+  const kpNodeName = '一次函数的图象';
+  const kpNode = await raw.kpNode.create({
+    data: { orgId, graphId: kpGraph.id, code: 'A4-KP-001', name: kpNodeName },
   });
 
   const lesson1Start = new Date(Date.now() + 3 * 86400_000);
@@ -143,6 +154,8 @@ export async function createA4Org(): Promise<A4Fixture> {
     lessonIds,
     lesson1StartIso: lesson1Start.toISOString(),
     questionIds,
+    kpNodeId: Number(kpNode.id),
+    kpNodeName,
   };
 }
 
@@ -161,6 +174,8 @@ export async function dropA4Org(orgId: bigint): Promise<void> {
   await raw.questionOption.deleteMany({ where: { orgId } });
   await raw.questionTag.deleteMany({ where: { orgId } });
   await raw.question.deleteMany({ where: { orgId } });
+  await raw.kpNode.deleteMany({ where: { orgId } });
+  await raw.kpGraph.deleteMany({ where: { orgId } });
   await raw.device.deleteMany({ where: { orgId } });
   await raw.loginTicket.deleteMany({ where: { orgId } });
   await raw.auditLog.deleteMany({ where: { orgId } });

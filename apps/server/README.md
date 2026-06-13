@@ -657,3 +657,76 @@ mock 预批规则与原 stub 完全一致(第 1 步恒 ok、其余看 `√{step}
 - 公式检测以"参考答案含反斜杠"为判据:若个别简单填空的参考答案里写了转义反斜杠(非公式语义)会被误判为公式填空而走复核 —— 录题侧约定参考答案 LaTeX 即可,MVP 口径接受该假阳。
 - 公式填空分计入 `subjectiveScore`(而非 objectiveScore),仅影响客观/主观分的展示拆分,不影响总分与掌握度;若前端按"填空=客观分"统计需注意此口径。
 - stub 预批对无 rubric 的填空恒给 `aiScore=0`,完全依赖教师复核给分;A7 真实网关上线后由 OCR/AI 产出实际预批分,`AI_GATEWAY` Provider 绑定切换即可,本域零改动。
+
+---
+
+# IMPL2-back 交付 · 学生密码登录 / 入班 / 讲次知识点 + 放宽发布
+
+负责目录:`src/auth`、`src/admin`、`src/course`、`src/lesson` 及相关 e2e;`app.module.ts` 无需改动(qr-exchange 仅在 auth 控制器/服务内,已就地移除)。本波次基于已审定的新契约(`/auth/student/login`、`/admin/students/{id}/reset-password`、`/admin/courses/{id}/students` POST/DELETE、`LessonSegmentDto.kpNodeId/kpNodeName`),只写业务实现并修因契约变化导致的编译错误,未改 contracts 与 schema.prisma。
+
+## 实现概览
+
+| 要求 | 落点 |
+|---|---|
+| `POST /auth/student/login` `{studentNo,password}` 账号密码登录 | `src/auth/auth.service.ts#studentLogin`、`auth.controller.ts`、`auth.dto.ts#StudentLoginDto` |
+| `POST /admin/students/{id}/reset-password` → 返回明文临时密码 | `src/admin/students.service.ts#resetPassword`、`admin.controller.ts` |
+| 学生创建即生成初始密码并 active | `src/admin/students.service.ts#create` |
+| 移除 qr-exchange 路由/控制器;解绑设备端点保留(无绑定恒成功) | `auth.controller.ts`(删 qr-exchange)、`students.service.ts#unbindDevice` |
+| `POST/DELETE /admin/courses/{id}/students` 入班/退班 | `src/admin/courses.service.ts#addStudents / removeStudent`、`admin.dto.ts#AddStudentsDto` |
+| 讲次环节 kpNodeId 读写 + kpNodeName 只读回填 | `src/lesson/lesson.service.ts#getSegments / replaceSegments`、`lesson.dto.ts#SegmentInputDto` |
+| 放宽发布硬规则(自由编排) | `src/lesson/lesson.service.ts#publish / computeChecklist` |
+
+## 学生登录 / 重置密码口径
+
+- **登录定位**:`studentNo` 仅 org 内唯一(schema `@@unique([orgId, studentNo])`),登录请求不带 org → 取全部同号在读学生,用 argon2(兼容 seed 的 scrypt 并静默升级)逐一校验密码定位本人;`status=active` 才放行,机构停用 → 403,密码错/学号不存在 → 401。签发与 `/auth/login` 同形的 `{accessToken,refreshToken,me}`(me.role=student)。审计 `auth.student_login`。
+- **重置密码**:`POST /admin/students/{id}/reset-password` 生成 8 位易读明文临时密码(剔除 0/O/1/l/I 等易混字符),写入该生 `passwordHash`(argon2),响应 `{password}`(明文仅此一处返回,供管理员当面/短信告知学生);写 `audit_logs`(action=`admin.student.reset_password`)。**已替换原 login-ticket 实现。**
+- **创建学生**:自动生成初始密码并写 `passwordHash`,`status=active`(已无扫码激活流程);创建响应仍是 `StudentDto`(不含密码),管理员可凭 reset-password 取回明文。不再生成 login_ticket、不再发"登录码"短信。
+- **设备**:学生登录不再绑设备;`devices/login_tickets` 表保留但不用;`StudentDto.device` 恒 `null`。`DELETE /admin/students/{id}/device` 保留,无绑定时也返回 200(有绑定则清除)。
+
+## 入班 / 退班
+
+- `POST /admin/courses/{id}/students` `{studentIds}`:把这些学生在该课程的 `course_students` 置/建为 `active`,**幂等**(已 active 不重复建、已 quit 复用记录置回 active);跨租户/不存在课程或学生 → 404;返回 `OkVoid`。审计 `admin.course.add_students`。
+- `DELETE /admin/courses/{id}/students/{studentId}`:把该选课记录置 `status=quit`(无记录则空操作);返回 `OkVoid`。审计 `admin.course.remove_student`。
+
+## 讲次环节知识点(kpNode)读写
+
+- `GET /lessons/{id}/segments`:join `kp_nodes` 回填 `kpNodeName`(只读展示);未挂知识点 → `kpNodeId=null, kpNodeName=null`。
+- `PUT /lessons/{id}/segments`(全量替换):每个 segment 接受 `kpNodeId`(可空),校验该 `kp_node` 同 org 存在(租户注入,跨租户/不存在 → 404);写入忽略请求中的 `kpNodeName`。
+
+## 新发布口径(放宽 — 自由编排)
+
+`POST /lessons/{id}/publish` 不再要求"四类环节必齐"。新硬规则:
+
+1. **至少 1 个环节**;空编排 → `4201`,`detail=['empty']`。
+2. **practice/homework 环节若挂了 paper,则该 paper 必须 published**;存在未发布的挂卷 → `4201`,`detail` 含 `'practice'`/`'homework'`(缺失项)。
+3. 通过 → `status=ready`。
+
+`prep_checklist` 相应简化为**按实际存在的环节类型标记**(warmup/lecture/summary=该类型环节存在;practice/homework=该类型存在且其中挂了 paper 的环节 paper 均 published,无 paper 不阻塞),仅作展示、不再因缺某类型环节而阻塞发布。`detail` 不再返回"缺某类型环节"项。
+
+## 验收 ↔ 测试(npm test 167 用例全绿,连跑两次)
+
+| 验收项 | 测试 |
+|---|---|
+| 学生账号密码登录 + 错误密码/未知学号 → 401;停用 → 403 | auth:`管理员重置学生密码 → 返回明文 → 学生账号密码登录成功;错误密码 → 401`、`停用学生 → 账号密码登录被拒(403)` |
+| 重置密码返回明文且可登录、写 audit | admin:`重置学生密码:返回明文临时密码,可凭其登录;写 audit_logs` |
+| 创建学生 active + 自动初始密码 | admin:`创建学生:结构一致、自动学号、入班、active 且自动生成初始密码` |
+| 解绑设备无绑定恒成功 | admin:`解绑设备:无绑定时恒成功(200);有绑定则清除` |
+| 入班幂等 / 退班 quit / 跨租户 404 | admin:`入班 / 退班:POST 置 active(幂等),DELETE 置 quit;不存在学生 / 跨租户 → 404` |
+| 环节 kpNode 读写 + kpNodeName 回填 + 404 | a4:`segments 知识点标签:写 kpNodeId → GET 回填 kpNodeName(写入忽略 kpNodeName);不存在节点 → 404` |
+| 放宽发布:无 homework 也可发布、checklist 按实际标记 | a4:`验收:自由编排 publish —— 无 homework 环节也可发布(放宽规则),prep_checklist 按实际类型标记` |
+| 挂未发布 paper → 4201 含 practice;空编排 → 4201 含 empty | a4:`publish:practice 挂的 paper 未 published(draft)→ 4201,detail 含 practice` |
+
+测试夹具:涉及学生登录的既有 e2e 统一改走 `test/fixtures/setup.ts#loginStudentById`(为夹具学生写已知密码+active 后 POST `/auth/student/login`);`a4.fixtures.ts` 新增本 org 一张教材图谱 + 1 个 kp_node(`kpNodeId/kpNodeName`)供环节知识点读写,`afterAll` 增 kpNode/kpGraph 清理。本波次 `.env` 设 `BULLMQ_PREFIX=impl2`,专属库 `qiming_impl2`,Redis 队列键 `impl2:` 前缀(禁 FLUSHALL)。
+
+## 与前端的对接点
+
+- **学生登录**:`POST /auth/student/login` body `{studentNo, password}`,200 返回 `{code,message,data:{accessToken,refreshToken,me}}`(me 与 `/auth/login` 同形,role=student);错误 401(密码错/学号不存在)、403(停用/机构停用)。学生端登录页用学号+密码,不再走扫码。
+- **重置密码**:`POST /admin/students/{id}/reset-password` 200 返回 `{code,message,data:{password}}`——明文临时密码,管理端展示一次供告知学生;`StudentDto` 仍不含密码。
+- **入班/退班**:`POST /admin/courses/{id}/students` body `{studentIds:number[]}` → `OkVoid`(幂等);`DELETE /admin/courses/{id}/students/{studentId}` → `OkVoid`。
+- **segment kpNode 响应形状**:`LessonSegmentDto` 新增 `kpNodeId:number|null`(读写)与 `kpNodeName:string|null`(只读,GET 回填);PUT 提交时 `kpNodeName` 可省略或随意,服务端忽略。
+- **发布**:`/lessons/{id}/publish` 失败仍 `code=4201`,`detail` 由旧的"缺类型环节列表"变为 `['empty']`(无环节)/含 `'practice'|'homework'`(挂了未发布的卷);前端按 detail 提示。
+
+## 遗留风险
+
+- `studentNo` 仅 org 内唯一,登录不带 org;跨 org 撞号且**密码也相同**时,`findMany` 顺序取首个匹配,理论上可能登成同号他校学生。生产中 studentNo 命名通常含机构前缀,撞号概率极低;若需根治可在契约层为学生登录补 orgCode/机构选择(需契约变更,未自行改)。
+- `login_tickets` / `devices` 表保留未用,`StudentDto.device` 恒 null;后续若彻底下线设备模型再行迁移。
