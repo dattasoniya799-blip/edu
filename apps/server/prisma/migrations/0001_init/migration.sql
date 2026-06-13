@@ -73,6 +73,7 @@ CREATE TABLE lessons (
   course_id BIGINT NOT NULL REFERENCES courses(id), seq INT NOT NULL,
   title VARCHAR(128) NOT NULL, scheduled_start TIMESTAMPTZ, scheduled_end TIMESTAMPTZ,
   status "LessonStatus" NOT NULL DEFAULT 'draft', prep_checklist JSONB NOT NULL DEFAULT '{}',
+  opening_config JSONB,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (course_id, seq));
 CREATE INDEX idx_lessons_org ON lessons(org_id);
@@ -120,6 +121,7 @@ CREATE TABLE questions (
   textbook_version VARCHAR(32), chapter VARCHAR(64),
   stem_latex TEXT NOT NULL, figures JSONB NOT NULL DEFAULT '[]',
   answer JSONB NOT NULL, rubric JSONB NOT NULL DEFAULT '[]', analysis_latex TEXT,
+  analysis_brief_latex TEXT, analysis_detail_latex TEXT,
   difficulty SMALLINT NOT NULL DEFAULT 2, status "QuestionStatus" NOT NULL DEFAULT 'draft',
   stats JSONB NOT NULL DEFAULT '{}',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -161,6 +163,7 @@ CREATE TABLE lesson_segments (
   config JSONB NOT NULL DEFAULT '{}',
   resource_id BIGINT REFERENCES resources(id), paper_id BIGINT REFERENCES papers(id),
   kp_node_id BIGINT REFERENCES kp_nodes(id),
+  unit_seq INT,
   UNIQUE (lesson_id, seq));
 CREATE INDEX idx_segments_org ON lesson_segments(org_id);
 

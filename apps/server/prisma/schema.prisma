@@ -237,6 +237,7 @@ model Lesson {
   scheduledEnd   DateTime?    @map("scheduled_end")
   status         LessonStatus @default(draft)
   prepChecklist  Json         @default("{}") @map("prep_checklist")
+  openingConfig  Json?        @map("opening_config") // 开场白配置(可选),如 {resourceId, text}
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime     @updatedAt @map("updated_at")
 
@@ -260,6 +261,7 @@ model LessonSegment {
   resourceId  BigInt?     @map("resource_id")
   paperId     BigInt?     @map("paper_id")
   kpNodeId    BigInt?     @map("kp_node_id") // 环节关联知识点(可空标签)
+  unitSeq     Int?        @map("unit_seq") // 知识点单元序号(可空);同 unitSeq+kpNodeId 为同一单元,null=单元外环节
   lesson      Lesson      @relation(fields: [lessonId], references: [id])
   resource    Resource?   @relation(fields: [resourceId], references: [id])
   paper       Paper?      @relation(fields: [paperId], references: [id])
@@ -365,7 +367,9 @@ model Question {
   figures         Json           @default("[]") // [{ossKey,position}]
   answer          Json           // single:{choice} blank:{texts[]} solution:{referenceLatex}
   rubric          Json           @default("[]") // [{step,desc,score}] AI预批依据
-  analysisLatex   String?        @map("analysis_latex")
+  analysisLatex   String?        @map("analysis_latex") // 正常解析
+  analysisBriefLatex  String?    @map("analysis_brief_latex") // 简单解析
+  analysisDetailLatex String?    @map("analysis_detail_latex") // 详细解析
   difficulty      Int            @default(2) @db.SmallInt
   status          QuestionStatus @default(draft)
   stats           Json           @default("{}") // 正确率/组卷次数,异步更新

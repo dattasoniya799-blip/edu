@@ -220,8 +220,15 @@ describe('管理员域(A2)', () => {
         .expect(409);
     });
 
-    it('重置密码 → 写 audit_logs(验收项)且短信仅日志模拟', async () => {
-      await post(`/admin/teachers/${myTeacherId}/reset-password`, adminAt).expect(200);
+    it('重置密码:返回明文临时密码(8位易读)→ 可凭其登录;写 audit_logs(验收项)', async () => {
+      const res = await post(`/admin/teachers/${myTeacherId}/reset-password`, adminAt).expect(200);
+      exactKeys(res.body.data, ['password']);
+      const pwd = res.body.data.password as string;
+      expect(pwd.length).toBeGreaterThanOrEqual(8);
+      // 教师可凭明文临时密码登录(手机号 + 密码)
+      const t = await raw.user.findFirstOrThrow({ where: { id: BigInt(myTeacherId) } });
+      await request(http).post('/api/v1/auth/login').send({ phone: t.phone, password: pwd }).expect(200);
+
       const log = await raw.auditLog.findFirst({
         where: { orgId: org1Id, action: 'admin.teacher.reset_password', targetId: BigInt(myTeacherId) },
       });
@@ -229,15 +236,35 @@ describe('管理员域(A2)', () => {
       expect(log!.targetType).toBe('user');
     });
 
-    it('停用(软删)后列表不可见', async () => {
+    it('停用 ≠ 删除:仅置 status=disabled、不写 deletedAt;列表仍可见;?status 过滤;可再启用', async () => {
       await del(`/admin/teachers/${myTeacherId}`, adminAt).expect(200);
-      const res = await get('/admin/teachers?keyword=A2测试教师改', adminAt).expect(200);
-      expect(res.body.data.total).toBe(0);
       const u = await raw.user.findUnique({ where: { id: BigInt(myTeacherId) } });
-      expect(u!.deletedAt).not.toBeNull();
       expect(u!.status).toBe('disabled');
-      // 已停用 → 再操作 404
-      await post(`/admin/teachers/${myTeacherId}/reset-password`, adminAt).expect(404);
+      expect(u!.deletedAt).toBeNull(); // 停用不软删
+
+      // 默认列表(deletedAt:null 过滤)仍能看到停用教师
+      const all = await get('/admin/teachers?keyword=A2测试教师改', adminAt).expect(200);
+      expect(all.body.data.total).toBe(1);
+      expect(all.body.data.items[0].status).toBe('disabled');
+      // ?status=disabled 命中;?status=active 不含
+      const dis = await get('/admin/teachers?keyword=A2测试教师改&status=disabled', adminAt).expect(200);
+      expect(dis.body.data.items.map((t: TeacherDto) => t.id)).toContain(myTeacherId);
+      const act = await get('/admin/teachers?keyword=A2测试教师改&status=active', adminAt).expect(200);
+      expect(act.body.data.items.map((t: TeacherDto) => t.id)).not.toContain(myTeacherId);
+
+      // 停用态仍可重置密码(非删除,仍可操作)
+      await post(`/admin/teachers/${myTeacherId}/reset-password`, adminAt).expect(200);
+
+      // 启用 → status=active;写 audit_logs;跨租户 → 404
+      await post(`/admin/teachers/${myTeacherId}/enable`, orgBAdminAt).expect(404);
+      await post(`/admin/teachers/${myTeacherId}/enable`, adminAt).expect(200);
+      const back = await raw.user.findUniqueOrThrow({ where: { id: BigInt(myTeacherId) } });
+      expect(back.status).toBe('active');
+      expect(back.deletedAt).toBeNull();
+      const enLog = await raw.auditLog.count({
+        where: { orgId: org1Id, action: 'admin.teacher.enable', targetId: BigInt(myTeacherId) },
+      });
+      expect(enLog).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -363,6 +390,30 @@ describe('管理员域(A2)', () => {
       const enrollment = await raw.courseStudent.findFirst({ where: { studentId: BigInt(myStudentId) } });
       expect(enrollment!.status).toBe('quit');
     });
+
+    it('停用学生不消失、?status 过滤、可启用(#3):enable 置 active、写 audit_logs、跨租户 404', async () => {
+      // 停用(学生无 DELETE 端点,经业务/直改 status;停用不写 deletedAt)
+      await raw.user.update({ where: { id: BigInt(myStudentId) }, data: { status: 'disabled' } });
+      // 默认列表仍可见;?status=disabled 命中;?status=active 不含
+      const all = await get('/admin/students?keyword=A2测试学生&size=50', adminAt).expect(200);
+      expect((all.body.data.items as StudentDto[]).map((s) => s.id)).toContain(myStudentId);
+      const dis = await get('/admin/students?keyword=A2测试学生&status=disabled&size=50', adminAt).expect(200);
+      expect((dis.body.data.items as StudentDto[]).map((s) => s.id)).toContain(myStudentId);
+      const act = await get('/admin/students?keyword=A2测试学生&status=active&size=50', adminAt).expect(200);
+      expect((act.body.data.items as StudentDto[]).map((s) => s.id)).not.toContain(myStudentId);
+      const u = await raw.user.findUniqueOrThrow({ where: { id: BigInt(myStudentId) } });
+      expect(u.deletedAt).toBeNull();
+
+      // 启用:跨租户 404;本租户 → active + 写 audit_logs
+      await post(`/admin/students/${myStudentId}/enable`, orgBAdminAt).expect(404);
+      await post(`/admin/students/${myStudentId}/enable`, adminAt).expect(200);
+      const back = await raw.user.findUniqueOrThrow({ where: { id: BigInt(myStudentId) } });
+      expect(back.status).toBe('active');
+      const enLog = await raw.auditLog.count({
+        where: { orgId: org1Id, action: 'admin.student.enable', targetId: BigInt(myStudentId) },
+      });
+      expect(enLog).toBeGreaterThanOrEqual(1);
+    });
   });
 
   // ================= 课程 =================
@@ -445,11 +496,13 @@ describe('管理员域(A2)', () => {
       expect(await raw.lesson.count({ where: { courseId: seedCourseId } })).toBe(6);
     });
 
-    it('roster:到课/作业概览与 seed 对账;教师可读', async () => {
+    it('roster:只返回在册 active 学生;到课/作业概览与 seed 对账;教师可读', async () => {
       const res = await get(`/admin/courses/${seedCourseId}/roster`, adminAt).expect(200);
       const items = res.body.data as { studentId: number; name: string; attendance: string; homeworkAvg: number | null; status: string }[];
-      const enrollments = await raw.courseStudent.count({ where: { courseId: seedCourseId } });
-      expect(items.length).toBe(enrollments);
+      // 名单口径:只含 active 在册学生(退班 quit 不计入)
+      const activeEnrolled = await raw.courseStudent.count({ where: { courseId: seedCourseId, status: 'active' } });
+      expect(items.length).toBe(activeEnrolled);
+      for (const it of items) expect(it.status).toBe('active');
 
       const paper = await raw.paper.findFirstOrThrow({ where: { orgId: org1Id, type: 'homework' } });
       const assignment = await raw.assignment.findFirstOrThrow({ where: { paperId: paper.id } });
@@ -492,6 +545,32 @@ describe('管理员域(A2)', () => {
       // 不存在学生 → 404;他租户(orgB admin 看不到本 org 课程) → 404
       await post(`/admin/courses/${myCourseId}/students`, adminAt).send({ studentIds: [999999999] }).expect(404);
       await post(`/admin/courses/${myCourseId}/students`, orgBAdminAt).send({ studentIds: [myStudentId] }).expect(404);
+    });
+
+    it('入班候选口径(#2):/students?courseId 与 roster 返回"在册 active"=应被排除集;候选=全体−该集', async () => {
+      // 前置:myStudentId 已 active 入 myCourseId(上一用例)
+      // (1) GET /admin/students?courseId=X → 仅返回在该课"active"的学生(= 入班候选应排除的集合)
+      const enrolledRes = await get(`/admin/students?courseId=${myCourseId}&size=50`, adminAt).expect(200);
+      const enrolledIds = (enrolledRes.body.data.items as StudentDto[]).map((s) => s.id);
+      const dbActive = await raw.courseStudent.findMany({
+        where: { courseId: BigInt(myCourseId), status: 'active' },
+        select: { studentId: true },
+      });
+      expect(new Set(enrolledIds)).toEqual(new Set(dbActive.map((e) => Number(e.studentId))));
+      expect(enrolledIds).toContain(myStudentId);
+
+      // (2) roster 的 active 名单与 ?courseId 集合一致(同一"已在课程 active"口径)
+      const rosterRes = await get(`/admin/courses/${myCourseId}/roster`, adminAt).expect(200);
+      const rosterIds = (rosterRes.body.data as { studentId: number }[]).map((r) => r.studentId);
+      expect(new Set(rosterIds)).toEqual(new Set(enrolledIds));
+
+      // (3) 候选 = 全体学生 − 在册集合;断言其为补集且非空(防"可选学生"再被反转为"全部已在课程")
+      const allRes = await get('/admin/students?size=50', adminAt).expect(200);
+      const allIds = (allRes.body.data.items as StudentDto[]).map((s) => s.id);
+      const candidateIds = allIds.filter((id) => !enrolledIds.includes(id));
+      expect(candidateIds).not.toContain(myStudentId); // 已在课程的不应出现在候选
+      expect(candidateIds.length).toBeGreaterThan(0); // 候选为补集,非空
+      for (const id of candidateIds) expect(enrolledIds).not.toContain(id);
     });
   });
 
