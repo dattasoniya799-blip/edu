@@ -109,11 +109,22 @@ try {
   assert(lessons.data[3].status === 'draft' && lessons.data[3].prepChecklist.homework === false,
     '第 4 讲初始 draft,checklist 缺 homework');
 
-  const pub1 = await api.post('/lessons/{id}/publish', { params: { id: 4 } }).catch((e) => e);
-  assert(pub1 instanceof Error && (pub1 as { code?: number }).code === 4201
-    && Array.isArray((pub1 as { detail?: unknown }).detail)
-    && ((pub1 as { detail: string[] }).detail).includes('homework'),
-    '缺课后作业时发布 → 4201 + detail 含 homework(A4 形状)');
+  // 放宽发布(IMPL2 #3):仅 practice/homework 未挂发布卷才拦截;先验证练习未挂卷 → 4201 仅含 practice
+  const segs4base = await api.get('/lessons/{id}/segments', { params: { id: 4 } });
+  await api.put('/lessons/{id}/segments', {
+    params: { id: 4 },
+    body: segs4base.data.map((s) => (s.type === 'practice' ? { ...s, paperId: null } : s)),
+  });
+  const pubNoPaper = await api.post('/lessons/{id}/publish', { params: { id: 4 } }).catch((e) => e);
+  assert(pubNoPaper instanceof Error && (pubNoPaper as { code?: number }).code === 4201
+    && Array.isArray((pubNoPaper as { detail?: unknown }).detail)
+    && ((pubNoPaper as { detail: string[] }).detail).includes('practice')
+    && !((pubNoPaper as { detail: string[] }).detail).includes('homework'),
+    '练习未挂卷发布 → 4201 + detail 仅含 practice(放宽:缺四类不拦截)');
+  // 还原练习挂卷 → 缺 homework/summary 也能直接发布
+  await api.put('/lessons/{id}/segments', { params: { id: 4 }, body: segs4base.data });
+  const pub1 = await api.post('/lessons/{id}/publish', { params: { id: 4 } });
+  assert(pub1.code === 0, '练习挂发布卷、无作业环节 → 直接发布成功(放宽发布)');
 
   const hw = await api.post('/papers', {
     body: { name: '第4讲课后作业 · 一次函数的图象平移', type: 'homework', questions: [{ questionId: 1, score: 5 }, { questionId: 5, score: 5 }, { questionId: 4, score: 10 }] },
@@ -164,12 +175,12 @@ try {
   const pending3 = await api.get('/grading/pending');
   assert(pending3.data.length === 0, '出分后待复核列表清空');
 
-  // 学生登录码兑换
-  const sLogin = await api.post('/auth/student/qr-exchange', {
-    body: { token: 'QM-DEMO', deviceFingerprint: 'fp-smoke', deviceName: 'smoke-tablet' },
+  // 学生学号 + 密码登录
+  const sLogin = await api.post('/auth/student/login', {
+    body: { studentNo: 'S-0001', password: 'Student@123' },
   });
   token = sLogin.data.accessToken;
-  assert(sLogin.data.me.name === '林小满', '学生登录码 QM-DEMO 兑换为 林小满');
+  assert(sLogin.data.me.name === '林小满', '学生 S-0001 密码登录为 林小满');
   const today = await api.get('/student/today');
   assert(!!today.data.todayLesson, '/student/today 返回今日课程');
   const wrong = await api.get('/student/wrong-book', { query: { page: 1, size: 20 } });

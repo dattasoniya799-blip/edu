@@ -12,7 +12,7 @@ import { APP_ROLE, ROLE_LABEL, useAuth } from '../auth/AuthProvider';
 const ROLE_NOTES: Record<Role, string> = {
   admin: '管理员使用电脑浏览器登录,管理机构内的教师与学生账号。',
   teacher: '教师使用电脑浏览器登录,维护题库、课件并发布作业。',
-  student: '学生端为平板设计,扫码或输入登录码即可在 iPad / 安卓平板登录。',
+  student: '学生端为平板设计,学生用「学号 + 密码」在 iPad / 安卓平板登录。',
 };
 const APP_PORTS: Record<Role, string> = { admin: '5173', teacher: '5174', student: '5175' };
 
@@ -101,7 +101,7 @@ export function LoginPage() {
             <div className="rounded-md border border-line bg-bg/50 px-4 py-5 text-center text-[13px] text-ink-2">
               请在平板上打开学生端(本机调试:
               <span className="font-mono text-primary">localhost:{APP_PORTS.student}</span>
-              ),输入家长手机收到的登录码即可。
+              ),用学号 + 密码登录即可。
             </div>
           ) : (
             <form onSubmit={onSubmit}>

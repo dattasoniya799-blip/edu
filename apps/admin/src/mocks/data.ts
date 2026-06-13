@@ -2,8 +2,8 @@
  * msw mock 数据(三端共用同一份,集中于 src/mocks/,禁止散落组件)
  * 口径 = W0 seed(apps/server/prisma/seed.ts):
  *   机构「启明演示机构」· 管理员 13800000001/Admin@123 · 教师 13800000002|3/Teacher@123
- *   12 名学生(前 2 名已绑设备,其余持登录码)· 2 门课程 · 6 讲次 · 30 题 · 第 3 讲作业已批改
- * 登录码(mock):QM-DEMO(=林小满)或 QM-DEMO-3 … QM-DEMO-12
+ *   12 名学生(前 2 名已绑设备)· 2 门课程 · 6 讲次 · 30 题 · 第 3 讲作业已批改
+ *   学生登录:学号 S-0001…S-0012 + 统一演示密码 Student@123(密码登录,取代旧登录码)
  */
 import type {
   MeDto, TeacherDto, StudentDto, CourseDto, LessonDto, LessonSegmentDto, ResourceDto,
@@ -54,14 +54,23 @@ export const students: StudentDto[] = STUDENT_NAMES.map((name, i) => ({
   weekStudySec: 3600 * 4 + i * 1234,
 }));
 
-/** 学生平板登录码(mock 口径):QM-DEMO 等价于 QM-DEMO-1(林小满) */
-export const LOGIN_TICKETS: Record<string, MeDto> = Object.fromEntries([
-  ['QM-DEMO', { ...ME_STUDENT }],
-  ...STUDENT_NAMES.map((name, i) => [
-    `QM-DEMO-${i + 1}`,
+/** 学生账密登录(mock 口径):学号 + 统一演示密码;取代旧的扫码/登录码 */
+export const STUDENT_PASSWORD = 'Student@123';
+export const STUDENT_LOGINS: Record<string, MeDto> = Object.fromEntries(
+  STUDENT_NAMES.map((name, i) => [
+    `S-${String(i + 1).padStart(4, '0')}`,
     { id: 4 + i, orgId: 1, role: 'student' as const, name, orgName: ORG, orgSettings },
   ]),
-]);
+);
+
+/**
+ * 课程在册学生(有状态 mock,入班/移出原地修改):
+ * 课程 1 = 全员;课程 2 = 一对一(李一诺);新建课程默认空名单。
+ */
+export const courseMembers: Record<number, number[]> = {
+  1: students.map((s) => s.id),
+  2: students.filter((s) => s.name === '李一诺').map((s) => s.id),
+};
 
 export const courses: CourseDto[] = [
   {
@@ -91,10 +100,10 @@ export const lessons: LessonDto[] = LESSON_TITLES.map((t, i) => {
 
 export const segments: Record<number, LessonSegmentDto[]> = {
   4: [
-    { id: 1, seq: 1, type: 'warmup', durationMin: 10, config: { source: 'auto_wrong', count: 3 }, resourceId: null, paperId: null },
-    { id: 2, seq: 2, type: 'lecture', durationMin: 35, config: { checkpoints: [3, 8, 12, 18, 22] }, resourceId: 1, paperId: null },
-    { id: 3, seq: 3, type: 'practice', durationMin: 30, config: { ai_guide: true, stuck_alert_min: 3 }, resourceId: null, paperId: 1 },
-    { id: 4, seq: 4, type: 'summary', durationMin: 25, config: { personal_consolidation: { min: 2, max: 4 } }, resourceId: null, paperId: null },
+    { id: 1, seq: 1, type: 'warmup', durationMin: 10, config: { source: 'auto_wrong', count: 3 }, resourceId: null, paperId: null, kpNodeId: null, kpNodeName: null },
+    { id: 2, seq: 2, type: 'lecture', durationMin: 35, config: { checkpoints: [3, 8, 12, 18, 22] }, resourceId: 1, paperId: null, kpNodeId: 102, kpNodeName: '一次函数的图象' },
+    { id: 3, seq: 3, type: 'practice', durationMin: 30, config: { ai_guide: true, stuck_alert_min: 3 }, resourceId: null, paperId: 1, kpNodeId: 104, kpNodeName: '图象的平移' },
+    { id: 4, seq: 4, type: 'summary', durationMin: 25, config: { personal_consolidation: { min: 2, max: 4 } }, resourceId: null, paperId: null, kpNodeId: null, kpNodeName: null },
   ],
 };
 

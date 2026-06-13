@@ -1,10 +1,10 @@
-/** 学生管理(原型 a-students):筛选 + 列表 + 添加 + 档案 + 登录码二维码 + 解绑(档案内) */
+/** 学生管理(原型 a-students):筛选 + 列表 + 添加 + 档案 + 重置密码 + 解绑(档案内) */
 import { useCallback, useEffect, useState } from 'react';
 import type { CourseDto, StudentDto } from '@qiming/contracts';
 import { Button, Card, Table, Tag, useToast } from '@qiming/ui';
 import { api } from '../api';
 import { Select, TextInput, Toolbar, LinkButton } from '../components/controls';
-import { LoginTicketModal, type TicketStudent } from '../components/LoginTicketModal';
+import { ResetPasswordModal, type ResetPasswordStudent } from '../components/ResetPasswordModal';
 import { Pager } from '../components/Pager';
 import { StudentFormModal } from '../components/StudentFormModal';
 import { StudentProfileModal } from '../components/StudentProfileModal';
@@ -26,7 +26,7 @@ export function Students() {
   // 弹窗状态
   const [addOpen, setAddOpen] = useState(false);
   const [profileId, setProfileId] = useState<number | null>(null);
-  const [ticketStudent, setTicketStudent] = useState<TicketStudent | null>(null);
+  const [resetStudent, setResetStudent] = useState<ResetPasswordStudent | null>(null);
   const { toast } = useToast();
 
   const load = useCallback(async () => {
@@ -62,7 +62,7 @@ export function Students() {
     <div>
       <PageHead
         title="学生管理"
-        sub={`共 ${total} 名学生 · 一名学生可同时报多门课程 · 平板首次登录需扫码绑定`}
+        sub={`共 ${total} 名学生 · 一名学生可同时报多门课程 · 学生用学号 + 密码登录平板`}
         actions={<Button variant="primary" onClick={() => setAddOpen(true)}>+ 添加学生</Button>}
       />
       <Card bodyClassName="!p-0">
@@ -111,8 +111,8 @@ export function Students() {
               render: (s) => (
                 <span className="flex gap-3">
                   <LinkButton onClick={() => setProfileId(s.id)}>详情</LinkButton>
-                  <LinkButton onClick={() => setTicketStudent({ id: s.id, name: s.name, studentNo: s.studentNo })}>
-                    {s.device ? '重发登录码' : '发送登录码'}
+                  <LinkButton onClick={() => setResetStudent({ id: s.id, name: s.name, studentNo: s.studentNo })}>
+                    重置密码
                   </LinkButton>
                 </span>
               ),
@@ -128,17 +128,17 @@ export function Students() {
         onClose={() => setAddOpen(false)}
         onSaved={(created) => {
           void load();
-          // 创建后直接弹出登录码,管理员可当场让学生扫码
-          setTicketStudent({ id: created.id, name: created.name, studentNo: created.studentNo });
+          // 创建后直接进入重置密码,管理员可当场拿到首登临时密码当面告知学生
+          setResetStudent({ id: created.id, name: created.name, studentNo: created.studentNo });
         }}
       />
       <StudentProfileModal
         studentId={profileId}
         onClose={() => setProfileId(null)}
         onChanged={() => void load()}
-        onIssueTicket={(s) => setTicketStudent(s)}
+        onResetPassword={(s) => setResetStudent(s)}
       />
-      <LoginTicketModal student={ticketStudent} onClose={() => setTicketStudent(null)} />
+      <ResetPasswordModal student={resetStudent} onClose={() => setResetStudent(null)} />
     </div>
   );
 }

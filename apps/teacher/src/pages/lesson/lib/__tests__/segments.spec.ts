@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import type { LessonSegmentDto } from '@qiming/contracts';
 import {
   CHECKLIST_KEYS, bizError, computeChecklist, missingLabels,
-  moveSegment, newSegment, removeSegment, reseq, totalDuration,
+  moveSegment, newSegment, pendingPaperKeys, removeSegment, reseq, totalDuration,
 } from '../segments';
 
 const seg = (type: LessonSegmentDto['type'], seq: number, paperId: number | null = null): LessonSegmentDto =>
-  ({ seq, type, durationMin: 10, config: {}, resourceId: null, paperId });
+  ({ seq, type, durationMin: 10, config: {}, resourceId: null, paperId, kpNodeId: null, kpNodeName: null });
 
 const FULL: LessonSegmentDto[] = [
   seg('warmup', 1), seg('lecture', 2), seg('practice', 3, 1), seg('summary', 4), seg('homework', 5, 2),
@@ -33,15 +33,17 @@ describe('moveSegment(上下移按钮)', () => {
   });
 });
 
-describe('computeChecklist(口径=A4 服务端)', () => {
-  it('五类齐备且 practice/homework 挂 published 卷 → 全绿', () => {
-    expect(computeChecklist(FULL, PUBLISHED)).toEqual({
-      warmup: true, lecture: true, practice: true, summary: true, homework: true,
-    });
+describe('computeChecklist(放宽口径:仅 practice/homework 挂卷门槛)', () => {
+  it('practice/homework 挂 published 卷 → 全绿', () => {
+    expect(computeChecklist(FULL, PUBLISHED)).toEqual({ practice: true, homework: true });
   });
-  it('缺 homework 环节 → homework=false', () => {
+  it('缺 homework 环节 → homework=true(放宽:不存在不拦截)', () => {
     const noHw = FULL.filter((s) => s.type !== 'homework');
-    expect(computeChecklist(noHw, PUBLISHED).homework).toBe(false);
+    expect(computeChecklist(noHw, PUBLISHED).homework).toBe(true);
+  });
+  it('缺 warmup/lecture/summary 不影响门槛(自由编排)', () => {
+    const onlyPractice = [seg('practice', 1, 1)];
+    expect(computeChecklist(onlyPractice, PUBLISHED)).toEqual({ practice: true, homework: true });
   });
   it('homework 环节存在但未挂卷 → false;挂 draft 卷 → false', () => {
     const noPaper = FULL.map((s) => (s.type === 'homework' ? { ...s, paperId: null } : s));
@@ -49,21 +51,31 @@ describe('computeChecklist(口径=A4 服务端)', () => {
     const draftPaper = new Map([[1, 'published'], [2, 'draft']]);
     expect(computeChecklist(FULL, draftPaper).homework).toBe(false);
   });
-  it('warmup/lecture/summary 只要求环节存在', () => {
-    const c = computeChecklist([seg('warmup', 1)], new Map());
-    expect(c.warmup).toBe(true);
-    expect(c.lecture).toBe(false);
-    expect(c.summary).toBe(false);
+  it('空编排可直接发布(全绿)', () => {
+    expect(computeChecklist([], new Map())).toEqual({ practice: true, homework: true });
+  });
+});
+
+describe('pendingPaperKeys(发布门槛中待补项)', () => {
+  it('全部就绪 → 空', () => {
+    expect(pendingPaperKeys(FULL, PUBLISHED)).toEqual([]);
+  });
+  it('practice 未挂卷 → 仅 practice', () => {
+    const noPractice = FULL.map((s) => (s.type === 'practice' ? { ...s, paperId: null } : s));
+    expect(pendingPaperKeys(noPractice, PUBLISHED)).toEqual(['practice']);
+  });
+  it('不含 practice/homework 环节 → 空(不拦截)', () => {
+    expect(pendingPaperKeys([seg('warmup', 1), seg('lecture', 2)], new Map())).toEqual([]);
   });
 });
 
 describe('missingLabels(4201 发布校验提示)', () => {
-  it('detail=键数组(A4 真实形状)→ 中文清单', () => {
+  it('detail=键数组(服务端形状)→ 中文清单', () => {
     expect(missingLabels(['homework'])).toEqual(['课后作业']);
     expect(missingLabels(['practice', 'homework'])).toEqual(['随堂练', '课后作业']);
   });
-  it('兼容 {missing:[…]} 包装;未知键被忽略', () => {
-    expect(missingLabels({ missing: ['homework', 'bogus'] })).toEqual(['课后作业']);
+  it('兼容 {missing:[…]} 包装;未知/已不拦截键被忽略', () => {
+    expect(missingLabels({ missing: ['homework', 'bogus', 'warmup'] })).toEqual(['课后作业']);
   });
   it('非法 detail → 空数组', () => {
     expect(missingLabels(undefined)).toEqual([]);
@@ -88,9 +100,11 @@ describe('bizError / totalDuration / reseq / newSegment', () => {
   it('reseq 已有序时保持元素引用', () => {
     expect(reseq(FULL)[0]).toBe(FULL[0]);
   });
-  it('newSegment 给 practice 带 AI 缺省配置', () => {
+  it('newSegment 给 practice 带 AI 缺省配置,知识点默认空', () => {
     const s = newSegment('practice', 3);
     expect(s.config).toEqual({ ai_guide: true, stuck_alert_min: 3 });
     expect(s.seq).toBe(3);
+    expect(s.kpNodeId).toBeNull();
+    expect(s.kpNodeName).toBeNull();
   });
 });

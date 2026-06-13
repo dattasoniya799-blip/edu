@@ -1,6 +1,6 @@
 /**
  * 学生端登录页(平板 1180×820)· 视觉=原型登录页(品牌区 + 三角色 Tab 登录卡)
- * 学生 Tab:输入登录码(扫码兑换的先行形态,B1 口径);管理员/教师 Tab 提示前往 PC 端。
+ * 学生 Tab:学号 + 密码登录(调 /auth/student/login);管理员/教师 Tab 提示前往 PC 端。
  */
 import type { FormEvent } from 'react';
 import { useState } from 'react';
@@ -13,15 +13,16 @@ import { Stage } from '../Stage';
 const ROLE_NOTES: Record<Role, string> = {
   admin: '管理员使用电脑浏览器登录,管理机构内的教师与学生账号。',
   teacher: '教师使用电脑浏览器登录,维护题库、课件并发布作业。',
-  student: '输入家长手机收到的平板登录码,首次登录将绑定本设备。',
+  student: '输入老师发给你的学号与密码登录;忘记密码请找老师重置。',
 };
 const APP_PORTS: Record<Role, string> = { admin: '5173', teacher: '5174', student: '5175' };
 
 export function LoginPage() {
-  const { loginWithTicket } = useAuth();
+  const { loginWithPassword } = useAuth();
   const navigate = useNavigate();
   const [role, setRole] = useState<Role>('student');
-  const [ticket, setTicket] = useState('');
+  const [studentNo, setStudentNo] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -30,7 +31,7 @@ export function LoginPage() {
     setError('');
     setBusy(true);
     try {
-      await loginWithTicket(ticket);
+      await loginWithPassword(studentNo, password);
       navigate('/', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : '登录失败,请稍后再试');
@@ -89,13 +90,25 @@ export function LoginPage() {
             ) : (
               <form onSubmit={onSubmit}>
                 <div className="mb-4">
-                  <label className="mb-1.5 block text-[13px] font-semibold" htmlFor="ticket">平板登录码</label>
+                  <label className="mb-1.5 block text-[13px] font-semibold" htmlFor="studentNo">学号</label>
                   <input
-                    id="ticket"
-                    value={ticket}
-                    onChange={(e) => setTicket(e.target.value)}
-                    placeholder="输入登录码(mock 演示:QM-DEMO)"
-                    autoComplete="off"
+                    id="studentNo"
+                    value={studentNo}
+                    onChange={(e) => setStudentNo(e.target.value)}
+                    placeholder="输入学号(mock 演示:S-0001)"
+                    autoComplete="username"
+                    className="min-h-touch w-full rounded-[11px] border-[1.5px] border-line bg-card px-3.5 py-[11px] text-sm outline-none transition-colors focus:border-primary"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="mb-1.5 block text-[13px] font-semibold" htmlFor="password">密码</label>
+                  <input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="输入密码(mock 演示:Student@123)"
+                    autoComplete="current-password"
                     className="min-h-touch w-full rounded-[11px] border-[1.5px] border-line bg-card px-3.5 py-[11px] text-sm outline-none transition-colors focus:border-primary"
                   />
                 </div>
@@ -104,12 +117,12 @@ export function LoginPage() {
                   type="submit"
                   variant="primary"
                   block
-                  disabled={busy || !ticket.trim()}
+                  disabled={busy || !studentNo.trim() || !password}
                   className="min-h-touch !py-[13px] !text-[15px] shadow-btn"
                 >
                   {busy ? '正在登录…' : '进入学习'}
                 </Button>
-                <div className="mt-3 text-center text-xs text-ink-3">扫码登录将在课堂联调任务中开启,先输入登录码即可</div>
+                <div className="mt-3 text-center text-xs text-ink-3">首次登录或忘记密码,请找老师重置后再登录</div>
               </form>
             )}
             <div className="mt-[18px] text-center text-xs text-ink-3">登录即代表同意《用户协议》与《隐私政策》</div>

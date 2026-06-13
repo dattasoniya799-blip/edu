@@ -83,7 +83,7 @@ export function Settings() {
           </Card>
           <Card title="账号与安全">
             <div className="flex flex-col gap-4">
-              <SettingRow title="学生设备绑定" desc="学生平板首次登录需扫码绑定,限制 1 人 1 机">
+              <SettingRow title="学生设备绑定" desc="学生平板首次登录后绑定本机,限制 1 人 1 机">
                 <Tag tone="green">已开启</Tag>
               </SettingRow>
               <SettingRow title="课堂模式锁定" desc="上课期间平板锁定在课堂应用内,防止切出">

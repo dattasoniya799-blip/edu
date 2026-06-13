@@ -5,13 +5,13 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import type { LessonDto, LessonSegmentDto, PaperDto, ResourceDto, SegmentType } from '@qiming/contracts';
+import type { KpNodeDto, LessonDto, LessonSegmentDto, PaperDto, ResourceDto, SegmentType } from '@qiming/contracts';
 import { Button, Card, EmptyState, Modal, Skeleton, Switch, Tag, useToast } from '@qiming/ui';
 import { api } from '../../api';
 import { PageHead } from '../Shell';
 import {
-  CHECKLIST_KEYS, CHECKLIST_LABEL, SEGMENT_LABEL, bizError, computeChecklist,
-  missingLabels, moveSegment, newSegment, removeSegment, reseq, totalDuration,
+  CHECKLIST_LABEL, SEGMENT_LABEL, bizError,
+  missingLabels, moveSegment, newSegment, pendingPaperKeys, removeSegment, reseq, totalDuration,
 } from './lib/segments';
 
 const SEG_ICON: Record<SegmentType, { glyph: string; cls: string }> = {
@@ -51,6 +51,10 @@ export function LessonArrangePage() {
   /** 挂载弹窗:目标环节下标 */
   const [mountIdx, setMountIdx] = useState<number | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  /** 知识点选择弹窗:目标环节下标 */
+  const [kpIdx, setKpIdx] = useState<number | null>(null);
+  const [kpNodes, setKpNodes] = useState<KpNodeDto[]>([]);
+  const [kpKeyword, setKpKeyword] = useState('');
 
   useEffect(() => {
     setLoading(true);
@@ -69,10 +73,21 @@ export function LessonArrangePage() {
       .finally(() => setLoading(false));
   }, [lessonId]);
 
+  // 知识点选择器数据源:教材知识图谱节点(可空标注)
+  useEffect(() => {
+    api.get('/kp/graphs')
+      .then((g) => {
+        const graph = g.data.find((x) => x.graphType === 'curriculum_knowledge') ?? g.data[0];
+        if (!graph) return;
+        return api.get('/kp/nodes', { query: { graphId: graph.id } }).then((n) => setKpNodes(n.data));
+      })
+      .catch(() => undefined);
+  }, []);
+
   const paperById = useMemo(() => new Map(papers.map((p) => [p.id, p])), [papers]);
   const resourceById = useMemo(() => new Map(resources.map((r) => [r.id, r])), [resources]);
   const paperStatus = useMemo(() => new Map(papers.map((p) => [p.id, p.status])), [papers]);
-  const checklist = useMemo(() => computeChecklist(segments ?? [], paperStatus), [segments, paperStatus]);
+  const pendingPaper = useMemo(() => pendingPaperKeys(segments ?? [], paperStatus), [segments, paperStatus]);
   const practiceIdx = useMemo(() => (segments ?? []).findIndex((s) => s.type === 'practice'), [segments]);
 
   const update = (next: LessonSegmentDto[]) => { setSegments(next); setDirty(true); };
@@ -224,6 +239,16 @@ export function LessonArrangePage() {
                     {homeworkMissing && <Tag tone="red" className="ml-2">未配置</Tag>}
                   </b>
                   <div className="mt-0.5 truncate text-[12.5px] text-ink-2">{segDesc(s)}</div>
+                  <button
+                    type="button"
+                    onClick={() => { setKpKeyword(''); setKpIdx(i); }}
+                    className="mt-1 inline-flex items-center gap-1 text-[12px]"
+                    aria-label={`环节 ${i + 1} 知识点`}
+                  >
+                    {s.kpNodeName
+                      ? <Tag tone="primary">📘 {s.kpNodeName}</Tag>
+                      : <span className="text-ink-3 hover:text-primary hover:underline">＋ 标注知识点</span>}
+                  </button>
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5 text-[12.5px] text-ink-2">
                   <input
@@ -313,14 +338,19 @@ export function LessonArrangePage() {
               </div>
             </Card>
           )}
-          <Card title="本讲检查清单">
+          <Card title="发布门槛">
             <div className="flex flex-col gap-2 text-[13px] leading-relaxed">
-              {CHECKLIST_KEYS.map((k) => (
-                <div key={k} className={checklist[k] ? 'text-ink' : 'font-semibold text-red'}>
-                  {checklist[k] ? '✅' : '❌'} {CHECKLIST_LABEL[k]}{checklist[k] ? '已就绪' : '未就绪'}
-                </div>
-              ))}
-              <div className="mt-1.5 text-xs text-ink-3">全部就绪后才能发布课堂{dirty && ';当前修改未保存,发布时会自动保存'}</div>
+              <div className="text-ink-2">环节可自由增删、调序,并按需标注知识点;发布无需四类齐全。</div>
+              {pendingPaper.length === 0 ? (
+                <div className="text-green">✅ 暂无待补项,本讲可随时发布</div>
+              ) : (
+                pendingPaper.map((k) => (
+                  <div key={k} className="font-semibold text-red">
+                    ❌ {CHECKLIST_LABEL[k]}环节需挂一份「已发布」试卷
+                  </div>
+                ))
+              )}
+              <div className="mt-1.5 text-xs text-ink-3">仅随堂练 / 课后作业未挂已发布试卷会拦截发布{dirty && ';当前修改未保存,发布时会自动保存'}</div>
             </div>
           </Card>
         </div>
@@ -381,6 +411,52 @@ export function LessonArrangePage() {
                 </button>
               );
             })}
+          </div>
+        )}
+      </Modal>
+
+      {/* 知识点选择弹窗(可空标注;写 segment.kpNodeId) */}
+      <Modal
+        open={kpIdx != null}
+        title="标注知识点"
+        onClose={() => setKpIdx(null)}
+      >
+        <div className="mb-3">
+          <input
+            value={kpKeyword}
+            onChange={(e) => setKpKeyword(e.target.value)}
+            placeholder="搜索知识点名称"
+            className="w-full rounded-[10px] border-[1.5px] border-line px-3 py-2 text-[13px] outline-none focus:border-primary"
+          />
+        </div>
+        <button
+          type="button"
+          className="mb-2 w-full rounded-md border-[1.5px] border-line px-3.5 py-2.5 text-left text-[13px] text-ink-2 hover:border-ink-3"
+          onClick={() => { if (kpIdx != null) patchSeg(kpIdx, { kpNodeId: null, kpNodeName: null }); setKpIdx(null); }}
+        >
+          不标注知识点(清除)
+        </button>
+        {kpNodes.length === 0 ? (
+          <EmptyState icon="▦" text="暂无可选知识点" hint="教材知识图谱未加载或为空" />
+        ) : (
+          <div className="flex max-h-[46vh] flex-col gap-1.5 overflow-auto">
+            {kpNodes
+              .filter((n) => !kpKeyword.trim() || n.name.includes(kpKeyword.trim()))
+              .map((n) => {
+                const selected = kpIdx != null && segments[kpIdx]?.kpNodeId === n.id;
+                return (
+                  <button
+                    key={n.id} type="button"
+                    className={`flex items-center justify-between rounded-md border-[1.5px] px-3.5 py-2.5 text-left text-[13.5px] ${
+                      selected ? 'border-primary bg-primary-soft font-bold text-primary' : 'border-line hover:border-ink-3'
+                    }`}
+                    onClick={() => { if (kpIdx != null) patchSeg(kpIdx, { kpNodeId: n.id, kpNodeName: n.name }); setKpIdx(null); }}
+                  >
+                    <span>{n.name}</span>
+                    {n.chapter && <small className="text-xs text-ink-3">{n.chapter}</small>}
+                  </button>
+                );
+              })}
           </div>
         )}
       </Modal>

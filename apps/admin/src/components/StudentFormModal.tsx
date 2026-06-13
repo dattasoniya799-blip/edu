@@ -1,4 +1,4 @@
-/** 添加学生弹窗(原型 modalStudent):创建并发送登录码 */
+/** 添加学生弹窗(原型 modalStudent):创建后设置初始登录密码 */
 import { useEffect, useState } from 'react';
 import type { CourseDto, StudentDto } from '@qiming/contracts';
 import { Button, Modal, useToast } from '@qiming/ui';
@@ -12,7 +12,7 @@ export interface StudentFormModalProps {
   /** 可报名课程(供多选) */
   courses: CourseDto[];
   onClose: () => void;
-  /** 创建成功(返回新学生,父页面据此刷新并弹登录码) */
+  /** 创建成功(返回新学生,父页面据此刷新并弹出初始密码) */
   onSaved: (created: StudentDto) => void;
 }
 
@@ -49,7 +49,7 @@ export function StudentFormModal({ open, courses, onClose, onSaved }: StudentFor
           courseIds,
         },
       });
-      toast('学生已创建,登录码已发送至家长手机');
+      toast('学生已创建,请设置初始登录密码');
       onSaved(r.data as StudentDto);
       onClose();
     } catch (e) {
@@ -67,7 +67,7 @@ export function StudentFormModal({ open, courses, onClose, onSaved }: StudentFor
       footer={
         <>
           <Button onClick={onClose} disabled={busy}>取消</Button>
-          <Button variant="primary" onClick={submit} disabled={busy}>{busy ? '提交中…' : '创建并发送登录码'}</Button>
+          <Button variant="primary" onClick={submit} disabled={busy}>{busy ? '提交中…' : '创建并设置密码'}</Button>
         </>
       }
     >
@@ -82,7 +82,7 @@ export function StudentFormModal({ open, courses, onClose, onSaved }: StudentFor
         </FormRow>
         <FormRow>
           <Field label="家长手机号" error={errors.parentPhone}>
-            <TextInput placeholder="用于接收平板登录码" value={form.parentPhone} onChange={(e) => set('parentPhone')(e.target.value)} />
+            <TextInput placeholder="家长联系电话" value={form.parentPhone} onChange={(e) => set('parentPhone')(e.target.value)} />
           </Field>
           <Field label="年级" error={errors.grade}>
             <Select value={form.grade} onChange={(e) => set('grade')(e.target.value)}>
@@ -103,7 +103,7 @@ export function StudentFormModal({ open, courses, onClose, onSaved }: StudentFor
             ))}
           </div>
         </div>
-        <RoleNote>创建后将向家长手机号发送平板登录二维码,学生在平板扫码即完成设备绑定。</RoleNote>
+        <RoleNote>创建后请为学生设置初始登录密码并当面告知;学生用「学号 + 密码」在平板登录。</RoleNote>
       </div>
     </Modal>
   );

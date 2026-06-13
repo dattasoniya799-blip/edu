@@ -115,6 +115,7 @@ export function Courses() {
         course={rosterCourse}
         onClose={() => setRosterCourse(null)}
         onOpenProfile={(id) => { setRosterCourse(null); setProfileId(id); }}
+        onChanged={() => void load()}
       />
       <StudentProfileModal studentId={profileId} onClose={() => setProfileId(null)} />
     </div>

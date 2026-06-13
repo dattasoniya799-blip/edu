@@ -15,11 +15,11 @@ export interface StudentProfileModalProps {
   onClose: () => void;
   /** 档案内发生变更(如解绑)时通知父页面刷新列表 */
   onChanged?: () => void;
-  /** 提供则显示「重发登录码」入口 */
-  onIssueTicket?: (s: { id: number; name: string; studentNo: string }) => void;
+  /** 提供则显示「重置密码」入口 */
+  onResetPassword?: (s: { id: number; name: string; studentNo: string }) => void;
 }
 
-export function StudentProfileModal({ studentId, onClose, onChanged, onIssueTicket }: StudentProfileModalProps) {
+export function StudentProfileModal({ studentId, onClose, onChanged, onResetPassword }: StudentProfileModalProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [failed, setFailed] = useState(false);
   const [confirmUnbind, setConfirmUnbind] = useState(false);
@@ -48,7 +48,7 @@ export function StudentProfileModal({ studentId, onClose, onChanged, onIssueTick
   const unbind = async () => {
     if (!s) return;
     await api.del('/admin/students/{id}/device', { params: { id: s.id } });
-    toast('已解绑,学生下次登录需重新扫码');
+    toast('已解绑,学生下次登录将重新绑定平板');
     setConfirmUnbind(false);
     await load(s.id);
     onChanged?.();
@@ -64,9 +64,9 @@ export function StudentProfileModal({ studentId, onClose, onChanged, onIssueTick
         footer={
           <>
             <Button onClick={onClose}>关闭</Button>
-            {s && onIssueTicket && (
-              <Button variant="primary" onClick={() => onIssueTicket({ id: s.id, name: s.name, studentNo: s.studentNo })}>
-                {s.device ? '重发登录码' : '发送登录码'}
+            {s && onResetPassword && (
+              <Button variant="primary" onClick={() => onResetPassword({ id: s.id, name: s.name, studentNo: s.studentNo })}>
+                重置密码
               </Button>
             )}
           </>
@@ -106,9 +106,9 @@ export function StudentProfileModal({ studentId, onClose, onChanged, onIssueTick
               ))}
               <div className="flex items-center gap-3 text-sm">
                 <div className="flex-1">
-                  <b>设备:{s.device ? s.device.name : '未绑定'}</b>
+                  <b>设备:{s.device ? s.device.name : '未绑定 / 不适用'}</b>
                   <div className="text-xs text-ink-3">
-                    {s.device ? `${formatDay(s.device.boundAt)} 绑定 · 课堂锁定已启用` : '学生首次登录平板时扫码绑定,限制 1 人 1 机'}
+                    {s.device ? `${formatDay(s.device.boundAt)} 绑定 · 课堂锁定已启用` : '该学生暂无绑定平板;如机构开启设备绑定,学生登录后自动绑定本机'}
                   </div>
                 </div>
                 {s.device ? (
@@ -130,7 +130,7 @@ export function StudentProfileModal({ studentId, onClose, onChanged, onIssueTick
         onConfirm={unbind}
         onClose={() => setConfirmUnbind(false)}
       >
-        解绑后 <b className="text-ink">{s?.name}</b> 的平板将立即退出登录,下次登录需重新扫码绑定。确定解绑「{s?.device?.name}」吗?
+        解绑后 <b className="text-ink">{s?.name}</b> 的平板将立即退出登录,下次登录时重新绑定。确定解绑「{s?.device?.name}」吗?
       </ConfirmModal>
     </>
   );

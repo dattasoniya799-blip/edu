@@ -1,11 +1,15 @@
 /**
- * 编排页纯逻辑:环节上下移 / 检查清单(口径=A4 lesson.service.computeChecklist)/ 缺失项文案
+ * 编排页纯逻辑:环节上下移 / 发布门槛检查(放宽口径)/ 缺失项文案
  * 全部为纯函数,vitest 覆盖(验收项「发布校验提示」)
+ *
+ * 放宽发布(IMPL2 #3):自由增删环节,不再强制四类齐全。
+ * 发布唯一硬门槛 = 已存在的 practice / homework 环节必须挂「已发布」试卷;
+ * 其余环节(warmup/lecture/summary)缺失不再拦截。
  */
 import type { LessonSegmentDto, SegmentType } from '@qiming/contracts';
 
-/** prep_checklist 五键(A4 服务端口径,顺序即展示顺序) */
-export const CHECKLIST_KEYS = ['warmup', 'lecture', 'practice', 'summary', 'homework'] as const;
+/** 发布门槛键(仅这两类挂卷会拦截发布;顺序即展示顺序) */
+export const CHECKLIST_KEYS = ['practice', 'homework'] as const;
 export type ChecklistKey = (typeof CHECKLIST_KEYS)[number];
 
 export const SEGMENT_LABEL: Record<SegmentType, string> = {
@@ -18,10 +22,7 @@ export const SEGMENT_LABEL: Record<SegmentType, string> = {
 };
 
 export const CHECKLIST_LABEL: Record<ChecklistKey, string> = {
-  warmup: '开场回顾',
-  lecture: '课件讲解',
   practice: '随堂练',
-  summary: '小结巩固',
   homework: '课后作业',
 };
 
@@ -50,25 +51,31 @@ export function totalDuration(list: LessonSegmentDto[]): number {
 }
 
 /**
- * 检查清单(镜像 A4 lesson.service#computeChecklist):
- * warmup/lecture/summary = 环节存在;practice/homework = 环节存在且所挂 paper 全部 published
+ * 发布门槛(放宽口径):仅校验已存在的 practice / homework 环节挂卷是否就绪。
+ * 该类型环节不存在 → 该键为 true(不拦截);存在 → 其所有挂卷必须 published。
+ * warmup/lecture/summary 不再纳入门槛(自由编排)。
  */
 export function computeChecklist(
   segments: Pick<LessonSegmentDto, 'type' | 'paperId'>[],
   paperStatusById: Map<number, string>,
 ): Record<ChecklistKey, boolean> {
-  const has = (t: SegmentType) => segments.some((s) => s.type === t);
   const paperReady = (t: SegmentType) => {
     const list = segments.filter((s) => s.type === t);
-    return list.length > 0 && list.every((s) => s.paperId != null && paperStatusById.get(s.paperId) === 'published');
+    return list.every((s) => s.paperId != null && paperStatusById.get(s.paperId) === 'published');
   };
   return {
-    warmup: has('warmup'),
-    lecture: has('lecture'),
     practice: paperReady('practice'),
-    summary: has('summary'),
     homework: paperReady('homework'),
   };
+}
+
+/** 发布门槛中「存在但未就绪」的环节键(供编排页提示用) */
+export function pendingPaperKeys(
+  segments: Pick<LessonSegmentDto, 'type' | 'paperId'>[],
+  paperStatusById: Map<number, string>,
+): ChecklistKey[] {
+  const checklist = computeChecklist(segments, paperStatusById);
+  return CHECKLIST_KEYS.filter((k) => segments.some((s) => s.type === k) && !checklist[k]);
 }
 
 /** 4201 detail → 缺失项中文清单(A4:detail = prep_checklist 键数组;兼容 {missing:[…]} 包装) */
@@ -98,5 +105,5 @@ export function newSegment(type: SegmentType, seq: number): LessonSegmentDto {
       : type === 'practice' ? { ai_guide: true, stuck_alert_min: 3 }
         : {};
   const durationMin = { warmup: 10, lecture: 30, practice: 30, summary: 20, homework: 0, break_time: 10 }[type];
-  return { seq, type, durationMin, config, resourceId: null, paperId: null };
+  return { seq, type, durationMin, config, resourceId: null, paperId: null, kpNodeId: null, kpNodeName: null };
 }
