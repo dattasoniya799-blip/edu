@@ -842,3 +842,51 @@ mock 预批规则与原 stub 完全一致(第 1 步恒 ok、其余看 `√{step}
 - `openingConfig` 写入路径选在 `PUT /lessons/{id}`(契约 segments PUT 体为 `Segment[]`,无 openingConfig 槽位);前端须在保存编排时**额外调一次** `PUT /lessons/{id}` 写开场白。若后续希望一次 PUT 同时落盘编排+开场白,需走契约变更把 segments PUT 体改为对象。
 - 知识点单元"三段齐全"仅后端软放行 + 前端软提示,不强制;若业务要求强约束需新增发布校验项。
 - #9 仅以 `lesson.status` 为闸:`finished` 讲次的会话已 `ended`(`课堂已结束`先行拦截),不单独再判;`draft` 之外一律放行符合"发布即可进"口径。
+
+---
+
+# FIX4-back 交付 · 代码审查修复六项(真实后端问题)
+
+契约 `timeline.sessionId` 已在前序分支(`task/fix4-contract`)落地,本分支只改后端实现,不动 `contracts/schema`。负责目录:`src/student`、`src/grading`、`src/upload`、`src/assignment`、`src/question` 及 `test/`。
+
+## 处置概览
+
+| # | 问题(代码审查) | 落点 | 处置 |
+|---|---|---|---|
+| 1 | 课程时间线缺 `sessionId`(契约已含) | `src/student/student-misc.service.ts` | `lessonTimeline` 每讲补 `sessionId` = 该讲最新未结束(`status≠ended`)`class_session`,无则 `null`,口径与 `/student/today` 一致。抽出 `latestOpenSessions` 供 today/timeline 共用。 |
+| 2 | 批改图 `/storage` 签名 URL 无路由 → 404 | `src/upload/upload.controller.ts`(新 `StorageDownloadController`)、`src/upload/storage/storage-sign.util.ts`(新)、`src/grading/grading.service.ts` | 新增 `@Public GET /storage/*`:校验 HMAC `sig`+`exp`(与 `signPhotoUrl` 同算法/同 `secret`),通过则从 `UPLOAD_ROOT` 流式回文件;过期/错签名/路径穿越 → 403,文件缺失 → 404。`signPhotoUrl` 改用 `signStorageUrl`,URL 统一带全局前缀 `/api/v1/storage/...`(原先漏 `/api/v1` 正是 404 主因)。 |
+| 3 | 题目/作答 `figures` 是 `ossKey`,前端无法展示 | `src/upload/upload.controller.ts` | 新增**已登录**端点 `GET /uploads/view-url?ossKey=` → `{ url }`(指向 #2 的签名 GET URL）。不改 DTO/契约形状。**此端点不在 openapi 契约**(见下"契约外端点")。 |
+| 4 | 作业未校验讲次/学生与目标课程一致 | `src/assignment/assignment.service.ts` | `create` 增 `assertTargetConsistency`:挂了讲次时,`target.courseId` 必须等于讲次所属课程;`target.studentIds` 必须均为讲次所属课程的 `active` 在册学生。不一致 → 400。无讲次时不约束(沿用原行为)。 |
+| 5 | 今日讲次只取最早,草稿会挡住已发布 | `src/student/student-misc.service.ts` | `findTodayLesson` 当天讲次按开课时间升序后,**优先取"已发布"**(`status≠draft` 或已建未结束会话）一条;全为草稿才回退最早一条。 |
+| 6 | 重复标签 `tagNodeIds=[x,x]` → 唯一约束 500 | `src/question/question.service.ts` | `writeRelations` 插入前对 `tagNodeIds` 去重(`[...new Set()]`),避免 `(question_id,node_id)` 唯一冲突。 |
+
+## 前端如何用签名 URL(#2/#3）
+
+- 后端返回的 `figures[].ossKey` / 作答 `photoOssKey` 都是**裸 ossKey**,不能直接展示。
+- 前端拿 ossKey 调 **`GET /api/v1/uploads/view-url?ossKey=<ossKey>`**(需登录态)→ 得 `{ url }`,`url` 形如 `…/api/v1/storage/<ossKey>?exp=<ms>&sig=<hex32>`。
+- 把该 `url` 直接用作 `<img src>` / 下载地址即可:`GET /storage/*` 为 `@Public`,凭 `sig` 校验(10 分钟时效),无需再带 Authorization。
+- 批改原稿 `GradingItem.photoUrl` 已是**后端直接签好**的同款 URL,前端拿来即用,无需再调 view-url。
+
+## 契约外端点(本次最小新增,建议补契约)
+
+- **`GET /uploads/view-url?ossKey=`**(已登录,返回 `{url}`):openapi 无此端点。为让前端把 ossKey 换成可展示的签名地址而加;签名 `secret` 在后端,前端无法自行拼 URL,故必须有此换取端点。**建议后续补入契约**。
+- **`@Public GET /storage/*`**:与既有 `PUT /uploads/local/:token`、`GET /student/resources/local/:token` 同类——本地驱动等价于 OSS 外部直传/回看地址,属实现细节,非业务契约端点。
+
+## 验收 ↔ 测试(`npm test` 16 套件 **206** 用例全绿,连跑两次)
+
+| 验收项 | 测试名(文件) |
+|---|---|
+| #1 已发布(有会话)讲 `sessionId` 非 null、草稿讲 null | `#1 时间线…`(`fix4-back.e2e`)、`验收:讲次时间线…`(`fix1-student.e2e`,断言 `[null, sessionId, null]`) |
+| #2 签名 URL 取回文件字节一致;错签名/过期/穿越/缺文件 → 拒绝 | `#2 /storage:签名 URL…`(`fix4-back.e2e`) |
+| #3 `view-url` 返回签名 URL;缺参/穿越 → 400、未登录 → 401 | `#3 view-url…`(`fix4-back.e2e`) |
+| #4 A 课讲次发 B 课学生/B 课 → 400;一致 → 200 | `#4 作业一致性…`(`fix4-back.e2e`) |
+| #5 当天早草稿+晚已发布 → today 取已发布 | `#5 today…`(`fix4-back.e2e`) |
+| #6 `tagNodeIds=[x,x]` 去重建题不 500、落库 1 条 | `#6 重复标签…`(`fix4-back.e2e`) |
+
+夹具:`test/fixtures/fix4.fixtures.ts`(13911 号段,自建自清)。`a5.e2e` 的 `photoUrl` 断言(含 ossKey 子串 + `exp/sig` 正则)在 URL 加 `/api/v1` 前缀后仍通过。
+
+## 遗留风险
+
+- `GET /uploads/view-url` 与 `@Public GET /storage/*` 不在 openapi 契约;若契约校验工具开启 strict 模式需登记,见"契约外端点"。
+- `/storage` 仅 `local` 驱动用;切 `STORAGE_DRIVER=oss` 后应由对象存储直签,本端点不接管(与 A3/FIX1 同口径)。
+- #4 仅在作业挂了讲次时校验一致性;不挂讲次的定向作业(`studentIds` 无 `lessonId`)不约束课程归属,沿用原行为。

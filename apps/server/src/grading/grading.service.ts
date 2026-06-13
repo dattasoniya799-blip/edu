@@ -1,6 +1,5 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createHmac } from 'crypto';
 import type {
   AssignmentKind,
   GradingAnswerBriefDto,
@@ -12,6 +11,7 @@ import type { JwtUser } from '../auth/auth.service';
 import { MasteryQueueService } from '../mastery/mastery.queue';
 import { PrismaService } from '../prisma/prisma.service';
 import { AccountItem, WrongBookService } from '../wrongbook/wrongbook.service';
+import { signStorageUrl } from '../upload/storage/storage-sign.util';
 import { AI_GATEWAY, AiGateway } from './ai/ai-gateway';
 import { BizException, ERR_GRADING_PENDING } from './business.exception';
 import { questionNeedsReview } from './formula-blank.util';
@@ -453,15 +453,16 @@ export class GradingService {
   }
 
   /**
-   * 手写原稿签名 URL(短时效 10 分钟):
-   * HMAC(ossKey:exp) 签名,base 取 UPLOAD_PUBLIC_BASE(同 A3 storage 适配器口径);
-   * 生产切 OSS 时由 storage 适配器换成真实签名 URL,字段形状不变。
+   * 手写原稿签名 URL(短时效 10 分钟):FIX4 · #2 起复用 signStorageUrl,URL 指向
+   * @Public GET /api/v1/storage/*(StorageDownloadController),修复此前 /storage 无路由 → 404。
+   * HMAC 算法/secret 不变;生产切 OSS 时由 storage 适配器换成真实签名 URL,字段形状不变。
    */
   private signPhotoUrl(ossKey: string): string {
-    const base = this.cfg.get<string>('UPLOAD_PUBLIC_BASE', 'http://127.0.0.1:3000');
+    const base = this.cfg.get<string>(
+      'UPLOAD_PUBLIC_BASE',
+      `http://127.0.0.1:${this.cfg.get('PORT', '3000')}`,
+    );
     const secret = this.cfg.get<string>('JWT_SECRET', 'dev-secret-change-me');
-    const exp = Date.now() + 600_000;
-    const sig = createHmac('sha256', secret).update(`${ossKey}:${exp}`).digest('hex').slice(0, 32);
-    return `${base}/storage/${ossKey}?exp=${exp}&sig=${sig}`;
+    return signStorageUrl(base, secret, ossKey);
   }
 }

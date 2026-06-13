@@ -5,11 +5,11 @@ import { REDIS } from '../redis/redis.module';
 import { LocalStorageAdapter } from './storage/local-storage.adapter';
 import { OssStorageAdapter } from './storage/oss-storage.adapter';
 import { STORAGE_ADAPTER } from './storage/storage.adapter';
-import { UploadController } from './upload.controller';
+import { StorageDownloadController, UploadController } from './upload.controller';
 import { UploadService } from './upload.service';
 
 @Module({
-  controllers: [UploadController],
+  controllers: [UploadController, StorageDownloadController],
   providers: [
     UploadService,
     {
