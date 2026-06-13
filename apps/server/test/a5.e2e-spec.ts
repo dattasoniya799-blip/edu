@@ -21,7 +21,7 @@ const ANSWER_KEYS = ['questionId', 'response', 'isCorrect', 'score', 'flagged'];
 const SUBMIT_RESULT_KEYS = ['judged', 'isCorrect', 'correctAnswer', 'analysisLatex'];
 const PENDING_KEYS = ['assignmentId', 'paperName', 'pendingCount', 'aiAvgScore'];
 const GRADING_ITEM_KEYS = ['answerId', 'studentId', 'studentName', 'questionId', 'stemLatex', 'rubric', 'photoUrl', 'textResponse', 'aiScore', 'aiSteps', 'aiErrorTags', 'finalScore', 'comment'];
-const WRONG_ITEM_KEYS = ['id', 'questionId', 'type', 'stemLatex', 'analysisLatex', 'wrongCount', 'correctRedoCount', 'errorTags', 'status', 'sourceName', 'createdAt'];
+const WRONG_ITEM_KEYS = ['id', 'questionId', 'type', 'stemLatex', 'analysisLatex', 'wrongCount', 'correctRedoCount', 'errorTags', 'status', 'sourceName', 'createdAt', 'subject'];
 const ASSIGNMENT_KEYS = ['id', 'paperId', 'paperName', 'lessonId', 'kind', 'target', 'publishAt', 'dueAt', 'scoreCounted', 'questionCount', 'totalScore'];
 
 /** 轮询等待异步任务(BullMQ 真实执行) */

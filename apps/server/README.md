@@ -604,3 +604,56 @@ mock 预批规则与原 stub 完全一致(第 1 步恒 ok、其余看 `√{step}
   B5-1,仲裁中)。本实现严格按当前契约(条目仅 `lesson`+`myHomework`);若 B5-1 获批,
   在 `lessonTimeline` 返回值补该字段即可,联调时注意此差异。
 - 测试夹具:1398 号段自建两机构,afterAll 逆依赖全量清理;seed 数据只读对账;套件可重复执行。
+
+---
+
+# IMPL-back 交付 · 插图 anchor / 填空混合判分 / 错题本 subject
+
+负责目录:`src/question/`、`src/attempt/`、`src/grading/`、`src/wrongbook/` + `test/impl-back.e2e-spec.ts`、`test/fixtures/impl-back.fixtures.ts`(手机号 **1399** 段)。在 2026-06-13 已批准的契约(`QuestionFigure.anchor`、`WrongBookItemDto.subject`、填空混合判分行为约定)之上仅做实现,未改 `packages/contracts` 与 `prisma/schema.prisma`;`app.module.ts` 无改动(模块已注册)。
+
+## 1. 题目插图 anchor(方案A,`src/question`)
+
+- `figures[]` 是题目级 Json,create/update 直接持久化(含 `anchor`);读取(GET/详情)原样返回,缺省 `anchor` 由读取端视为题干(向后兼容旧数据,无迁移)。
+- DTO:`FigureDto` 新增可选 `anchor:{target,ref?}`(`question.dto.ts` 的 `FigureAnchorDto`);因全局 `ValidationPipe({whitelist:true})` 会剥离未声明字段,故 anchor 必须在 DTO 显式声明才不被吞掉。`target` 取值由 `@IsIn(['stem','option','analysis','reference','rubric'])` 把关(非法 → 400)。
+- 服务层校验(`question.service.ts#validateFigures`,create/put 共用):`target=option` → `ref` 必须匹配某选项 `label`;`target=rubric` → `ref` 必须匹配某 rubric `step`(数值以字符串传入);`stem/analysis/reference` 的 ref 可选不校验。校验失败 → 400。
+
+## 2. 填空混合判分(`src/attempt` + `src/grading`,核心)
+
+- **公式填空检测规则**(`src/grading/formula-blank.util.ts`):blank 题的**参考答案**(`questions.answer.texts[]`)任一空含 LaTeX 控制符(反斜杠 `\`,如 `\frac`/`\sqrt`)→ 该题为"公式填空";否则"简单填空"。检测只看题目参考答案,与学生作答无关 → 是题目级属性。
+- **粒度(MVP 口径)**:以"整道 answer"为单位 —— 一道填空题多空且混合时,只要任一空含公式即整题走复核,不做逐空拆分判分(简单清晰、可测;前端按整题展示复核态即可)。
+- **简单填空**:保持现状,`normalizeBlank`(全角转半角 + 去空白)逐空比对即时判分。
+- **公式填空**:与 solution 同管线 —— `submitAnswer` 不即时判分(`answer.isCorrect=null`、`score=null`),交卷后投递 BullMQ `pre_grading`(`AiGateway` stub,填空无 rubric → stub 返回 `aiScore=0/steps=[]/errorTags=[]`,即"管线打通、分由教师给")→ 写 `grading_records` → 进 `/grading/pending`(与 solution 一并按作业聚合,`pendingCount` 含公式填空)→ teacher `review`/`finalize` 出分。`/grading/answers/:id` 把各空作答拼接进 `textResponse` 供教师查看。
+- **交卷自动出分门槛**:`attempt.service.ts#submit` 由"卷面是否含 solution"放宽为"卷面是否含需复核题(solution **或** 公式填空)";含则不自动 finalize,等教师复核。`objectiveScore` 仍只汇总 `isCorrect != null` 的即时分(公式填空此时为 null,不计入)。
+- **finalize / 错题 / 掌握度**(`grading.service.ts#settleAttempt`、`wrongbook.service.ts#accountAttempt`):统一用每题 `needsReview` 标志(`paperMeta` 携带)区分判定口径 —— 需复核题按复核后的 `final_score < 满分 = 错`;客观题按 `is_correct`。公式填空出分时**回填 `answer.is_correct`**(`final_score >= 满分`),使其与客观题一致地纳入错题流水与**掌握度样本**(mastery 仅采 `is_correct` 非空的作答;solution 仍恒 NULL 不入样本)。公式填空的复核分计入 `subjectiveScore`(走了复核管线),总分 `score = objectiveScore + subjectiveScore` 不变。
+
+## 3. 错题本 subject(`src/wrongbook`)
+
+- `WrongBookService.list` 的题目查询补 `subject`,映射项补 `subject`(源自 `questions.subject`),修好契约新增 `WrongBookItemDto.subject` 导致的 wrongbook 编译错误。
+- 报备:`test/a5.e2e-spec.ts` 的 `WRONG_ITEM_KEYS`(exactKeys 断言用)同步补 `'subject'`(否则既有 A5 错题用例会因多出字段红)——属契约新增字段的连带测试更新,wrongbook 语义零变化。
+
+## 验收项 ↔ 测试映射(npm test 166 用例全绿 = 既有 150 + IMPL-back 16,连跑两次绿,`test/impl-back.e2e-spec.ts`)
+
+| 验收项 | 测试 |
+|---|---|
+| anchor 各位置挂图 → 读取无损 | `anchor:各位置各挂一张图 → 录入并读取逐字段无损(验收项)` |
+| 缺省 anchor 向后兼容 | `anchor:缺省(无 anchor)向后兼容 → 存读无损(视为题干)` |
+| 非法 target → 400 | `anchor:非法 target → 400` |
+| option/rubric ref 不存在 → 400 | `anchor:target=option … → 400`、`anchor:target=rubric … → 400` |
+| ① 简单填空即时判 + 归一化(回归) | `① 简单填空即时判分 + 归一化(回归)…` |
+| ② 公式填空交卷后 isCorrect=null + 进 pending + 预批写 grading_records | `② 公式填空 / 混合题提交 → judged=false…`、`② 交卷…`、`② 预批…grading_records`、`② 公式填空进入 /grading/pending…` |
+| ③ review→finalize→错则入错题本、掌握度更新 | `③ 教师 review → finalize…`、`③ finalize 在…前被拒 → 4501`、`③ + 任务3:错题本入账…`、`③ 掌握度:…N1 = 2/3 = 67` |
+| ④ 混合题(一空数字一空公式)整题走复核 | `④ 混合题…整题走复核:isCorrect=null 且已进预批` |
+| 任务3:错题本 subject 正确 | `③ + 任务3:错题本入账(公式填空错)且 subject 正确` |
+
+测试夹具:`test/fixtures/impl-back.fixtures.ts` 自建专属机构(手机号 **1399** 开头)+ 小图谱 + 三道填空题(简单/公式/混合);`afterAll` 逆依赖全量清理并删 `${BULLMQ_PREFIX}:pre_grading:*`/`:mastery:*` 队列键(本波次 `.env` 设 `BULLMQ_PREFIX=impl`,Redis 键 `impl:` 前缀,禁 FLUSHALL);seed 数据只读,套件可重复执行。
+
+## 与前端的对接点
+
+- **公式填空响应形状**:`PUT /student/attempts/:id/answers/:qid` 对公式填空(及混合填空)返回 `{judged:false, isCorrect:null, correctAnswer:null, analysisLatex:null}`(与 solution 一致);`AttemptDto.answers[]` 中该题 `isCorrect=null/score=null` 直到教师 finalize;`GradingItemDto.textResponse` 给出各空拼接文本(`' | '` 连接)。前端据 `judged=false` 展示"待批改",勿按即时对错渲染。
+- **figures anchor 读写形状**:`QuestionFigure = {ossKey, position, anchor?:{target:'stem'|'option'|'analysis'|'reference'|'rubric', ref?}}`;`option` 的 `ref`=选项 label,`rubric` 的 `ref`=rubric step(字符串);缺省 anchor 按题干渲染。写入即读出,无服务端改写。
+
+## 遗留风险
+
+- 公式检测以"参考答案含反斜杠"为判据:若个别简单填空的参考答案里写了转义反斜杠(非公式语义)会被误判为公式填空而走复核 —— 录题侧约定参考答案 LaTeX 即可,MVP 口径接受该假阳。
+- 公式填空分计入 `subjectiveScore`(而非 objectiveScore),仅影响客观/主观分的展示拆分,不影响总分与掌握度;若前端按"填空=客观分"统计需注意此口径。
+- stub 预批对无 rubric 的填空恒给 `aiScore=0`,完全依赖教师复核给分;A7 真实网关上线后由 OCR/AI 产出实际预批分,`AI_GATEWAY` Provider 绑定切换即可,本域零改动。

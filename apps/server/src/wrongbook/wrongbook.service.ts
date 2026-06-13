@@ -18,7 +18,9 @@ export interface AccountItem {
   /** 卷面满分(paper_questions.score) */
   fullScore: number;
   type: string;
-  /** AI 预批错因(主观题) */
+  /** 是否走复核管线(solution / 公式填空)→ 对错由 finalScore 判;否则由 isCorrect 判 */
+  needsReview: boolean;
+  /** AI 预批错因(主观题 / 公式填空) */
   errorTags: string[];
 }
 
@@ -63,7 +65,7 @@ export class WrongBookService {
     const questions = qIds.length
       ? await this.prisma.client.question.findMany({
           where: { id: { in: qIds } },
-          select: { id: true, type: true, stemLatex: true, analysisLatex: true },
+          select: { id: true, type: true, subject: true, stemLatex: true, analysisLatex: true },
         })
       : [];
     const qMap = new Map(questions.map((it) => [String(it.id), it]));
@@ -82,6 +84,7 @@ export class WrongBookService {
           status: r.status,
           sourceName: r.sourceAnswer.attempt.assignment.paper.name,
           createdAt: iso(r.createdAt),
+          subject: question?.subject ?? '', // [2026-06-13] 错题本按学科分组,源自题目 subject
         };
       }),
       total,
@@ -123,14 +126,13 @@ export class WrongBookService {
   ): Promise<void> {
     const isRedo = REDO_KINDS.includes(kind);
     for (const item of items) {
-      const wrong =
-        item.type === 'solution'
-          ? item.finalScore != null && item.finalScore < item.fullScore
-          : item.isCorrect === false;
-      const correct =
-        item.type === 'solution'
-          ? item.finalScore != null && item.finalScore >= item.fullScore
-          : item.isCorrect === true;
+      // 需复核题(solution / 公式填空):对错由复核分判;客观题:由 is_correct 判
+      const wrong = item.needsReview
+        ? item.finalScore != null && item.finalScore < item.fullScore
+        : item.isCorrect === false;
+      const correct = item.needsReview
+        ? item.finalScore != null && item.finalScore >= item.fullScore
+        : item.isCorrect === true;
 
       if (wrong) {
         await this.prisma.client.wrongBookEntry.upsert({

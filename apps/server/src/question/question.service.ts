@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import type { PageResp, QuestionAnswer, QuestionDto } from '@qiming/contracts';
+import type { PageResp, QuestionAnswer, QuestionDto, QuestionFigure } from '@qiming/contracts';
 import { PrismaService } from '../prisma/prisma.service';
 import { BusinessException, ERR_QUESTION_IN_PAPER } from './business.exception';
 import { QuestionInputDto, QuestionListQueryDto } from './question.dto';
@@ -27,6 +27,8 @@ export class QuestionService {
   private async validateInput(dto: QuestionInputDto) {
     const isChoice = dto.type === 'single' || dto.type === 'multi';
     const options = dto.options ?? [];
+
+    this.validateFigures(dto);
 
     if (isChoice) {
       if (options.length < 2) throw new BadRequestException('选择题 options 必填且至少 2 项');
@@ -67,6 +69,31 @@ export class QuestionService {
       throw new BadRequestException('tagNodeIds 含不存在的图谱节点');
     if (!nodes.some((n) => n.graph.graphType === 'curriculum_knowledge'))
       throw new BadRequestException('tagNodeIds 至少需包含 1 个教材知识点(curriculum_knowledge)');
+  }
+
+  /**
+   * 题目插图 anchor 校验(方案A,2026-06-13):
+   * - anchor.target 必在 {stem,option,analysis,reference,rubric}(枚举由 DTO 的 @IsIn 把关)
+   * - target=option → ref 必须匹配某选项 label
+   * - target=rubric → ref 必须匹配某 rubric step(数值,以字符串传入)
+   * - 缺省 anchor 视为题干(向后兼容),不校验
+   */
+  private validateFigures(dto: QuestionInputDto) {
+    const figures = dto.figures ?? [];
+    const optionLabels = new Set((dto.options ?? []).map((o) => o.label));
+    const rubricSteps = new Set((dto.rubric ?? []).map((r) => String(r.step)));
+    for (const fig of figures) {
+      const anchor = fig.anchor;
+      if (!anchor) continue; // 缺省 = 题干
+      if (anchor.target === 'option') {
+        if (anchor.ref == null || !optionLabels.has(anchor.ref))
+          throw new BadRequestException(`插图 anchor.ref="${anchor.ref}" 不匹配任何选项 label`);
+      } else if (anchor.target === 'rubric') {
+        if (anchor.ref == null || !rubricSteps.has(String(anchor.ref)))
+          throw new BadRequestException(`插图 anchor.ref="${anchor.ref}" 不匹配任何 rubric step`);
+      }
+      // stem / analysis / reference:ref 可选,不校验
+    }
   }
 
   /** 仅 owner 或 admin 可改/删/发布 */
@@ -246,7 +273,8 @@ export class QuestionService {
       textbookVersion: q.textbookVersion,
       chapter: q.chapter,
       stemLatex: q.stemLatex,
-      figures: (q.figures ?? []) as { ossKey: string; position: number }[],
+      // figures 是题目级 Json,原样返回(含 anchor;缺省 anchor 由读取端视为题干)
+      figures: (q.figures ?? []) as unknown as QuestionFigure[],
       options: q.options.map((o) => ({
         label: o.label,
         contentLatex: o.contentLatex,
