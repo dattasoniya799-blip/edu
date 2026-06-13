@@ -235,12 +235,18 @@ const WRONG_SEED: { qid: number; wrongCount: number; tags: string[]; source: str
   { qid: 7, wrongCount: 1, tags: ['计算失误'], source: '第2讲课后作业', at: '2026-06-01T11:05:00.000Z' },
   { qid: 17, wrongCount: 1, tags: ['概念辨析'], source: '第1讲随堂练', at: '2026-05-23T07:20:00.000Z' },
 ];
-export const wrongBook: WrongBookItemDto[] = WRONG_SEED.map((w, i) => {
+/**
+ * 错题项视图(FIX3 问题5):WrongBookItem 契约暂无 subject(见「契约变更申请 FIX3-1」),
+ * mock 先按申请形状附带 subject(取自题目 subject),前端据此做学科分组/筛选;
+ * 当前 seed 为数学单科 → 学科筛选优雅退化(不显示)。契约落地后字段即对齐。
+ */
+export type WrongBookItemView = WrongBookItemDto & { subject: string };
+export const wrongBook: WrongBookItemView[] = WRONG_SEED.map((w, i) => {
   const q = questions[w.qid - 1];
   return {
     id: i + 1, questionId: q.id, type: q.type, stemLatex: q.stemLatex, analysisLatex: q.analysisLatex,
     wrongCount: w.wrongCount, correctRedoCount: 0, errorTags: w.tags, status: 'open',
-    sourceName: w.source, createdAt: w.at,
+    sourceName: w.source, createdAt: w.at, subject: q.subject,
   };
 });
 

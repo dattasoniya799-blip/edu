@@ -4,7 +4,7 @@
  */
 import { useId } from 'react';
 import type { AnswerResponse } from '@qiming/contracts';
-import { Tag, TexText } from '@qiming/ui';
+import { MathInput, Tag, TexText } from '@qiming/ui';
 import type { ItemState } from './machine';
 import type { AttemptQuestionView } from './types';
 
@@ -106,22 +106,24 @@ function BlankInputs({ q, item, draft, onDraft, locked }: QuestionPanelProps & {
   const texts = locked
     ? item.response && 'texts' in item.response ? item.response.texts : []
     : draft && 'texts' in draft ? draft.texts : [];
+  const setBlank = (i: number, v: string) => {
+    const next = Array.from({ length: blanks }, (_, j) => (j === i ? v : texts[j] ?? ''));
+    onDraft(next.some((t) => t.trim() !== '') ? { texts: next } : null);
+  };
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-3.5">
       {Array.from({ length: blanks }, (_, i) => (
-        <label key={i} className="flex min-h-touch items-center gap-2.5">
-          <span className="shrink-0 text-xs text-ink-3">第 {i + 1} 空</span>
-          <input
+        <div key={i} className="flex items-start gap-2.5">
+          <span className="mt-2.5 shrink-0 text-xs text-ink-3">第 {i + 1} 空</span>
+          {/* 平板公式输入(FIX3 问题4):键盘直打简单答案 + 「公式」面板插入分数/根号/上下标,实时预览 */}
+          <MathInput
             value={texts[i] ?? ''}
             disabled={locked}
-            placeholder="输入答案,如 y=2x+1(空格与全角不影响判分)"
-            onChange={(e) => {
-              const next = Array.from({ length: blanks }, (_, j) => (j === i ? e.target.value : texts[j] ?? ''));
-              onDraft(next.some((t) => t.trim() !== '') ? { texts: next } : null);
-            }}
-            className="min-h-touch w-full max-w-[420px] rounded-[10px] border-[1.5px] border-line bg-card px-3.5 text-sm text-ink outline-none transition-all focus:border-primary disabled:bg-bg"
+            ariaLabel={`第 ${i + 1} 空`}
+            placeholder="输入答案,如 y=2x+1;复杂公式点「公式」(空格与全角不影响判分)"
+            onChange={(v) => setBlank(i, v)}
           />
-        </label>
+        </div>
       ))}
     </div>
   );

@@ -4,31 +4,38 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { AssignmentDto, WrongBookItemDto } from '@qiming/contracts';
+import type { AssignmentDto } from '@qiming/contracts';
 import { Button, Card, EmptyState, Skeleton, useToast } from '@qiming/ui';
 import { api, errorMessage } from '../../api';
 import { WrongItemCard } from './WrongItemCard';
+import { deriveSubjects, filterBySubject, type WrongBookItemView } from './subjects';
 
 export function WrongBookPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [items, setItems] = useState<WrongBookItemDto[] | null>(null);
+  const [items, setItems] = useState<WrongBookItemView[] | null>(null);
+  const [subject, setSubject] = useState<string | null>(null); // FIX3 问题5:学科筛选(null=全部)
   const [filter, setFilter] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [showCleared, setShowCleared] = useState(false);
 
   useEffect(() => {
-    api.get('/student/wrong-book', { query: { page: 1, size: 50 } }).then((r) => setItems(r.data.items as WrongBookItemDto[]));
+    // 契约 WrongBookItem 暂无 subject(见 README 契约变更申请 FIX3-1);view 容忍缺失,mock 先行附带
+    api.get('/student/wrong-book', { query: { page: 1, size: 50 } }).then((r) => setItems(r.data.items as WrongBookItemView[]));
   }, []);
 
   const open = useMemo(() => (items ?? []).filter((w) => w.status === 'open'), [items]);
   const cleared = useMemo(() => (items ?? []).filter((w) => w.status === 'cleared'), [items]);
+  // 学科分组:≥2 学科才显示筛选,单科优雅退化(对照原型单科口径)
+  const subjects = useMemo(() => deriveSubjects(open), [open]);
+  const bySubject = useMemo(() => filterBySubject(open, subjects.length > 1 ? subject : null), [open, subjects, subject]);
   const tagCounts = useMemo(() => {
     const m = new Map<string, number>();
-    for (const w of open) for (const t of w.errorTags) m.set(t, (m.get(t) ?? 0) + 1);
+    for (const w of bySubject) for (const t of w.errorTags) m.set(t, (m.get(t) ?? 0) + 1);
     return [...m.entries()];
-  }, [open]);
-  const visible = filter ? open.filter((w) => w.errorTags.includes(filter)) : open;
+  }, [bySubject]);
+  const visible = filter ? bySubject.filter((w) => w.errorTags.includes(filter)) : bySubject;
+  const pickSubject = (s: string | null) => { setSubject(s); setFilter(null); }; // 切学科重置错因筛选
 
   const go = (a: AssignmentDto) => navigate(`/homework/${a.id}`);
 
@@ -81,8 +88,23 @@ export function WrongBookPage() {
         </Card>
       ) : (
         <>
+          {/* 学科筛选(FIX3 问题5):≥2 学科才显示,单科退化隐藏 */}
+          {subjects.length > 1 && (
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <span className="text-xs text-ink-3">学科</span>
+              <FilterChip active={subject == null} label={`全部 (${open.length})`} onClick={() => pickSubject(null)} />
+              {subjects.map((s) => (
+                <FilterChip
+                  key={s}
+                  active={subject === s}
+                  label={`${s} (${open.filter((w) => (w.subject ?? '') === s).length})`}
+                  onClick={() => pickSubject(subject === s ? null : s)}
+                />
+              ))}
+            </div>
+          )}
           <div className="mb-4 flex flex-wrap gap-2">
-            <FilterChip active={filter == null} label={`全部 (${open.length})`} onClick={() => setFilter(null)} />
+            <FilterChip active={filter == null} label={`全部 (${bySubject.length})`} onClick={() => setFilter(null)} />
             {tagCounts.map(([t, n]) => (
               <FilterChip key={t} active={filter === t} label={`${t} (${n})`} onClick={() => setFilter(filter === t ? null : t)} />
             ))}
@@ -91,7 +113,9 @@ export function WrongBookPage() {
             {visible.length === 0 ? (
               <Card><EmptyState text="该错因下没有待消灭错题" /></Card>
             ) : (
-              visible.map((w) => <WrongItemCard key={w.id} item={w} onRedo={redoOne} redoing={busy} />)
+              visible.map((w) => (
+                <WrongItemCard key={w.id} item={w} subjectLabel={subjects.length > 1 ? w.subject : undefined} onRedo={redoOne} redoing={busy} />
+              ))
             )}
           </div>
         </>
