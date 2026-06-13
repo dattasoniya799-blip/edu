@@ -129,6 +129,39 @@ describe('题库 CRUD(A3)', () => {
     expect(q.tags.filter((t: any) => t.graphType === 'curriculum_knowledge')).toHaveLength(2);
   });
 
+  it('C2#7 三种解析:录入 正常/简单/详细 → 读取逐字段无损;只录正常 → 另两者 null', async () => {
+    // 三种解析全部录入
+    const triple = {
+      ...singlePayload(),
+      analysisLatex: '正常解析:平移规律,$y=2x-2$。',
+      analysisBriefLatex: '简单:下减 3。',
+      analysisDetailLatex: '详细:一次函数 $y=kx+b$ 上下平移只改 $b$,$1-3=-2$,故 $y=2x-2$。',
+    };
+    const c1 = await request(http).post('/api/v1/questions').set(auth(teacherA)).send(triple).expect(200);
+    const g1 = await request(http).get(`/api/v1/questions/${c1.body.data.id}`).set(auth(teacherA)).expect(200);
+    expect(g1.body.data.analysisLatex).toBe(triple.analysisLatex);
+    expect(g1.body.data.analysisBriefLatex).toBe(triple.analysisBriefLatex);
+    expect(g1.body.data.analysisDetailLatex).toBe(triple.analysisDetailLatex);
+
+    // 只录正常解析 → 简单/详细为 null
+    const onlyNormal = { ...singlePayload(), analysisLatex: '仅正常解析。' };
+    const c2 = await request(http).post('/api/v1/questions').set(auth(teacherA)).send(onlyNormal).expect(200);
+    const g2 = await request(http).get(`/api/v1/questions/${c2.body.data.id}`).set(auth(teacherA)).expect(200);
+    expect(g2.body.data.analysisLatex).toBe('仅正常解析。');
+    expect(g2.body.data.analysisBriefLatex).toBeNull();
+    expect(g2.body.data.analysisDetailLatex).toBeNull();
+
+    // PUT 更新可补写简单/详细
+    await request(http)
+      .put(`/api/v1/questions/${c2.body.data.id}`)
+      .set(auth(teacherA))
+      .send({ ...onlyNormal, analysisBriefLatex: '补:简单', analysisDetailLatex: '补:详细' })
+      .expect(200);
+    const g3 = await request(http).get(`/api/v1/questions/${c2.body.data.id}`).set(auth(teacherA)).expect(200);
+    expect(g3.body.data.analysisBriefLatex).toBe('补:简单');
+    expect(g3.body.data.analysisDetailLatex).toBe('补:详细');
+  });
+
   // ---------------- create 校验 ----------------
 
   it('create 校验:选择题 options/正确项数量、解答题 rubric、教材知识点标签', async () => {

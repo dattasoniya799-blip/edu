@@ -73,7 +73,9 @@ describe('课堂实时 WebSocket(A6,/classroom)', () => {
   const qid = (i: number) => Number(fx.questionIds[i]);
   const sid = () => fx.sessionId;
   const uid = (i: number) => Number(fx.studentIds[i]);
-  const keyPrefix = () => `a6:cls:${sid()}`;
+  // 课堂热状态键前缀:与服务端 CLS_REDIS_PREFIX 对齐(本工作区设 c2b: 隔离共享 Redis)
+  const CLS_PREFIX = process.env.CLS_REDIS_PREFIX ?? 'a6:';
+  const keyPrefix = () => `${CLS_PREFIX}cls:${sid()}`;
 
   // ---------------- 工具 ----------------
 
@@ -152,7 +154,7 @@ describe('课堂实时 WebSocket(A6,/classroom)', () => {
 
   /** 仅清本套件键(禁止 FLUSHALL/FLUSHDB,共享 Redis 纪律) */
   const flushOwnKeys = async () => {
-    const keys = await scanKeys('a6:cls:*');
+    const keys = await scanKeys(`${CLS_PREFIX}cls:*`);
     if (keys.length) await redis.del(...keys);
   };
 
@@ -254,6 +256,52 @@ describe('课堂实时 WebSocket(A6,/classroom)', () => {
     const tb = await connectClient(teacherBToken);
     await joinExpectError(tb, sid()); // 跨租户:租户注入下查无此课
     tb.disconnect();
+  });
+
+  it('C2#9 进课堂新规则:未发布(draft)讲次 → 学生 join 被拒绝', async () => {
+    const draftLesson = await raw.lesson.create({
+      data: {
+        orgId: fx.orgId, courseId: BigInt(fx.courseId), seq: 90,
+        title: 'C2#9 草稿讲次', status: 'draft',
+        scheduledStart: new Date(Date.now() - 5 * 60_000),
+        scheduledEnd: new Date(Date.now() + 60 * 60_000),
+        prepChecklist: {},
+      },
+    });
+    const draftSession = await raw.classSession.create({
+      data: {
+        orgId: fx.orgId, lessonId: draftLesson.id, status: 'scheduled',
+        mode: { guide_only: true, stuck_alert_min: 2, lockdown: false, sync_segments: false },
+      },
+    });
+    const stu = await connectClient(studentTokens[3]);
+    const msg = await joinExpectError(stu, Number(draftSession.id));
+    expect(msg).toContain('未发布');
+    stu.disconnect();
+  });
+
+  it('C2#9 进课堂新规则:时间未到但已发布(ready)→ 学生可 join 并开课(scheduled→live,不看时间)', async () => {
+    const futureLesson = await raw.lesson.create({
+      data: {
+        orgId: fx.orgId, courseId: BigInt(fx.courseId), seq: 91,
+        title: 'C2#9 已发布·未到时间', status: 'ready',
+        scheduledStart: new Date(Date.now() + 2 * 60 * 60_000), // 2 小时后才上课
+        scheduledEnd: new Date(Date.now() + 3 * 60 * 60_000),
+        prepChecklist: { lecture: true },
+      },
+    });
+    const futureSession = await raw.classSession.create({
+      data: {
+        orgId: fx.orgId, lessonId: futureLesson.id, status: 'scheduled',
+        mode: { guide_only: true, stuck_alert_min: 2, lockdown: false, sync_segments: false },
+      },
+    });
+    const stu = await connectClient(studentTokens[4]);
+    const snap = await join(stu, Number(futureSession.id));
+    expect(snap.session.status).toBe('live'); // 已发布即可开课,无时间门槛
+    const row = await raw.classSession.findFirst({ where: { id: futureSession.id } });
+    expect(row?.status).toBe('live');
+    stu.disconnect();
   });
 
   it('教师 join → 进入监控房间,收到 monitor:roster(ParticipantMonitor 形状)', async () => {

@@ -785,3 +785,60 @@ mock 预批规则与原 stub 完全一致(第 1 步恒 ok、其余看 `√{step}
 
 - 批改名单统计 `submitted`+`graded` 两态 attempt:同一学生对同一作业多次 attempt(如重做新开)时,各 attempt 的复核题作答都会作为独立项列出(answerId 唯一区分),前端复核页若需"仅最新一次"需自行按 attempt 去重;现行口径与 `/grading/pending`(亦不去重)一致。
 - `correctAnswer` 下发以"整道 attempt 交卷"或"该题 isCorrect 非空"为闸:公式填空/solution 在交卷前即便 AI 已预批也不下发(isCorrect 仍为 null),符合防作弊但意味着学生交卷前看不到主观题参考答案——为既定口径。
+
+---
+
+# C2-back-redesign(3 项重设计 · 后端)
+
+承接契约 `c2-contract`(`LessonSegment.unitSeq` / `Lesson.openingConfig` / `Question.analysisBrief|DetailLatex`)。本节实现 3 项重设计后端,**不改契约/schema**,DB 走库 `qiming_c2b`(Redis 键 `c2b:`,BullMQ 前缀 `c2b`)。
+
+## #5 知识点单元(讲解·随堂练·小结)—— unitSeq 分组
+
+模型:一节课 = **开场白**(`lesson.openingConfig`,可空)+ 多个**知识点单元**;每单元 = 同 `unitSeq` 且同 `kpNodeId` 的一组环节(典型:讲解 `lecture`+课件 / 随堂练 `practice`+卷 / 小结 `summary`+config)。环节仍按 `seq` 存 `lesson_segments`,**A6 课堂按 seq 播放,口径未变**。
+
+- **GET `/lessons/{id}/segments`**:Segment 原样返回,含 `unitSeq`、`kpNodeName`(join `kp_nodes` 回填)。
+- **PUT `/lessons/{id}/segments`**:接受每段 `unitSeq`(可空,null=开场白等单元外环节)。
+- **`openingConfig` 读写走讲次端点**(契约 segments PUT 体仍是 `Segment[]`,无 openingConfig 槽位):
+  - 写:`PUT /lessons/{id}` body 增 `openingConfig`(传对象写入、传 `null` 显式清空、不传不变);
+  - 读:`GET /lessons/{id}`(及 `/courses/{id}/lessons`、`/student/...` 的 LessonDto)返回 `openingConfig`。
+- 校验:同一 `unitSeq` 的段 **`kpNodeId` 必须一致**(否则 **400**);`kpNodeId`/`resourceId`/`paperId` 经租户注入校验本 org 存在(跨租户即 404)。
+- **发布规则(承接 IMPL2 放宽,未改)**:至少 1 段;`practice`/`homework` 挂的 paper 须 `published`(缺失 4201,detail=`['empty']`/含 `practice`|`homework`)。知识点单元三段齐全为**前端软提示**,后端不拦。`prep_checklist` 仍按存在的环节类型标记。
+
+## #7 三种解析
+
+录题 `POST/PUT /questions` 接受并存 `analysisLatex`(正常)/`analysisBriefLatex`(简单)/`analysisDetailLatex`(详细),三者均可空;`GET /questions/{id}` 逐字段原样返回。只录正常解析时另两者为 `null`。QuestionDto 序列化补两字段以消除契约新增必填导致的构造点编译错误。
+
+## #9 进课堂改为"老师发布即可进,不看时间"
+
+`class:join`(WS,`src/classroom/classroom.service.ts`)新规则:
+
+- **未发布(`lesson.status='draft'`)→ 拒绝**(`讲次未发布,无法进入课堂`);
+- 已发布(`ready`/`in_progress` 等,即老师 publish 过)→ 可进入/开课;
+- **去掉"未到时间不可进"的时间门槛**:`scheduled→live` 不再要求 `≥ scheduledStart-10min`(原 `withinStartWindow` 已移除),已发布即可开课。
+- `/student/today` 的 `canEnterAt` 仅为前端展示提示,非后端闸门,保持不变。
+
+## 与前端对接形状
+
+- **unitSeq**:Segment 读写字段;PUT segments 每段传 `unitSeq:number|null`,GET 原样返回。同 `unitSeq` 必须同 `kpNodeId`。
+- **openingConfig**:讲次级读写字段。写经 `PUT /lessons/{id}`(`openingConfig` 传对象/`null`/省略),读经 GET 讲次/讲次列表。
+- **三种解析**:`analysisLatex`/`analysisBriefLatex`/`analysisDetailLatex`,QuestionInput 可选、QuestionDto 必返回(缺省 `null`)。
+- **进课堂**:WS `class:join` 仅看 `lesson.status`(draft 拒、已发布放行),不再校验时间。
+
+## 验收 ↔ 测试(`npm test` 14 套件 **182** 用例全绿,连跑两次)
+
+| 验收项 | 测试名(文件) |
+|---|---|
+| #5 PUT 带 unitSeq+openingConfig → GET 无损回填 | `C2#5 知识点单元:PUT 带 unitSeq + openingConfig → GET 无损回填`(`a4.e2e`) |
+| #5 同 unitSeq 不同 kpNodeId → 400 | `C2#5 知识点单元:同一 unitSeq 不同 kpNodeId → 400`(`a4.e2e`) |
+| #5 segments 形状含 unitSeq、Lesson 形状含 openingConfig | `a4.e2e` SEGMENT_KEYS/LESSON_KEYS、`fix1-student.e2e` |
+| #7 三种解析无损;只录正常 → 另两者 null | `C2#7 三种解析:录入 正常/简单/详细 → 读取逐字段无损;只录正常 → 另两者 null`(`question.e2e`) |
+| #9 未发布(draft)→ 学生 join 被拒 | `C2#9 进课堂新规则:未发布(draft)讲次 → 学生 join 被拒绝`(`a6.e2e`) |
+| #9 时间未到但已发布 → 可 join/开课 | `C2#9 进课堂新规则:时间未到但已发布(ready)→ 学生可 join 并开课`(`a6.e2e`) |
+
+夹具:复用 `a4`/`a6`/`a3` 夹具(`a4` 增 `kpNode2Id` 供单元一致性校验;`a6` 进课堂用例内联建 draft/future 讲次+会话,经 `dropA6Org` 按 org 清理)。`a6.e2e` 课堂热状态键改为读 `CLS_REDIS_PREFIX`(本工作区 `c2b:`)。
+
+## 遗留风险
+
+- `openingConfig` 写入路径选在 `PUT /lessons/{id}`(契约 segments PUT 体为 `Segment[]`,无 openingConfig 槽位);前端须在保存编排时**额外调一次** `PUT /lessons/{id}` 写开场白。若后续希望一次 PUT 同时落盘编排+开场白,需走契约变更把 segments PUT 体改为对象。
+- 知识点单元"三段齐全"仅后端软放行 + 前端软提示,不强制;若业务要求强约束需新增发布校验项。
+- #9 仅以 `lesson.status` 为闸:`finished` 讲次的会话已 `ended`(`课堂已结束`先行拦截),不单独再判;`draft` 之外一律放行符合"发布即可进"口径。

@@ -132,10 +132,12 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
     // 租户注入下查询:他 org 的 session 天然查不到(宪法 §7)
     const session = await this.prisma.client.classSession.findFirst({
       where: { id: BigInt(sid) },
-      include: { lesson: { select: { id: true, courseId: true, scheduledStart: true, course: { select: { teacherId: true } } } } },
+      include: { lesson: { select: { id: true, courseId: true, status: true, scheduledStart: true, course: { select: { teacherId: true } } } } },
     });
     if (!session) throw new ClsError('课堂不存在');
     if (session.status === 'ended') throw new ClsError('课堂已结束');
+    // IMPL #9:老师发布即可进——讲次未发布(draft)拒绝;已发布(ready/in_progress 等)即可进入,不看时间
+    if (session.lesson.status === 'draft') throw new ClsError('讲次未发布,无法进入课堂');
 
     // 本课成员校验(7.2):学生=有效选课,教师=本课授课教师
     if (user.role === 'student') {
@@ -152,9 +154,10 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
 
     await this.ensureHotState(sid);
 
-    // 状态机:scheduled → live(首次进入,≥提前 10min,7.6;updateMany 条件更新保证只发生一次)
+    // 状态机:scheduled → live(IMPL #9:讲次已发布即可开课,去掉"未到时间不可进"的时间门槛;
+    // updateMany 条件更新保证只发生一次)
     let meta = await this.getMeta(sid);
-    if (meta.status === 'scheduled' && this.withinStartWindow(session.lesson.scheduledStart)) {
+    if (meta.status === 'scheduled') {
       const now = new Date();
       const hit = await this.prisma.client.classSession.updateMany({
         where: { id: BigInt(sid), status: 'scheduled' },
@@ -820,11 +823,6 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
       data: { status: to as never, ...extra },
     });
     if (!hit.count) throw new ClsError(`非法状态切换:仅 ${from.join('/')} 可 → ${to}`);
-  }
-
-  private withinStartWindow(scheduledStart: Date | null): boolean {
-    if (!scheduledStart) return true;
-    return Date.now() >= scheduledStart.getTime() - 10 * 60_000;
   }
 
   private elapsedSec(meta: MetaState): number {

@@ -57,6 +57,8 @@ export class LessonService {
         ...(dto.title !== undefined ? { title: dto.title } : {}),
         ...(dto.scheduledStart !== undefined ? { scheduledStart: new Date(dto.scheduledStart) } : {}),
         ...(dto.scheduledEnd !== undefined ? { scheduledEnd: new Date(dto.scheduledEnd) } : {}),
+        // 开场白(IMPL #5):提供即写入(传 null 显式清空),未提供(undefined)则不变
+        ...(dto.openingConfig !== undefined ? { openingConfig: (dto.openingConfig ?? null) as object } : {}),
       },
     });
     return null;
@@ -82,6 +84,7 @@ export class LessonService {
       paperId: s.paperId == null ? null : num(s.paperId),
       kpNodeId: s.kpNodeId == null ? null : num(s.kpNodeId),
       kpNodeName: s.kpNode?.name ?? null,
+      unitSeq: s.unitSeq ?? null,
     }));
   }
 
@@ -94,6 +97,19 @@ export class LessonService {
     // seq 不得重复
     const seqs = new Set(segments.map((s) => s.seq));
     if (seqs.size !== segments.length) throw new BadRequestException('环节 seq 不得重复');
+
+    // 知识点单元(IMPL #5):同一 unitSeq 的环节必须 kpNodeId 相同(否则不是同一知识点单元 → 400)
+    const unitKp = new Map<number, number | null>();
+    for (const s of segments) {
+      if (s.unitSeq == null) continue; // null = 开场白等单元外环节,不参与单元分组
+      const kp = s.kpNodeId ?? null;
+      if (unitKp.has(s.unitSeq)) {
+        if (unitKp.get(s.unitSeq) !== kp)
+          throw new BadRequestException(`同一 unitSeq(=${s.unitSeq})的环节 kpNodeId 必须一致`);
+      } else {
+        unitKp.set(s.unitSeq, kp);
+      }
+    }
 
     // 挂载约束(设计文档 §5.2):lecture 挂课件;practice/homework 挂试卷
     for (const s of segments) {
@@ -153,6 +169,7 @@ export class LessonService {
             resourceId: s.resourceId != null ? BigInt(s.resourceId) : null,
             paperId: s.paperId != null ? BigInt(s.paperId) : null,
             kpNodeId: s.kpNodeId != null ? BigInt(s.kpNodeId) : null,
+            unitSeq: s.unitSeq ?? null,
           })) as never,
         });
       }
@@ -256,6 +273,7 @@ export class LessonService {
     scheduledEnd: Date | null;
     status: LessonDto['status'];
     prepChecklist: unknown;
+    openingConfig?: unknown;
   }): LessonDto {
     return {
       id: num(l.id),
@@ -266,6 +284,7 @@ export class LessonService {
       scheduledEnd: iso(l.scheduledEnd),
       status: l.status,
       prepChecklist: (l.prepChecklist ?? {}) as Record<string, boolean>,
+      openingConfig: (l.openingConfig ?? null) as Record<string, unknown> | null,
     };
   }
 }

@@ -130,6 +130,8 @@ export class QuestionService {
           answer: dto.answer as object,
           rubric: (dto.rubric ?? []) as unknown as object[],
           analysisLatex: dto.analysisLatex ?? null,
+          analysisBriefLatex: dto.analysisBriefLatex ?? null,
+          analysisDetailLatex: dto.analysisDetailLatex ?? null,
           difficulty: dto.difficulty ?? 2,
           status: 'draft',
         } as never,
@@ -215,6 +217,8 @@ export class QuestionService {
           answer: dto.answer as object,
           rubric: (dto.rubric ?? []) as unknown as object[],
           analysisLatex: dto.analysisLatex ?? null,
+          analysisBriefLatex: dto.analysisBriefLatex ?? null,
+          analysisDetailLatex: dto.analysisDetailLatex ?? null,
           difficulty: dto.difficulty ?? 2,
         },
       });
@@ -283,6 +287,8 @@ export class QuestionService {
       answer: (q.answer ?? null) as QuestionAnswer | null,
       rubric: (q.rubric ?? []) as unknown as QuestionDto['rubric'],
       analysisLatex: q.analysisLatex,
+      analysisBriefLatex: q.analysisBriefLatex,
+      analysisDetailLatex: q.analysisDetailLatex,
       difficulty: q.difficulty,
       status: q.status,
       tags: q.tags.map((t) => ({

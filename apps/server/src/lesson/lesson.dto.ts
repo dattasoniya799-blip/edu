@@ -22,11 +22,16 @@ export const SEGMENT_TYPES = [
   'break_time',
 ] as const satisfies readonly SegmentType[];
 
-/** PUT /lessons/:id(改标题/时间) */
+/** PUT /lessons/:id(改标题/时间/开场白) */
 export class LessonUpdateDto {
   @IsOptional() @IsString() @IsNotEmpty() @MaxLength(128) title?: string;
   @IsOptional() @IsDateString() scheduledStart?: string;
   @IsOptional() @IsDateString() scheduledEnd?: string;
+  /**
+   * 开场白配置(lesson.openingConfig,可空,读写);如 {resourceId, text}。
+   * 传 null 显式清空;不传则不变(用 IsDefined 的缺省语义无法区分,故 service 按 key 存在判断)。
+   */
+  @IsOptional() @IsObject() openingConfig?: Record<string, unknown> | null;
 }
 
 /** PUT /lessons/:id/segments 元素(openapi Segment;id 由服务端重新生成,忽略入参) */
@@ -41,4 +46,6 @@ export class SegmentInputDto {
   @IsOptional() @Type(() => Number) @IsInt() paperId?: number | null;
   /** 关联知识点节点(可空,写);kpNodeName 为只读展示字段,写入忽略 */
   @IsOptional() @Type(() => Number) @IsInt() kpNodeId?: number | null;
+  /** 知识点单元序号(可空,读写);同 unitSeq + kpNodeId 为同一单元,null=开场白等单元外环节 */
+  @IsOptional() @Type(() => Number) @IsInt() unitSeq?: number | null;
 }

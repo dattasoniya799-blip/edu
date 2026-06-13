@@ -87,6 +87,9 @@ export class QuestionInputDto {
   rubric?: RubricStepDto[];
 
   @IsOptional() @IsString() analysisLatex?: string;
+  /** 三种解析(IMPL #7,均可空):正常 analysisLatex / 简单 analysisBriefLatex / 详细 analysisDetailLatex */
+  @IsOptional() @IsString() analysisBriefLatex?: string;
+  @IsOptional() @IsString() analysisDetailLatex?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(3) difficulty?: number;
 
   @IsOptional()

@@ -26,6 +26,7 @@ export interface A4Fixture {
   questionIds: number[]; // [single, blank, solution, single]
   kpNodeId: number; // 环节知识点标签(IMPL2)
   kpNodeName: string;
+  kpNode2Id: number; // 第二个知识点节点(C2 单元 unitSeq 一致性校验用)
 }
 
 export async function createA4Org(): Promise<A4Fixture> {
@@ -73,6 +74,9 @@ export async function createA4Org(): Promise<A4Fixture> {
   const kpNodeName = '一次函数的图象';
   const kpNode = await raw.kpNode.create({
     data: { orgId, graphId: kpGraph.id, code: 'A4-KP-001', name: kpNodeName },
+  });
+  const kpNode2 = await raw.kpNode.create({
+    data: { orgId, graphId: kpGraph.id, code: 'A4-KP-002', name: '一次函数的性质' },
   });
 
   const lesson1Start = new Date(Date.now() + 3 * 86400_000);
@@ -156,6 +160,7 @@ export async function createA4Org(): Promise<A4Fixture> {
     questionIds,
     kpNodeId: Number(kpNode.id),
     kpNodeName,
+    kpNode2Id: Number(kpNode2.id),
   };
 }
 
