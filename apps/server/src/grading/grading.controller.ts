@@ -1,8 +1,8 @@
-import { Body, Controller, Get, HttpCode, Param, ParseIntPipe, Post, Put, UseFilters } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, ParseIntPipe, Post, Put, Query, UseFilters } from '@nestjs/common';
 import type { JwtUser } from '../auth/auth.service';
 import { CurrentUser, Roles } from '../common/decorators';
 import { BizExceptionFilter } from './business.exception';
-import { ReviewDto } from './grading.dto';
+import { GradingAnswersQueryDto, ReviewDto } from './grading.dto';
 import { GradingService } from './grading.service';
 
 /** openapi /grading/* [teacher] */
@@ -15,6 +15,14 @@ export class GradingController {
   @Get('pending')
   pending() {
     return this.grading.pending();
+  }
+
+  @Get('assignments/:id/answers')
+  assignmentAnswers(
+    @Param('id', ParseIntPipe) id: number,
+    @Query() q: GradingAnswersQueryDto,
+  ) {
+    return this.grading.assignmentAnswers(id, q.status);
   }
 
   @Get('answers/:id')

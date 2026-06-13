@@ -123,6 +123,16 @@ export interface AttemptDto {
   startedAt: string; submittedAt: string | null;
   score: number | null; objectiveScore: number | null; subjectiveScore: number | null;
   answers: AnswerDto[];
+  questions: AttemptQuestionView[]; // [2026-06-13 批准·C1] 作答题面(学生端渲染必需)
+}
+/**
+ * 作答时的题面视图(学生端):含题干/选项(不含 isCorrect)/插图。
+ * correctAnswer/analysisLatex 仅在该题已判定或交卷后下发(in_progress 期间为 null,防作弊)。
+ */
+export interface AttemptQuestionView {
+  seq: number; questionId: number; score: number; type: QuestionType;
+  stemLatex: string; figures: QuestionFigure[]; options: QuestionOptionDto[];
+  correctAnswer: QuestionAnswer | null; analysisLatex: string | null;
 }
 export interface AnswerDto {
   questionId: number; response: AnswerResponse | null;
@@ -137,6 +147,12 @@ export interface GradingItemDto {
   photoUrl: string | null; textResponse: string | null;
   aiScore: number | null; aiSteps: { step: number; ok: boolean; comment?: string }[];
   aiErrorTags: string[]; finalScore: number | null; comment: string | null;
+}
+/** [2026-06-13 批准·C1] 批改名单项:教师枚举某作业里待复核/已复核的逐题作答 */
+export interface GradingAnswerBriefDto {
+  answerId: number; studentId: number; studentName: string;
+  questionId: number; seq: number; status: 'pending' | 'graded';
+  aiScore: number | null; finalScore: number | null;
 }
 export interface WrongBookItemDto {
   id: number; questionId: number; type: QuestionType; stemLatex: string;

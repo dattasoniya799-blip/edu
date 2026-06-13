@@ -2413,6 +2413,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/grading/assignments/{id}/answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 某作业逐题作答名单(待复核/已复核,供教师切换) [teacher] */
+        get: {
+            parameters: {
+                query?: {
+                    status?: "pending" | "graded";
+                };
+                header?: never;
+                path: {
+                    id: components["parameters"]["idPath"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: number;
+                            message: string;
+                            data: components["schemas"]["GradingAnswerBrief"][];
+                        };
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/grading/answers/{id}": {
         parameters: {
             query?: never;
@@ -3781,6 +3826,30 @@ export interface components {
             objectiveScore: null | number;
             subjectiveScore: null | number;
             answers: components["schemas"]["Answer"][];
+            questions: components["schemas"]["AttemptQuestionView"][];
+        };
+        /** @description 作答题面(学生端渲染)。correctAnswer/analysisLatex 仅在该题已判定或交卷后下发,in_progress 期间为 null。 */
+        AttemptQuestionView: {
+            seq: number;
+            questionId: number;
+            score: number;
+            type: components["schemas"]["QuestionType"];
+            stemLatex: string;
+            figures: components["schemas"]["QuestionFigure"][];
+            options: components["schemas"]["QuestionOption"][];
+            correctAnswer: null | components["schemas"]["QuestionAnswer"];
+            analysisLatex: null | string;
+        };
+        GradingAnswerBrief: {
+            answerId: number;
+            studentId: number;
+            studentName: string;
+            questionId: number;
+            seq: number;
+            /** @enum {string} */
+            status: "pending" | "graded";
+            aiScore: null | number;
+            finalScore: null | number;
         };
         SubmitAnswerResult: {
             /** @description 客观题 true 即时判分;主观题 false 入预批队列 */

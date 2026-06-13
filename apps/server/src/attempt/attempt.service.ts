@@ -1,5 +1,13 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import type { AnswerResponse, AttemptDto, QuestionType } from '@qiming/contracts';
+import type {
+  AnswerResponse,
+  AttemptDto,
+  AttemptQuestionView,
+  QuestionAnswer,
+  QuestionFigure,
+  QuestionOptionDto,
+  QuestionType,
+} from '@qiming/contracts';
 import { dec, iso, num, round1 } from '../admin/helpers';
 import { AssignmentService } from '../assignment/assignment.service';
 import type { JwtUser } from '../auth/auth.service';
@@ -268,7 +276,13 @@ export class AttemptService {
     return (answer?.texts ?? []).join('; ');
   }
 
-  /** Attempt 契约视图:answers = 卷面全部题目(seq 序),未答 response=null */
+  /**
+   * Attempt 契约视图:
+   * - answers = 卷面全部题目(seq 序),未答 response=null
+   * - questions = 卷面全部题面(seq 序,学生视图):题干/选项(不含 isCorrect)/插图(含 anchor 原样);
+   *   correctAnswer/analysisLatex 仅在「该题已判定(answer.isCorrect 非空)或 attempt 已交卷/已出分」时
+   *   下发,否则为 null(防作弊:in_progress 且该题未判 → 两者 null)。
+   */
   private async toDto(attemptId: bigint): Promise<AttemptDto> {
     const at = await this.prisma.client.attempt.findFirst({
       where: { id: attemptId },
@@ -278,9 +292,28 @@ export class AttemptService {
     const pqs = await this.prisma.client.paperQuestion.findMany({
       where: { paperId: at.assignment.paperId },
       orderBy: { seq: 'asc' },
-      select: { questionId: true },
+      select: {
+        seq: true,
+        score: true,
+        questionId: true,
+        question: {
+          select: {
+            type: true,
+            stemLatex: true,
+            figures: true,
+            analysisLatex: true,
+            answer: true,
+            options: {
+              orderBy: { label: 'asc' as const },
+              select: { label: true, contentLatex: true },
+            },
+          },
+        },
+      },
     });
     const byQuestion = new Map(at.answers.map((a) => [String(a.questionId), a]));
+    // 交卷/已出分 → 全卷可下发正确答案与解析
+    const attemptRevealed = at.status === 'submitted' || at.status === 'graded';
     return {
       id: num(at.id),
       assignmentId: num(at.assignmentId),
@@ -299,6 +332,28 @@ export class AttemptService {
           isCorrect: a?.isCorrect ?? null,
           score: dec(a?.score),
           flagged: a?.flagged ?? false,
+        };
+      }),
+      questions: pqs.map((pq): AttemptQuestionView => {
+        const a = byQuestion.get(String(pq.questionId));
+        // 该题已判定(客观题即时判分)或整卷已交卷 → 下发正确答案 + 解析
+        const revealed = attemptRevealed || a?.isCorrect != null;
+        return {
+          seq: pq.seq,
+          questionId: num(pq.questionId),
+          score: dec(pq.score) ?? 0,
+          type: pq.question.type,
+          stemLatex: pq.question.stemLatex,
+          // figures 题目级 Json,原样下发(含 anchor)
+          figures: (pq.question.figures ?? []) as unknown as QuestionFigure[],
+          // 学生视图:不含 isCorrect(沿用题目域学生序列化口径)
+          options: pq.question.options.map(
+            (o): QuestionOptionDto => ({ label: o.label, contentLatex: o.contentLatex }),
+          ),
+          correctAnswer: revealed
+            ? ((pq.question.answer ?? null) as QuestionAnswer | null)
+            : null,
+          analysisLatex: revealed ? pq.question.analysisLatex : null,
         };
       }),
     };

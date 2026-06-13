@@ -1,7 +1,12 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHmac } from 'crypto';
-import type { AssignmentKind, GradingItemDto, RubricStep } from '@qiming/contracts';
+import type {
+  AssignmentKind,
+  GradingAnswerBriefDto,
+  GradingItemDto,
+  RubricStep,
+} from '@qiming/contracts';
 import { dec, num, round1 } from '../admin/helpers';
 import type { JwtUser } from '../auth/auth.service';
 import { MasteryQueueService } from '../mastery/mastery.queue';
@@ -153,6 +158,69 @@ export class GradingService {
           ? round1(g.aiScores.reduce((s, x) => s + x, 0) / g.aiScores.length)
           : null,
       }));
+  }
+
+  /**
+   * GET /grading/assignments/:id/answers:某作业逐题作答名单(供教师在复核页切换)。
+   * 口径与 /grading/pending、/grading/answers/:id 一致 —— 只含走复核管线的题(solution + 公式填空);
+   * 统计 submitted/graded 两态 attempt 的作答。status='graded' = grading_records.final_score 已写
+   * 或 answer 已出分(answers.score 非空);否则 'pending'。?status 过滤同义。跨租户作业 → 404。
+   */
+  async assignmentAnswers(
+    assignmentId: number,
+    status?: 'pending' | 'graded',
+  ): Promise<GradingAnswerBriefDto[]> {
+    const assignment = await this.mustAssignment(assignmentId);
+    // 卷面 seq 映射(逐题作答按题序展示)
+    const pqs = await this.prisma.client.paperQuestion.findMany({
+      where: { paperId: assignment.paperId },
+      select: { questionId: true, seq: true },
+    });
+    const seqByQuestion = new Map(pqs.map((pq) => [String(pq.questionId), pq.seq]));
+    // 走复核管线的题(solution + 公式填空)
+    const reviewIds = new Set(
+      (
+        await this.prisma.client.question.findMany({
+          where: { id: { in: pqs.map((pq) => pq.questionId) } },
+          select: { id: true, type: true, answer: true },
+        })
+      )
+        .filter((q) => questionNeedsReview(q.type, q.answer))
+        .map((q) => String(q.id)),
+    );
+    if (!reviewIds.size) return [];
+
+    const answers = await this.prisma.client.answer.findMany({
+      where: {
+        questionId: { in: [...reviewIds].map((id) => BigInt(id)) },
+        attempt: { assignmentId: BigInt(assignmentId), status: { in: ['submitted', 'graded'] } },
+      },
+      select: {
+        id: true,
+        questionId: true,
+        score: true,
+        grading: { select: { aiScore: true, finalScore: true } },
+        attempt: { select: { student: { select: { id: true, name: true } } } },
+      },
+    });
+
+    const briefs: GradingAnswerBriefDto[] = answers.map((a) => {
+      // 已复核 = grading.final_score 已写 或 该作答已出分(answers.score 非空)
+      const graded = a.grading?.finalScore != null || dec(a.score) != null;
+      return {
+        answerId: num(a.id),
+        studentId: num(a.attempt.student.id),
+        studentName: a.attempt.student.name,
+        questionId: num(a.questionId),
+        seq: seqByQuestion.get(String(a.questionId)) ?? 0,
+        status: graded ? 'graded' : 'pending',
+        aiScore: dec(a.grading?.aiScore),
+        finalScore: dec(a.grading?.finalScore),
+      };
+    });
+    return briefs
+      .filter((b) => status == null || b.status === status)
+      .sort((x, y) => x.seq - y.seq || x.studentId - y.studentId);
   }
 
   /** GET /grading/answers/:id:原稿(签名 URL)+ AI 预批 + rubric */

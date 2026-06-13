@@ -16,7 +16,7 @@ import { createApp, loginStudentById, raw } from './fixtures/setup';
 const exactKeys = (obj: object, keys: string[]) =>
   expect(Object.keys(obj).sort()).toEqual([...keys].sort());
 
-const ATTEMPT_KEYS = ['id', 'assignmentId', 'status', 'attemptNo', 'startedAt', 'submittedAt', 'score', 'objectiveScore', 'subjectiveScore', 'answers'];
+const ATTEMPT_KEYS = ['id', 'assignmentId', 'status', 'attemptNo', 'startedAt', 'submittedAt', 'score', 'objectiveScore', 'subjectiveScore', 'answers', 'questions'];
 const ANSWER_KEYS = ['questionId', 'response', 'isCorrect', 'score', 'flagged'];
 const SUBMIT_RESULT_KEYS = ['judged', 'isCorrect', 'correctAnswer', 'analysisLatex'];
 const PENDING_KEYS = ['assignmentId', 'paperName', 'pendingCount', 'aiAvgScore'];
