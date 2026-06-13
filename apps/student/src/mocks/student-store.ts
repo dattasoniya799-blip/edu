@@ -11,8 +11,10 @@
  * - 题面下发:attempt 响应附 questions 学生视图(契约变更申请 B5-1 的形状,见 pages/homework/types.ts)。
  */
 import type {
-  AnswerResponse, AssignmentDto, AttemptDto, AttemptStatus, QuestionDto, WrongBookItemDto,
+  AnswerResponse, AssignmentDto, AttemptDto, AttemptStatus, QuestionDto,
 } from '@qiming/contracts';
+// 错题项视图含 subject(FIX3 问题5,WrongBookItem 契约暂无,mock 先行)
+import type { WrongBookItemView } from './data';
 import type { AttemptQuestionView, AttemptWithQuestions } from '../pages/homework/types';
 import * as D from './data';
 
@@ -38,7 +40,7 @@ interface StoredAttempt {
 interface PaperRef { id: number; name: string; questions: { questionId: number; score: number }[] }
 interface State {
   attempts: StoredAttempt[];
-  wrongBook: WrongBookItemDto[];
+  wrongBook: WrongBookItemView[];
   /** redo / redo-all 动态生成的作业与卷面 */
   extraAssignments: AssignmentDto[];
   extraPapers: PaperRef[];
@@ -288,6 +290,7 @@ function settleWrongBook(at: StoredAttempt): void {
           analysisLatex: q.analysisLatex, wrongCount: 1, correctRedoCount: 0,
           errorTags: [q.tags[0]?.name ?? '待归因'], status: 'open',
           sourceName: asg?.paperName ?? '练习', createdAt: new Date().toISOString(),
+          subject: q.subject, // FIX3 问题5:新入账错题携带学科(契约变更申请 FIX3-1)
         });
       }
     } else if (isRedoKind && existing && existing.status === 'open') {
@@ -298,13 +301,13 @@ function settleWrongBook(at: StoredAttempt): void {
 }
 
 // ---------- 错题本 ----------
-export function listWrongBook(status?: string): WrongBookItemDto[] {
+export function listWrongBook(status?: string): WrongBookItemView[] {
   return state.wrongBook
     .filter((w) => !status || w.status === status)
     .map((w) => ({ ...w, errorTags: [...w.errorTags] }));
 }
 
-function createRedoAssignment(items: WrongBookItemDto[], name: string): AssignmentDto {
+function createRedoAssignment(items: WrongBookItemView[], name: string): AssignmentDto {
   const paper: PaperRef = {
     id: state.nextPaperId++,
     name,
