@@ -10,7 +10,7 @@ import type { GradingAnswerBriefDto, GradingItemDto } from '@qiming/contracts';
 import { Button, Card, EmptyState, Skeleton, Tag, TexText, useToast } from '@qiming/ui';
 import { api } from '../../api';
 import { PageHead } from '../Shell';
-import { bizError } from '../lesson/lib/segments';
+import { bizError, pendingAnswerIds } from '../lesson/lib/segments';
 
 const fullScore = (g: GradingItemDto) => g.rubric.reduce((s, r) => s + r.score, 0);
 
@@ -140,7 +140,8 @@ export function GradingReviewPage() {
     } catch (e) {
       const biz = bizError(e);
       if (biz?.code === 4501) {
-        const ids = Array.isArray(biz.detail) ? biz.detail : [];
+        // 4501 detail 为对象 {pendingAnswerIds}(亦兼容裸数组);取 ids 计数(C3 #P2)
+        const ids = pendingAnswerIds(biz.detail);
         toast(`仍有 ${ids.length || pendingCount} 份未复核,复核完成后才能出分`);
       } else {
         toast(e instanceof Error ? e.message : '出分失败');

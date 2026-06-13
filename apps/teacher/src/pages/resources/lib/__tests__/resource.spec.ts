@@ -4,7 +4,7 @@ import { TYPE_META, formatResourceMeta, formatSize, formatUsedBy } from '../reso
 
 const base: ResourceDto = {
   id: 1, type: 'pdf', name: '讲义.pdf', ossKey: 'demo/x.pdf', size: 0,
-  meta: {}, usedByLessons: [], createdAt: '2026-06-01T00:00:00.000Z',
+  meta: {}, usedByLessons: [], kpNodeId: null, kpNodeName: null, createdAt: '2026-06-01T00:00:00.000Z',
 };
 
 describe('formatSize', () => {

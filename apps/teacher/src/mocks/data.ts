@@ -108,11 +108,13 @@ export const resources: ResourceDto[] = [
   {
     id: 1, type: 'interactive', name: '函数图象平移 · 动画演示', ossKey: 'demo/courseware/translation.html',
     size: 2457600, meta: { pages: 24, checkpoints: [3, 8, 12, 18, 22] },
-    usedByLessons: [{ lessonId: 4, lessonTitle: '第4讲 · 一次函数的图象平移' }], createdAt: '2026-05-20T03:00:00.000Z',
+    usedByLessons: [{ lessonId: 4, lessonTitle: '第4讲 · 一次函数的图象平移' }],
+    kpNodeId: 102, kpNodeName: '一次函数的图象', createdAt: '2026-05-20T03:00:00.000Z',
   },
   {
     id: 2, type: 'video', name: '待定系数法 · 微课视频', ossKey: 'demo/video/undetermined.mp4',
-    size: 104857600, meta: { durationSec: 756 }, usedByLessons: [], createdAt: '2026-05-21T03:00:00.000Z',
+    size: 104857600, meta: { durationSec: 756 }, usedByLessons: [],
+    kpNodeId: 103, kpNodeName: '待定系数法', createdAt: '2026-05-21T03:00:00.000Z',
   },
 ];
 
@@ -124,13 +126,22 @@ export const kpGraphs: KpGraphDto[] = [
 ];
 
 const KP_NAMES = ['一次函数的概念', '一次函数的图象', '待定系数法', '图象的平移', '一次函数与方程', '函数增减性'];
+/** 知识点教材正文(content,本次契约透出;按 KP_NAMES 顺序对应,内容库页左树展示) */
+const KP_CONTENT: string[] = [
+  '形如 $y=kx+b$($k,b$ 为常数,$k\\neq 0$)的函数,叫做一次函数。当 $b=0$ 时 $y=kx$ 是正比例函数,是一次函数的特例。',
+  '一次函数 $y=kx+b$ 的图象是一条直线,常称作直线 $y=kx+b$。它与 $y$ 轴交于 $(0,b)$,与 $x$ 轴交于 $(-\\dfrac{b}{k},0)$。',
+  '已知函数类型与若干条件,先设出含待定字母的解析式,再代入条件列方程(组)求出字母,这种方法叫待定系数法。',
+  '直线 $y=kx+b$ 上下平移只改变 $b$:向上平移 $m$ 个单位得 $y=kx+b+m$,向下得 $y=kx+b-m$,即“上加下减”。',
+  '一次函数与一元一次方程、不等式密切相关:$kx+b=0$ 的解即图象与 $x$ 轴交点的横坐标。',
+  '当 $k>0$ 时 $y$ 随 $x$ 增大而增大;当 $k<0$ 时 $y$ 随 $x$ 增大而减小。',
+];
 // FIX2 问题2:能力/策略维度改用真实图谱全量节点(能力 41 / 策略 35),供三维标注选择器显示完整。
 // 30 题的 ability/strategy tag 从全量节点取叶子,保持 id/code/name 一致。
 export const kpNodes: KpNodeDto[] = [
   ...KP_NAMES.map((name, i): KpNodeDto => ({
     id: 101 + i, graphId: 1, code: `PEP-19-${i + 1}`, name, parentCode: 'PEP-19', level: 3,
     category: '知识点', grade: '初二', chapter: '第十九章 一次函数', section: `19.${i + 1}`,
-    difficulty: 1 + (i % 3), examWeight: 0.6 + i * 0.05, summary: null,
+    difficulty: 1 + (i % 3), examWeight: 0.6 + i * 0.05, summary: null, content: KP_CONTENT[i] ?? null,
   })),
   ...abilityNodes,
   ...strategyNodes,
@@ -205,7 +216,30 @@ export const assignments: AssignmentDto[] = [
     target: { courseId: 1 }, publishAt: '2026-06-06T08:10:00.000Z', dueAt: '2026-06-10T14:00:00.000Z',
     scoreCounted: true, questionCount: 5, totalScore: 35,
   },
+  {
+    id: 2, paperId: 1, paperName: '第2讲随堂巩固 · 一次函数的图象', lessonId: 2, kind: 'homework',
+    target: { courseId: 1 }, publishAt: '2026-05-30T08:00:00.000Z', dueAt: '2026-06-03T14:00:00.000Z',
+    scoreCounted: true, questionCount: 5, totalScore: 30,
+  },
 ];
+
+/**
+ * 作业总览进度种子(C3 #4):非动态作业的提交/批改概览。
+ * 作业 1 的进度由批改链动态计算(见 handlers GET /assignments);其余取此种子,未命中则视为「刚发布、零提交」。
+ */
+export const assignmentBriefSeed: Record<number, { submitted: number; totalStudents: number; graded: number; status: 'ongoing' | 'finished' }> = {
+  2: { submitted: 12, totalStudents: 12, graded: 12, status: 'finished' },
+};
+
+/**
+ * 知识点内容包存储(C3 #5,GET/PUT /knowledge/content-packs/{kpNodeId}):
+ * 每知识点一份可复用内容(讲解课件 resource / 随堂练卷 paper / 小结模板 config);未维护则不在表中。
+ * 字段名只读(resource/paper 名)由 handlers 按 id 解析回填。可变:PUT 时 upsert。
+ */
+export const contentPacks: Record<number, { lectureResourceId: number | null; practicePaperId: number | null; summaryConfig: Record<string, unknown> }> = {
+  // 知识点 102「一次函数的图象」预置一份内容包:讲解挂资源 1、随堂练挂卷 1、小结模板
+  102: { lectureResourceId: 1, practicePaperId: 1, summaryConfig: { personal_consolidation: { min: 2, max: 4 } } },
+};
 
 export const attempt: AttemptDto = {
   id: 1, assignmentId: 1, status: 'graded', attemptNo: 1,

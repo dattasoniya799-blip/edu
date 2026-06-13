@@ -16,6 +16,8 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { to: '/', label: '工作台', icon: '◧', group: '教 学' },
   { to: '/courses', label: '我的课程', icon: '▦' },
+  { to: '/assignments', label: '作业', icon: '✦' },
+  { to: '/knowledge', label: '知识点内容库', icon: '📘' },
   { to: '/bank', label: '题库维护', icon: '▤' },
   { to: '/resources', label: '资源库', icon: '▣' },
   { to: '/analytics', label: '学情分析', icon: '◔', group: '学 生' },

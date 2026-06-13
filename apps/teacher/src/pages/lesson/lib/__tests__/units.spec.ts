@@ -4,8 +4,8 @@
 import { describe, expect, it } from 'vitest';
 import type { LessonSegmentDto } from '@qiming/contracts';
 import {
-  newUnit, openingFromLesson, openingToConfig, segmentsToUnits,
-  unitWarnings, unitsDuration, unitsToSegments, type KpUnit,
+  mergeSegments, newUnit, openingFromLesson, openingToConfig, outsideSegments,
+  segmentsToUnits, unitWarnings, unitsDuration, unitsToSegments, type KpUnit,
 } from '../units';
 
 const seg = (p: Partial<LessonSegmentDto> & Pick<LessonSegmentDto, 'type'>): LessonSegmentDto => ({
@@ -86,5 +86,39 @@ describe('unitWarnings / opening', () => {
     expect(o).toEqual({ enabled: true, text: '开场', resourceId: 5 });
     expect(openingToConfig(o)).toEqual({ enabled: true, text: '开场', resourceId: 5 });
     expect(openingToConfig({ enabled: false, text: 'x', resourceId: 1 })).toBeNull();
+  });
+});
+
+describe('单元外段保留(C3 #P0-2 关键 bug:保存不丢 warmup/homework/break)', () => {
+  it('outsideSegments 仅取非单元三段(warmup/homework/break_time)', () => {
+    const segs = [
+      seg({ type: 'warmup' }), seg({ type: 'lecture', unitSeq: 1 }), seg({ type: 'practice', unitSeq: 1 }),
+      seg({ type: 'summary', unitSeq: 1 }), seg({ type: 'homework', paperId: 9 }), seg({ type: 'break_time' }),
+    ];
+    expect(outsideSegments(segs).map((s) => s.type)).toEqual(['warmup', 'homework', 'break_time']);
+  });
+
+  it('mergeSegments:单元段在前、单元外段在后,seq 连续重排', () => {
+    const u: KpUnit = { ...newUnit(1), kpNodeId: 102, kpNodeName: '图象' };
+    const unitSegs = unitsToSegments([u]);
+    const outside = [seg({ type: 'homework', paperId: 9 }), seg({ type: 'warmup' })];
+    const merged = mergeSegments(unitSegs, outside);
+    expect(merged.map((s) => s.type)).toEqual(['lecture', 'practice', 'summary', 'homework', 'warmup']);
+    expect(merged.map((s) => s.seq)).toEqual([1, 2, 3, 4, 5]);
+    expect(merged.find((s) => s.type === 'homework')!.paperId).toBe(9);
+  });
+
+  it('回归:读 → 取单元外段 → 合并写回,homework 卷不丢', () => {
+    const loaded = [
+      seg({ type: 'lecture', resourceId: 7, unitSeq: 1, kpNodeId: 102, kpNodeName: '图象' }),
+      seg({ type: 'practice', paperId: 8, unitSeq: 1, kpNodeId: 102, kpNodeName: '图象' }),
+      seg({ type: 'summary', unitSeq: 1, kpNodeId: 102, kpNodeName: '图象' }),
+      seg({ type: 'homework', paperId: 9 }),
+    ];
+    const units = segmentsToUnits(loaded);
+    const outside = outsideSegments(loaded);
+    const writeBack = mergeSegments(unitsToSegments(units), outside);
+    // 旧实现只写 unitsToSegments(units) → 丢 homework;合并后必须保留
+    expect(writeBack.some((s) => s.type === 'homework' && s.paperId === 9)).toBe(true);
   });
 });

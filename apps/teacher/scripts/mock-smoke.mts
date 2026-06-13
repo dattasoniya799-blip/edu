@@ -153,6 +153,45 @@ try {
   }).catch((e) => e);
   assert(lockedPut instanceof Error && (lockedPut as { code?: number }).code === 4302, '被 assignment 引用的卷禁改 → 4302');
 
+  // ===== C3 #5 知识点内容库:内容包 GET/PUT 往返 + 编排复用基础 =====
+  const pack102 = await api.get('/knowledge/content-packs/{kpNodeId}', { params: { kpNodeId: 102 } });
+  assert(pack102.data.lectureResourceId === 1 && pack102.data.practicePaperId === 1 && pack102.data.lectureResourceName === '函数图象平移 · 动画演示',
+    '内容包:知识点 102 预置讲解资源 1 + 随堂练卷 1,只读名回填');
+  const emptyPack = await api.get('/knowledge/content-packs/{kpNodeId}', { params: { kpNodeId: 105 } });
+  assert(emptyPack.data.lectureResourceId === null && emptyPack.data.practicePaperId === null,
+    '内容包:未维护知识点 → 空包(lecture/practice 为 null)');
+  await api.put('/knowledge/content-packs/{kpNodeId}', {
+    params: { kpNodeId: 105 },
+    body: { lectureResourceId: 2, practicePaperId: 1, summaryConfig: { personal_consolidation: { min: 3, max: 5 } } },
+  });
+  const pack105 = await api.get('/knowledge/content-packs/{kpNodeId}', { params: { kpNodeId: 105 } });
+  assert(pack105.data.lectureResourceId === 2 && pack105.data.practicePaperId === 1,
+    '内容包 upsert:写讲解/练 → 回读一致(编排可据此预填)');
+  const packList = await api.get('/knowledge/content-packs', { query: { graphId: 1 } });
+  assert(packList.data.some((x) => x.kpNodeId === 102) && packList.data.some((x) => x.kpNodeId === 105),
+    '内容包列表:某图谱下仅返回已维护知识点(102 预置 + 105 新建)');
+  // 资源按 kpNode 归档(ResourceDto.kpNodeId,编排页可据此过滤)
+  const allRes = await api.get('/resources', { query: { page: 1, size: 50 } });
+  assert(allRes.data.items.some((r) => r.kpNodeId === 102), '资源含 kpNodeId 归档(供编排按知识点过滤)');
+
+  // ===== C3 #4 作业总览:GET /assignments → AssignmentBrief[] =====
+  const asgAll = await api.get('/assignments');
+  const a1Brief = asgAll.data.find((a) => a.id === 1);
+  assert(!!a1Brief && a1Brief.submitted === 12 && a1Brief.graded === 8 && a1Brief.status === 'ongoing',
+    '作业总览:作业 1 提交 12/已批 8(扣 4 待复核)/进行中');
+  assert(asgAll.data.some((a) => a.id === asg.data.id && a.submitted === 0 && a.status === 'ongoing'),
+    '作业总览:新发布作业初始零提交、进行中');
+  const asgFinished = await api.get('/assignments', { query: { status: 'finished' } });
+  assert(asgFinished.data.every((a) => a.status === 'finished') && asgFinished.data.some((a) => a.id === 2),
+    '作业总览:status=finished 过滤(种子作业 2 已结束)');
+
+  // ===== C3 #P2 发布空讲次 → 4201 detail=['empty'] =====
+  await api.put('/lessons/{id}/segments', { params: { id: 6 }, body: [] });
+  const emptyPub = await api.post('/lessons/{id}/publish', { params: { id: 6 } }).catch((e) => e);
+  assert(emptyPub instanceof Error && (emptyPub as { code?: number }).code === 4201
+    && Array.isArray((emptyPub as { detail?: unknown }).detail) && ((emptyPub as { detail: string[] }).detail).includes('empty'),
+    '发布空讲次 → 4201 + detail=[empty](C3 #P2)');
+
   // ===== B4 批改复核链路(第 3 讲作业,4 份解答题) =====
   const pending0 = await api.get('/grading/pending');
   assert(pending0.data[0]?.pendingCount === 4, '/grading/pending:4 份待复核(seed 口径)');
@@ -164,8 +203,9 @@ try {
   assert(briefsPending.data.length === 4, '名单 status=pending 过滤(只看待复核)');
   const fin0 = await api.post('/grading/assignments/{id}/finalize', { params: { id: 1 } }).catch((e) => e);
   assert(fin0 instanceof Error && (fin0 as { code?: number }).code === 4501
-    && Array.isArray((fin0 as { detail?: unknown }).detail) && ((fin0 as { detail: number[] }).detail).length === 4,
-    '未复核完出分 → 4501 + detail=pendingAnswerIds(A5 形状)');
+    && Array.isArray(((fin0 as { detail?: { pendingAnswerIds?: number[] } }).detail)?.pendingAnswerIds)
+    && (((fin0 as { detail: { pendingAnswerIds: number[] } }).detail).pendingAnswerIds).length === 4,
+    '未复核完出分 → 4501 + detail={pendingAnswerIds}(A5 对象形状,C3 #P2)');
 
   const g41 = await api.get('/grading/answers/{id}', { params: { id: 41 } });
   assert(g41.data.studentName === '许诺' && g41.data.aiScore === 7 && g41.data.finalScore === null, '单份详情:许诺 AI 预批 7/10');

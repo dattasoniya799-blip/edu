@@ -9,13 +9,13 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import type { KpNodeDto, LessonDto, LessonSegmentDto, PaperDto, ResourceDto } from '@qiming/contracts';
+import type { KpContentPackDto, KpNodeDto, LessonDto, LessonSegmentDto, PaperDto, ResourceDto } from '@qiming/contracts';
 import { Button, Card, EmptyState, Modal, Skeleton, Tag, useToast } from '@qiming/ui';
 import { api } from '../../api';
 import { PageHead } from '../Shell';
-import { CHECKLIST_LABEL, bizError, missingLabels, pendingPaperKeys } from './lib/segments';
+import { CHECKLIST_LABEL, bizError, missingMessages, newSegment, pendingPaperKeys } from './lib/segments';
 import {
-  UNIT_SLOT_LABEL, newUnit, openingFromLesson, openingToConfig,
+  UNIT_SLOT_LABEL, mergeSegments, newUnit, openingFromLesson, openingToConfig, outsideSegments,
   segmentsToUnits, unitWarnings, unitsDuration, unitsToSegments,
   type KpUnit, type OpeningConfig, type UnitSlotType,
 } from './lib/units';
@@ -40,6 +40,8 @@ export function LessonArrangePage() {
 
   const [lesson, setLesson] = useState<LessonDto | null>(null);
   const [units, setUnits] = useState<KpUnit[] | null>(null);
+  /** 单元外段(开场回顾/课后作业/休息)—— 不入单元模型,但保存时一并写回(C3 #P0-2 不丢段) */
+  const [extras, setExtras] = useState<LessonSegmentDto[]>([]);
   const [opening, setOpening] = useState<OpeningConfig>({ enabled: false, text: '', resourceId: null });
   const [papers, setPapers] = useState<PaperDto[]>([]);
   const [resources, setResources] = useState<ResourceDto[]>([]);
@@ -48,8 +50,8 @@ export function LessonArrangePage() {
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [missing, setMissing] = useState<string[] | null>(null);
-  /** 挂载弹窗:{unitIdx, slot} 或 opening 资源 */
-  const [mount, setMount] = useState<{ unitIdx: number; slot: 'lecture' | 'practice' } | 'opening' | null>(null);
+  /** 挂载弹窗:{unitIdx, slot} 或 opening 资源 或 homework 作业卷 */
+  const [mount, setMount] = useState<{ unitIdx: number; slot: 'lecture' | 'practice' } | 'opening' | 'homework' | null>(null);
   /** 知识点选择弹窗目标单元 */
   const [kpIdx, setKpIdx] = useState<number | null>(null);
   const [kpKeyword, setKpKeyword] = useState('');
@@ -67,6 +69,7 @@ export function LessonArrangePage() {
         setLesson(lessonDto);
         setOpening(openingFromLesson(lessonDto));
         setUnits(segmentsToUnits(s.data as LessonSegmentDto[]));
+        setExtras(outsideSegments(s.data as LessonSegmentDto[]));
         setPapers(p.data.items as PaperDto[]);
         setResources(r.data.items as ResourceDto[]);
       })
@@ -86,13 +89,47 @@ export function LessonArrangePage() {
   const paperById = useMemo(() => new Map(papers.map((p) => [p.id, p])), [papers]);
   const resourceById = useMemo(() => new Map(resources.map((r) => [r.id, r])), [resources]);
   const paperStatus = useMemo(() => new Map(papers.map((p) => [p.id, p.status])), [papers]);
-  const segmentsPreview = useMemo(() => (units ? unitsToSegments(units) : []), [units]);
+  // 整页 segments = 单元段 + 单元外段(含 homework),门槛预览据此算,homework 未挂卷亦能提示
+  const segmentsPreview = useMemo(() => (units ? mergeSegments(unitsToSegments(units), extras) : []), [units, extras]);
   const pendingPaper = useMemo(() => pendingPaperKeys(segmentsPreview, paperStatus), [segmentsPreview, paperStatus]);
+  const homeworkSeg = useMemo(() => extras.find((s) => s.type === 'homework') ?? null, [extras]);
 
   const update = (next: KpUnit[]) => { setUnits(next); setDirty(true); };
   const patchSlot = (unitIdx: number, slot: UnitSlotType, patch: Partial<KpUnit['lecture']>) =>
     update((units ?? []).map((u, i) => (i === unitIdx ? { ...u, [slot]: { ...u[slot], ...patch } } : u)));
   const patchOpening = (patch: Partial<OpeningConfig>) => { setOpening((o) => ({ ...o, ...patch })); setDirty(true); };
+
+  /** 课后作业卷:挂/换/移除(讲次级 homework 段,独立于知识点单元;存于 extras) */
+  const setHomeworkPaper = (paperId: number | null) => {
+    setExtras((prev) => {
+      if (paperId == null) return prev.filter((s) => s.type !== 'homework');
+      if (prev.some((s) => s.type === 'homework')) return prev.map((s) => (s.type === 'homework' ? { ...s, paperId } : s));
+      return [...prev, { ...newSegment('homework', prev.length + 1), paperId }];
+    });
+    setDirty(true);
+  };
+
+  /** 选知识点 → 即时落 kpNode,再按内容包预填讲解/随堂练/小结(可覆盖,C3 #5 编排复用) */
+  const selectKp = async (idx: number, node: KpNodeDto) => {
+    update((units ?? []).map((u, j) => (j === idx ? { ...u, kpNodeId: node.id, kpNodeName: node.name } : u)));
+    setKpIdx(null);
+    try {
+      const r = await api.get('/knowledge/content-packs/{kpNodeId}', { params: { kpNodeId: node.id } });
+      const pack = r.data as KpContentPackDto;
+      const hasPrefill = pack.lectureResourceId != null || pack.practicePaperId != null || Object.keys(pack.summaryConfig ?? {}).length > 0;
+      if (!hasPrefill) return;
+      setUnits((prev) => prev?.map((u, j) => (j === idx ? {
+        ...u,
+        lecture: pack.lectureResourceId != null ? { ...u.lecture, resourceId: pack.lectureResourceId } : u.lecture,
+        practice: pack.practicePaperId != null ? { ...u.practice, paperId: pack.practicePaperId } : u.practice,
+        summary: Object.keys(pack.summaryConfig ?? {}).length ? { ...u.summary, config: pack.summaryConfig } : u.summary,
+      } : u)) ?? prev);
+      setDirty(true);
+      toast('已按知识点内容包预填讲解/随堂练/小结(可覆盖)');
+    } catch {
+      /* 内容包拉取失败不阻断知识点选择 */
+    }
+  };
 
   const moveUnit = (idx: number, dir: -1 | 1) => {
     if (!units) return;
@@ -111,7 +148,8 @@ export function LessonArrangePage() {
         params: { id: lessonId },
         body: { openingConfig: openingToConfig(opening) },
       });
-      await api.put('/lessons/{id}/segments', { params: { id: lessonId }, body: unitsToSegments(units) });
+      // 合并单元段 + 单元外段(homework/warmup/break)一并写回,避免丢段(C3 #P0-2)
+      await api.put('/lessons/{id}/segments', { params: { id: lessonId }, body: mergeSegments(unitsToSegments(units), extras) });
       setDirty(false);
       const l = await api.get('/lessons/{id}', { params: { id: lessonId } });
       setLesson(l.data as LessonDto);
@@ -133,13 +171,20 @@ export function LessonArrangePage() {
     } catch (e) {
       const biz = bizError(e);
       if (biz?.code === 4201) {
-        setMissing(missingLabels(biz.detail));
+        // 4201 detail:['empty'](空讲次)或挂卷键 → 完整中文提示(C3 #P2)
+        setMissing(missingMessages(biz.detail));
       } else {
         toast(e instanceof Error ? e.message : '发布失败');
       }
     } finally {
       setBusy(false);
     }
+  };
+
+  /** 去组卷:有未保存改动先保存(组卷页读/写同一份 segments),避免编排丢失 */
+  const goToPaper = async () => {
+    if (dirty && !(await save())) return;
+    navigate(`/lessons/${lessonId}/paper${homeworkSeg?.paperId ? `?paperId=${homeworkSeg.paperId}` : ''}`);
   };
 
   if (loading) {
@@ -156,18 +201,29 @@ export function LessonArrangePage() {
 
   // 挂载弹窗候选
   const mountIsOpening = mount === 'opening';
-  const mountSlot = mount && mount !== 'opening' ? mount.slot : (mountIsOpening ? 'lecture' : null);
+  const mountIsHomework = mount === 'homework';
+  const mountSlot: 'lecture' | 'practice' | 'homework' | null =
+    mountIsOpening ? 'lecture' : mountIsHomework ? 'homework' : mount ? mount.slot : null;
+  // 讲解挂课件时,按当前单元 kpNode 过滤/置顶资源(ResourceDto.kpNodeId,C3 #5)
+  const mountUnitKp = mount && mount !== 'opening' && mount !== 'homework' ? units[mount.unitIdx]?.kpNodeId ?? null : null;
+  const lectureResources = mountUnitKp == null
+    ? resources
+    : [...resources.filter((r) => r.kpNodeId === mountUnitKp), ...resources.filter((r) => r.kpNodeId !== mountUnitKp)];
   const mountItems: { id: number; name: string; meta: string }[] =
     mountSlot === 'lecture'
-      ? resources.map((r) => ({ id: r.id, name: r.name, meta: r.type }))
+      ? lectureResources.map((r) => ({ id: r.id, name: r.name, meta: mountUnitKp != null && r.kpNodeId === mountUnitKp ? `${r.type} · 本知识点` : r.type }))
       : mountSlot === 'practice'
         ? papers.filter((p) => p.type === 'practice').map((p) => ({ id: p.id, name: p.name, meta: `${p.questions.length} 题 · ${p.totalScore} 分` }))
-        : [];
+        : mountSlot === 'homework'
+          ? papers.filter((p) => p.type === 'homework').map((p) => ({ id: p.id, name: p.name, meta: `${p.questions.length} 题 · ${p.totalScore} 分${p.status !== 'published' ? ' · 未发布' : ''}` }))
+          : [];
   const mountSelectedId = mountIsOpening
     ? opening.resourceId
-    : mount
-      ? (mount.slot === 'lecture' ? units[mount.unitIdx]?.lecture.resourceId : units[mount.unitIdx]?.practice.paperId)
-      : null;
+    : mountIsHomework
+      ? (homeworkSeg?.paperId ?? null)
+      : mount
+        ? (mount.slot === 'lecture' ? units[mount.unitIdx]?.lecture.resourceId : units[mount.unitIdx]?.practice.paperId)
+        : null;
 
   return (
     <div>
@@ -291,6 +347,37 @@ export function LessonArrangePage() {
           >
             + 添加知识点单元
           </button>
+
+          {/* 课后作业(讲次级,独立于知识点单元;C3 #P0/#P0-1) */}
+          <div className="rounded-lg border border-line bg-card shadow-card">
+            <div className="flex items-center gap-3 border-b border-line px-4 py-3">
+              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-orange-soft text-[15px] text-orange">✦</span>
+              <b className="text-sm">课后作业 <span className="text-[12px] font-normal text-ink-3">(挂一份卷 · 独立于知识点单元 · 下课推送学生平板)</span></b>
+              <div className="ml-auto flex items-center gap-3">
+                <button type="button" className={LINK_CLS} onClick={() => setMount('homework')}>
+                  {homeworkSeg?.paperId != null ? '更换已有卷' : '选择已有卷'}
+                </button>
+                <button type="button" className={LINK_CLS} onClick={goToPaper}>
+                  {homeworkSeg?.paperId != null ? '去组卷编辑 →' : '新建试卷 / 去组卷 →'}
+                </button>
+              </div>
+            </div>
+            <div className="flex items-center gap-3.5 px-4 py-3">
+              <div className="min-w-0 flex-1 text-[12.5px] text-ink-2">
+                {homeworkSeg?.paperId != null ? (() => {
+                  const p = paperById.get(homeworkSeg.paperId!);
+                  return p
+                    ? <>《{p.name}》 · {p.questions.length} 题 · 共 {p.totalScore} 分{p.status !== 'published' && <span className="text-red"> · 未发布(发布会被拦截)</span>}</>
+                    : <span className="text-ink-3">已挂作业卷 #{homeworkSeg.paperId}</span>;
+                })() : (
+                  <span className="text-ink-3">未布置课后作业 —— 「去组卷」从题库选题发布作业,或「选择已有卷」挂一份现成卷</span>
+                )}
+              </div>
+              {homeworkSeg?.paperId != null && (
+                <button type="button" className="shrink-0 text-[13px] font-medium text-red hover:underline" onClick={() => setHomeworkPaper(null)}>移除作业</button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* 右:发布门槛 */}
@@ -323,10 +410,10 @@ export function LessonArrangePage() {
         onClose={() => setMissing(null)}
         footer={<Button onClick={() => setMissing(null)}>继续编排</Button>}
       >
-        <div className="text-[13.5px] text-ink-2">以下环节还未就绪,补齐后才能发布课堂:</div>
+        <div className="text-[13.5px] text-ink-2">以下问题需先解决,才能发布课堂:</div>
         <div className="mt-3 flex flex-col gap-2">
           {(missing ?? []).map((m) => (
-            <div key={m} className="rounded-md bg-red-soft px-3.5 py-2.5 text-[13.5px] font-semibold text-red">✕ {m}需挂一份已发布试卷</div>
+            <div key={m} className="rounded-md bg-red-soft px-3.5 py-2.5 text-[13.5px] font-semibold text-red">✕ {m}</div>
           ))}
         </div>
       </Modal>
@@ -334,11 +421,11 @@ export function LessonArrangePage() {
       {/* 挂载课件 / 选择试卷 */}
       <Modal
         open={mount != null}
-        title={mountSlot === 'lecture' ? '挂载课件' : '选择随堂练试卷'}
+        title={mountSlot === 'lecture' ? '挂载课件' : mountSlot === 'homework' ? '选择课后作业试卷' : '选择随堂练试卷'}
         onClose={() => setMount(null)}
       >
         {mountItems.length === 0 ? (
-          <EmptyState icon="▣" text={mountSlot === 'lecture' ? '资源库暂无课件' : '暂无可用随堂练试卷'} />
+          <EmptyState icon="▣" text={mountSlot === 'lecture' ? '资源库暂无课件' : mountSlot === 'homework' ? '暂无可用课后作业试卷,可「去组卷」新建' : '暂无可用随堂练试卷'} />
         ) : (
           <div className="flex flex-col gap-2">
             {mountItems.map((it) => {
@@ -352,6 +439,7 @@ export function LessonArrangePage() {
                   onClick={() => {
                     if (mount == null) return;
                     if (mount === 'opening') patchOpening({ resourceId: it.id });
+                    else if (mount === 'homework') setHomeworkPaper(it.id);
                     else if (mount.slot === 'lecture') patchSlot(mount.unitIdx, 'lecture', { resourceId: it.id });
                     else patchSlot(mount.unitIdx, 'practice', { paperId: it.id });
                     setMount(null);
@@ -397,7 +485,7 @@ export function LessonArrangePage() {
                     className={`flex items-center justify-between rounded-md border-[1.5px] px-3.5 py-2.5 text-left text-[13.5px] ${
                       selected ? 'border-primary bg-primary-soft font-bold text-primary' : 'border-line hover:border-ink-3'
                     }`}
-                    onClick={() => { if (kpIdx != null) update(units.map((u, j) => (j === kpIdx ? { ...u, kpNodeId: n.id, kpNodeName: n.name } : u))); setKpIdx(null); }}
+                    onClick={() => { if (kpIdx != null) void selectKp(kpIdx, n); else setKpIdx(null); }}
                   >
                     <span>{n.name}</span>
                     {n.chapter && <small className="text-xs text-ink-3">{n.chapter}</small>}
