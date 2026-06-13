@@ -4,7 +4,8 @@
  */
 import { useId } from 'react';
 import type { AnswerResponse } from '@qiming/contracts';
-import { MathInput, QuestionFigures, resolveOssUrl, Tag, TexText } from '@qiming/ui';
+import { MathInput, QuestionFigures, Tag, TexText } from '@qiming/ui';
+import { resolveFigureSrc } from '../../api';
 import type { ItemState } from './machine';
 import type { AttemptQuestionView } from './types';
 
@@ -34,7 +35,7 @@ export function QuestionPanel({ q, item, draft, onDraft, redoKind }: QuestionPan
         <TexText src={q.stemLatex} />
       </div>
       {/* 题干插图(anchor=stem,缺省锚点) */}
-      <QuestionFigures figures={q.figures} target="stem" resolveSrc={resolveOssUrl} />
+      <QuestionFigures figures={q.figures} target="stem" resolveSrc={resolveFigureSrc} />
 
       <div className="mt-4">
         {(q.type === 'single' || q.type === 'multi') && (
@@ -97,7 +98,7 @@ function OptionList({ q, item, draft, onDraft, locked }: QuestionPanelProps & { 
             <span className="min-w-0">
               <TexText src={o.contentLatex} />
               {/* 选项插图(anchor=option,ref=选项 label) */}
-              <QuestionFigures figures={q.figures} target="option" anchorRef={o.label} compact resolveSrc={resolveOssUrl} />
+              <QuestionFigures figures={q.figures} target="option" anchorRef={o.label} compact resolveSrc={resolveFigureSrc} />
             </span>
           </button>
         );
@@ -224,7 +225,7 @@ function FeedbackPanel({ item, q }: { item: ItemState; q: AttemptQuestionView })
         <div className="mt-1 text-ink-2">
           <b className="mr-1 text-ink">解析</b>
           <TexText src={fb.analysisLatex} />
-          <QuestionFigures figures={q.figures} target="analysis" resolveSrc={resolveOssUrl} />
+          <QuestionFigures figures={q.figures} target="analysis" resolveSrc={resolveFigureSrc} />
         </div>
       )}
     </div>

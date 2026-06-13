@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { CourseDto } from '@qiming/contracts';
 import { Button, Card, EmptyState, ProgressBar, StatCard, Tag } from '@qiming/ui';
@@ -15,15 +15,21 @@ export function Dashboard() {
   const [courses, setCourses] = useState<CourseDto[]>([]);
   const [pending, setPending] = useState(0);
   const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false); // REV-front #2:区分加载失败(可重试)与空态
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoaded(false);
+    setError(false);
     Promise.all([api.get('/teacher/courses'), api.get('/grading/pending')])
       .then(([c, g]) => {
         setCourses(c.data as CourseDto[]); // openapi Course.status 为宽松 string,收窄为 DTO 联合类型
         setPending(g.data.reduce((sum, x) => sum + x.pendingCount, 0));
       })
+      .catch(() => setError(true))
       .finally(() => setLoaded(true));
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   return (
     <div>
@@ -37,7 +43,10 @@ export function Dashboard() {
         <StatCard ribbon="violet" label="AI 预批" value="已开启" />
       </div>
       <Card title="我的课程">
-        {!loaded || courses.length ? (
+        {error ? (
+          <EmptyState icon="⚠" text="课程加载失败" hint="可能是网络波动,请重试"
+            action={<Button variant="primary" onClick={load}>重新加载</Button>} />
+        ) : !loaded || courses.length ? (
           <div className="grid gap-4 lg:grid-cols-2">
             {courses.map((c) => (
               <div key={c.id} className="rounded-md border border-line p-4">

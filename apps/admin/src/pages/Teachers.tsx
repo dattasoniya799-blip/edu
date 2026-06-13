@@ -64,10 +64,15 @@ export function Teachers() {
 
   const disableTeacher = async () => {
     if (!disableTarget) return;
-    await api.del('/admin/teachers/{id}', { params: { id: disableTarget.id } });
-    toast(`已停用 ${disableTarget.name} 的账号`);
-    setDisableTarget(null);
-    await load();
+    // REV-front #3:停用失败不静默(与 enableTeacher 一致)
+    try {
+      await api.del('/admin/teachers/{id}', { params: { id: disableTarget.id } });
+      toast(`已停用 ${disableTarget.name} 的账号`);
+      setDisableTarget(null);
+      await load();
+    } catch {
+      toast('停用失败,请重试');
+    }
   };
 
   const enableTeacher = async (t: TeacherDto) => {

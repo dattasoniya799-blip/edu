@@ -7,6 +7,8 @@
  * 真实后端经 resolveSrc 把 ossKey 解析为签名 URL 后即显示图片。
  */
 import type { QuestionFigure } from '@qiming/contracts';
+import { OssImage } from './OssImage';
+import type { FigureSrcResolver } from './oss';
 
 export type FigureTarget = NonNullable<QuestionFigure['anchor']>['target'];
 
@@ -46,37 +48,37 @@ export interface QuestionFiguresProps {
   target: FigureTarget;
   /** 选项 label / rubric step;省略=该锚点下全部 */
   anchorRef?: string;
-  /** ossKey → 可加载 URL(真实后端注入签名 URL);默认仅识别 http/data/blob */
-  resolveSrc?: (ossKey: string) => string | null;
+  /**
+   * ossKey → 可加载 URL(真实后端注入签名 URL);默认仅识别 http/data/blob。
+   * 可同步(直链/mock)或异步(真实两跳换签名直链,见 oss.ts resolveOssUrlAsync)。
+   */
+  resolveSrc?: FigureSrcResolver;
   /** 紧凑模式:选项内联用更小的图 */
   compact?: boolean;
   className?: string;
 }
 
-/** 把归属某锚点的插图渲染出来;无图返回 null */
+/** 把归属某锚点的插图渲染出来;无图返回 null。每张图经 OssImage 异步解析 + loading 占位 */
 export function QuestionFigures({
   figures, target, anchorRef, resolveSrc = defaultResolveSrc, compact, className,
 }: QuestionFiguresProps) {
   const list = selectFigures(figures, target, anchorRef);
   if (list.length === 0) return null;
   const imgCls = compact ? 'max-h-[64px] rounded-md border border-line' : 'max-h-[180px] rounded-md border border-line';
+  const box = compact ? 'h-[64px] w-20' : 'h-[120px] w-[160px]';
   return (
     <div className={`flex flex-wrap items-start gap-2.5 ${className ?? (compact ? 'mt-1.5' : 'mt-3')}`} data-figure-target={target}>
-      {list.map((fig, i) => {
-        const src = resolveSrc(fig.ossKey);
-        const alt = `图 ${i + 1}`;
-        return src ? (
-          <img key={fig.ossKey + i} src={src} alt={alt} className={imgCls} />
-        ) : (
-          <span
-            key={fig.ossKey + i}
-            className={`inline-flex items-center gap-1.5 rounded-[7px] bg-primary-soft px-2 py-1 text-primary ${compact ? 'text-[11px]' : 'text-xs'}`}
-            title={fig.ossKey}
-          >
-            <span aria-hidden>⛶</span> {alt}
-          </span>
-        );
-      })}
+      {list.map((fig, i) => (
+        <OssImage
+          key={fig.ossKey + i}
+          ossKey={fig.ossKey}
+          alt={`图 ${i + 1}`}
+          resolveSrc={resolveSrc}
+          className={imgCls}
+          boxClassName={box}
+          compact={compact}
+        />
+      ))}
     </div>
   );
 }

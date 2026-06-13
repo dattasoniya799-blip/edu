@@ -1,26 +1,30 @@
 /**
- * ossKey → 可加载图片 URL 的「单点」解析(FIX4-front #2,P1-4 前端侧)。
+ * ossKey → 可加载图片 URL 的「单点」解析(REV-front #1)。
  *
- * 题目插图在题库里以 ossKey 存储,前端 <img src> 不能直接吃 ossKey。后端会提供
- * 「按 ossKey 取签名/直链」的方式;确切端点形状在整合时由协调者给出 —— 届时只需
- * 改本文件这一处(resolveOssUrl 的真实分支),所有渲染处(教师录题/学生作业/结果/
- * 错题/批改)自动生效。
+ * 题目插图在题库里以 ossKey 存储,前端 <img src> 不能直接吃 ossKey。真实后端取图是
+ * **异步两跳**:先带登录态调 `GET /api/v1/uploads/view-url?ossKey=` 拿 JSON `{url}`
+ * (url 指向 @Public 的 /storage 签名直链),再把该直链放进 <img src>。该端点不属于
+ * openapi 契约(见 server upload.controller),故由各端用自己的 createClient 注入一个
+ * `ViewUrlFetcher`(带 token、走统一 401 处理),这里只负责「mock 占位 / 已是直链 /
+ * 异步换签名直链 + 缓存」的解析编排。
  *
- *   ── 待对接(整合时) ───────────────────────────────────────────────
- *   真实模式当前按「后端提供一个按 ossKey 直接返回(签名)图片的 GET 端点,可直接
- *   放进 <img src>」的假设拼路径(OSS_SIGN_PATH)。若后端实际是「先调接口拿临时
- *   URL 再加载」的异步形态,则把本函数改为异步并相应调整 <QuestionFigures> 调用;
- *   若端点路径/参数不同,只改 OSS_SIGN_PATH 一行。
- *   ──────────────────────────────────────────────────────────────────
+ *   ── 形态(2026-06 实测对接) ─────────────────────────────────────────
+ *   - 已是可加载 URL(http/data/blob)→ 原样用(教师录题刚上传的本地 blob 预览即此类)
+ *   - mock 模式 → 占位 SVG(data URL),无需任何网络请求
+ *   - 真实模式 → resolveOssUrlAsync(ossKey, fetchViewUrl):异步取签名直链,按 ossKey 缓存
+ *   ────────────────────────────────────────────────────────────────────
  */
 
-/** 与 contracts createClient 默认 baseUrl 对齐 */
-const OSS_SIGN_PATH = '/api/v1/files/sign';
-
-/** mock 模式判定(与三端 main.tsx 口径一致:VITE_USE_MOCK !== 'false' 即 mock) */
+/**
+ * mock 模式判定(与三端 main.tsx 口径一致:VITE_USE_MOCK !== 'false' 即 mock)。
+ * 优先 vite 注入的 import.meta.env;无注入时(vitest node / SSR)兜底看 process.env —— 浏览器
+ * 真实构建里 import.meta.env 必有值,不会走到 process.env 分支,故 prod 行为不变。
+ */
 function isMockMode(): boolean {
-  const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
-  return env?.VITE_USE_MOCK !== 'false';
+  const viteEnv = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
+  const flag = viteEnv?.VITE_USE_MOCK
+    ?? (typeof process !== 'undefined' ? process.env?.VITE_USE_MOCK : undefined);
+  return flag !== 'false';
 }
 
 /** 已经是浏览器可直接加载的 URL(签名直链 / data / blob)→ 原样用 */
@@ -42,14 +46,46 @@ function mockPlaceholder(ossKey: string): string {
 }
 
 /**
- * 把题目插图 ossKey 解析为可加载 URL。
- * - 已是可加载 URL → 原样返回。
- * - mock 模式 → 占位 SVG data URL(可见)。
- * - 真实模式 → 后端按 ossKey 取(签名)图片的端点(待整合对接,见文件头)。
+ * 各端注入:由 ossKey 取后端签名直链(走该端 createClient,带 token + 401 处理)。
+ * 失败应自行 reject;调用方会吞为 null 并降级占位框。
+ */
+export type ViewUrlFetcher = (ossKey: string) => Promise<string>;
+
+/** 插图源解析器:ossKey → 可加载 URL,可同步(直链/mock)也可异步(真实换签名直链) */
+export type FigureSrcResolver = (ossKey: string) => string | null | Promise<string | null>;
+
+/**
+ * 同步解析:仅处理「已是直链」与「mock 占位」;真实模式的非直链 ossKey 需异步,这里返回
+ * null(交给 resolveOssUrlAsync / QuestionFigures 的异步路径)。供无副作用渲染场景使用。
  */
 export function resolveOssUrl(ossKey: string): string | null {
   if (!ossKey) return null;
   if (isLoadable(ossKey)) return ossKey;
   if (isMockMode()) return mockPlaceholder(ossKey);
-  return `${OSS_SIGN_PATH}?ossKey=${encodeURIComponent(ossKey)}`;
+  return null;
+}
+
+/** 按 ossKey 缓存换签名直链的 in-flight / 已完成 Promise,避免同图多次回签名 */
+const viewUrlCache = new Map<string, Promise<string | null>>();
+
+/**
+ * 异步解析:已是直链 / mock 占位 → 立即 resolve;真实模式 → 经 fetchViewUrl 换签名直链
+ * 并按 ossKey 缓存。fetchViewUrl 失败 → resolve(null)(渲染层降级为占位框,不抛)。
+ */
+export function resolveOssUrlAsync(ossKey: string, fetchViewUrl: ViewUrlFetcher): Promise<string | null> {
+  if (!ossKey) return Promise.resolve(null);
+  if (isLoadable(ossKey)) return Promise.resolve(ossKey);
+  if (isMockMode()) return Promise.resolve(mockPlaceholder(ossKey));
+  let p = viewUrlCache.get(ossKey);
+  if (!p) {
+    p = fetchViewUrl(ossKey)
+      .then((u) => (u ? u : null))
+      .catch(() => {
+        // 失败不长期缓存:下次仍可重试
+        viewUrlCache.delete(ossKey);
+        return null;
+      });
+    viewUrlCache.set(ossKey, p);
+  }
+  return p;
 }

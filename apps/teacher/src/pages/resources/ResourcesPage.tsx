@@ -50,13 +50,16 @@ export function ResourcesPage() {
   const [items, setItems] = useState<ResourceDto[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false); // REV-front #2:加载失败(可重试)区别于空态
   const [uploading, setUploading] = useState(false);
   const [refresh, setRefresh] = useState(0);
 
   useEffect(() => {
     setLoading(true);
+    setError(false);
     api.get('/resources', { query: { page, size: PAGE_SIZE, ...(type ? { type } : {}) } })
       .then((r) => { setItems(r.data.items); setTotal(r.data.total); })
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [type, page, refresh]);
 
@@ -84,7 +87,8 @@ export function ResourcesPage() {
       toast('资源已删除');
       setRefresh((n) => n + 1);
     } catch (e) {
-      toast(e instanceof Error ? e.message : '删除失败(被讲次引用的资源需先解除引用)');
+      // REV-front #2:按后端返回的 message 显示(如被引用约束),不再硬编码原因
+      toast(e instanceof Error && e.message ? e.message : '删除失败,请重试');
     }
   };
 
@@ -132,6 +136,11 @@ export function ResourcesPage() {
       {loading ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3.5">
           {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-44 w-full" />)}
+        </div>
+      ) : error ? (
+        <div className="rounded-lg border border-line bg-card shadow-card">
+          <EmptyState icon="⚠" text="资源加载失败" hint="可能是网络波动,请重试"
+            action={<Button variant="primary" onClick={() => setRefresh((n) => n + 1)}>重新加载</Button>} />
         </div>
       ) : items.length === 0 ? (
         <div className="rounded-lg border border-line bg-card shadow-card">

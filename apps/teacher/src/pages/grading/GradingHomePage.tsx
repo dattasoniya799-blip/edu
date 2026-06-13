@@ -19,18 +19,28 @@ export function GradingHomePage() {
   const navigate = useNavigate();
   const [groups, setGroups] = useState<PendingGroup[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false); // REV-front #2:加载失败(可重试)区别于空态
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
+    setLoading(true);
+    setError(false);
     api.get('/grading/pending')
       .then((r) => setGroups(r.data as PendingGroup[]))
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, []);
+  }, [reload]);
 
   return (
     <div>
       <PageHead title="作业批改" sub="客观题已自动批改;解答题经 AI 预批,逐份复核后出分" />
       {loading ? (
         <Skeleton lines={2} className="h-20 w-full" />
+      ) : error ? (
+        <div className="rounded-lg border border-line bg-card shadow-card">
+          <EmptyState icon="⚠" text="待复核列表加载失败" hint="可能是网络波动,请重试"
+            action={<Button variant="primary" onClick={() => setReload((n) => n + 1)}>重新加载</Button>} />
+        </div>
       ) : groups.length === 0 ? (
         <div className="rounded-lg border border-line bg-card shadow-card">
           <EmptyState icon="✓" text="暂无待复核的作业" hint="学生提交解答题后,AI 预批结果会出现在这里" />
