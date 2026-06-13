@@ -81,10 +81,20 @@ export interface KpNodeDto {
 }
 export interface QuestionOptionDto { label: string; contentLatex: string; isCorrect?: boolean }
 export interface RubricStep { step: number; desc: string; score: number }
+/**
+ * 题目插图(方案 A,2026-06-13 批准):一张图通过 anchor 标明归属位置。
+ * anchor 缺省 = 题干(向后兼容旧数据);option/rubric 用 ref 指明第几项(选项 label / rubric step)。
+ * figures 仍是题目级 Json 数组,无需数据库迁移。
+ */
+export interface QuestionFigure {
+  ossKey: string;
+  position: number;
+  anchor?: { target: 'stem' | 'option' | 'analysis' | 'reference' | 'rubric'; ref?: string };
+}
 export interface QuestionDto {
   id: number; type: QuestionType; stage: string; subject: string;
   textbookVersion: string | null; chapter: string | null;
-  stemLatex: string; figures: { ossKey: string; position: number }[];
+  stemLatex: string; figures: QuestionFigure[];
   options: QuestionOptionDto[]; // 学生视图不含 isCorrect
   answer: QuestionAnswer | null; // 学生作答中不下发
   rubric: RubricStep[]; analysisLatex: string | null;
@@ -130,6 +140,7 @@ export interface WrongBookItemDto {
   id: number; questionId: number; type: QuestionType; stemLatex: string;
   analysisLatex: string | null; wrongCount: number; correctRedoCount: number;
   errorTags: string[]; status: WrongStatus; sourceName: string; createdAt: string;
+  subject: string; // [2026-06-13 批准] 错题本按学科分组;源自题目 subject
 }
 export interface MasteryItemDto { nodeId: number; nodeName: string; graphType: GraphType; mastery: number; sampleCount: number }
 export interface AiUsageSummaryDto {

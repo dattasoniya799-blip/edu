@@ -3542,6 +3542,16 @@ export interface components {
             desc: string;
             score: number;
         };
+        /** @description 题目插图(方案A)。anchor 缺省=题干;option/rubric 用 ref 指第几项(选项label/rubric step)。figures 为题目级 Json,无需迁移。 */
+        QuestionFigure: {
+            ossKey: string;
+            position: number;
+            anchor?: {
+                /** @enum {string} */
+                target: "stem" | "option" | "analysis" | "reference" | "rubric";
+                ref?: string;
+            };
+        };
         QuestionOption: {
             label: string;
             contentLatex: string;
@@ -3571,10 +3581,7 @@ export interface components {
             textbookVersion: null | string;
             chapter: null | string;
             stemLatex: string;
-            figures: {
-                ossKey: string;
-                position: number;
-            }[];
+            figures: components["schemas"]["QuestionFigure"][];
             options: components["schemas"]["QuestionOption"][];
             answer: null | components["schemas"]["QuestionAnswer"];
             rubric: components["schemas"]["RubricStep"][];
@@ -3597,10 +3604,7 @@ export interface components {
             textbookVersion?: string;
             chapter?: string;
             stemLatex: string;
-            figures?: {
-                ossKey: string;
-                position: number;
-            }[];
+            figures?: components["schemas"]["QuestionFigure"][];
             /** @description 选择题必填且 isCorrect 必须恰有规定数量 */
             options?: components["schemas"]["QuestionOption"][];
             answer: components["schemas"]["QuestionAnswer"];
@@ -3733,6 +3737,7 @@ export interface components {
             sourceName: string;
             /** Format: date-time */
             createdAt: string;
+            subject: string;
         };
         MasteryItem: {
             nodeId: number;

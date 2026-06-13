@@ -224,6 +224,19 @@ components:
       type: object
       required: [step, desc, score]
       properties: { step: { type: integer }, desc: { type: string }, score: { type: number } }
+    QuestionFigure:
+      type: object
+      description: 题目插图(方案A)。anchor 缺省=题干;option/rubric 用 ref 指第几项(选项label/rubric step)。figures 为题目级 Json,无需迁移。
+      required: [ossKey, position]
+      properties:
+        ossKey: { type: string }
+        position: { type: integer }
+        anchor:
+          type: object
+          required: [target]
+          properties:
+            target: { type: string, enum: [stem, option, analysis, reference, rubric] }
+            ref: { type: string }
     QuestionOption:
       type: object
       required: [label, contentLatex]
@@ -258,10 +271,7 @@ components:
         stemLatex: { type: string }
         figures:
           type: array
-          items:
-            type: object
-            required: [ossKey, position]
-            properties: { ossKey: { type: string }, position: { type: integer } }
+          items: { $ref: '#/components/schemas/QuestionFigure' }
         options: { type: array, items: { $ref: '#/components/schemas/QuestionOption' } }
         answer: { oneOf: [{ type: 'null' }, { $ref: '#/components/schemas/QuestionAnswer' }] }
         rubric: { type: array, items: { $ref: '#/components/schemas/RubricStep' } }
@@ -287,7 +297,7 @@ components:
         textbookVersion: { type: string }
         chapter: { type: string }
         stemLatex: { type: string }
-        figures: { type: array, items: { type: object, required: [ossKey, position], properties: { ossKey: { type: string }, position: { type: integer } } } }
+        figures: { type: array, items: { $ref: '#/components/schemas/QuestionFigure' } }
         options: { type: array, items: { $ref: '#/components/schemas/QuestionOption' }, description: 选择题必填且 isCorrect 必须恰有规定数量 }
         answer: { $ref: '#/components/schemas/QuestionAnswer' }
         rubric: { type: array, items: { $ref: '#/components/schemas/RubricStep' }, description: 解答题必填,AI 预批依据 }
@@ -421,7 +431,7 @@ components:
         comment: { oneOf: [{ type: 'null' }, { type: string }] }
     WrongBookItem:
       type: object
-      required: [id, questionId, type, stemLatex, analysisLatex, wrongCount, correctRedoCount, errorTags, status, sourceName, createdAt]
+      required: [id, questionId, type, stemLatex, analysisLatex, wrongCount, correctRedoCount, errorTags, status, sourceName, createdAt, subject]
       properties:
         id: { type: integer }
         questionId: { type: integer }
@@ -434,6 +444,7 @@ components:
         status: { $ref: '#/components/schemas/WrongStatus' }
         sourceName: { type: string }
         createdAt: { type: string, format: date-time }
+        subject: { type: string }
     MasteryItem:
       type: object
       required: [nodeId, nodeName, graphType, mastery, sampleCount]
