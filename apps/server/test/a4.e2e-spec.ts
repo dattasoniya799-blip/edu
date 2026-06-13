@@ -90,7 +90,7 @@ describe('课程/讲次/编排/试卷/作业(A4)', () => {
     student = ex.body.data.accessToken;
 
     // seed 机构(org1)的课程/试卷 id,用于跨租户 404
-    const seedOrg = await raw.org.findFirstOrThrow({ where: { name: '启明演示机构' } });
+    const seedOrg = await raw.org.findFirstOrThrow({ where: { name: '鲸云演示机构' } });
     seedCourseId = Number((await raw.course.findFirstOrThrow({ where: { orgId: seedOrg.id } })).id);
     seedPaperId = Number((await raw.paper.findFirstOrThrow({ where: { orgId: seedOrg.id } })).id);
   });

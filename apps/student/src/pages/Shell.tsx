@@ -22,8 +22,8 @@ export function Shell() {
     <Stage>
       <div className="flex h-[64px] shrink-0 items-center gap-3.5 border-b border-line bg-card px-6">
         <div className="flex items-center gap-2 text-[15px] font-extrabold">
-          <span className="flex h-6 w-6 items-center justify-center rounded-[7px] bg-gradient-to-br from-primary to-primary-deep text-xs font-extrabold text-card">启</span>
-          启明智学
+          <span className="flex h-6 w-6 items-center justify-center rounded-[7px] bg-gradient-to-br from-primary to-primary-deep text-xs font-extrabold text-card">鲸</span>
+          鲸云AI教育平台
         </div>
         <nav className="ml-3.5 flex gap-0.5">
           {TABS.map((t) => (

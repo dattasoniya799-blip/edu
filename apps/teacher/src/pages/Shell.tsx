@@ -38,7 +38,7 @@ export function Shell() {
       <aside className="flex w-[228px] shrink-0 flex-col border-r border-line bg-card">
         <div className="px-5 pb-3 pt-[22px]">
           <div className="flex items-center gap-2 text-[15px] font-extrabold">
-            <span className="flex h-6 w-6 items-center justify-center rounded-[7px] bg-gradient-to-br from-primary to-primary-deep text-xs font-extrabold text-card">启</span>
+            <span className="flex h-6 w-6 items-center justify-center rounded-[7px] bg-gradient-to-br from-primary to-primary-deep text-xs font-extrabold text-card">鲸</span>
             {me.orgName}
           </div>
           <div className="mt-1 pl-8 text-[11.5px] text-ink-3">{ROLE_TITLE}</div>
