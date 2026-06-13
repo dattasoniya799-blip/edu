@@ -246,7 +246,8 @@ export const assignments: AssignmentDto[] = [
 ];
 
 /** 第 3 讲课后作业的已批改作答:q11(填空)/q13(单选)答错,解答 q4 得 6/10(未满分=错,A5 口径) */
-export const attempt: AttemptDto = {
+// 题面(questions)由 store 的 toQuestionViews 按卷面派生,seed 仅存作答快照
+export const attempt: Omit<AttemptDto, 'questions'> = {
   id: 1, assignmentId: 1, status: 'graded', attemptNo: 1,
   startedAt: '2026-06-07T10:00:00.000Z', submittedAt: '2026-06-07T10:24:00.000Z',
   score: 16, objectiveScore: 10, subjectiveScore: 6,

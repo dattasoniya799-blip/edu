@@ -77,13 +77,27 @@ export function HomeworkPage() {
     );
   }
 
-  // 题面未随 attempt 下发(契约变更申请 B5-1 未在后端落地)时降级为错误态,避免白屏
-  if (at.phase === 'error' || !at.attempt || !Array.isArray(at.attempt.questions) || at.attempt.questions.length === 0) {
+  // 加载失败 / 作业不存在
+  if (at.phase === 'error' || !at.attempt) {
     return (
       <div className="mx-auto max-w-[1080px]">
         {head}
         <div className="rounded-lg border border-line bg-card p-10 text-center shadow-card">
           <div className="text-[13.5px] text-ink-3">{at.error ?? '作业不存在或已失效'}</div>
+          <Button variant="primary" className="min-h-touch mt-4" onClick={() => navigate('/')}>回到今日</Button>
+        </div>
+      </div>
+    );
+  }
+
+  // 题面由契约保证(AttemptDto.questions);为空仅作优雅空态,不再走「字段缺失降级」
+  if (at.attempt.questions.length === 0) {
+    return (
+      <div className="mx-auto max-w-[1080px]">
+        {head}
+        <div className="rounded-lg border border-line bg-card p-10 text-center shadow-card">
+          <div className="text-2xl text-ink-3" aria-hidden>📄</div>
+          <div className="mt-2 text-[13.5px] text-ink-3">本卷暂无题目</div>
           <Button variant="primary" className="min-h-touch mt-4" onClick={() => navigate('/')}>回到今日</Button>
         </div>
       </div>

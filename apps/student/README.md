@@ -64,9 +64,9 @@ npm run test:mock    # msw/node 冒烟(同一份 handlers,含学号密码登录 
 - 答题器:右栏无 AI 助教(B6/AI 任务);课后不限时(无计时器)。
 - `packages/ui` Modal 的 ✕ 关闭钮 <44px(既有共享组件未动;两处模态均有 ≥44px 的 footer 按钮与遮罩/ESC 关闭)。
 
-### 契约变更申请 B5-1(待仲裁,详见提交说明)
+### 契约变更申请 B5-1(已落地 → 见下「C1GAP-front」)
 
-学生侧无任何可取题面的端点(`/questions/{id}`、`/papers/{id}` 均 [teacher]),申请为 `/student/attempts*` 响应**纯增量**补 `questions` 学生视图(`pages/homework/types.ts` 为形状);`/student/courses/{id}/lessons` 条目补 `resources`(回看入口需要 resource id)。mock 已按申请形状先行;若否决,前端改造点集中在 `useAttempt` 取题逻辑与时间线回看入口(页面已对缺失做降级)。
+学生侧原无可取题面的端点。该申请已于 2026-06-13 批准并落地为契约字段 `AttemptDto.questions: AttemptQuestionView[]`,答题器不再依赖私有降级形状,详见文末「C1GAP-front」。(`/student/courses/{id}/lessons` 的 `resources` 回看入口为另一申请,与本轮无关。)
 
 ## FIX3 · 学生端走查修复(平板横屏 1180×820)
 
@@ -199,3 +199,25 @@ ws-protocol 的 `ClassSnapshot` 不含任何可渲染内容:`me.answers` 仅 que
 - figures 形状:`QuestionFigure = { ossKey, position, anchor?: { target: stem|option|analysis|reference|rubric, ref? } }`;ossKey 经 `QuestionFigures` 的 `resolveSrc` 解析为签名 URL(mock 无 URL → 占位框)。
 - 公式填空:交卷后该空 `answer.isCorrect=null`(像解答题待批改),由 AI 预批 + 教师复核出分;检测规则由后端实现(参考答案含 LaTeX 即视为公式填空)。
 - 遗留风险:错题本 / 课堂大题渲染口径已抽到同一 `QuestionFigures` 组件,但 `WrongBookItemDto` 无 figures 字段,错题卡当前不显示题目插图(契约未含,未自行扩展)。
+
+## C1GAP-front · 答题器读 `attempt.questions`(契约已落地 2026-06-13·C1)
+
+B5 期间题面缺口用私有降级形状(`pages/homework/types.ts`)兜底;本轮契约补齐 `AttemptDto.questions: AttemptQuestionView[]`,答题器改为直接读契约字段渲染。
+
+### 处置
+- `pages/homework/types.ts` 不再自定义题面 —— 转出契约 `AttemptQuestionView`,`AttemptWithQuestions` 退化为 `AttemptDto` 别名;`useAttempt`/`QuestionPanel`/`ResultView`/课堂随堂练共用此契约类型。
+- `ResultView`:`correctAnswer` 现为契约 `QuestionAnswer` 对象(非字符串),新增 `formatCorrectAnswer` 格式化为可混排串再 `<TexText/>`。
+- `HomeworkPage`:移除「题面字段缺失 → 降级错误态」逻辑(题面现由契约保证);`questions` 为空仅作**优雅空态**(「本卷暂无题目」),真实加载失败仍走错误态。
+- **防作弊口径**:`correctAnswer/analysisLatex` 仅在该题已判定或交卷后(`status != 'in_progress'`)下发;作答中为 `null`,`QuestionPanel` 即时反馈只用单题 `SubmitAnswerResult.correctAnswer`(判错才下发),组件层不读题面 `correctAnswer`,天然不泄漏。
+
+### mock 口径(`src/mocks/`)
+- `student-store.toQuestionViews`:`correctAnswer` 改为下发契约 `QuestionAnswer` 对象(`q.answer`),`in_progress` 期间为 `null`(防作弊);`data.ts` seed `attempt` 题面由 store 派生(类型 `Omit<AttemptDto,'questions'>`)。
+
+### 测试 / 构建
+- `pages/homework/__tests__/ResultView.render.spec.tsx`(读 questions 渲染题干/正确答案/解析;`correctAnswer=null` 不泄漏)。
+- 更新 `attempt-flow.spec.ts` / `student-store.spec.ts`:交卷后 `questions[].correctAnswer` 断言改为契约对象 `{ choice: 'B' }`;新增「作答中所有题 correctAnswer/analysisLatex 皆 null」断言。
+- `npm run build` 绿;`npm run test` 100/100 绿;`npm run test:mock` 绿。
+
+### 与后端对接假设
+- `AttemptQuestionView.correctAnswer: QuestionAnswer | null`,后端按防作弊口径仅在已判/交卷后填充;单题即时判分仍走 `PUT .../answers/{qid}` 的 `SubmitAnswerResult.correctAnswer: string | null`(判错才下发)。两者口径不同(题面=对象、即时反馈=字符串)是契约约定,前端分别处理。
+- 遗留风险:题面 `correctAnswer` 对象→展示串的格式化在前端(`formatCorrectAnswer`),若后端日后改为直接下发展示串需同步收敛。

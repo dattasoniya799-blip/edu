@@ -8,7 +8,8 @@
  *   · 交卷:汇总客观分;卷面无 solution → 自动 graded 出分;redo/correction 答对 correct_redo_count+1,达 2 → cleared;
  *     再错 wrong_count+1、re-open 并重置 correct_redo_count
  * - mock 简化(README 注明):客观题错题入账在交卷时立即生效(真实后端在教师 finalize 出分时)。
- * - 题面下发:attempt 响应附 questions 学生视图(契约变更申请 B5-1 的形状,见 pages/homework/types.ts)。
+ * - 题面下发:attempt 响应附 questions(契约 AttemptDto.questions: AttemptQuestionView[]);
+ *   correctAnswer/analysisLatex 仅在 status != 'in_progress'(已判/交卷后)下发,作答中为 null(防作弊)。
  */
 import type {
   AnswerResponse, AssignmentDto, AttemptDto, AttemptStatus, QuestionDto,
@@ -177,7 +178,8 @@ function toQuestionViews(at: StoredAttempt): AttemptQuestionView[] {
       stemLatex: q.stemLatex,
       figures: q.figures,
       options: q.options.map((o) => ({ label: o.label, contentLatex: o.contentLatex })),
-      correctAnswer: revealed ? formatCorrectAnswer(q) : null,
+      // 契约口径:correctAnswer 为 QuestionAnswer 对象;in_progress 不下发(防作弊)
+      correctAnswer: revealed ? (q.answer ?? null) : null,
       analysisLatex: revealed ? q.analysisLatex : null,
     };
   });
@@ -186,7 +188,7 @@ function toQuestionViews(at: StoredAttempt): AttemptQuestionView[] {
 function toDto(at: StoredAttempt): AttemptWithQuestions {
   const paper = paperOf(at.assignmentId);
   const byQid = new Map(at.answers.map((a) => [a.questionId, a]));
-  const base: AttemptDto = {
+  const base: Omit<AttemptDto, 'questions'> = {
     id: at.id, assignmentId: at.assignmentId, status: at.status, attemptNo: at.attemptNo,
     startedAt: at.startedAt, submittedAt: at.submittedAt,
     score: at.score, objectiveScore: at.objectiveScore, subjectiveScore: at.subjectiveScore,

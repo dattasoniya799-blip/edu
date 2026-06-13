@@ -91,7 +91,7 @@ mock 说明:`src/mocks/` 中 `/questions*` 为**有状态** mock(POST/PUT/DELETE
 - 组卷:AI 组卷建议、定时发布延后(保留截止时间);组卷页选题用弹窗(与 B3 题库同源数据,不改 bank 页面行为)
 - 监控:「介入辅导(推语音)」「回放时点切换」延后;工作台待办/上讲学情区块未做(不在 B4 任务卡范围)
 - 讲次时间线:「+ 追加讲次」未做(契约无创建讲次端点)
-- **契约缺口**:无「按作业列出主观题答卷」端点,批改页学生切换条经 `pages/grading/source.ts` 适配层枚举(mock 固定 answerId 41–44,详情仍走 `GET /grading/answers/{id}`);已提契约变更申请(建议新增 `GET /grading/assignments/{id}/answers`),端点落地后只改该文件
+- ~~**契约缺口**:无「按作业列出主观题答卷」端点~~ → 已落地为 `GET /grading/assignments/{id}/answers`,`pages/grading/source.ts` 适配层已删除,批改页直接读真实端点(见文末「C1GAP-front」)
 
 ## FIX2 · 教师端 mock 走查三问题修复
 
@@ -131,7 +131,30 @@ FIX2-CR-01 的「方案 A」已批准并重新生成 SDK(`QuestionFigure.anchor?
 
 ### 与后端对接假设
 - figures 形状:`QuestionFigure = { ossKey, position, anchor?: { target, ref? } }`;缺省 anchor=题干。渲染统一走 `@qiming/ui` 的 `QuestionFigures`(ossKey 经 `resolveSrc` 解析为签名 URL;mock 无 URL 时降级占位框)。
-- 遗留:`GradingItemDto` 无 figures 字段,复核页暂不渲染题目插图(仅题面 LaTeX);`/grading/assignments/{id}/answers` 列举端点仍缺(沿用 `pages/grading/source.ts` 适配层)。
+- 遗留:`GradingItemDto` 无 figures 字段,复核页暂不渲染题目插图(仅题面 LaTeX)。(`/grading/assignments/{id}/answers` 列举端点已落地,见文末「C1GAP-front」。)
+
+## C1GAP-front · 批改名单改用真实端点(契约已落地 2026-06-13·C1)
+
+B4 期间「按作业列主观题答卷」缺端点,批改页学生切换条经 `pages/grading/source.ts` 适配层(固定 answerId 41–44)枚举。本轮契约补齐 `GET /grading/assignments/{id}/answers → GradingAnswerBriefDto[]`,改用真实端点。
+
+### 处置(`pages/grading/GradingReviewPage.tsx`)
+- 删除 `pages/grading/source.ts` 适配层;名单改由 `GET /grading/assignments/{id}/answers`(`GradingAnswerBriefDto[]`:answerId/studentName/seq/status/aiScore/finalScore)驱动学生切换条。
+- 点一项 → `GET /grading/answers/{answerId}` 拉详情(原稿 + AI 预批 + rubric)复核;`review` 后用名单端点重拉,该项 `pending→graded` 刷新并自动跳到下一份 pending。
+- 新增「只看待复核」开关(客户端按 `status` 过滤;端点亦支持 `?status=pending`,保留全量以维持准确计数);名单全部 graded 时切换条提示已全部复核。
+- 详情加载有独立骨架;`全部采纳 AI 分`/`出分(4501 剩余份数提示)` 行为不变。
+
+### mock 口径(`src/mocks/`)
+- `handlers.ts`:新增 `GET /grading/assignments/:id/answers`,由 `gradingAnswers` 派生 brief(`seq` 取自作业卷题序,`status` 由 `finalScore` 是否为空决定),支持 `?status=pending|graded` 过滤;与现有 `review`/`adopt-ai`/`finalize` 状态联动(review/adopt 后该项转 graded)。非该作业 → 空名单。
+- `data.ts`:seed `attempt` 补齐契约 `AttemptDto.questions`(题面随 attempt 下发,graded 下发 correctAnswer/analysis)以对齐新契约。
+
+### 测试 / 构建
+- `src/mocks/__tests__/grading-answers.spec.ts`(6 例):列名单 4 份 pending、详情复核、review 后 pending→graded 刷新、`status=pending/graded` 过滤、adopt-ai 全 graded、无主观题作业空名单。
+- `scripts/mock-smoke.mts` 补名单端点 + status 过滤自检。
+- `npm run build` 绿;`npm run test` 81/81 绿;`npm run test:mock` 绿。
+
+### 与后端对接假设
+- `GradingAnswerBriefDto.seq` = 该题在作业卷中的题序;`status` 仅 `pending|graded`;名单含待复核 + 已复核两类,`?status=` 过滤其一。复核详情仍走 `GET /grading/answers/{id}`,改分走 `PUT /grading/answers/{id}/review`(口径不变)。
+- 遗留风险:「只看待复核」用客户端过滤而非 `?status=pending` 网络请求(为保留总数/待复核计数);端点 status 参数已在 mock + 测试覆盖,后端实现需保证两路口径一致。
 
 ## IMPL2-front · 编排知识点 + 放宽发布(契约已落地)
 
