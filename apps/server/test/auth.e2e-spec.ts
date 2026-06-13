@@ -51,7 +51,7 @@ describe('认证(A1)', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
     const data = meRes.body.data;
-    expect(data.orgName).toBe('启明演示机构');
+    expect(data.orgName).toBe('鲸云演示机构');
     expect(data.orgSettings.ai).toEqual({ qaGuideOnly: true, preGrading: true });
     expect(data.orgSettings.studentHours).toEqual({ start: '06:00', end: '22:30' });
     expect(data.orgSettings.deviceBinding).toBe(true);

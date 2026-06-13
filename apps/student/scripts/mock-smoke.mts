@@ -28,7 +28,7 @@ try {
   // 管理员登录
   const login = await api.post('/auth/login', { body: { phone: '13800000001', password: 'Admin@123' } });
   token = login.data.accessToken;
-  assert(login.data.me.role === 'admin' && login.data.me.orgName === '启明演示机构', '管理员 13800000001/Admin@123 登录,机构=启明演示机构');
+  assert(login.data.me.role === 'admin' && login.data.me.orgName === '鲸云演示机构', '管理员 13800000001/Admin@123 登录,机构=鲸云演示机构');
 
   const me = await api.get('/me');
   assert(me.data.name === '王校长', '/me 返回 王校长');

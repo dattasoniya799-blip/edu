@@ -66,7 +66,7 @@ describe('直传凭证 /uploads/sts(A3)', () => {
     expect(new Date(expiresAt).getTime()).toBeGreaterThan(Date.now());
     expect(uploadUrl).toContain('/api/v1/uploads/local/');
 
-    const bytes = Buffer.from('PNG-fake-bytes-\x00\x01\x02-启明智学', 'utf8');
+    const bytes = Buffer.from('PNG-fake-bytes-\x00\x01\x02-鲸云AI教育平台', 'utf8');
     const put = await request(http)
       .put(pathOf(uploadUrl))
       .set('Content-Type', 'application/octet-stream')

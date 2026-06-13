@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: 启明智学 API
+  title: 鲸云AI教育平台 API
   version: 0.1.0
   description: |
     W0-2 契约 · MVP 口径(对应《MVP 裁剪手册》)。统一响应包 {code,message,data};

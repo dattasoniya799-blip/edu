@@ -1,7 +1,7 @@
 /**
  * msw mock 数据(三端共用同一份,集中于 src/mocks/,禁止散落组件)
  * 口径 = W0 seed(apps/server/prisma/seed.ts):
- *   机构「启明演示机构」· 管理员 13800000001/Admin@123 · 教师 13800000002|3/Teacher@123
+ *   机构「鲸云演示机构」· 管理员 13800000001/Admin@123 · 教师 13800000002|3/Teacher@123
  *   12 名学生(前 2 名已绑设备,其余持登录码)· 2 门课程 · 6 讲次 · 30 题 · 第 3 讲作业已批改
  * 登录码(mock):QM-DEMO(=林小满)或 QM-DEMO-3 … QM-DEMO-12
  */
@@ -12,7 +12,7 @@ import type {
 } from '@qiming/contracts';
 import { abilityNodes, strategyNodes } from './kpAbilityStrategyNodes';
 
-const ORG = '启明演示机构';
+const ORG = '鲸云演示机构';
 const orgSettings: MeDto['orgSettings'] = {
   ai: { qaGuideOnly: true, preGrading: true },
   studentHours: { start: '06:00', end: '22:30' },

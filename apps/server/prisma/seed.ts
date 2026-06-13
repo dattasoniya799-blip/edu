@@ -29,7 +29,7 @@ const STUDENT_NAMES = ['林小满','周子航','吴佳怡','郑一鸣','许诺',
 
 async function base(c: Client) {
   const org = await c.query(
-    `INSERT INTO orgs(name, settings) VALUES ('启明演示机构',
+    `INSERT INTO orgs(name, settings) VALUES ('鲸云演示机构',
       '{"ai":{"qaGuideOnly":true,"preGrading":true},"studentHours":{"start":"06:00","end":"22:30"},"deviceBinding":true}')
      RETURNING id`);
   const orgId = org.rows[0].id;
