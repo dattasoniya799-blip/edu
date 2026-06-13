@@ -30,12 +30,31 @@ const TAG_TONE_BY_GRAPH = {
   problem_solving_strategy: 'bg-orange-soft text-orange',
 } as const;
 
-function PaneHead({ color, children }: { color: 'primary' | 'green' | 'orange' | 'violet'; children: React.ReactNode }) {
+// FIX2 问题1:题干插图已支持(figures);选项/解析/参考答案/rubric 插图需 schema 新增字段(见 README 契约变更申请 FIX2-CR-01)。
+// 契约未就绪前,此处仅放占位按钮提示「待后端支持」,不伪造数据结构。
+const FIGURE_TODO_MSG = '该位置插图需后端字段支持,已提契约变更申请(FIX2-CR-01);当前仅题干支持插图';
+
+/** 待后端支持的插图占位按钮(不写入任何数据,仅提示) */
+function FigureTodoButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={FIGURE_TODO_MSG}
+      className="inline-flex items-center gap-1 rounded-[7px] border border-dashed border-line px-2 py-1 text-[11.5px] text-ink-3 transition-colors hover:border-primary hover:text-primary"
+    >
+      ⛶ {label}
+    </button>
+  );
+}
+
+function PaneHead({ color, children, action }: { color: 'primary' | 'green' | 'orange' | 'violet'; children: React.ReactNode; action?: React.ReactNode }) {
   const dot = { primary: 'bg-primary', green: 'bg-green', orange: 'bg-orange', violet: 'bg-violet' }[color];
   return (
     <div className="flex items-center gap-2.5 border-b border-line bg-bg px-4 py-2.5 text-[12.5px] font-bold text-ink-2">
       <span className={`h-2 w-2 rounded-pill ${dot}`} />
       {children}
+      {action && <span className="ml-auto">{action}</span>}
     </div>
   );
 }
@@ -371,13 +390,14 @@ export function EditorPage() {
                 <span className="min-w-0 flex-1 px-1.5 text-sm">
                   {o.contentLatex.trim() !== '' && <TexText src={normalizeOptionLatex(o.contentLatex)} />}
                 </span>
+                <FigureTodoButton label="插图" onClick={() => toast(FIGURE_TODO_MSG)} />
               </div>
             ))}
             <FieldErrors errors={errors} field="options" />
           </div>
         ) : (
           <div className="flex flex-col overflow-hidden rounded-lg border border-line bg-card shadow-card">
-            <PaneHead color="orange">参考答案{form.type === 'solution' && '与评分要点'} · AI 预批将按要点逐步给分</PaneHead>
+            <PaneHead color="orange" action={<FigureTodoButton label="插图" onClick={() => toast(FIGURE_TODO_MSG)} />}>参考答案{form.type === 'solution' && '与评分要点'} · AI 预批将按要点逐步给分</PaneHead>
             {form.type === 'blank' ? (
               <div className="flex flex-col gap-2 p-4">
                 {form.blankAnswers.map((t, i) => (
@@ -466,7 +486,7 @@ export function EditorPage() {
         )}
 
         <div className="flex flex-col overflow-hidden rounded-lg border border-line bg-card shadow-card">
-          <PaneHead color="violet">解析(学生答错后可见,同样支持 LaTeX)</PaneHead>
+          <PaneHead color="violet" action={<FigureTodoButton label="插图" onClick={() => toast(FIGURE_TODO_MSG)} />}>解析(学生答错后可见,同样支持 LaTeX)</PaneHead>
           <textarea
             value={form.analysisLatex}
             onChange={(e) => patch({ analysisLatex: e.target.value })}

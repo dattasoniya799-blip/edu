@@ -11,6 +11,7 @@ import { PaperBuilderPage } from './pages/paper/PaperBuilderPage';
 import { GradingHomePage } from './pages/grading/GradingHomePage';
 import { GradingReviewPage } from './pages/grading/GradingReviewPage';
 import { MonitorPage } from './pages/monitor/MonitorPage';
+import { ResourcesPage } from './pages/resources/ResourcesPage';
 import { Placeholder } from './pages/Placeholder';
 
 export function App() {
@@ -29,7 +30,7 @@ export function App() {
           <Route path="/bank" element={<BankList />} />
           <Route path="/bank/new" element={<EditorPage />} />
           <Route path="/bank/:id/edit" element={<EditorPage />} />
-          <Route path="/resources" element={<Placeholder title="资源库" sub="课件上传与挂载(MVP:视频 + PDF + 图片)" hint="B3 任务接 /resources" />} />
+          <Route path="/resources" element={<ResourcesPage />} />
           <Route path="/analytics" element={<Placeholder title="学情分析" sub="知识点掌握热力 + 待关注名单(MVP 口径)" hint="B4 任务接 /analytics/*" />} />
           <Route path="*" element={<Placeholder title="页面不存在" />} />
         </Route>
