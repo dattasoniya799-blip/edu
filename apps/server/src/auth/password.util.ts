@@ -30,3 +30,15 @@ export async function verifyPassword(
 export function randomToken(bytes = 32): string {
   return randomBytes(bytes).toString('hex');
 }
+
+/**
+ * 生成易读的明文临时密码(默认 8 位):剔除易混淆字符(0/O/1/l/I),
+ * 用于学生初始密码与管理员重置密码,管理员当面/短信告知学生本人。
+ */
+export function randomReadablePassword(len = 8): string {
+  const alphabet = 'abcdefghijkmnpqrstuvwxyzACDEFGHJKLMNPQRSTUVWXY23456789';
+  const buf = randomBytes(len);
+  let out = '';
+  for (let i = 0; i < len; i++) out += alphabet[buf[i] % alphabet.length];
+  return out;
+}

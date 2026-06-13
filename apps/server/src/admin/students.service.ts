@@ -2,20 +2,16 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import type { MasteryItemDto, PageResp, StudentDto } from '@qiming/contracts';
 import { AuditService } from '../audit/audit.service';
 import type { JwtUser } from '../auth/auth.service';
-import { randomToken } from '../auth/password.util';
+import { hashPassword, randomReadablePassword } from '../auth/password.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { StudentInputDto, StudentListQueryDto } from './admin.dto';
 import { daysAgoUtc, iso, num, profileField } from './helpers';
-import { SmsService } from './sms.service';
-
-const TICKET_TTL_MS = 7 * 86400_000; // 与 seed 口径一致:登录码 7 天有效
 
 @Injectable()
 export class StudentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
-    private readonly sms: SmsService,
   ) {}
 
   // ---------------- 列表 ----------------
@@ -50,11 +46,14 @@ export class StudentsService {
     return { items: await this.decorate(rows.map((r) => r.id)), total };
   }
 
-  // ---------------- 创建(向家长手机发登录码) ----------------
+  // ---------------- 创建(自动生成初始密码,active) ----------------
   async create(user: JwtUser, dto: StudentInputDto, ip?: string): Promise<StudentDto> {
     const studentNo = dto.studentNo ?? (await this.nextNo());
     await this.assertStudentNoFree(studentNo);
     const courseIds = await this.assertCoursesExist(dto.courseIds ?? []);
+
+    // 初始密码:创建即可登录;明文不入库不入响应,管理员经 reset-password 取回明文告知学生
+    const passwordHash = await hashPassword(randomReadablePassword());
 
     const orgId = BigInt(user.orgId);
     const created = await this.prisma.client.$transaction(async (tx) => {
@@ -65,7 +64,8 @@ export class StudentsService {
           name: dto.name,
           phone: dto.parentPhone,
           studentNo,
-          status: 'pending', // 首次扫码登录后由 A1 流程激活
+          status: 'active', // 账号密码登录:创建即激活(已无扫码激活流程)
+          passwordHash,
           profile: { grade: dto.grade },
         },
       });
@@ -74,17 +74,8 @@ export class StudentsService {
           data: courseIds.map((cid) => ({ orgId, courseId: cid, studentId: s.id })),
         });
       }
-      await tx.loginTicket.create({
-        data: {
-          orgId,
-          studentId: s.id,
-          token: `tk_${randomToken(16)}`,
-          expiresAt: new Date(Date.now() + TICKET_TTL_MS),
-        },
-      });
       return s;
     });
-    this.sms.sendLoginTicket(dto.parentPhone);
     await this.audit.log({
       actorId: user.uid, orgId: user.orgId, action: 'admin.student.create',
       targetType: 'user', targetId: num(created.id), ip,
@@ -138,34 +129,25 @@ export class StudentsService {
     return { student, mastery, wrongOpenCount };
   }
 
-  // ---------------- 生成/重发平板登录码 ----------------
-  async loginTicket(user: JwtUser, id: number, ip?: string): Promise<{ token: string; expiresAt: string }> {
+  // ---------------- 重置学生密码(返回明文临时密码) ----------------
+  async resetPassword(user: JwtUser, id: number, ip?: string): Promise<{ password: string }> {
     const s = await this.findStudentOr404(id);
-    const expiresAt = new Date(Date.now() + TICKET_TTL_MS);
-    const token = `tk_${randomToken(16)}`;
-    await this.prisma.client.$transaction(async (tx) => {
-      // 旧的未用登录码立即作废(重发语义)
-      await tx.loginTicket.updateMany({
-        where: { studentId: s.id, usedAt: null },
-        data: { usedAt: new Date() },
-      });
-      await tx.loginTicket.create({
-        data: { orgId: BigInt(user.orgId), studentId: s.id, token, expiresAt },
-      });
+    const password = randomReadablePassword();
+    await this.prisma.client.user.update({
+      where: { id: s.id },
+      data: { passwordHash: await hashPassword(password) },
     });
-    if (s.phone) this.sms.sendLoginTicket(s.phone);
     await this.audit.log({
-      actorId: user.uid, orgId: user.orgId, action: 'admin.student.login_ticket',
+      actorId: user.uid, orgId: user.orgId, action: 'admin.student.reset_password',
       targetType: 'user', targetId: id, ip,
     });
-    return { token, expiresAt: iso(expiresAt) };
+    return { password };
   }
 
-  // ---------------- 解绑设备 ----------------
+  // ---------------- 解绑设备(已无设备绑定,无绑定时恒成功) ----------------
   async unbindDevice(user: JwtUser, id: number, ip?: string): Promise<null> {
     const s = await this.findStudentOr404(id);
-    const { count } = await this.prisma.client.device.deleteMany({ where: { studentId: s.id } });
-    if (count === 0) throw new NotFoundException('该学生未绑定设备');
+    await this.prisma.client.device.deleteMany({ where: { studentId: s.id } });
     await this.audit.log({
       actorId: user.uid, orgId: user.orgId, action: 'admin.student.unbind_device',
       targetType: 'device', targetId: id, ip,

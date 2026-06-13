@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, Ip, Post, Put } from '@nestjs/common';
 import { CurrentUser, Public } from '../common/decorators';
 import { AuthService, JwtUser } from './auth.service';
-import { ChangePasswordDto, LoginDto, QrExchangeDto, RefreshDto } from './auth.dto';
+import { ChangePasswordDto, LoginDto, RefreshDto, StudentLoginDto } from './auth.dto';
 
 @Controller()
 export class AuthController {
@@ -15,10 +15,10 @@ export class AuthController {
   }
 
   @Public()
-  @Post('auth/student/qr-exchange')
+  @Post('auth/student/login')
   @HttpCode(200)
-  qrExchange(@Body() dto: QrExchangeDto, @Ip() ip: string) {
-    return this.auth.qrExchange(dto.token, dto.deviceFingerprint, dto.deviceName, ip);
+  studentLogin(@Body() dto: StudentLoginDto, @Ip() ip: string) {
+    return this.auth.studentLogin(dto.studentNo, dto.password, ip);
   }
 
   @Public()

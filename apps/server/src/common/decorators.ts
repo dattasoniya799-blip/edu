@@ -2,7 +2,7 @@ import { SetMetadata, createParamDecorator, ExecutionContext } from '@nestjs/com
 import type { Role } from '@qiming/contracts';
 
 export const IS_PUBLIC_KEY = 'isPublic';
-/** 免登录接口(login/qr-exchange/refresh/healthz) */
+/** 免登录接口(login/student/login/refresh/healthz) */
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 
 export const ROLES_KEY = 'roles';

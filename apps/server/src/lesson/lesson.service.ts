@@ -11,10 +11,10 @@ import { PrismaService } from '../prisma/prisma.service';
 import { LessonUpdateDto, SegmentInputDto } from './lesson.dto';
 
 /**
- * 备课检查清单(prep_checklist)五项:
- * - warmup / lecture / summary:存在对应类型环节
- * - practice / homework:存在对应环节,且其挂载的 paper 全部已 published
- * publish 时缺失项即 checklist 中为 false 的键,经 4201 detail 下发。
+ * 备课检查清单(prep_checklist,自由编排口径,IMPL2):按实际存在的环节类型标记。
+ * - warmup / lecture / summary:存在对应类型环节即为 true
+ * - practice / homework:存在对应环节,且其中挂了 paper 的环节 paper 全部 published
+ * 仅作展示;不再要求四类环节齐备。
  */
 const CHECKLIST_KEYS = ['warmup', 'lecture', 'practice', 'summary', 'homework'] as const;
 
@@ -64,11 +64,12 @@ export class LessonService {
 
   // ---------------- 编排(segments) ----------------
 
-  /** GET /lessons/:id/segments */
+  /** GET /lessons/:id/segments(join kp_nodes 填 kpNodeName) */
   async getSegments(lessonId: number): Promise<LessonSegmentDto[]> {
     const lesson = await this.findOrThrow(lessonId);
     const rows = await this.prisma.client.lessonSegment.findMany({
       where: { lessonId: lesson.id },
+      include: { kpNode: { select: { name: true } } },
       orderBy: { seq: 'asc' },
     });
     return rows.map((s) => ({
@@ -79,6 +80,8 @@ export class LessonService {
       config: (s.config ?? {}) as Record<string, unknown>,
       resourceId: s.resourceId == null ? null : num(s.resourceId),
       paperId: s.paperId == null ? null : num(s.paperId),
+      kpNodeId: s.kpNodeId == null ? null : num(s.kpNodeId),
+      kpNodeName: s.kpNode?.name ?? null,
     }));
   }
 
@@ -119,6 +122,16 @@ export class LessonService {
       : [];
     if (papers.length !== paperIds.length) throw new NotFoundException('引用的试卷不存在');
 
+    // 知识点节点存在性(租户注入保证只查本 org → 跨租户即 404)
+    const kpNodeIds = [...new Set(segments.filter((s) => s.kpNodeId != null).map((s) => s.kpNodeId!))];
+    if (kpNodeIds.length) {
+      const foundNodes = await this.prisma.client.kpNode.findMany({
+        where: { id: { in: kpNodeIds.map(BigInt) } },
+        select: { id: true },
+      });
+      if (foundNodes.length !== kpNodeIds.length) throw new NotFoundException('引用的知识点节点不存在');
+    }
+
     const paperStatus = new Map(papers.map((p) => [String(p.id), p.status]));
     const checklist = this.computeChecklist(
       segments.map((s) => ({
@@ -139,6 +152,7 @@ export class LessonService {
             config: (s.config ?? {}) as object,
             resourceId: s.resourceId != null ? BigInt(s.resourceId) : null,
             paperId: s.paperId != null ? BigInt(s.paperId) : null,
+            kpNodeId: s.kpNodeId != null ? BigInt(s.kpNodeId) : null,
           })) as never,
         });
       }
@@ -150,9 +164,10 @@ export class LessonService {
   // ---------------- 发布 ----------------
 
   /**
-   * POST /lessons/:id/publish:
-   * 四类环节(warmup/lecture/practice/summary)齐备且 practice/homework 的 paper 已 published;
-   * 缺失 → 4201 + 缺失项列表,且 prep_checklist 同步落库;通过 → status=ready。
+   * POST /lessons/:id/publish(自由编排口径,IMPL2):
+   * 不再要求四类环节齐备。硬规则:① 至少 1 个环节;② practice/homework 环节若挂了 paper,
+   * 该 paper 必须 published。违反 → 4201 + 缺失项(empty / practice / homework),prep_checklist 同步落库;
+   * 通过 → status=ready。
    */
   async publish(id: number): Promise<null> {
     const lesson = await this.findOrThrow(id);
@@ -164,7 +179,15 @@ export class LessonService {
       include: { paper: { select: { status: true } } },
     });
     const checklist = this.computeChecklist(segs);
-    const missing = CHECKLIST_KEYS.filter((k) => !checklist[k]);
+
+    const missing: string[] = [];
+    if (segs.length === 0) missing.push('empty');
+    for (const t of ['practice', 'homework'] as const) {
+      const hasUnpublished = segs.some(
+        (s) => s.type === t && s.paper != null && s.paper.status !== 'published',
+      );
+      if (hasUnpublished) missing.push(t);
+    }
 
     if (missing.length) {
       await this.prisma.client.lesson.update({
@@ -190,9 +213,10 @@ export class LessonService {
 
   private computeChecklist(segs: SegForCheck[]): Record<(typeof CHECKLIST_KEYS)[number], boolean> {
     const has = (t: string) => segs.some((s) => s.type === t);
+    // 自由编排:存在该类型环节,且其中挂了 paper 的环节 paper 均已 published(无 paper 不阻塞)
     const paperReady = (t: string) => {
       const list = segs.filter((s) => s.type === t);
-      return list.length > 0 && list.every((s) => s.paper?.status === 'published');
+      return list.length > 0 && list.every((s) => s.paper == null || s.paper.status === 'published');
     };
     return {
       warmup: has('warmup'),

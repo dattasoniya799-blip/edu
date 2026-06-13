@@ -26,7 +26,7 @@ import { ROUTES_OVERRIDE_KEY } from '../src/ai/llm/route-table.service';
 import type { Pricing, RouteTable } from '../src/ai/llm/types';
 import { runAsUser } from '../src/common/tenant-context';
 import { A7_PASSWORD, A7_RUBRIC, A7Fixture, createA7Org, dropA7Org } from './fixtures/a7.fixtures';
-import { createApp, makeTicket, raw } from './fixtures/setup';
+import { createApp, loginStudentById, raw } from './fixtures/setup';
 
 interface SseEvent {
   event: string;
@@ -99,14 +99,8 @@ describe('AI 网关:供应商抽象 + 计量 + 四能力(A7)', () => {
       const res = await request(http).post('/api/v1/auth/login').send({ phone, password: A7_PASSWORD }).expect(200);
       return res.body.data.accessToken as string;
     };
-    const studentLogin = async (orgId: bigint, sid: bigint, fp: string) => {
-      const ticket = await makeTicket(orgId, sid);
-      const res = await request(http)
-        .post('/api/v1/auth/student/qr-exchange')
-        .send({ token: ticket, deviceFingerprint: fp, deviceName: 'A7 测试平板' })
-        .expect(200);
-      return res.body.data.accessToken as string;
-    };
+    const studentLogin = async (_orgId: bigint, sid: bigint, _fp?: string) =>
+      loginStudentById(http, sid);
     admin = await login(fx.adminPhone);
     teacher = await login(fx.teacherPhone);
     s1 = await studentLogin(fx.orgId, fx.s1Id, 'a7-fp-1');

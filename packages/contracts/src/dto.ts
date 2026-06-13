@@ -66,6 +66,8 @@ export interface LessonDto {
 export interface LessonSegmentDto {
   id?: number; seq: number; type: SegmentType; durationMin: number;
   config: Record<string, unknown>; resourceId: number | null; paperId: number | null;
+  kpNodeId: number | null;        // 关联知识点节点(可空,读写)
+  kpNodeName: string | null;      // 知识点名称(只读展示)
 }
 export interface ResourceDto {
   id: number; type: ResourceType; name: string; ossKey: string; size: number;

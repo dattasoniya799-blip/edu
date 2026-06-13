@@ -15,7 +15,7 @@ const UPLOAD_ROOT = mkdtempSync(join(tmpdir(), 'qiming-a3-upload-'));
 process.env.UPLOAD_ROOT = UPLOAD_ROOT;
 
 import { A3_PASSWORD, A3Fixture, createA3Org, dropA3Org } from './fixtures/a3.fixtures';
-import { createApp, makeTicket, raw } from './fixtures/setup';
+import { createApp, loginStudentById, raw } from './fixtures/setup';
 
 describe('直传凭证 /uploads/sts(A3)', () => {
   let app: INestApplication;
@@ -40,12 +40,7 @@ describe('直传凭证 /uploads/sts(A3)', () => {
       .send({ phone: fx.teacherAPhone, password: A3_PASSWORD })
       .expect(200);
     teacher = login.body.data.accessToken;
-    const ticket = await makeTicket(fx.orgId, fx.studentId);
-    const ex = await request(http)
-      .post('/api/v1/auth/student/qr-exchange')
-      .send({ token: ticket, deviceFingerprint: 'a3-up-fp', deviceName: 'A3 测试平板' })
-      .expect(200);
-    student = ex.body.data.accessToken;
+    student = await loginStudentById(http, fx.studentId);
   });
 
   afterAll(async () => {

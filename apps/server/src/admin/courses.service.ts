@@ -210,6 +210,45 @@ export class CoursesService {
     });
   }
 
+  // ---------------- 入班(幂等,置/建 active) ----------------
+  async addStudents(user: JwtUser, courseId: number, studentIds: number[], ip?: string): Promise<null> {
+    const course = await this.findCourseOr404(courseId);
+    const ids = await this.assertStudentsExist(studentIds); // 跨租户/不存在 → 404
+    const orgId = BigInt(user.orgId);
+
+    const existing = await this.prisma.client.courseStudent.findMany({
+      where: { courseId: course.id, studentId: { in: ids } },
+    });
+    const existingMap = new Map(existing.map((e) => [String(e.studentId), e]));
+    for (const sid of ids) {
+      const cur = existingMap.get(String(sid));
+      if (!cur) {
+        await this.prisma.client.courseStudent.create({ data: { orgId, courseId: course.id, studentId: sid } });
+      } else if (cur.status !== 'active') {
+        await this.prisma.client.courseStudent.update({ where: { id: cur.id }, data: { status: 'active' } });
+      }
+    }
+    await this.audit.log({
+      actorId: user.uid, orgId: user.orgId, action: 'admin.course.add_students',
+      targetType: 'course', targetId: courseId, detail: { studentIds }, ip,
+    });
+    return null;
+  }
+
+  // ---------------- 退班(置 quit) ----------------
+  async removeStudent(user: JwtUser, courseId: number, studentId: number, ip?: string): Promise<null> {
+    const course = await this.findCourseOr404(courseId);
+    await this.prisma.client.courseStudent.updateMany({
+      where: { courseId: course.id, studentId: BigInt(studentId) },
+      data: { status: 'quit' },
+    });
+    await this.audit.log({
+      actorId: user.uid, orgId: user.orgId, action: 'admin.course.remove_student',
+      targetType: 'course', targetId: courseId, detail: { studentId }, ip,
+    });
+    return null;
+  }
+
   // ---------------- 内部 ----------------
   private async findCourseOr404(id: number) {
     const c = await this.prisma.client.course.findFirst({

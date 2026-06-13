@@ -5,10 +5,9 @@ export class LoginDto {
   @IsString() password: string;
 }
 
-export class QrExchangeDto {
-  @IsString() token: string;
-  @IsString() deviceFingerprint: string;
-  @IsString() deviceName: string;
+export class StudentLoginDto {
+  @IsString() studentNo: string;
+  @IsString() password: string;
 }
 
 export class RefreshDto {

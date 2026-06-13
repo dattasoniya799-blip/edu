@@ -259,9 +259,11 @@ model LessonSegment {
   config      Json        @default("{}") // warmup:{source,count} lecture:{checkpoints} practice:{ai_guide,stuck_alert_min}
   resourceId  BigInt?     @map("resource_id")
   paperId     BigInt?     @map("paper_id")
+  kpNodeId    BigInt?     @map("kp_node_id") // 环节关联知识点(可空标签)
   lesson      Lesson      @relation(fields: [lessonId], references: [id])
   resource    Resource?   @relation(fields: [resourceId], references: [id])
   paper       Paper?      @relation(fields: [paperId], references: [id])
+  kpNode      KpNode?     @relation(fields: [kpNodeId], references: [id])
   @@unique([lessonId, seq])
   @@index([orgId])
   @@map("lesson_segments")
@@ -325,6 +327,7 @@ model KpNode {
   edgesTo     KpEdge[] @relation("edge_to")
   tags        QuestionTag[]
   mastery     MasterySnapshot[]
+  segments    LessonSegment[]
   @@unique([graphId, code])
   @@index([orgId, grade, chapter])
   @@map("kp_nodes")

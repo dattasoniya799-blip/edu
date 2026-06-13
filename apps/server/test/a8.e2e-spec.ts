@@ -11,7 +11,7 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { A8_PASSWORD, A8Fixture, createA8Org, dropA8Org } from './fixtures/a8.fixtures';
-import { createApp, makeTicket, raw } from './fixtures/setup';
+import { createApp, loginStudentById, raw } from './fixtures/setup';
 
 const exactKeys = (obj: object, keys: string[]) =>
   expect(Object.keys(obj).sort()).toEqual([...keys].sort());
@@ -105,14 +105,8 @@ describe('学情聚合(A8)', () => {
     const res = await request(http).post('/api/v1/auth/login').send({ phone, password }).expect(200);
     return res.body.data.accessToken as string;
   };
-  const studentLogin = async (orgId: bigint, sid: bigint, fp: string) => {
-    const ticket = await makeTicket(orgId, sid);
-    const res = await request(http)
-      .post('/api/v1/auth/student/qr-exchange')
-      .send({ token: ticket, deviceFingerprint: fp, deviceName: 'A8 测试平板' })
-      .expect(200);
-    return res.body.data.accessToken as string;
-  };
+  const studentLogin = async (_orgId: bigint, sid: bigint, _fp?: string) =>
+    loginStudentById(http, sid);
   const get = (url: string, token: string) => request(http).get(`/api/v1${url}`).set(auth(token));
 
   beforeAll(async () => {

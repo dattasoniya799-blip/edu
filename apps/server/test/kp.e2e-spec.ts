@@ -10,7 +10,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import request from 'supertest';
 import { A3_PASSWORD, A3Fixture, createA3Org, dropA3Org } from './fixtures/a3.fixtures';
-import { createApp, makeTicket, raw } from './fixtures/setup';
+import { createApp, loginStudentById, raw } from './fixtures/setup';
 
 const SEED_TEACHER = { phone: '13800000002', password: 'Teacher@123' };
 
@@ -60,12 +60,7 @@ describe('知识图谱只读(A3)', () => {
 
     fx = await createA3Org();
     fxTeacherAt = await login(fx.teacherAPhone, A3_PASSWORD);
-    const ticket = await makeTicket(fx.orgId, fx.studentId);
-    const ex = await request(http)
-      .post('/api/v1/auth/student/qr-exchange')
-      .send({ token: ticket, deviceFingerprint: 'a3-kp-fp', deviceName: 'A3 测试平板' })
-      .expect(200);
-    studentAt = ex.body.data.accessToken;
+    studentAt = await loginStudentById(http, fx.studentId);
 
     const res = await request(http).get('/api/v1/kp/graphs').set('Authorization', `Bearer ${teacherAt}`).expect(200);
     graphsByCode = Object.fromEntries(res.body.data.map((g: any) => [g.code, g]));

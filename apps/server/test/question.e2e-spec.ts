@@ -10,7 +10,7 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { A3_PASSWORD, A3Fixture, createA3Org, dropA3Org } from './fixtures/a3.fixtures';
-import { createApp, makeTicket, raw } from './fixtures/setup';
+import { createApp, loginStudentById, raw } from './fixtures/setup';
 
 const SEED_TEACHER = { phone: '13800000002', password: 'Teacher@123' };
 
@@ -87,12 +87,7 @@ describe('题库 CRUD(A3)', () => {
       login(fx.adminPhone, A3_PASSWORD),
       login(SEED_TEACHER.phone, SEED_TEACHER.password),
     ]);
-    const ticket = await makeTicket(fx.orgId, fx.studentId);
-    const ex = await request(http)
-      .post('/api/v1/auth/student/qr-exchange')
-      .send({ token: ticket, deviceFingerprint: 'a3-q-fp', deviceName: 'A3 测试平板' })
-      .expect(200);
-    student = ex.body.data.accessToken;
+    student = await loginStudentById(http, fx.studentId);
   });
 
   afterAll(async () => {

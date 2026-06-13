@@ -16,7 +16,7 @@ import type { AssignmentDto, CourseDto, LessonDto, PaperDto, ResourceDto } from 
 import { AssignmentService } from '../src/assignment/assignment.service';
 import { runAsUser } from '../src/common/tenant-context';
 import { A4_PASSWORD, A4Fixture, createA4Org, dropA4Org } from './fixtures/a4.fixtures';
-import { createApp, makeTicket, raw } from './fixtures/setup';
+import { createApp, loginStudentById, raw } from './fixtures/setup';
 
 const SEED_TEACHER = { phone: '13800000002', password: 'Teacher@123' };
 
@@ -25,7 +25,7 @@ const exactKeys = (obj: object, keys: string[]) =>
 
 const COURSE_KEYS = ['id', 'name', 'classType', 'subject', 'stage', 'teacherId', 'teacherName', 'totalLessons', 'currentLesson', 'studentCount', 'status', 'nextLessonAt', 'attendanceRate', 'homeworkRate'];
 const LESSON_KEYS = ['id', 'courseId', 'seq', 'title', 'scheduledStart', 'scheduledEnd', 'status', 'prepChecklist'];
-const SEGMENT_KEYS = ['id', 'seq', 'type', 'durationMin', 'config', 'resourceId', 'paperId'];
+const SEGMENT_KEYS = ['id', 'seq', 'type', 'durationMin', 'config', 'resourceId', 'paperId', 'kpNodeId', 'kpNodeName'];
 const PAPER_KEYS = ['id', 'name', 'type', 'totalScore', 'status', 'questions'];
 const PAPER_QUESTION_KEYS = ['seq', 'questionId', 'score', 'type', 'stemLatex'];
 const ASSIGNMENT_KEYS = ['id', 'paperId', 'paperName', 'lessonId', 'kind', 'target', 'publishAt', 'dueAt', 'scoreCounted', 'questionCount', 'totalScore'];
@@ -82,12 +82,7 @@ describe('课程/讲次/编排/试卷/作业(A4)', () => {
       login(fx.adminPhone, A4_PASSWORD),
       login(SEED_TEACHER.phone, SEED_TEACHER.password),
     ]);
-    const ticket = await makeTicket(fx.orgId, fx.s1Id);
-    const ex = await request(http)
-      .post('/api/v1/auth/student/qr-exchange')
-      .send({ token: ticket, deviceFingerprint: 'a4-fp', deviceName: 'A4 测试平板' })
-      .expect(200);
-    student = ex.body.data.accessToken;
+    student = await loginStudentById(http, fx.s1Id);
 
     // seed 机构(org1)的课程/试卷 id,用于跨租户 404
     const seedOrg = await raw.org.findFirstOrThrow({ where: { name: '鲸云演示机构' } });
@@ -278,6 +273,9 @@ describe('课程/讲次/编排/试卷/作业(A4)', () => {
     expect(segs[1].resourceId).toBe(resourceId);
     expect(segs[2].paperId).toBe(practicePaperId);
     expect(segs[3].paperId).toBeNull();
+    // 未挂知识点 → kpNodeId / kpNodeName 均为 null
+    expect(segs[0].kpNodeId).toBeNull();
+    expect(segs[0].kpNodeName).toBeNull();
 
     // 全量替换:旧 4 条被 2 条覆盖
     await request(http)
@@ -291,6 +289,31 @@ describe('课程/讲次/编排/试卷/作业(A4)', () => {
     const got2 = await request(http).get(`/api/v1/lessons/${id}/segments`).set(auth(teacherA)).expect(200);
     expect(got2.body.data).toHaveLength(2);
     expect(got2.body.data.map((s: { type: string }) => s.type)).toEqual(['lecture', 'break_time']);
+  });
+
+  it('segments 知识点标签:写 kpNodeId → GET 回填 kpNodeName(写入忽略 kpNodeName);不存在节点 → 404', async () => {
+    const id = lessonId(0);
+    await request(http)
+      .put(`/api/v1/lessons/${id}/segments`)
+      .set(auth(teacherA))
+      .send([
+        // kpNodeName 为只读字段,写入应被忽略,GET 时以 join kp_nodes 的真实名称回填
+        { seq: 1, type: 'lecture', durationMin: 20, config: {}, resourceId: null, paperId: null, kpNodeId: fx.kpNodeId, kpNodeName: '应被忽略' },
+        { seq: 2, type: 'practice', durationMin: 20, config: {}, resourceId: null, paperId: practicePaperId },
+      ])
+      .expect(200);
+    const got = await request(http).get(`/api/v1/lessons/${id}/segments`).set(auth(teacherA)).expect(200);
+    expect(got.body.data[0].kpNodeId).toBe(fx.kpNodeId);
+    expect(got.body.data[0].kpNodeName).toBe(fx.kpNodeName);
+    expect(got.body.data[1].kpNodeId).toBeNull();
+    expect(got.body.data[1].kpNodeName).toBeNull();
+
+    // 引用不存在 / 他 org 的知识点节点 → 404
+    await request(http)
+      .put(`/api/v1/lessons/${id}/segments`)
+      .set(auth(teacherA))
+      .send([{ seq: 1, type: 'lecture', durationMin: 20, config: {}, resourceId: null, paperId: null, kpNodeId: 999999999 }])
+      .expect(404);
   });
 
   it('segments 校验:seq 重复/挂载错位 → 400;引用不存在的课件或试卷 → 404;跨租户 → 404', async () => {
@@ -313,22 +336,21 @@ describe('课程/讲次/编排/试卷/作业(A4)', () => {
 
   // ================= 发布(验收核心) =================
 
-  it('验收:缺 homework 时 publish → 4201 + 缺失项列表,prep_checklist 同步落库', async () => {
+  it('验收:自由编排 publish —— 无 homework 环节也可发布(放宽规则),prep_checklist 按实际类型标记', async () => {
     const id = lessonId(0);
-    // 恢复四类齐备但无 homework 的编排
+    // 四类齐备但无 homework:放宽后不再因缺某类型环节报错
     await request(http)
       .put(`/api/v1/lessons/${id}/segments`)
       .set(auth(teacherA))
       .send(baseSegments(practicePaperId, { resource: resourceId }))
       .expect(200);
 
-    const res = await request(http).post(`/api/v1/lessons/${id}/publish`).set(auth(teacherA)).expect(409);
-    expect(res.body.code).toBe(4201); // 业务码,非 HTTP 状态码
-    expect(res.body.detail).toEqual(['homework']); // 缺失项列表
-    expect(typeof res.body.message).toBe('string');
+    const res = await request(http).post(`/api/v1/lessons/${id}/publish`).set(auth(teacherA)).expect(200);
+    expect(res.body).toEqual({ code: 0, message: 'ok', data: null });
 
     const got = await request(http).get(`/api/v1/lessons/${id}`).set(auth(teacherA)).expect(200);
-    expect(got.body.data.status).toBe('draft'); // 未发布成功
+    expect(got.body.data.status).toBe('ready'); // 放宽后发布成功
+    // prep_checklist 按实际存在环节标记:无 homework 环节 → homework=false(仅展示,不阻塞)
     expect(got.body.data.prepChecklist).toEqual({
       warmup: true, lecture: true, practice: true, summary: true, homework: false,
     });
@@ -365,9 +387,9 @@ describe('课程/讲次/编排/试卷/作业(A4)', () => {
     const res = await request(http).post(`/api/v1/lessons/${id}/publish`).set(auth(teacherA)).expect(409);
     expect(res.body.code).toBe(4201);
     expect(res.body.detail).toEqual(['practice']);
-    // 空编排 → 五项全缺
+    // 空编排 → 至少 1 个环节,detail=['empty']
     const empty = await request(http).post(`/api/v1/lessons/${lessonId(2)}/publish`).set(auth(teacherA)).expect(409);
-    expect(empty.body.detail).toEqual(['warmup', 'lecture', 'practice', 'summary', 'homework']);
+    expect(empty.body.detail).toEqual(['empty']);
     // 跨租户 publish → 404
     await request(http).post(`/api/v1/lessons/${id}/publish`).set(auth(seedTeacherAt)).expect(404);
   });

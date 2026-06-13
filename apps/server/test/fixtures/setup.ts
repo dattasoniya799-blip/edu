@@ -2,6 +2,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { PrismaClient } from '@prisma/client';
+import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { hashPassword } from '../../src/auth/password.util';
 import { ProbeModule } from './probe.module';
@@ -64,6 +65,27 @@ export async function dropOrg2(orgId: bigint): Promise<void> {
   await raw.auditLog.deleteMany({ where: { orgId } });
   await raw.user.deleteMany({ where: { orgId } });
   await raw.org.deleteMany({ where: { id: orgId } });
+}
+
+/**
+ * IMPL2 学生登录助手:为夹具学生写入已知密码并置 active,然后走新的账号密码登录
+ * (POST /auth/student/login),返回 accessToken。替代已删除的 qr-exchange 流。
+ */
+export const STUDENT_TEST_PASSWORD = 'Student@123';
+export async function loginStudentById(
+  http: unknown,
+  studentId: bigint,
+  password = STUDENT_TEST_PASSWORD,
+): Promise<string> {
+  const u = await raw.user.update({
+    where: { id: studentId },
+    data: { passwordHash: await hashPassword(password), status: 'active' },
+  });
+  const res = await request(http as never)
+    .post('/api/v1/auth/student/login')
+    .send({ studentNo: u.studentNo, password })
+    .expect(200);
+  return res.body.data.accessToken as string;
 }
 
 export async function makeTicket(orgId: bigint, studentId: bigint, opts?: { expired?: boolean }) {
