@@ -24,8 +24,8 @@ const exactKeys = (obj: object, keys: string[]) =>
   expect(Object.keys(obj).sort()).toEqual([...keys].sort());
 
 const COURSE_KEYS = ['id', 'name', 'classType', 'subject', 'stage', 'teacherId', 'teacherName', 'totalLessons', 'currentLesson', 'studentCount', 'status', 'nextLessonAt', 'attendanceRate', 'homeworkRate'];
-const LESSON_KEYS = ['id', 'courseId', 'seq', 'title', 'scheduledStart', 'scheduledEnd', 'status', 'prepChecklist'];
-const SEGMENT_KEYS = ['id', 'seq', 'type', 'durationMin', 'config', 'resourceId', 'paperId', 'kpNodeId', 'kpNodeName'];
+const LESSON_KEYS = ['id', 'courseId', 'seq', 'title', 'scheduledStart', 'scheduledEnd', 'status', 'prepChecklist', 'openingConfig'];
+const SEGMENT_KEYS = ['id', 'seq', 'type', 'durationMin', 'config', 'resourceId', 'paperId', 'kpNodeId', 'kpNodeName', 'unitSeq'];
 const PAPER_KEYS = ['id', 'name', 'type', 'totalScore', 'status', 'questions'];
 const PAPER_QUESTION_KEYS = ['seq', 'questionId', 'score', 'type', 'stemLatex'];
 const ASSIGNMENT_KEYS = ['id', 'paperId', 'paperName', 'lessonId', 'kind', 'target', 'publishAt', 'dueAt', 'scoreCounted', 'questionCount', 'totalScore'];
@@ -314,6 +314,50 @@ describe('课程/讲次/编排/试卷/作业(A4)', () => {
       .set(auth(teacherA))
       .send([{ seq: 1, type: 'lecture', durationMin: 20, config: {}, resourceId: null, paperId: null, kpNodeId: 999999999 }])
       .expect(404);
+  });
+
+  it('C2#5 知识点单元:PUT 带 unitSeq + openingConfig → GET 无损回填(unitSeq/openingConfig 读写)', async () => {
+    const id = lessonId(0);
+    // 开场白(单元外环节,unitSeq=null) + 知识点单元1(unitSeq=1,同 kpNodeId 的 讲解/随堂练/小结 三段)
+    await request(http)
+      .put(`/api/v1/lessons/${id}/segments`)
+      .set(auth(teacherA))
+      .send([
+        { seq: 1, type: 'lecture', durationMin: 10, config: {}, resourceId: null, paperId: null, kpNodeId: fx.kpNodeId, unitSeq: 1 },
+        { seq: 2, type: 'practice', durationMin: 20, config: {}, resourceId: null, paperId: practicePaperId, kpNodeId: fx.kpNodeId, unitSeq: 1 },
+        { seq: 3, type: 'summary', durationMin: 5, config: {}, resourceId: null, paperId: null, kpNodeId: fx.kpNodeId, unitSeq: 1 },
+        { seq: 4, type: 'lecture', durationMin: 8, config: {}, resourceId: null, paperId: null, kpNodeId: fx.kpNode2Id, unitSeq: 2 },
+      ])
+      .expect(200);
+
+    // openingConfig 经 PUT /lessons/:id 写入(契约:openingConfig 为讲次级读写字段)
+    const opening = { resourceId, text: '今天我们一起复习一次函数' };
+    await request(http).put(`/api/v1/lessons/${id}`).set(auth(teacherA)).send({ openingConfig: opening }).expect(200);
+
+    const got = await request(http).get(`/api/v1/lessons/${id}/segments`).set(auth(teacherA)).expect(200);
+    const segs = got.body.data;
+    expect(segs.map((s: { unitSeq: number | null }) => s.unitSeq)).toEqual([1, 1, 1, 2]);
+    expect(segs[0].kpNodeId).toBe(fx.kpNodeId);
+    expect(segs[3].kpNodeId).toBe(fx.kpNode2Id);
+
+    const lessonGot = await request(http).get(`/api/v1/lessons/${id}`).set(auth(teacherA)).expect(200);
+    expect(lessonGot.body.data.openingConfig).toEqual(opening); // 开场白无损回填
+    // openingConfig 置 null 显式清空
+    await request(http).put(`/api/v1/lessons/${id}`).set(auth(teacherA)).send({ openingConfig: null }).expect(200);
+    const cleared = await request(http).get(`/api/v1/lessons/${id}`).set(auth(teacherA)).expect(200);
+    expect(cleared.body.data.openingConfig).toBeNull();
+  });
+
+  it('C2#5 知识点单元:同一 unitSeq 不同 kpNodeId → 400', async () => {
+    const id = lessonId(0);
+    await request(http)
+      .put(`/api/v1/lessons/${id}/segments`)
+      .set(auth(teacherA))
+      .send([
+        { seq: 1, type: 'lecture', durationMin: 10, config: {}, resourceId: null, paperId: null, kpNodeId: fx.kpNodeId, unitSeq: 1 },
+        { seq: 2, type: 'summary', durationMin: 5, config: {}, resourceId: null, paperId: null, kpNodeId: fx.kpNode2Id, unitSeq: 1 },
+      ])
+      .expect(400);
   });
 
   it('segments 校验:seq 重复/挂载错位 → 400;引用不存在的课件或试卷 → 404;跨租户 → 404', async () => {

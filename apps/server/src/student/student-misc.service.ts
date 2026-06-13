@@ -340,6 +340,7 @@ export class StudentMiscService {
           scheduledEnd: iso(l.scheduledEnd),
           status: l.status,
           prepChecklist: (l.prepChecklist ?? {}) as Record<string, boolean>,
+          openingConfig: (l.openingConfig ?? null) as Record<string, unknown> | null,
         },
         myHomework: hw
           ? {

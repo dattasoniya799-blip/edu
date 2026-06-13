@@ -40,7 +40,7 @@ const COURSE_KEYS = [
   'currentLesson', 'studentCount', 'status', 'nextLessonAt', 'attendanceRate', 'homeworkRate',
 ];
 const TIMELINE_KEYS = ['lesson', 'myHomework'];
-const LESSON_KEYS = ['id', 'courseId', 'seq', 'title', 'scheduledStart', 'scheduledEnd', 'status', 'prepChecklist'];
+const LESSON_KEYS = ['id', 'courseId', 'seq', 'title', 'scheduledStart', 'scheduledEnd', 'status', 'prepChecklist', 'openingConfig'];
 const MYHW_KEYS = ['assignmentId', 'score', 'wrongCount'];
 const REPORT_KEYS = ['mastery', 'weekStats'];
 const WEEK_KEYS = ['answeredCount', 'correctRate', 'studySec', 'wrongOpenCount'];
@@ -208,6 +208,7 @@ async function expectedTimeline(orgId: bigint, sid: bigint, courseId: bigint) {
         scheduledStart: l.scheduledStart ? l.scheduledStart.toISOString() : null,
         scheduledEnd: l.scheduledEnd ? l.scheduledEnd.toISOString() : null,
         status: l.status, prepChecklist: (l.prepChecklist ?? {}) as Record<string, boolean>,
+        openingConfig: (l.openingConfig ?? null) as Record<string, unknown> | null,
       },
       myHomework,
     });
@@ -387,7 +388,7 @@ describe('学生端只读杂项(FIX1)', () => {
     expect(data[0].lesson).toEqual({
       id: Number(fx.l1Id), courseId: Number(fx.course1Id), seq: 1,
       title: 'FIX1 第1讲 · 待定系数法', scheduledStart: expect.any(String),
-      scheduledEnd: expect.any(String), status: 'finished', prepChecklist: {},
+      scheduledEnd: expect.any(String), status: 'finished', prepChecklist: {}, openingConfig: null,
     });
     for (const item of data) {
       exactKeys(item, TIMELINE_KEYS);
