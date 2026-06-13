@@ -11,6 +11,13 @@ import {
 } from 'class-validator';
 import type { AssignmentKind } from '@qiming/contracts';
 
+/** GET /assignments 作业总览查询(C3-back #C):courseId/lessonId/status 均选填 */
+export class AssignmentListQueryDto {
+  @IsOptional() @Type(() => Number) @IsInt() courseId?: number;
+  @IsOptional() @Type(() => Number) @IsInt() lessonId?: number;
+  @IsOptional() @IsIn(['ongoing', 'finished']) status?: 'ongoing' | 'finished';
+}
+
 export const ASSIGNMENT_KINDS = [
   'homework',
   'in_class',

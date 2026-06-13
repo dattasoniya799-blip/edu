@@ -8,6 +8,8 @@ import { ResourceCreateDto, ResourceListQueryDto, ResourceUpdateDto } from './re
 
 const SEGMENT_JOIN = {
   segments: { include: { lesson: { select: { id: true, title: true } } } },
+  // C3-back #A:回填知识点名称(可空标签)
+  kpNode: { select: { name: true } },
 };
 
 /**
@@ -26,6 +28,7 @@ export class ResourceService {
       deletedAt: null,
       ...(q.type ? { type: q.type } : {}),
       ...(q.keyword ? { name: { contains: q.keyword } } : {}),
+      ...(q.kpNodeId != null ? { kpNodeId: BigInt(q.kpNodeId) } : {}), // C3-back #A:按知识点归档过滤
     };
     const [total, rows] = await Promise.all([
       this.prisma.client.resource.count({ where }),
@@ -41,6 +44,7 @@ export class ResourceService {
   }
 
   async create(user: JwtUser, dto: ResourceCreateDto): Promise<ResourceDto> {
+    if (dto.kpNodeId != null) await this.mustKpNode(dto.kpNodeId);
     const created = await this.prisma.client.resource.create({
       data: {
         ownerId: BigInt(user.uid),
@@ -49,6 +53,7 @@ export class ResourceService {
         ossKey: dto.ossKey,
         size: BigInt(dto.size),
         meta: (dto.meta ?? {}) as object,
+        kpNodeId: dto.kpNodeId != null ? BigInt(dto.kpNodeId) : null, // C3-back #A
       } as never,
       include: SEGMENT_JOIN,
     });
@@ -57,11 +62,16 @@ export class ResourceService {
 
   async update(id: number, dto: ResourceUpdateDto): Promise<null> {
     const r = await this.findOrThrow(id);
+    // C3-back #A:kpNodeId 缺省不改、显式 null 清空、给值则校验同 org 存在
+    if (dto.kpNodeId != null) await this.mustKpNode(dto.kpNodeId);
     await this.prisma.client.resource.update({
       where: { id: r.id },
       data: {
         ...(dto.name !== undefined ? { name: dto.name } : {}),
         ...(dto.meta !== undefined ? { meta: dto.meta as object } : {}),
+        ...(dto.kpNodeId !== undefined
+          ? { kpNodeId: dto.kpNodeId === null ? null : BigInt(dto.kpNodeId) }
+          : {}),
       },
     });
     return null;
@@ -91,6 +101,15 @@ export class ResourceService {
     return r;
   }
 
+  /** C3-back #A:知识点存在性(租户注入保证同 org;跨租户/不存在 → 404) */
+  private async mustKpNode(kpNodeId: number): Promise<void> {
+    const node = await this.prisma.client.kpNode.findFirst({
+      where: { id: BigInt(kpNodeId) },
+      select: { id: true },
+    });
+    if (!node) throw new NotFoundException('知识点节点不存在');
+  }
+
   private usedByLessons(
     segments: { lesson: { id: bigint; title: string } }[],
   ): { lessonId: number; lessonTitle: string }[] {
@@ -110,6 +129,8 @@ export class ResourceService {
       size: Number(r.size),
       meta: (r.meta ?? {}) as Record<string, unknown>,
       usedByLessons: this.usedByLessons(r.segments),
+      kpNodeId: r.kpNodeId == null ? null : num(r.kpNodeId), // C3-back #A
+      kpNodeName: r.kpNode?.name ?? null,
       createdAt: iso(r.createdAt),
     };
   }

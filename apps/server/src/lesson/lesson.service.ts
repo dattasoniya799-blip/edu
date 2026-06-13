@@ -217,7 +217,37 @@ export class LessonService {
       where: { id: lesson.id },
       data: { status: 'ready', prepChecklist: checklist },
     });
+    // C3-back #B:发布即建课堂会话(根因——全系统从不建 class_session,学生 sessionId 恒 null
+    // 进不去课堂)。幂等:已有未结束会话则复用。
+    await this.ensureSession(lesson.id, segs);
     return null;
+  }
+
+  /**
+   * C3-back #B:确保讲次存在一条未结束的 class_session(幂等)。
+   * - 已有 status≠ended 的会话 → 复用,不重复建
+   * - 否则建一条 status='scheduled'(学生 class:join 时 scheduled→live,A6 网关已就绪)
+   * - mode 取自编排设置:practice 环节 config(ai_guide→guideOnly、stuck_alert_min→stuckAlertMin)
+   */
+  private async ensureSession(
+    lessonId: bigint,
+    segs: { type: string; config?: unknown }[],
+  ): Promise<void> {
+    const open = await this.prisma.client.classSession.findFirst({
+      where: { lessonId, status: { not: 'ended' } },
+      select: { id: true },
+    });
+    if (open) return;
+
+    const practice = segs.find((s) => s.type === 'practice');
+    const cfg = (practice?.config ?? {}) as Record<string, unknown>;
+    const mode = {
+      guideOnly: Boolean(cfg.ai_guide ?? false),
+      ...(cfg.stuck_alert_min != null ? { stuckAlertMin: Number(cfg.stuck_alert_min) } : {}),
+    };
+    await this.prisma.client.classSession.create({
+      data: { lessonId, status: 'scheduled', mode: mode as object } as never,
+    });
   }
 
   // ---------------- 内部 ----------------

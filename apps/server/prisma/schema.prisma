@@ -275,6 +275,7 @@ model Resource {
   id        BigInt       @id @default(autoincrement())
   orgId     BigInt       @map("org_id")
   ownerId   BigInt       @map("owner_id")
+  kpNodeId  BigInt?      @map("kp_node_id") // 课件按知识点归档/过滤(可空标签)
   type      ResourceType
   name      String       @db.VarChar(128)
   ossKey    String       @map("oss_key")
@@ -283,7 +284,9 @@ model Resource {
   createdAt DateTime     @default(now()) @map("created_at")
   updatedAt DateTime     @updatedAt @map("updated_at")
   deletedAt DateTime?    @map("deleted_at")
+  kpNode    KpNode?      @relation(fields: [kpNodeId], references: [id])
   segments  LessonSegment[]
+  contentPacks KpContentPack[] // 反向:作为内容包讲解课件被引用
   @@index([orgId, ownerId])
   @@map("resources")
 }
@@ -330,6 +333,8 @@ model KpNode {
   tags        QuestionTag[]
   mastery     MasterySnapshot[]
   segments    LessonSegment[]
+  resources    Resource[]        // 按知识点归档的课件
+  contentPacks KpContentPack[]   // 内容包(@@unique([orgId,kpNodeId]) 保证每机构每节点至多一份)
   @@unique([graphId, code])
   @@index([orgId, grade, chapter])
   @@map("kp_nodes")
@@ -350,6 +355,24 @@ model KpEdge {
   @@unique([graphId, fromNodeId, toNodeId, relation])
   @@index([orgId])
   @@map("kp_edges")
+}
+
+// 知识点内容库:每知识点每机构维护一份可复用"内容包"(讲解课件/随堂练卷/小结模板)
+model KpContentPack {
+  id                BigInt   @id @default(autoincrement())
+  orgId             BigInt   @map("org_id")
+  kpNodeId          BigInt   @map("kp_node_id")
+  lectureResourceId BigInt?  @map("lecture_resource_id") // 讲解课件
+  practicePaperId   BigInt?  @map("practice_paper_id")   // 随堂练卷
+  summaryConfig     Json     @default("{}") @map("summary_config") // 小结模板
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  kpNode            KpNode    @relation(fields: [kpNodeId], references: [id])
+  lectureResource   Resource? @relation(fields: [lectureResourceId], references: [id])
+  practicePaper     Paper?    @relation(fields: [practicePaperId], references: [id])
+  @@unique([orgId, kpNodeId]) // 每机构每知识点一份
+  @@index([orgId])
+  @@map("kp_content_packs")
 }
 
 // ---------------- 题库 ----------------
@@ -422,6 +445,7 @@ model Paper {
   questions  PaperQuestion[]
   segments   LessonSegment[]
   assignments Assignment[]
+  contentPacks KpContentPack[] // 反向:作为内容包随堂练卷被引用
   @@index([orgId, creatorId])
   @@map("papers")
 }

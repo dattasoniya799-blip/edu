@@ -80,6 +80,7 @@ CREATE INDEX idx_lessons_org ON lessons(org_id);
 
 CREATE TABLE resources (
   id BIGSERIAL PRIMARY KEY, org_id BIGINT NOT NULL, owner_id BIGINT NOT NULL,
+  kp_node_id BIGINT, -- FK 见下方 kp_nodes 建表后的 ALTER(resources 早于 kp_nodes 建表)
   type "ResourceType" NOT NULL, name VARCHAR(128) NOT NULL, oss_key TEXT NOT NULL,
   size BIGINT NOT NULL DEFAULT 0, meta JSONB NOT NULL DEFAULT '{}',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -104,6 +105,8 @@ CREATE TABLE kp_nodes (
   source_refs JSONB NOT NULL DEFAULT '[]', version INT NOT NULL DEFAULT 1,
   UNIQUE (graph_id, code));
 CREATE INDEX idx_kpnodes_org_grade_ch ON kp_nodes(org_id, grade, chapter);
+-- resources.kp_node_id FK(resources 建表早于 kp_nodes,故此处补外键)
+ALTER TABLE resources ADD CONSTRAINT resources_kp_node_id_fkey FOREIGN KEY (kp_node_id) REFERENCES kp_nodes(id);
 
 CREATE TABLE kp_edges (
   id BIGSERIAL PRIMARY KEY, org_id BIGINT NOT NULL,
@@ -155,6 +158,17 @@ CREATE TABLE paper_questions (
   question_id BIGINT NOT NULL REFERENCES questions(id),
   seq INT NOT NULL, score NUMERIC(5,1) NOT NULL,
   UNIQUE (paper_id, seq), UNIQUE (paper_id, question_id));
+
+-- 知识点内容库:讲解课件/随堂练卷/小结模板(每机构每知识点一份);建表在 kp_nodes/resources/papers 之后
+CREATE TABLE kp_content_packs (
+  id BIGSERIAL PRIMARY KEY, org_id BIGINT NOT NULL,
+  kp_node_id BIGINT NOT NULL REFERENCES kp_nodes(id),
+  lecture_resource_id BIGINT REFERENCES resources(id),
+  practice_paper_id BIGINT REFERENCES papers(id),
+  summary_config JSONB NOT NULL DEFAULT '{}',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (org_id, kp_node_id));
+CREATE INDEX idx_kp_content_packs_org ON kp_content_packs(org_id);
 
 CREATE TABLE lesson_segments (
   id BIGSERIAL PRIMARY KEY, org_id BIGINT NOT NULL,

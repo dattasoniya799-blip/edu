@@ -74,6 +74,8 @@ export interface LessonSegmentDto {
 export interface ResourceDto {
   id: number; type: ResourceType; name: string; ossKey: string; size: number;
   meta: Record<string, unknown>; usedByLessons: { lessonId: number; lessonTitle: string }[];
+  kpNodeId: number | null;    // 归档知识点节点(只读;可空)
+  kpNodeName: string | null;  // 知识点名称(只读展示)
   createdAt: string;
 }
 export interface KpGraphDto { id: number; code: string; graphType: GraphType; subject: string; nodeCount: number }
@@ -82,6 +84,14 @@ export interface KpNodeDto {
   parentCode: string | null; level: number | null; category: string | null;
   grade: string | null; chapter: string | null; section: string | null;
   difficulty: number | null; examWeight: number | null; summary: string | null;
+  content: string | null;  // 教材正文(DB 已有 content 列,本次透出)
+}
+/** 知识点内容包:每知识点维护一份可复用内容(讲解课件/随堂练卷/小结模板);未维护时 lecture/practice 为 null */
+export interface KpContentPackDto {
+  kpNodeId: number; kpNodeName: string;
+  lectureResourceId: number | null; lectureResourceName: string | null;
+  practicePaperId: number | null; practicePaperName: string | null;
+  summaryConfig: Record<string, unknown>;
 }
 export interface QuestionOptionDto { label: string; contentLatex: string; isCorrect?: boolean }
 export interface RubricStep { step: number; desc: string; score: number }
@@ -122,6 +132,14 @@ export interface AssignmentDto {
   kind: AssignmentKind; target: { courseId?: number; studentIds?: number[] };
   publishAt: string; dueAt: string | null; scoreCounted: boolean;
   questionCount: number; totalScore: number;
+}
+/** 作业总览项:教师看自己布置过的全部作业(进度概览 + ongoing/finished 状态由 finalize 是否完成判定) */
+export interface AssignmentBriefDto {
+  id: number; paperName: string;
+  lessonId: number | null; lessonTitle: string | null;
+  kind: AssignmentKind; publishAt: string; dueAt: string | null;
+  submitted: number; totalStudents: number; graded: number;
+  status: 'ongoing' | 'finished';
 }
 export interface AttemptDto {
   id: number; assignmentId: number; status: AttemptStatus; attemptNo: number;
