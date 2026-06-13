@@ -322,7 +322,7 @@ export interface paths {
             };
         };
         put?: never;
-        /** 创建教师(短信发初始密码) [admin] */
+        /** 创建教师 [admin] */
         post: {
             parameters: {
                 query?: never;
@@ -433,7 +433,52 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 重置密码并短信通知 [admin] */
+        /** 重置教师密码 [admin] */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["idPath"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: number;
+                            message: string;
+                            data: {
+                                password: string;
+                            };
+                        };
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/teachers/{id}/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 启用教师 [admin] */
         post: {
             parameters: {
                 query?: never;
@@ -477,6 +522,7 @@ export interface paths {
                     page?: components["parameters"]["page"];
                     size?: components["parameters"]["size"];
                     keyword?: components["parameters"]["keyword"];
+                    status?: components["schemas"]["UserStatus"];
                     courseId?: number;
                     deviceBound?: boolean;
                 };
@@ -666,6 +712,45 @@ export interface paths {
                                 password: string;
                             };
                         };
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/students/{id}/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 启用学生 [admin] */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["idPath"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OkVoid"];
                     };
                 };
                 default: components["responses"]["Err"];
@@ -3614,6 +3699,10 @@ export interface components {
             prepChecklist: {
                 [key: string]: boolean;
             };
+            /** @description 开场白配置(可空,读写),如 resourceId/text */
+            openingConfig: null | {
+                [key: string]: unknown;
+            };
         };
         Segment: {
             id?: number;
@@ -3629,6 +3718,8 @@ export interface components {
             kpNodeId: null | number;
             /** @description 知识点名称(只读展示) */
             readonly kpNodeName?: null | string;
+            /** @description 知识点单元序号(可空 */
+            unitSeq: null | number;
         };
         Resource: {
             id: number;
@@ -3716,7 +3807,12 @@ export interface components {
             options: components["schemas"]["QuestionOption"][];
             answer: null | components["schemas"]["QuestionAnswer"];
             rubric: components["schemas"]["RubricStep"][];
+            /** @description 正常解析 */
             analysisLatex: null | string;
+            /** @description 简单解析 */
+            analysisBriefLatex: null | string;
+            /** @description 详细解析 */
+            analysisDetailLatex: null | string;
             difficulty: number;
             status: components["schemas"]["QuestionStatus"];
             tags: components["schemas"]["QuestionTagRef"][];
@@ -3741,7 +3837,12 @@ export interface components {
             answer: components["schemas"]["QuestionAnswer"];
             /** @description 解答题必填 */
             rubric?: components["schemas"]["RubricStep"][];
+            /** @description 正常解析 */
             analysisLatex?: string;
+            /** @description 简单解析 */
+            analysisBriefLatex?: string;
+            /** @description 详细解析 */
+            analysisDetailLatex?: string;
             difficulty?: number;
             /** @description 三维标注 */
             tagNodeIds?: number[];

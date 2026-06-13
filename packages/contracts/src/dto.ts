@@ -62,12 +62,14 @@ export interface LessonDto {
   id: number; courseId: number; seq: number; title: string;
   scheduledStart: string | null; scheduledEnd: string | null;
   status: LessonStatus; prepChecklist: Record<string, boolean>;
+  openingConfig: Record<string, unknown> | null;  // 开场白配置(可空,读写),如 {resourceId, text}
 }
 export interface LessonSegmentDto {
   id?: number; seq: number; type: SegmentType; durationMin: number;
   config: Record<string, unknown>; resourceId: number | null; paperId: number | null;
   kpNodeId: number | null;        // 关联知识点节点(可空,读写)
   kpNodeName: string | null;      // 知识点名称(只读展示)
+  unitSeq: number | null;         // 知识点单元序号(可空,读写);同 unitSeq+kpNodeId 为同一单元,null=单元外环节
 }
 export interface ResourceDto {
   id: number; type: ResourceType; name: string; ossKey: string; size: number;
@@ -99,7 +101,10 @@ export interface QuestionDto {
   stemLatex: string; figures: QuestionFigure[];
   options: QuestionOptionDto[]; // 学生视图不含 isCorrect
   answer: QuestionAnswer | null; // 学生作答中不下发
-  rubric: RubricStep[]; analysisLatex: string | null;
+  rubric: RubricStep[];
+  analysisLatex: string | null;        // 正常解析
+  analysisBriefLatex: string | null;   // 简单解析
+  analysisDetailLatex: string | null;  // 详细解析
   difficulty: number; status: QuestionStatus;
   tags: { nodeId: number; graphType: GraphType; code: string; name: string }[];
   stats: { correctRate: number | null; usedInPapers: number };

@@ -156,7 +156,7 @@ components:
         studentIds: { type: array, items: { type: integer } }
     Lesson:
       type: object
-      required: [id, courseId, seq, title, scheduledStart, scheduledEnd, status, prepChecklist]
+      required: [id, courseId, seq, title, scheduledStart, scheduledEnd, status, prepChecklist, openingConfig]
       properties:
         id: { type: integer }
         courseId: { type: integer }
@@ -166,9 +166,10 @@ components:
         scheduledEnd: { oneOf: [{ type: 'null' }, { type: string, format: date-time }] }
         status: { $ref: '#/components/schemas/LessonStatus' }
         prepChecklist: { type: object, additionalProperties: { type: boolean } }
+        openingConfig: { oneOf: [{ type: 'null' }, { type: object, additionalProperties: true }], description: '开场白配置(可空,读写),如 resourceId/text' }
     Segment:
       type: object
-      required: [seq, type, durationMin, config, resourceId, paperId, kpNodeId]
+      required: [seq, type, durationMin, config, resourceId, paperId, kpNodeId, unitSeq]
       properties:
         id: { type: integer }
         seq: { type: integer }
@@ -179,6 +180,7 @@ components:
         paperId: { oneOf: [{ type: 'null' }, { type: integer }] }
         kpNodeId: { oneOf: [{ type: 'null' }, { type: integer }], description: 关联知识点节点(可空,写) }
         kpNodeName: { oneOf: [{ type: 'null' }, { type: string }], readOnly: true, description: 知识点名称(只读展示) }
+        unitSeq: { oneOf: [{ type: 'null' }, { type: integer }], description: 知识点单元序号(可空,读写);同 unitSeq 且 kpNodeId 相同的环节属同一单元,null=开场白等单元外环节 }
     Resource:
       type: object
       required: [id, type, name, ossKey, size, meta, usedByLessons, createdAt]
@@ -262,7 +264,7 @@ components:
         - { type: object, required: [referenceLatex], properties: { referenceLatex: { type: string } } }
     Question:
       type: object
-      required: [id, type, stage, subject, textbookVersion, chapter, stemLatex, figures, options, answer, rubric, analysisLatex, difficulty, status, tags, stats, ownerName, createdAt]
+      required: [id, type, stage, subject, textbookVersion, chapter, stemLatex, figures, options, answer, rubric, analysisLatex, analysisBriefLatex, analysisDetailLatex, difficulty, status, tags, stats, ownerName, createdAt]
       properties:
         id: { type: integer }
         type: { $ref: '#/components/schemas/QuestionType' }
@@ -277,7 +279,9 @@ components:
         options: { type: array, items: { $ref: '#/components/schemas/QuestionOption' } }
         answer: { oneOf: [{ type: 'null' }, { $ref: '#/components/schemas/QuestionAnswer' }] }
         rubric: { type: array, items: { $ref: '#/components/schemas/RubricStep' } }
-        analysisLatex: { oneOf: [{ type: 'null' }, { type: string }] }
+        analysisLatex: { oneOf: [{ type: 'null' }, { type: string }], description: 正常解析 }
+        analysisBriefLatex: { oneOf: [{ type: 'null' }, { type: string }], description: 简单解析 }
+        analysisDetailLatex: { oneOf: [{ type: 'null' }, { type: string }], description: 详细解析 }
         difficulty: { type: integer, minimum: 1, maximum: 3 }
         status: { $ref: '#/components/schemas/QuestionStatus' }
         tags: { type: array, items: { $ref: '#/components/schemas/QuestionTagRef' } }
@@ -303,7 +307,9 @@ components:
         options: { type: array, items: { $ref: '#/components/schemas/QuestionOption' }, description: 选择题必填且 isCorrect 必须恰有规定数量 }
         answer: { $ref: '#/components/schemas/QuestionAnswer' }
         rubric: { type: array, items: { $ref: '#/components/schemas/RubricStep' }, description: 解答题必填,AI 预批依据 }
-        analysisLatex: { type: string }
+        analysisLatex: { type: string, description: 正常解析 }
+        analysisBriefLatex: { type: string, description: 简单解析 }
+        analysisDetailLatex: { type: string, description: 详细解析 }
         difficulty: { type: integer, minimum: 1, maximum: 3 }
         tagNodeIds: { type: array, items: { type: integer }, description: 三维标注,至少 1 个教材知识点 }
     Paper:
@@ -569,7 +575,7 @@ paths:
         '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [items, total], properties: {items: {type: array, items: {$ref: '#/components/schemas/Teacher'}}, total: {type: integer}}}}}}}}
         default: {$ref: '#/components/responses/Err'}
     post:
-      summary: 创建教师(短信发初始密码) [admin]
+      summary: 创建教师 [admin]
       requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/TeacherInput'}}}}
       responses:
         '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/Teacher'}}}}}}
@@ -590,7 +596,14 @@ paths:
         default: {$ref: '#/components/responses/Err'}
   /admin/teachers/{id}/reset-password:
     post:
-      summary: 重置密码并短信通知 [admin]
+      summary: 重置教师密码 [admin]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [password], properties: {password: {type: string}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/teachers/{id}/enable:
+    post:
+      summary: 启用教师 [admin]
       parameters: [{$ref: '#/components/parameters/idPath'}]
       responses:
         '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
@@ -598,7 +611,7 @@ paths:
   /admin/students:
     get:
       summary: 学生列表 [admin]
-      parameters: [{$ref: '#/components/parameters/page'}, {$ref: '#/components/parameters/size'}, {$ref: '#/components/parameters/keyword'}, {name: courseId, in: query, schema: {type: integer}}, {name: deviceBound, in: query, schema: {type: boolean}}]
+      parameters: [{$ref: '#/components/parameters/page'}, {$ref: '#/components/parameters/size'}, {$ref: '#/components/parameters/keyword'}, {name: status, in: query, schema: {$ref: '#/components/schemas/UserStatus'}}, {name: courseId, in: query, schema: {type: integer}}, {name: deviceBound, in: query, schema: {type: boolean}}]
       responses:
         '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [items, total], properties: {items: {type: array, items: {$ref: '#/components/schemas/Student'}}, total: {type: integer}}}}}}}}
         default: {$ref: '#/components/responses/Err'}
@@ -629,6 +642,13 @@ paths:
       parameters: [{$ref: '#/components/parameters/idPath'}]
       responses:
         '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [password], properties: {password: {type: string}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/students/{id}/enable:
+    post:
+      summary: 启用学生 [admin]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
         default: {$ref: '#/components/responses/Err'}
   /admin/students/{id}/device:
     delete:
