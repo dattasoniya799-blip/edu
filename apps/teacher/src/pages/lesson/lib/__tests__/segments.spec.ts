@@ -6,7 +6,7 @@ import {
 } from '../segments';
 
 const seg = (type: LessonSegmentDto['type'], seq: number, paperId: number | null = null): LessonSegmentDto =>
-  ({ seq, type, durationMin: 10, config: {}, resourceId: null, paperId, kpNodeId: null, kpNodeName: null });
+  ({ seq, type, durationMin: 10, config: {}, resourceId: null, paperId, kpNodeId: null, kpNodeName: null, unitSeq: null });
 
 const FULL: LessonSegmentDto[] = [
   seg('warmup', 1), seg('lecture', 2), seg('practice', 3, 1), seg('summary', 4), seg('homework', 5, 2),

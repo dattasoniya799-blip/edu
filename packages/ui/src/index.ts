@@ -8,6 +8,7 @@ export { ProgressBar, type ProgressBarProps } from './ProgressBar';
 export { StatCard, type StatCardProps } from './StatCard';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export { TexText, renderMix, type TexTextProps } from './TexText';
+export { AnalysisView, type AnalysisViewProps } from './AnalysisView';
 export {
   FormulaKeypad,
   insertSnippet,

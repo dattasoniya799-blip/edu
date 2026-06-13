@@ -169,3 +169,27 @@ B4 期间「按作业列主观题答卷」缺端点,批改页学生切换条经 
 
 ### 与后端对接假设
 - 假设后端已实现新契约端点(`/auth/student/login`、`/admin/students/{id}/reset-password`、`/admin/courses/{id}/students` POST/DELETE),并按放宽口径计算 lesson 发布(4201 detail 仅含 practice/homework 键)。若 `apps/server` 仍停留在旧端点(qr-exchange / login-ticket / 强制四类),需后端同步;mock 模式不受影响。
+
+## C2-front-redesign · 编排重构 + 标准渲染器 + 三种解析 + 工作台按钮去重
+
+教师端涉及 #5 / #6 / #7 / #8 四项(#9 在学生端)。
+
+### #5 编排重构:知识点单元(讲解 · 随堂练 · 小结)
+- 编排页 `pages/lesson/LessonArrangePage.tsx` 从「扁平环节列表」改为**知识点单元卡片**:整页 = 开场白(可选,编辑 `lesson.openingConfig`,可挂课件/写文本)+ 多个知识点单元。
+- 每个单元 = 选一个知识点(kpNode)+ 三段固定槽:**讲解**(挂 resource)/ **随堂练**(挂 paper)/ **小结巩固**(config)。可增删单元、上下移排序。
+- 互转纯逻辑 `pages/lesson/lib/units.ts`:`unitsToSegments`(每单元产出 lecture/practice/summary 三段,带同一 `unitSeq`+`kpNodeId`,按 seq 顺序)/ `segmentsToUnits`(按 `unitSeq` 还原单元;旧无 unitSeq 段各自独立成单元,不丢数据);`openingFromLesson`/`openingToConfig` 处理开场白。
+- 保存:`PUT /lessons/{id}`(openingConfig)+ `PUT /lessons/{id}/segments`(单元展开的段)。软提示三段建议齐全(`unitWarnings`,缺则黄标提示不强制);发布仍走放宽门槛(仅 practice/homework 未挂已发布卷才 4201,弹缺失项)。
+- 单测:`lib/__tests__/units.spec.ts`(往返/分组/软提示/开场白)+ `mocks/__tests__/segments-kp.spec.ts` 新增「知识点单元往返 + openingConfig 读写」。
+
+### #6 录题渲染:标准 Markdown + LaTeX
+- `packages/ui` 的 `TexText` 升级为**标准 Markdown + 标准 LaTeX** 渲染:`**加粗**`/`*斜体*`(及 `__`/`_`)、`` `行内代码` ``、有序/无序列表、软换行;`$行内$`/`$$行间$$` 经 KaTeX(含 mhchem)。先把公式抽成占位符再跑 Markdown,公式内 `*`/`_`/`\\` 不被误解析;错误公式仍红色 mono 提示。对外 API(`TexText`/`renderMix`)保持兼容,**改 ui 即全端生效**。单测见 `packages/ui/src/__tests__/TexText.spec.tsx`(原 25 条 + 新增 Markdown 12 条)。
+
+### #7 三种解析录入
+- 录题编辑器 `pages/bank/EditorPage.tsx` 解析区改为**简单 / 正常 / 详细三分区**,分别写 `analysisBriefLatex` / `analysisLatex` / `analysisDetailLatex`(均可空,各自 TexText 预览,已填档绿点标记)。`lib/transform.ts` 与 mock handler 同步透传三字段。展示侧切换器见 `packages/ui` 的 `AnalysisView`(学生端使用)。
+
+### #8 工作台两按钮重复修正
+- `pages/Dashboard.tsx` 课程卡两入口原先都跳 `/courses?courseId=X`;现经 `pages/course/lib/nav.ts` 区分:**讲次列表** → `/courses?courseId=X`(看时间线);**编排课堂** → `/courses?courseId=X&go=arrange`,讲次页据 `go=arrange` 自动跳到「下一讲」编排页。单测 `pages/course/lib/__tests__/nav.spec.ts`。
+
+### 与后端对接假设(C2)
+- **openingConfig 写入**:契约 `Lesson.openingConfig` 标注「读写」,但 `PUT /lessons/{id}` 的 body schema 暂未含该字段(契约 gap)。前端按读写语义下发(代码处 `as unknown` 绕过类型,mock 已落库);后端需在 `PUT /lessons/{id}` 接受并持久化 `openingConfig`。
+- 编排发布沿用既有放宽门槛(4201 detail 仅 practice/homework 键);单元三段的 lecture/summary 缺失不拦截发布,仅前端软提示。

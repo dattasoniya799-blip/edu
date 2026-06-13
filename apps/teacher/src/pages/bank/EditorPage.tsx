@@ -33,6 +33,22 @@ const TAG_TONE_BY_GRAPH = {
   problem_solving_strategy: 'bg-orange-soft text-orange',
 } as const;
 
+// C2 #7:三种解析录入(写 analysisBriefLatex/analysisLatex/analysisDetailLatex)
+type AnalysisKey = 'analysisBriefLatex' | 'analysisLatex' | 'analysisDetailLatex';
+const ANALYSIS_TABS: { key: AnalysisKey; label: string }[] = [
+  { key: 'analysisBriefLatex', label: '简单解析' },
+  { key: 'analysisLatex', label: '正常解析' },
+  { key: 'analysisDetailLatex', label: '详细解析' },
+];
+const ANALYSIS_LABEL: Record<AnalysisKey, string> = {
+  analysisBriefLatex: '简单解析', analysisLatex: '正常解析', analysisDetailLatex: '详细解析',
+};
+const ANALYSIS_PLACEHOLDER: Record<AnalysisKey, string> = {
+  analysisBriefLatex: '一句话点出关键步骤,如:**上加下减**,改 $b$ 即可。',
+  analysisLatex: '常规解析,如:设 $y=kx+b$,把两点代入得 …',
+  analysisDetailLatex: '逐步详解,可用列表:\n1. 设 $y=kx+b$\n2. 代入两点求 $k,b$\n3. 还原平移方向',
+};
+
 // 方案 A(2026-06-13 批准):figures[] 带 anchor,选项/解析/参考答案/评分要点均可插图。
 // 录题时各位置走与题干同款两步直传(/uploads/sts → PUT),成功后写入 figures(带 anchor)。
 
@@ -127,6 +143,7 @@ export function EditorPage() {
   const [errors, setErrors] = useState<FieldError[]>([]);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [analysisTab, setAnalysisTab] = useState<AnalysisKey>('analysisLatex');
   const stemRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -547,19 +564,37 @@ export function EditorPage() {
               label="插图" target="analysis"
               figures={form.figures} uploading={uploading} onUpload={uploadToAnchor} onRemove={removeFigure}
             />
-          )}>解析(学生答错后可见,同样支持 LaTeX)</PaneHead>
+          )}>解析(学生答错后可见;简单 / 正常 / 详细 三档,均可空,标准 Markdown + LaTeX)</PaneHead>
+          {/* C2 #7:三种解析分区录入,各自实时预览 */}
+          <div className="flex gap-1.5 border-b border-line px-3 py-2">
+            {ANALYSIS_TABS.map((t) => {
+              const on = analysisTab === t.key;
+              const filled = form[t.key].trim() !== '';
+              return (
+                <button
+                  key={t.key} type="button" onClick={() => setAnalysisTab(t.key)}
+                  className={`rounded-[8px] border-[1.5px] px-3 py-1 text-[12.5px] font-semibold transition-colors ${
+                    on ? 'border-primary bg-primary-soft text-primary' : 'border-line text-ink-2 hover:border-ink-3'
+                  }`}
+                >
+                  {t.label}{filled && <span className="ml-1 text-green" aria-label="已填写">●</span>}
+                </button>
+              );
+            })}
+          </div>
           <textarea
-            value={form.analysisLatex}
-            onChange={(e) => patch({ analysisLatex: e.target.value })}
+            value={form[analysisTab]}
+            onChange={(e) => patch({ [analysisTab]: e.target.value } as Partial<QuestionForm>)}
             spellCheck={false}
-            aria-label="解析源码"
-            placeholder="如:设 $y=kx+b$,把两点代入得 …"
+            aria-label={`${ANALYSIS_LABEL[analysisTab]}源码`}
+            placeholder={ANALYSIS_PLACEHOLDER[analysisTab]}
             className="min-h-[110px] flex-1 resize-y bg-card p-4 font-mono text-[13px] leading-[1.8] focus:bg-bg/50 focus:outline-none"
           />
           <div className="min-h-[80px] border-t border-line px-4 py-3 text-sm leading-[1.9]">
-            {form.analysisLatex.trim() === ''
-              ? <span className="text-[13px] text-ink-3">解析预览…</span>
-              : <TexText src={form.analysisLatex} />}
+            <div className="mb-1 text-[11.5px] font-semibold text-ink-3">{ANALYSIS_LABEL[analysisTab]} · 预览</div>
+            {form[analysisTab].trim() === ''
+              ? <span className="text-[13px] text-ink-3">该档解析为空(可不填,展示侧会自动隐藏)</span>
+              : <TexText src={form[analysisTab]} />}
           </div>
         </div>
       </div>

@@ -83,7 +83,7 @@ describe('questionToForm ↔ formToInput 往返(编辑回填)', () => {
     options: [],
     answer: { referenceLatex: '设 $y=kx+b$,解得 $k=2$。' },
     rubric: [{ step: 1, desc: '设式并代入', score: 3 }, { step: 2, desc: '求解', score: 4 }],
-    analysisLatex: '解析…', difficulty: 3, status: 'published',
+    analysisBriefLatex: null, analysisLatex: '解析…', analysisDetailLatex: null, difficulty: 3, status: 'published',
     tags: [
       { nodeId: 103, graphType: 'curriculum_knowledge', code: 'PEP-19-3', name: '待定系数法' },
       { nodeId: 201, graphType: 'problem_solving_ability', code: 'ABL-1', name: '运算求解' },
@@ -152,7 +152,7 @@ describe('图片插图 anchor(方案 A)往返', () => {
         { ossKey: 'k/stem.png', position: 2 },
       ],
       options: [{ label: 'A', contentLatex: '$1$' }], answer: { choice: 'A' }, rubric: [],
-      analysisLatex: null, difficulty: 2, status: 'published', tags: [],
+      analysisBriefLatex: null, analysisLatex: null, analysisDetailLatex: null, difficulty: 2, status: 'published', tags: [],
       stats: { correctRate: null, usedInPapers: 0 }, ownerName: '张明', createdAt: '2026-06-02T03:00:00.000Z',
     };
     const form = questionToForm(q);

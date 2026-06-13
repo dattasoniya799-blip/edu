@@ -4,12 +4,16 @@
  */
 import { useState } from 'react';
 import type { WrongBookItemDto } from '@qiming/contracts';
-import { Button, Tag, TexText } from '@qiming/ui';
+import { AnalysisView, Button, Tag, TexText } from '@qiming/ui';
 
 const TYPE_LABEL: Record<string, string> = { single: '单选题', multi: '多选题', blank: '填空题', solution: '解答题' };
 
 export interface WrongItemCardProps {
-  item: WrongBookItemDto;
+  /**
+   * 契约 WrongBookItemDto 仅含 analysisLatex(正常解析);简单/详细为前瞻可选字段
+   * (mock 已下发,后端补齐后即自动出现切换 —— 见 README「与后端对接假设」)。
+   */
+  item: WrongBookItemDto & { analysisBriefLatex?: string | null; analysisDetailLatex?: string | null };
   onRedo: (id: number) => void;
   redoing?: boolean;
   /** FIX3 问题5:多学科时显示学科标(单科退化为不传 → 不显示) */
@@ -19,6 +23,7 @@ export interface WrongItemCardProps {
 export function WrongItemCard({ item, onRedo, redoing, subjectLabel }: WrongItemCardProps) {
   const [expanded, setExpanded] = useState(false);
   const cleared = item.status === 'cleared';
+  const hasAnalysis = !!(item.analysisLatex || item.analysisBriefLatex || item.analysisDetailLatex);
 
   return (
     <div className={`rounded-lg border border-line bg-card p-5 shadow-card ${cleared ? 'opacity-70' : ''}`}>
@@ -45,18 +50,20 @@ export function WrongItemCard({ item, onRedo, redoing, subjectLabel }: WrongItem
             重做本题
           </Button>
         )}
-        {item.analysisLatex && (
+        {hasAnalysis && (
           <Button className="min-h-touch" aria-expanded={expanded} onClick={() => setExpanded((v) => !v)}>
             {expanded ? '收起解析' : '看解析'}
           </Button>
         )}
       </div>
 
-      {expanded && item.analysisLatex && (
-        <div className="mt-3 rounded-md bg-bg/60 p-3.5 text-[13px] leading-7 text-ink-2">
-          <b className="mr-1 text-ink">解析</b>
-          <TexText src={item.analysisLatex} />
-        </div>
+      {expanded && hasAnalysis && (
+        <AnalysisView
+          className="mt-3"
+          brief={item.analysisBriefLatex}
+          normal={item.analysisLatex}
+          detail={item.analysisDetailLatex}
+        />
       )}
     </div>
   );

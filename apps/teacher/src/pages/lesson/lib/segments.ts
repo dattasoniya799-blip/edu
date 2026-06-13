@@ -105,5 +105,5 @@ export function newSegment(type: SegmentType, seq: number): LessonSegmentDto {
       : type === 'practice' ? { ai_guide: true, stuck_alert_min: 3 }
         : {};
   const durationMin = { warmup: 10, lecture: 30, practice: 30, summary: 20, homework: 0, break_time: 10 }[type];
-  return { seq, type, durationMin, config, resourceId: null, paperId: null, kpNodeId: null, kpNodeName: null };
+  return { seq, type, durationMin, config, resourceId: null, paperId: null, kpNodeId: null, kpNodeName: null, unitSeq: null };
 }

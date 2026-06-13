@@ -5,6 +5,7 @@ import { Button, Card, EmptyState, ProgressBar, StatCard, Tag } from '@qiming/ui
 import { api } from '../api';
 import { useAuth } from '../auth/AuthProvider';
 import { PageHead } from './Shell';
+import { courseArrangeTo, courseListTo } from './course/lib/nav';
 
 const CLASS_TYPE_LABEL = { group: '班课', one_on_one: '一对一', one_on_three: '一对三' } as const;
 
@@ -49,11 +50,11 @@ export function Dashboard() {
                   {c.nextLessonAt && ` · 下次 ${new Date(c.nextLessonAt).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`}
                 </div>
                 <ProgressBar className="mt-3" value={Math.round((c.currentLesson / c.totalLessons) * 100)} tone="primary" />
-                {/* B4:课程卡 → 讲次时间线 / 备课入口 */}
+                {/* C2 #8:两入口落点不同 —— 讲次列表=看时间线;编排课堂=进下一讲编排页 */}
                 <div className="mt-3.5 flex gap-2">
-                  <Button className="!px-3 !py-1.5 !text-xs" onClick={() => navigate(`/courses?courseId=${c.id}`)}>讲次列表</Button>
-                  <Button variant="primary" className="!px-3 !py-1.5 !text-xs" onClick={() => navigate(`/courses?courseId=${c.id}`)}>
-                    {c.nextLessonAt ? '编排课堂' : '查看编排'}
+                  <Button className="!px-3 !py-1.5 !text-xs" onClick={() => navigate(courseListTo(c.id))}>讲次列表</Button>
+                  <Button variant="primary" className="!px-3 !py-1.5 !text-xs" onClick={() => navigate(courseArrangeTo(c.id))}>
+                    编排课堂
                   </Button>
                 </div>
               </div>

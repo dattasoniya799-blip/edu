@@ -46,7 +46,7 @@ export function TodayPage() {
       <div className="mb-5">
         <h2 className="text-[21px] font-extrabold">{greet},{me?.name ?? ''} 👋</h2>
         <p className="mt-1 text-[13px] text-ink-2">
-          {data == null ? '正在加载今天的安排…' : data.todayLesson ? '今天有课,提前 10 分钟可进入课堂' : '今天没有排课,完成任务列表里的练习吧'}
+          {data == null ? '正在加载今天的安排…' : data.todayLesson ? '今天有课,课堂已发布即可进入' : '今天没有排课,完成任务列表里的练习吧'}
         </p>
       </div>
 
@@ -64,7 +64,7 @@ export function TodayPage() {
             onClick={() => {
               const sid = data.todayLesson?.sessionId;
               if (sid != null) navigate(`/classroom/${sid}`);
-              else toast('课堂还没开始,开课后再进入吧');
+              else toast('课堂尚未开放,请稍后再试');
             }}>
             进入课堂
           </Button>

@@ -3,6 +3,7 @@
  */
 import type { LessonDto } from '@qiming/contracts';
 import { Button, Tag } from '@qiming/ui';
+import { canEnterClassroom, enterClassLabel } from './lib/entry';
 
 export interface TimelineItem {
   lesson: LessonDto;
@@ -17,7 +18,7 @@ export interface LessonTimelineProps {
   correctionByLesson: Record<number, number>;
   onReplay: (resourceId: number, name: string) => void;
   onCorrect: (assignmentId: number) => void;
-  onEnterClass: () => void;
+  onEnterClass: (lesson: LessonDto) => void;
 }
 
 const fmtDate = (iso: string | null) =>
@@ -31,9 +32,11 @@ export function LessonTimeline({ items, correctionByLesson, onReplay, onCorrect,
       {items.map(({ lesson, myHomework, resources }, i) => {
         const today = isToday(lesson.scheduledStart);
         const finished = lesson.status === 'finished';
+        // C2 #9:进课堂以「已发布」为准(ready/in_progress),不再按上课时间拦截
+        const enterable = canEnterClassroom(lesson);
         const dot = finished
           ? 'bg-green-soft text-green'
-          : today || lesson.status === 'in_progress'
+          : enterable
             ? 'bg-primary text-card shadow-btn-sm'
             : 'bg-bg text-ink-3';
         const correctionId = correctionByLesson[lesson.id];
@@ -60,14 +63,14 @@ export function LessonTimeline({ items, correctionByLesson, onReplay, onCorrect,
                   ? <span>{myHomework.wrongCount > 0 ? `${myHomework.wrongCount} 道错题待订正` : '作业全对,无需订正'}</span>
                   : finished
                     ? <span>本讲无作业</span>
-                    : today
-                      ? <span>AI 伴学课堂 · 约 100 分钟</span>
-                      : <span>预习内容待老师发布</span>}
+                    : enterable
+                      ? <span>AI 伴学课堂已开放 · 约 100 分钟</span>
+                      : <span>老师发布后即可进入课堂</span>}
               </div>
-              {(today || (finished && ((resources?.length ?? 0) > 0 || correctionId != null))) && (
+              {(enterable || (finished && ((resources?.length ?? 0) > 0 || correctionId != null))) && (
                 <div className="mt-2.5 flex flex-wrap gap-2">
-                  {today && (
-                    <Button variant="primary" className="min-h-touch" onClick={onEnterClass}>进入课堂</Button>
+                  {enterable && (
+                    <Button variant="primary" className="min-h-touch" onClick={() => onEnterClass(lesson)}>{enterClassLabel(lesson)}</Button>
                   )}
                   {finished && resources?.map((r) => (
                     <Button key={r.id} className="min-h-touch" onClick={() => onReplay(r.id, r.name)}>▶ 回看课件</Button>

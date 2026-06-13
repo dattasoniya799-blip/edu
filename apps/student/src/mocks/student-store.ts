@@ -165,7 +165,12 @@ function shapeOk(q: QuestionDto, r: AnswerResponse): boolean {
 }
 
 // ---------- attempt 视图 ----------
-function toQuestionViews(at: StoredAttempt): AttemptQuestionView[] {
+// C2 #7:契约 AttemptQuestionView 仅 analysisLatex;mock 前瞻下发简单/详细两档(交卷/已判后)
+type AttemptQuestionViewExt = AttemptQuestionView & {
+  analysisBriefLatex?: string | null;
+  analysisDetailLatex?: string | null;
+};
+function toQuestionViews(at: StoredAttempt): AttemptQuestionViewExt[] {
   const paper = paperOf(at.assignmentId);
   const revealed = at.status !== 'in_progress';
   return paper.questions.map((pq, i) => {
@@ -181,6 +186,8 @@ function toQuestionViews(at: StoredAttempt): AttemptQuestionView[] {
       // 契约口径:correctAnswer 为 QuestionAnswer 对象;in_progress 不下发(防作弊)
       correctAnswer: revealed ? (q.answer ?? null) : null,
       analysisLatex: revealed ? q.analysisLatex : null,
+      analysisBriefLatex: revealed ? q.analysisBriefLatex : null,
+      analysisDetailLatex: revealed ? q.analysisDetailLatex : null,
     };
   });
 }
