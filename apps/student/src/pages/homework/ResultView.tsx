@@ -1,7 +1,7 @@
 /**
  * 交卷结果 / 看解析(展示组件):得分汇总 + 逐题判定 + 正确答案与解析(TexText)
  */
-import { AnalysisView, QuestionFigures, Tag, TexText } from '@qiming/ui';
+import { AnalysisView, QuestionFigures, resolveOssUrl, Tag, TexText } from '@qiming/ui';
 import type { AnswerResponse, AssignmentDto, QuestionAnswer } from '@qiming/contracts';
 import { TYPE_LABEL } from './QuestionPanel';
 import type { AttemptWithQuestions } from './types';
@@ -69,7 +69,7 @@ export function ResultView({ attempt, assignment }: { attempt: AttemptWithQuesti
               </span>
             </div>
             <div className="text-sm leading-7 text-ink"><TexText src={q.stemLatex} /></div>
-            <QuestionFigures figures={q.figures} target="stem" />
+            <QuestionFigures figures={q.figures} target="stem" resolveSrc={resolveOssUrl} />
             <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[13px]">
               <span className={a?.isCorrect === false ? 'text-red' : 'text-ink-2'}>
                 我的答案:{my.isPhoto ? my.text : <TexText src={my.text} />}
@@ -77,7 +77,7 @@ export function ResultView({ attempt, assignment }: { attempt: AttemptWithQuesti
               {q.correctAnswer != null && q.type !== 'solution' && (
                 <span className="text-green">
                   正确答案:<TexText src={formatCorrectAnswer(q.correctAnswer)} />
-                  <QuestionFigures figures={q.figures} target="reference" compact />
+                  <QuestionFigures figures={q.figures} target="reference" compact resolveSrc={resolveOssUrl} />
                 </span>
               )}
             </div>
@@ -86,7 +86,7 @@ export function ResultView({ attempt, assignment }: { attempt: AttemptWithQuesti
               brief={(q as typeof q & { analysisBriefLatex?: string | null }).analysisBriefLatex}
               normal={q.analysisLatex}
               detail={(q as typeof q & { analysisDetailLatex?: string | null }).analysisDetailLatex}
-              extra={<QuestionFigures figures={q.figures} target="analysis" />}
+              extra={<QuestionFigures figures={q.figures} target="analysis" resolveSrc={resolveOssUrl} />}
             />
           </div>
         );

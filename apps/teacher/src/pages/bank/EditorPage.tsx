@@ -8,7 +8,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { KpGraphDto, QuestionDto, QuestionType } from '@qiming/contracts';
-import { Button, EmptyState, Skeleton, TexText, useToast } from '@qiming/ui';
+import { Button, EmptyState, resolveOssUrl, Skeleton, TexText, useToast } from '@qiming/ui';
 import { api } from '../../api';
 import { TagPickerModal } from './components/TagPickerModal';
 import { TEX_SNIPPETS, insertSnippet } from './lib/snippets';
@@ -97,8 +97,8 @@ function FigureAnchorControl({
       </button>
       {mine.map((fig, i) => (
         <span key={fig.ossKey + i} className="inline-flex items-center gap-1 rounded-[7px] border border-line bg-card px-1.5 py-0.5 text-[11px] text-ink-2">
-          {fig.previewUrl
-            ? <img src={fig.previewUrl} alt={`${label}缩略图`} className="h-6 w-9 rounded object-contain" />
+          {(fig.previewUrl ?? resolveOssUrl(fig.ossKey))
+            ? <img src={fig.previewUrl ?? resolveOssUrl(fig.ossKey)!} alt={`${label}缩略图`} className="h-6 w-9 rounded object-contain" />
             : <span className="text-ink-3" aria-hidden>⛶</span>}
           <button type="button" aria-label={`删除${label}`} className="font-semibold text-red" onClick={() => onRemove(fig)}>✕</button>
         </span>
@@ -147,6 +147,14 @@ export function EditorPage() {
   const [analysisTab, setAnalysisTab] = useState<AnalysisKey>('analysisLatex');
   const stemRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  // P2-11:跟踪本组件创建的预览 objectURL,换图/删除及卸载时释放,防内存泄漏
+  const previewUrls = useRef<Set<string>>(new Set());
+
+  // 卸载时释放所有未回收的预览 objectURL
+  useEffect(() => () => {
+    previewUrls.current.forEach((u) => URL.revokeObjectURL(u));
+    previewUrls.current.clear();
+  }, []);
 
   const patch = (p: Partial<QuestionForm>) => setForm((f) => ({ ...f, ...p }));
   // 已入库题不可再 publish(后端 400):只显示"保存修改";新题/草稿 → 可入库
@@ -191,11 +199,13 @@ export function EditorPage() {
     setUploading(true);
     try {
       const ossKey = await uploadFigure(file);
+      const previewUrl = URL.createObjectURL(file);
+      previewUrls.current.add(previewUrl);
       setForm((f) => ({
         ...f,
         figures: [...f.figures, {
           ossKey, position: f.figures.length + 1, anchor,
-          previewUrl: URL.createObjectURL(file), fileName: file.name,
+          previewUrl, fileName: file.name,
         }],
       }));
       toast(`插图已上传 · ${ANCHOR_LABEL[anchor.target]}${anchor.ref ? ` ${anchor.ref}` : ''}`);
@@ -205,8 +215,14 @@ export function EditorPage() {
       setUploading(false);
     }
   };
-  const removeFigure = (fig: FigureItem) =>
+  const removeFigure = (fig: FigureItem) => {
+    // 释放该图的预览 objectURL(若由本组件创建)
+    if (fig.previewUrl && previewUrls.current.has(fig.previewUrl)) {
+      URL.revokeObjectURL(fig.previewUrl);
+      previewUrls.current.delete(fig.previewUrl);
+    }
     setForm((f) => ({ ...f, figures: f.figures.filter((x) => x !== fig).map((x, j) => ({ ...x, position: j + 1 })) }));
+  };
 
   const toggleCorrect = (label: string) => {
     setForm((f) => ({
@@ -403,8 +419,8 @@ export function EditorPage() {
             <div className="mx-4 mb-4 flex flex-wrap gap-2.5">
               {stemFigures.map((fig, i) => (
                 <div key={fig.ossKey + i} className="flex flex-col items-center gap-1.5 rounded-[10px] border border-line bg-card p-2 text-[11px] text-ink-2">
-                  {fig.previewUrl
-                    ? <img src={fig.previewUrl} alt={fig.fileName ?? fig.ossKey} className="h-[84px] w-[120px] rounded-md object-contain" />
+                  {(fig.previewUrl ?? resolveOssUrl(fig.ossKey))
+                    ? <img src={fig.previewUrl ?? resolveOssUrl(fig.ossKey)!} alt={fig.fileName ?? fig.ossKey} className="h-[84px] w-[120px] rounded-md object-contain" />
                     : <span className="flex h-[84px] w-[120px] items-center justify-center rounded-md bg-bg text-[20px] text-ink-3">⛶</span>}
                   <span className="max-w-[120px] truncate">{fig.fileName ?? fig.ossKey.split('/').pop()} · 已插入题干</span>
                   <button type="button" className="text-[12px] font-semibold text-red" onClick={() => removeFigure(fig)}>
@@ -425,8 +441,8 @@ export function EditorPage() {
                   <TexText src={form.stemLatex} />
                   {stemFigures.map((fig, i) => (
                     <div key={fig.ossKey + i} className="mt-3">
-                      {fig.previewUrl
-                        ? <img src={fig.previewUrl} alt={`图 ${i + 1}`} className="max-h-[180px] rounded-md border border-line" />
+                      {(fig.previewUrl ?? resolveOssUrl(fig.ossKey))
+                        ? <img src={fig.previewUrl ?? resolveOssUrl(fig.ossKey)!} alt={`图 ${i + 1}`} className="max-h-[180px] rounded-md border border-line" />
                         : <span className="inline-flex items-center gap-1.5 rounded-[7px] bg-primary-soft px-2 py-1 text-xs text-primary">⛶ 图 {i + 1} · {fig.ossKey}</span>}
                     </div>
                   ))}

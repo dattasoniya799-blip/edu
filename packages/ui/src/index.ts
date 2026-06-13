@@ -30,3 +30,5 @@ export {
   type QuestionFiguresProps,
   type FigureTarget,
 } from './QuestionFigure';
+export { resolveOssUrl } from './oss';
+export { MockBadge, type MockBadgeProps } from './MockBadge';
