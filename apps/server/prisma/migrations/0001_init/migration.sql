@@ -160,6 +160,7 @@ CREATE TABLE lesson_segments (
   type "SegmentType" NOT NULL, duration_min INT NOT NULL,
   config JSONB NOT NULL DEFAULT '{}',
   resource_id BIGINT REFERENCES resources(id), paper_id BIGINT REFERENCES papers(id),
+  kp_node_id BIGINT REFERENCES kp_nodes(id),
   UNIQUE (lesson_id, seq));
 CREATE INDEX idx_segments_org ON lesson_segments(org_id);
 

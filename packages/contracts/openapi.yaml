@@ -168,7 +168,7 @@ components:
         prepChecklist: { type: object, additionalProperties: { type: boolean } }
     Segment:
       type: object
-      required: [seq, type, durationMin, config, resourceId, paperId]
+      required: [seq, type, durationMin, config, resourceId, paperId, kpNodeId]
       properties:
         id: { type: integer }
         seq: { type: integer }
@@ -177,6 +177,8 @@ components:
         config: { type: object, additionalProperties: true }
         resourceId: { oneOf: [{ type: 'null' }, { type: integer }] }
         paperId: { oneOf: [{ type: 'null' }, { type: integer }] }
+        kpNodeId: { oneOf: [{ type: 'null' }, { type: integer }], description: 关联知识点节点(可空,写) }
+        kpNodeName: { oneOf: [{ type: 'null' }, { type: string }], readOnly: true, description: 知识点名称(只读展示) }
     Resource:
       type: object
       required: [id, type, name, ossKey, size, meta, usedByLessons, createdAt]
@@ -493,13 +495,13 @@ paths:
       responses:
         '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [accessToken, refreshToken, me], properties: {accessToken: {type: string}, refreshToken: {type: string}, me: {$ref: '#/components/schemas/Me'}}}}}}}}
         default: {$ref: '#/components/responses/Err'}
-  /auth/student/qr-exchange:
+  /auth/student/login:
     post:
-      summary: 平板扫码:一次性 ticket 换 JWT 并绑定设备 [公开]
+      summary: 学生账号密码登录 [公开]
       security: []
       requestBody:
         required: true
-        content: {application/json: {schema: {type: object, required: [token, deviceFingerprint, deviceName], properties: {token: {type: string}, deviceFingerprint: {type: string}, deviceName: {type: string}}}}}
+        content: {application/json: {schema: {type: object, required: [studentNo, password], properties: {studentNo: {type: string}, password: {type: string}}}}}
       responses:
         '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [accessToken, refreshToken, me], properties: {accessToken: {type: string}, refreshToken: {type: string}, me: {$ref: '#/components/schemas/Me'}}}}}}}}
         default: {$ref: '#/components/responses/Err'}
@@ -594,12 +596,12 @@ paths:
       responses:
         '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [student, mastery, wrongOpenCount], properties: {student: {$ref: '#/components/schemas/Student'}, mastery: {type: array, items: {$ref: '#/components/schemas/MasteryItem'}}, wrongOpenCount: {type: integer}}}}}}}}
         default: {$ref: '#/components/responses/Err'}
-  /admin/students/{id}/login-ticket:
+  /admin/students/{id}/reset-password:
     post:
-      summary: 生成/重发平板登录码 [admin]
+      summary: 重置学生密码 [admin]
       parameters: [{$ref: '#/components/parameters/idPath'}]
       responses:
-        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [token, expiresAt], properties: {token: {type: string}, expiresAt: {type: string, format: date-time}}}}}}}}
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [password], properties: {password: {type: string}}}}}}}}
         default: {$ref: '#/components/responses/Err'}
   /admin/students/{id}/device:
     delete:
@@ -635,6 +637,21 @@ paths:
       parameters: [{$ref: '#/components/parameters/idPath'}]
       responses:
         '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {type: object, required: [studentId, name, attendance, homeworkAvg, status], properties: {studentId: {type: integer}, name: {type: string}, attendance: {type: string}, homeworkAvg: {oneOf: [{type: 'null'}, {type: number}]}, status: {type: string}}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/courses/{id}/students:
+    post:
+      summary: 课程添加学生 [admin]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [studentIds], properties: {studentIds: {type: array, items: {type: integer}}}}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/courses/{id}/students/{studentId}:
+    delete:
+      summary: 课程移除学生 [admin]
+      parameters: [{$ref: '#/components/parameters/idPath'}, {name: studentId, in: path, required: true, schema: {type: integer}}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
         default: {$ref: '#/components/responses/Err'}
   /admin/dashboard:
     get:

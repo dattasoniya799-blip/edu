@@ -56,7 +56,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/student/qr-exchange": {
+    "/auth/student/login": {
         parameters: {
             query?: never;
             header?: never;
@@ -65,7 +65,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 平板扫码:一次性 ticket 换 JWT 并绑定设备 [公开] */
+        /** 学生账号密码登录 [公开] */
         post: {
             parameters: {
                 query?: never;
@@ -76,9 +76,8 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        token: string;
-                        deviceFingerprint: string;
-                        deviceName: string;
+                        studentNo: string;
+                        password: string;
                     };
                 };
             };
@@ -633,7 +632,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/students/{id}/login-ticket": {
+    "/admin/students/{id}/reset-password": {
         parameters: {
             query?: never;
             header?: never;
@@ -642,7 +641,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 生成/重发平板登录码 [admin] */
+        /** 重置学生密码 [admin] */
         post: {
             parameters: {
                 query?: never;
@@ -664,9 +663,7 @@ export interface paths {
                             code: number;
                             message: string;
                             data: {
-                                token: string;
-                                /** Format: date-time */
-                                expiresAt: string;
+                                password: string;
                             };
                         };
                     };
@@ -884,6 +881,91 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/courses/{id}/students": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 课程添加学生 [admin] */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["idPath"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        studentIds: number[];
+                    };
+                };
+            };
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OkVoid"];
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/courses/{id}/students/{studentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 课程移除学生 [admin] */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["idPath"];
+                    studentId: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OkVoid"];
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -3498,6 +3580,10 @@ export interface components {
             };
             resourceId: null | number;
             paperId: null | number;
+            /** @description 关联知识点节点(可空 */
+            kpNodeId: null | number;
+            /** @description 知识点名称(只读展示) */
+            readonly kpNodeName?: null | string;
         };
         Resource: {
             id: number;
