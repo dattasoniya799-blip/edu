@@ -401,6 +401,23 @@ export const handlers = [
       aiAvgScore: aiScores.length ? Math.round((aiScores.reduce((a, b) => a + b, 0) / aiScores.length) * 10) / 10 : null,
     }]);
   })),
+  // [C1] 某作业逐题作答名单(待复核/已复核;status 过滤)→ 驱动复核页学生切换条
+  http.get(`${BASE}/grading/assignments/:id/answers`, authed(({ params, request }) => {
+    const assignmentId = Number(params.id);
+    const assignment = D.assignments.find((a) => a.id === assignmentId);
+    if (!assignment) return ok([]); // 仅 seed 的第 3 讲作业有主观题待复核
+    const paper = D.papers.find((p) => p.id === assignment.paperId);
+    const status = new URL(request.url).searchParams.get('status');
+    const briefs = D.gradingAnswers.map((g, i) => ({
+      answerId: g.answerId, studentId: g.studentId, studentName: g.studentName,
+      questionId: g.questionId,
+      seq: paper?.questions.find((pq) => pq.questionId === g.questionId)?.seq ?? i + 1,
+      status: (g.finalScore == null ? 'pending' : 'graded') as 'pending' | 'graded',
+      aiScore: g.aiScore, finalScore: g.finalScore,
+    }));
+    const filtered = status === 'pending' || status === 'graded' ? briefs.filter((b) => b.status === status) : briefs;
+    return ok(filtered);
+  })),
   http.get(`${BASE}/grading/answers/:id`, authed(({ params }) => {
     const g = D.gradingAnswers.find((x) => x.answerId === Number(params.id));
     return g ? ok(g) : err(404, 4040, '答卷不存在');

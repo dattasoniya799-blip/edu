@@ -35,11 +35,12 @@ describe('作业全流程(断点续答有状态)', () => {
     const task0 = today0.data.tasks.find((t) => t.assignmentId === 2)!;
     expect(task0.progress).toMatchObject({ answered: 0, total: 3, status: 'not_started' });
 
-    // 开始作答:题面随 attempt 下发(契约变更申请 B5-1 形状)
+    // 开始作答:题面随 attempt 下发(契约 AttemptDto.questions)
     const started = (await api.post('/student/attempts', { body: { assignmentId: 2 } })).data as AttemptWithQuestions;
     expect(started.status).toBe('in_progress');
     expect(started.questions.map((q) => q.type)).toEqual(['single', 'blank', 'solution']);
     expect(started.questions[0].correctAnswer).toBeNull(); // 作答中不泄漏答案
+    expect(started.questions.every((q) => q.correctAnswer == null && q.analysisLatex == null)).toBe(true);
 
     // 答第 1 题(单选,故意答错 → 即时判分 + 解析)
     const r1 = await api.put('/student/attempts/{id}/answers/{qid}', {
@@ -76,9 +77,9 @@ describe('作业全流程(断点续答有状态)', () => {
     expect(submitted.status).toBe('submitted'); // 含解答题 → 待老师复核出分
     expect(submitted.objectiveScore).toBe(5);   // 填空 5 分
 
-    // 看解析:交卷后快照下发 correctAnswer/analysisLatex
+    // 看解析:交卷后快照下发 correctAnswer(契约 QuestionAnswer 对象)/analysisLatex
     const review = (await api.get('/student/attempts/{id}', { params: { id: started.id } })).data as AttemptWithQuestions;
-    expect(review.questions[0].correctAnswer).toBe('B');
+    expect(review.questions[0].correctAnswer).toEqual({ choice: 'B' });
     expect(review.questions[0].analysisLatex).toBeTruthy();
 
     // 今日进度联动 + 错题本:q13 订正答错 → wrongCount 1→2 且重置订正计数

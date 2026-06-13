@@ -121,7 +121,7 @@ describe('交卷与出分', () => {
     }
     submitAttempt(a.id);
     const snap = getAttempt(a.id);
-    expect(snap.questions[0].correctAnswer).toBe('B');
+    expect(snap.questions[0].correctAnswer).toEqual({ choice: 'B' }); // 契约 QuestionAnswer 对象
     expect(snap.questions[0].analysisLatex).toBeTruthy();
   });
 

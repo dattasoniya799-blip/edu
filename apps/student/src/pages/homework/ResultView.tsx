@@ -2,7 +2,7 @@
  * 交卷结果 / 看解析(展示组件):得分汇总 + 逐题判定 + 正确答案与解析(TexText)
  */
 import { QuestionFigures, Tag, TexText } from '@qiming/ui';
-import type { AnswerResponse, AssignmentDto } from '@qiming/contracts';
+import type { AnswerResponse, AssignmentDto, QuestionAnswer } from '@qiming/contracts';
 import { TYPE_LABEL } from './QuestionPanel';
 import type { AttemptWithQuestions } from './types';
 
@@ -13,6 +13,14 @@ function renderMyAnswer(r: AnswerResponse | null): { text: string; isPhoto?: boo
   if ('texts' in r) return { text: r.texts.join('; ') };
   if ('photoOssKey' in r) return { text: `照片作答:${r.photoOssKey.split('/').pop() ?? ''}`, isPhoto: true };
   return { text: r.text };
+}
+
+/** 契约 QuestionAnswer(对象)→ 可混排展示串(交卷/已判后下发) */
+function formatCorrectAnswer(a: QuestionAnswer): string {
+  if ('choice' in a) return a.choice;
+  if ('choices' in a) return [...a.choices].sort().join(',');
+  if ('texts' in a) return a.texts.join('; ');
+  return a.referenceLatex;
 }
 
 export function ResultView({ attempt, assignment }: { attempt: AttemptWithQuestions; assignment: AssignmentDto | null }) {
@@ -68,7 +76,7 @@ export function ResultView({ attempt, assignment }: { attempt: AttemptWithQuesti
               </span>
               {q.correctAnswer != null && q.type !== 'solution' && (
                 <span className="text-green">
-                  正确答案:<TexText src={q.correctAnswer} />
+                  正确答案:<TexText src={formatCorrectAnswer(q.correctAnswer)} />
                   <QuestionFigures figures={q.figures} target="reference" compact />
                 </span>
               )}

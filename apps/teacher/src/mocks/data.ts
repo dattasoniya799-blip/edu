@@ -212,6 +212,16 @@ export const attempt: AttemptDto = {
     score: j === 4 ? 10 : j !== 2 ? 5 : 0,
     flagged: false,
   })),
+  // 题面随 attempt 下发(契约 AttemptDto.questions);graded → 下发 correctAnswer/analysisLatex
+  questions: [9, 10, 11, 13, 4].map((qid, j) => {
+    const q = questions[qid - 1];
+    return {
+      seq: j + 1, questionId: q.id, score: j === 4 ? 10 : 5, type: q.type,
+      stemLatex: q.stemLatex, figures: q.figures,
+      options: q.options.map((o) => ({ label: o.label, contentLatex: o.contentLatex })),
+      correctAnswer: q.answer, analysisLatex: q.analysisLatex,
+    };
+  }),
 };
 
 // ================= B4 · 批改复核链(seed 口径:第 3 讲作业,4 份解答题待复核) =================

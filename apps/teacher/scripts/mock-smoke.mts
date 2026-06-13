@@ -156,6 +156,12 @@ try {
   // ===== B4 批改复核链路(第 3 讲作业,4 份解答题) =====
   const pending0 = await api.get('/grading/pending');
   assert(pending0.data[0]?.pendingCount === 4, '/grading/pending:4 份待复核(seed 口径)');
+  // [C1] 名单端点驱动复核页切换条
+  const briefs0 = await api.get('/grading/assignments/{id}/answers', { params: { id: 1 } });
+  assert(briefs0.data.length === 4 && briefs0.data.every((b) => b.status === 'pending'),
+    '/grading/assignments/1/answers:4 份逐题名单,全 pending(驱动切换条)');
+  const briefsPending = await api.get('/grading/assignments/{id}/answers', { params: { id: 1 }, query: { status: 'pending' } });
+  assert(briefsPending.data.length === 4, '名单 status=pending 过滤(只看待复核)');
   const fin0 = await api.post('/grading/assignments/{id}/finalize', { params: { id: 1 } }).catch((e) => e);
   assert(fin0 instanceof Error && (fin0 as { code?: number }).code === 4501
     && Array.isArray((fin0 as { detail?: unknown }).detail) && ((fin0 as { detail: number[] }).detail).length === 4,
