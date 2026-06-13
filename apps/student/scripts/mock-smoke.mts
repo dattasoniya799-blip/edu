@@ -50,12 +50,12 @@ try {
   const courses = await api.get('/teacher/courses');
   assert(courses.data.length === 2, '教师课程 2 门');
 
-  // 学生登录码兑换
-  const sLogin = await api.post('/auth/student/qr-exchange', {
-    body: { token: 'QM-DEMO', deviceFingerprint: 'fp-smoke', deviceName: 'smoke-tablet' },
+  // 学生学号 + 密码登录
+  const sLogin = await api.post('/auth/student/login', {
+    body: { studentNo: 'S-0001', password: 'Student@123' },
   });
   token = sLogin.data.accessToken;
-  assert(sLogin.data.me.name === '林小满', '学生登录码 QM-DEMO 兑换为 林小满');
+  assert(sLogin.data.me.name === '林小满', '学生 S-0001 密码登录为 林小满');
   const today = await api.get('/student/today');
   assert(!!today.data.todayLesson, '/student/today 返回今日课程');
   const wrong = await api.get('/student/wrong-book', { query: { page: 1, size: 20 } });

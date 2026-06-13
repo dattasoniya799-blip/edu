@@ -24,9 +24,9 @@ beforeEach(() => resetStore());
 
 describe('作业全流程(断点续答有状态)', () => {
   it('开始→答 2 题→刷新恢复→续答→交卷→看解析;错题本/今日进度联动', async () => {
-    // 学生登录码兑换
-    const login = await api.post('/auth/student/qr-exchange', {
-      body: { token: 'QM-DEMO', deviceFingerprint: 'fp-test', deviceName: 'vitest' },
+    // 学生学号密码登录
+    const login = await api.post('/auth/student/login', {
+      body: { studentNo: 'S-0001', password: 'Student@123' },
     });
     token = login.data.accessToken;
 
@@ -91,8 +91,8 @@ describe('作业全流程(断点续答有状态)', () => {
   });
 
   it('错题重做闭环:redo → 全对 graded → 对 2 次 cleared;redo-all 生成重练卷', async () => {
-    const login = await api.post('/auth/student/qr-exchange', {
-      body: { token: 'QM-DEMO', deviceFingerprint: 'fp-test', deviceName: 'vitest' },
+    const login = await api.post('/auth/student/login', {
+      body: { studentNo: 'S-0001', password: 'Student@123' },
     });
     token = login.data.accessToken;
 

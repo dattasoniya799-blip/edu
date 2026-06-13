@@ -9,22 +9,11 @@ import { getToken, setToken } from './token';
 export const APP_ROLE: Role = 'student';
 export const ROLE_LABEL: Record<Role, string> = { admin: '管理员', teacher: '教师', student: '学生' };
 
-/** 设备指纹:首次生成后持久化(扫码兑换 = 绑定设备) */
-function deviceFingerprint(): string {
-  const KEY = 'qiming.student.device-fp';
-  let fp = localStorage.getItem(KEY);
-  if (!fp) {
-    fp = `fp-${Math.random().toString(36).slice(2)}-${Date.now().toString(36)}`;
-    localStorage.setItem(KEY, fp);
-  }
-  return fp;
-}
-
 interface AuthCtx {
   me: MeDto | null;
   ready: boolean;
-  /** 学生登录:扫码/输入登录码,兑换 JWT 并绑定设备(B1 先做输入登录码的形式) */
-  loginWithTicket: (ticket: string) => Promise<MeDto>;
+  /** 学生登录:学号 + 密码,换取 JWT(密码登录,取代旧扫码/登录码) */
+  loginWithPassword: (studentNo: string, password: string) => Promise<MeDto>;
   logout: () => void;
 }
 
@@ -51,9 +40,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setReady(true));
   }, []);
 
-  const loginWithTicket = useCallback(async (ticket: string) => {
-    const r = await api.post('/auth/student/qr-exchange', {
-      body: { token: ticket.trim(), deviceFingerprint: deviceFingerprint(), deviceName: '学生平板(Web)' },
+  const loginWithPassword = useCallback(async (studentNo: string, password: string) => {
+    const r = await api.post('/auth/student/login', {
+      body: { studentNo: studentNo.trim(), password },
     });
     const { accessToken, me: who } = r.data;
     if (who.role !== APP_ROLE) {
@@ -71,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     navigate('/login', { replace: true });
   }, [navigate]);
 
-  const value = useMemo(() => ({ me, ready, loginWithTicket, logout }), [me, ready, loginWithTicket, logout]);
+  const value = useMemo(() => ({ me, ready, loginWithPassword, logout }), [me, ready, loginWithPassword, logout]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

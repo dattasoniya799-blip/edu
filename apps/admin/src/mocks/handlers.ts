@@ -39,6 +39,15 @@ function paginate<T>(items: T[], url: URL) {
   return { items: items.slice((page - 1) * size, page * size), total: items.length };
 }
 
+/** 课程名单行(从有状态 courseMembers 派生,入班/移出即时反映) */
+function rosterRows(courseId: number) {
+  const ids = D.courseMembers[courseId] ?? [];
+  return ids
+    .map((sid) => D.students.find((s) => s.id === sid))
+    .filter((s): s is NonNullable<typeof s> => !!s)
+    .map((s) => ({ studentId: s.id, name: s.name, attendance: '3/3', homeworkAvg: 70 + (s.id % 25), status: s.status }));
+}
+
 const tokenFor = (me: MeDto) => `mock-token-${me.role}${me.role === 'student' && me.id !== D.ME_STUDENT.id ? `-${me.id}` : ''}`;
 
 export const handlers = [
@@ -51,10 +60,10 @@ export const handlers = [
     sessions.set(accessToken, acc.me);
     return ok({ accessToken, refreshToken: `mock-refresh-${acc.me.role}`, me: acc.me });
   }),
-  http.post(`${BASE}/auth/student/qr-exchange`, async ({ request }) => {
-    const body = (await request.json()) as { token: string; deviceFingerprint: string; deviceName: string };
-    const me = D.LOGIN_TICKETS[body.token?.trim()];
-    if (!me) return err(401, 4012, '登录码无效或已过期(mock 演示码:QM-DEMO)');
+  http.post(`${BASE}/auth/student/login`, async ({ request }) => {
+    const body = (await request.json()) as { studentNo: string; password: string };
+    const me = D.STUDENT_LOGINS[body.studentNo?.trim()];
+    if (!me || body.password !== D.STUDENT_PASSWORD) return err(401, 4010, '学号或密码不正确');
     const accessToken = tokenFor(me);
     sessions.set(accessToken, me);
     return ok({ accessToken, refreshToken: 'mock-refresh-student', me });
@@ -138,14 +147,12 @@ export const handlers = [
     if (!s) return err(404, 4040, '学生不存在');
     return ok({ student: s, mastery: D.mastery, wrongOpenCount: D.wrongBook.length });
   })),
-  http.post(`${BASE}/admin/students/:id/login-ticket`, authed(({ params }) => {
-    // ticket 序号与 LOGIN_TICKETS 口径一致(QM-DEMO-{序号} = 学生列表第 N 位),学生端可直接兑换
-    const idx = D.students.findIndex((s) => s.id === Number(params.id));
-    if (idx < 0) return err(404, 4040, '学生不存在');
-    const s = D.students[idx];
-    const token = `QM-DEMO-${idx + 1}`;
-    D.LOGIN_TICKETS[token] = { id: s.id, orgId: 1, role: 'student', name: s.name, orgName: D.ME_ADMIN.orgName, orgSettings: D.orgSettings };
-    return ok({ token, expiresAt: '2026-06-18T00:00:00.000Z' });
+  http.post(`${BASE}/admin/students/:id/reset-password`, authed(({ params }) => {
+    // 重置 → 返回明文临时密码(管理员当面告知学生);mock 随机生成,满足复杂度
+    const s = D.students.find((x) => x.id === Number(params.id));
+    if (!s) return err(404, 4040, '学生不存在');
+    const password = `Qm${Math.random().toString(36).slice(2, 6)}@${Math.floor(1000 + Math.random() * 9000)}`;
+    return ok({ password });
   })),
   http.delete(`${BASE}/admin/students/:id/device`, authed(({ params }) => {
     const s = D.students.find((x) => x.id === Number(params.id));
@@ -180,10 +187,37 @@ export const handlers = [
   })),
   http.put(`${BASE}/admin/courses/:id`, authed(() => okVoid())),
   http.get(`${BASE}/admin/courses/:id/roster`, authed(({ params }) =>
-    // seed 口径:课程 1 = 全员名单;课程 2 = 一对一(李一诺);新建课程 = 空名单
-    Number(params.id) === 1 ? ok(D.courseRoster)
-      : Number(params.id) === 2 ? ok(D.courseRoster.filter((r) => r.name === '李一诺'))
-        : ok([]))),
+    ok(rosterRows(Number(params.id))))),
+  // 入班:批量添加学生(有状态;同步学生 courses 与 course.studentCount)
+  http.post(`${BASE}/admin/courses/:id/students`, authed(async ({ params, request }) => {
+    const cid = Number(params.id);
+    const course = D.courses.find((c) => c.id === cid);
+    if (!course) return err(404, 4040, '课程不存在');
+    const body = (await request.json()) as { studentIds: number[] };
+    const members = (D.courseMembers[cid] ??= []);
+    for (const sid of body.studentIds ?? []) {
+      const s = D.students.find((x) => x.id === sid);
+      if (!s || members.includes(sid)) continue;
+      members.push(sid);
+      if (!s.courses.some((c) => c.id === cid)) s.courses.push({ id: course.id, name: course.name, classType: course.classType });
+    }
+    course.studentCount = members.length;
+    return okVoid();
+  })),
+  // 移出:从课程移除单个学生
+  http.delete(`${BASE}/admin/courses/:id/students/:studentId`, authed(({ params }) => {
+    const cid = Number(params.id);
+    const sid = Number(params.studentId);
+    const course = D.courses.find((c) => c.id === cid);
+    if (!course) return err(404, 4040, '课程不存在');
+    const members = (D.courseMembers[cid] ??= []);
+    const at = members.indexOf(sid);
+    if (at >= 0) members.splice(at, 1);
+    const s = D.students.find((x) => x.id === sid);
+    if (s) s.courses = s.courses.filter((c) => c.id !== cid);
+    course.studentCount = members.length;
+    return okVoid();
+  })),
   http.get(`${BASE}/admin/dashboard`, authed(() =>
     ok({
       ...D.adminDashboard,

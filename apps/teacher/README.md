@@ -8,8 +8,8 @@ Vite + React18 + TS,结构与 admin 端一致(`src/auth` + `src/api.ts` + `src/m
 npm install          # packages/ui 也需 npm install 一次(tsc 全量检查其源码,缺 react 类型会报错)
 npm run dev          # http://localhost:5174,默认 mock 模式
 npm run build
-npm run test         # vitest 单测(B3 27 例 + B4 33 例)
-npm run test:mock    # msw/node 冒烟(同一份 handlers,B3 录题 + B4 编排→发布→组卷→发布作业→批改全链路)
+npm run test         # vitest 单测(含 IMPL2:segments.spec 放宽门槛 + segments-kp.spec 知识点写回)
+npm run test:mock    # msw/node 冒烟(B3 录题 + B4/IMPL2 编排→放宽发布→组卷→发布作业→批改全链路)
 ```
 
 - mock 登录:教师 `13800000002 / Teacher@123`(真实模式同 seed 账号);`VITE_USE_MOCK=false` 时代理到 A1 后端(`.env.example`)。
@@ -59,7 +59,7 @@ mock 说明:`src/mocks/` 中 `/questions*` 为**有状态** mock(POST/PUT/DELETE
 | --- | --- | --- |
 | `/`(工作台课程卡) | `pages/Dashboard.tsx`(B1 基础上加入口) | 课程卡补「讲次列表 / 编排课堂」按钮 → 讲次时间线;「待复核答卷」卡可点 → 批改 |
 | `/courses` | `pages/course/CourseLessonsPage.tsx` | 讲次时间线:课程切换、rail 圆点 + 状态胶囊(已上课/下次上课/已就绪/未备课)、备课清单进度行、入口(编排/回放/批改/学情) |
-| `/lessons/:id/arrange` | `pages/lesson/LessonArrangePage.tsx` | 编排:环节卡**上下移按钮**(替代拖拽)+ 时长编辑 + 挂课件(lecture)/挂卷(practice/homework)+ 添加环节;课堂 AI 设置(MVP 两开关:引导模式/卡住提醒,落 practice 环节 config);检查清单实时计算(口径=A4);发布 → **4201 弹缺失项弹窗**(detail=键数组),通过 → 讲次 ready |
+| `/lessons/:id/arrange` | `pages/lesson/LessonArrangePage.tsx` | 编排:环节卡**上下移按钮**(替代拖拽)+ 时长编辑 + 挂课件(lecture)/挂卷(practice/homework)+ **每环节「标注知识点」**(从 `/kp/nodes` 选 → 写 `segment.kpNodeId`,显示 `kpNodeName`,可清空;PUT 全量保存带上)+ 添加环节;课堂 AI 设置(MVP 两开关:引导模式/卡住提醒);**放宽发布(IMPL2 #3)**:自由增删环节、不再强制四类齐全,右侧「发布门槛」只提示 practice/homework 未挂已发布试卷;发布若后端返 **4201** 才弹缺失项(detail=键数组,仅 practice/homework),通过 → 讲次 ready |
 | `/lessons/:id/paper` | `pages/paper/PaperBuilderPage.tsx` | 组卷:已选题列表(TexText 题干 + 分值编辑 + 实时总分)+ 题库选题弹窗(B3 题库同源数据,仅已入库题)+ 发布设置(名称/对象/截止时间);发布作业 = 保存卷(POST/PUT /papers)→ POST /assignments → 自动挂载 homework 环节 |
 | `/grading` `/grading/:assignmentId` | `pages/grading/GradingHomePage.tsx` `GradingReviewPage.tsx` | 批改复核:待复核列表 → 学生切换条(pending/已复核 ✓)、作答原稿(照片或文字)、AI 逐步预批(rubric 对照 ✓/✕ + 错因标签)、改分+评语、确认下一份(自动跳到下一份 pending)、全部采纳 AI 分、出分(4501 时提示剩余份数) |
 | `/lessons/:id/monitor` | `pages/monitor/MonitorPage.tsx` | 监控:mock `monitor:roster` 流驱动(每 5s 一帧),顶部四卡(环节进度/实时正确率/卡住提醒/AI 答疑)、学生卡片网格(**卡住红框**、举手橙标、离线置灰)、告警侧栏(monitor:alert 时间线) |
@@ -132,3 +132,17 @@ FIX2-CR-01 的「方案 A」已批准并重新生成 SDK(`QuestionFigure.anchor?
 ### 与后端对接假设
 - figures 形状:`QuestionFigure = { ossKey, position, anchor?: { target, ref? } }`;缺省 anchor=题干。渲染统一走 `@qiming/ui` 的 `QuestionFigures`(ossKey 经 `resolveSrc` 解析为签名 URL;mock 无 URL 时降级占位框)。
 - 遗留:`GradingItemDto` 无 figures 字段,复核页暂不渲染题目插图(仅题面 LaTeX);`/grading/assignments/{id}/answers` 列举端点仍缺(沿用 `pages/grading/source.ts` 适配层)。
+
+## IMPL2-front · 编排知识点 + 放宽发布(契约已落地)
+
+### 处置
+- **每环节知识点**:`LessonArrangePage` 拉 `/kp/graphs`(取 `curriculum_knowledge` 图)→ `/kp/nodes` 作为选择源;环节卡「标注知识点」弹窗写 `segment.kpNodeId`(可清空),`kpNodeName` 只读展示;`PUT /lessons/{id}/segments` 全量保存带上 `kpNodeId`(mock 服务端按图谱回填 `kpNodeName`)。
+- **放宽发布**:`lib/segments.ts` 的发布门槛改为「仅已存在的 practice/homework 环节须挂已发布卷」,`CHECKLIST_KEYS` 收为 `['practice','homework']`,新增 `pendingPaperKeys`;右侧卡由「五项检查清单」改为「发布门槛」提示,去掉强制流程感。发布仍由后端裁决,前端只在收到 **4201** 时按 detail 弹缺失项。
+
+### 测试 / 构建
+- `lesson/lib/__tests__/segments.spec.ts`:放宽门槛(缺四类不拦截、空编排可发布)、`pendingPaperKeys`、`newSegment` 默认知识点空。
+- `src/mocks/__tests__/segments-kp.spec.ts`:知识点写回(kpNodeId→kpNodeName 回填、清空)+ 放宽发布(练习未挂卷→4201 仅含 practice;练习挂卷无作业→直接发布)。
+- `npm run build` 绿;`npm run test` 绿;`npm run test:mock` 绿。
+
+### 与后端对接假设
+- 假设后端已实现新契约端点(`/auth/student/login`、`/admin/students/{id}/reset-password`、`/admin/courses/{id}/students` POST/DELETE),并按放宽口径计算 lesson 发布(4201 detail 仅含 practice/homework 键)。若 `apps/server` 仍停留在旧端点(qr-exchange / login-ticket / 强制四类),需后端同步;mock 模式不受影响。

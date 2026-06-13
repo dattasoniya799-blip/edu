@@ -65,10 +65,10 @@ export const handlers = [
     sessions.set(accessToken, acc.me);
     return ok({ accessToken, refreshToken: `mock-refresh-${acc.me.role}`, me: acc.me });
   }),
-  http.post(`${BASE}/auth/student/qr-exchange`, async ({ request }) => {
-    const body = (await request.json()) as { token: string; deviceFingerprint: string; deviceName: string };
-    const me = D.LOGIN_TICKETS[body.token?.trim()];
-    if (!me) return err(401, 4012, '登录码无效或已过期(mock 演示码:QM-DEMO)');
+  http.post(`${BASE}/auth/student/login`, async ({ request }) => {
+    const body = (await request.json()) as { studentNo: string; password: string };
+    const me = D.STUDENT_LOGINS[body.studentNo?.trim()];
+    if (!me || body.password !== D.STUDENT_PASSWORD) return err(401, 4010, '学号或密码不正确');
     const accessToken = tokenFor(me);
     sessions.set(accessToken, me);
     return ok({ accessToken, refreshToken: 'mock-refresh-student', me });
@@ -131,8 +131,8 @@ export const handlers = [
     if (!s) return err(404, 4040, '学生不存在');
     return ok({ student: s, mastery: D.mastery, wrongOpenCount: D.wrongBook.length });
   })),
-  http.post(`${BASE}/admin/students/:id/login-ticket`, authed(({ params }) =>
-    ok({ token: `QM-DEMO-${params.id}`, expiresAt: '2026-06-18T00:00:00.000Z' }))),
+  http.post(`${BASE}/admin/students/:id/reset-password`, authed(({ params }) =>
+    ok({ password: `Qm-${String(params.id).padStart(4, '0')}-${Math.random().toString(36).slice(2, 6)}` }))),
   http.delete(`${BASE}/admin/students/:id/device`, authed(() => okVoid())),
 
   http.get(`${BASE}/admin/courses`, authed(({ request }) => {
