@@ -203,6 +203,8 @@ export const handlers = [
       expiresAt: '2026-06-11T23:59:59.000Z',
     });
   })),
+  // 直传两步流第 2 步:预签名 PUT 假端点(解答题拍照真上传 #2;对 uploadUrl 直接 PUT 文件体)
+  http.put('https://oss.example.com/upload/*', () => new HttpResponse(null, { status: 200 })),
 
   // ================= 资源库 =================
   http.get(`${BASE}/resources`, authed(({ request }) => {

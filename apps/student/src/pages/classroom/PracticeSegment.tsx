@@ -7,6 +7,7 @@
 import { useState } from 'react';
 import type { AnswerResponse } from '@qiming/contracts';
 import { Button, EmptyState, ProgressBar, Tag, TexText, useToast } from '@qiming/ui';
+import { uploadAnswerPhoto } from '../../api';
 import { AnswerCard } from '../homework/AnswerCard';
 import { TutorPanel } from './TutorPanel';
 import { answeredCount } from '../homework/machine';
@@ -94,7 +95,7 @@ export function PracticeSegment({ state, onAnswer, onGoto, onFlag, onAsk, onTouc
           {isBigQ && <Tag tone="green" className="shrink-0">压轴大题</Tag>}
         </div>
 
-        <QuestionPanel q={q} item={item} draft={draft}
+        <QuestionPanel q={q} item={item} draft={draft} onUploadPhoto={uploadAnswerPhoto}
           onDraft={(r) => { setDrafts((d) => ({ ...d, [q.questionId]: r })); onTouch(q.questionId); }} />
 
         {/* 大题:提交后展示 AI 预批结果卡 */}

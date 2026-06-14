@@ -2,7 +2,7 @@
  * 题卡(展示组件,无副作用):题干/选项/填空/解答题拍照占位 + 即时判分反馈
  * 数学内容一律 <TexText/>;全部可点目标 ≥44px(min-h-touch,touch44.spec 断言)
  */
-import { useId } from 'react';
+import { useId, useState, type ChangeEvent } from 'react';
 import type { AnswerResponse } from '@qiming/contracts';
 import { MathInput, QuestionFigures, Tag, TexText } from '@qiming/ui';
 import { resolveFigureSrc } from '../../api';
@@ -19,9 +19,15 @@ export interface QuestionPanelProps {
   onDraft: (r: AnswerResponse | null) => void;
   /** 订正/错题重做卷 → 显示「原错题」标 */
   redoKind?: boolean;
+  /**
+   * 解答题拍照真上传(注入式,保持本组件纯展示、不持 api client):
+   * 收到 File → 完成 sts+PUT 直传 → resolve 出真实 ossKey;失败抛错。
+   * 未注入时拍照入口禁用(降级,不落假 key)。
+   */
+  onUploadPhoto?: (file: File) => Promise<string>;
 }
 
-export function QuestionPanel({ q, item, draft, onDraft, redoKind }: QuestionPanelProps) {
+export function QuestionPanel({ q, item, draft, onDraft, redoKind, onUploadPhoto }: QuestionPanelProps) {
   const locked = item.response != null;
   return (
     <div className="rounded-lg border border-line bg-card p-5 shadow-card">
@@ -42,7 +48,7 @@ export function QuestionPanel({ q, item, draft, onDraft, redoKind }: QuestionPan
           <OptionList q={q} item={item} draft={draft} onDraft={onDraft} locked={locked} />
         )}
         {q.type === 'blank' && <BlankInputs q={q} item={item} draft={draft} onDraft={onDraft} locked={locked} />}
-        {q.type === 'solution' && <SolutionPad item={item} draft={draft} onDraft={onDraft} locked={locked} />}
+        {q.type === 'solution' && <SolutionPad item={item} draft={draft} onDraft={onDraft} locked={locked} onUploadPhoto={onUploadPhoto} />}
       </div>
 
       <FeedbackPanel item={item} q={q} />
@@ -136,12 +142,32 @@ function BlankInputs({ q, item, draft, onDraft, locked }: QuestionPanelProps & {
   );
 }
 
-// ---------------- 解答题:拍照上传占位(MVP 裁剪:手写板标「即将上线」) ----------------
-function SolutionPad({ item, draft, onDraft, locked }: Pick<QuestionPanelProps, 'item' | 'draft' | 'onDraft'> & { locked: boolean }) {
+// ---------------- 解答题:拍照真上传(sts+PUT 经注入回调;MVP 裁剪:手写板标「即将上线」) ----------------
+function SolutionPad({ item, draft, onDraft, locked, onUploadPhoto }: Pick<QuestionPanelProps, 'item' | 'draft' | 'onDraft' | 'onUploadPhoto'> & { locked: boolean }) {
   const inputId = useId();
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const photoKey = locked
     ? item.response && 'photoOssKey' in item.response ? item.response.photoOssKey : null
     : draft && 'photoOssKey' in draft ? draft.photoOssKey : null;
+
+  // 真上传:sts 取凭证 → PUT 文件字节 → 拿真实 ossKey 写草稿;失败提示且不落假 key。
+  const handlePick = async (e: ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = ''; // 允许重选同一文件再次触发 change
+    if (!f || !onUploadPhoto || uploading) return;
+    setError(null);
+    setUploading(true);
+    try {
+      const ossKey = await onUploadPhoto(f);
+      onDraft({ photoOssKey: ossKey });
+    } catch (err) {
+      setError(err instanceof Error && err.message ? err.message : '照片上传失败,请重试');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="rounded-md border border-line bg-bg/60 p-4">
       <div className="mb-3 flex gap-2">
@@ -163,25 +189,33 @@ function SolutionPad({ item, draft, onDraft, locked }: Pick<QuestionPanelProps, 
             accept="image/*"
             capture="environment"
             className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) onDraft({ photoOssKey: `mock/uploads/${Date.now()}-${f.name}` });
-            }}
+            disabled={uploading || !onUploadPhoto}
+            onChange={handlePick}
           />
           <label
             htmlFor={inputId}
-            className="min-h-touch flex cursor-pointer flex-col items-center justify-center gap-1 rounded-md border-[1.5px] border-dashed border-line bg-card py-6 text-center transition-all hover:border-primary"
+            aria-disabled={uploading || !onUploadPhoto}
+            className={`min-h-touch flex flex-col items-center justify-center gap-1 rounded-md border-[1.5px] border-dashed border-line bg-card py-6 text-center transition-all ${
+              uploading || !onUploadPhoto ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:border-primary'
+            }`}
           >
-            <span className="text-xl text-ink-3">📷</span>
-            <span className="text-[13px] text-ink-2">{photoKey ? '重新拍摄' : '拍摄纸质作答并上传'}</span>
+            <span className="text-xl text-ink-3" aria-hidden>{uploading ? '⏳' : '📷'}</span>
+            <span className="text-[13px] text-ink-2">
+              {uploading ? '上传中…' : photoKey ? '重新拍摄' : '拍摄纸质作答并上传'}
+            </span>
             <span className="text-xs text-ink-3">在纸上写完整过程 → 拍照,AI 预批后由老师复核给分</span>
           </label>
         </>
       )}
-      {photoKey && (
+      {error && !uploading && (
+        <div role="alert" className="mt-3 rounded-md border border-red bg-red-soft px-3.5 py-2 text-[13px] leading-6 text-red">
+          ✕ {error}
+        </div>
+      )}
+      {photoKey && !uploading && (
         <div className="mt-3 flex min-h-touch items-center gap-2 rounded-md border border-line bg-card px-3.5 text-[13px] text-ink-2">
           <span aria-hidden>🖼</span>
-          <span className="truncate">已选择作答照片:{photoKey.split('/').pop()}</span>
+          <span className="truncate">已上传作答照片:{photoKey.split('/').pop()}</span>
           {locked && <Tag tone="violet" className="ml-auto shrink-0">待 AI 预批</Tag>}
         </div>
       )}
