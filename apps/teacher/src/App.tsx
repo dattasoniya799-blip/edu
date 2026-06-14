@@ -9,6 +9,7 @@ import { EditorPage } from './pages/bank/EditorPage';
 import { CourseLessonsPage } from './pages/course/CourseLessonsPage';
 import { LessonArrangePage } from './pages/lesson/LessonArrangePage';
 import { PaperBuilderPage } from './pages/paper/PaperBuilderPage';
+import { PaperLibraryPage } from './pages/paper/PaperLibraryPage';
 import { GradingHomePage } from './pages/grading/GradingHomePage';
 import { GradingReviewPage } from './pages/grading/GradingReviewPage';
 import { MonitorPage } from './pages/monitor/MonitorPage';
@@ -31,6 +32,7 @@ export function App() {
           <Route path="/assignments" element={<AssignmentsPage />} />
           <Route path="/grading" element={<GradingHomePage />} />
           <Route path="/grading/:assignmentId" element={<GradingReviewPage />} />
+          <Route path="/papers" element={<PaperLibraryPage />} />
           <Route path="/bank" element={<BankList />} />
           <Route path="/bank/new" element={<EditorPage />} />
           <Route path="/bank/:id/edit" element={<EditorPage />} />
