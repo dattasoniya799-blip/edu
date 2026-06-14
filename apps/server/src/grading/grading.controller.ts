@@ -13,21 +13,22 @@ export class GradingController {
   constructor(private readonly grading: GradingService) {}
 
   @Get('pending')
-  pending() {
-    return this.grading.pending();
+  pending(@CurrentUser() user: JwtUser) {
+    return this.grading.pending(user);
   }
 
   @Get('assignments/:id/answers')
   assignmentAnswers(
+    @CurrentUser() user: JwtUser,
     @Param('id', ParseIntPipe) id: number,
     @Query() q: GradingAnswersQueryDto,
   ) {
-    return this.grading.assignmentAnswers(id, q.status);
+    return this.grading.assignmentAnswers(user, id, q.status);
   }
 
   @Get('answers/:id')
-  answerDetail(@Param('id', ParseIntPipe) id: number) {
-    return this.grading.answerDetail(id);
+  answerDetail(@CurrentUser() user: JwtUser, @Param('id', ParseIntPipe) id: number) {
+    return this.grading.answerDetail(user, id);
   }
 
   @Put('answers/:id/review')
@@ -47,7 +48,7 @@ export class GradingController {
 
   @Post('assignments/:id/finalize')
   @HttpCode(200)
-  finalize(@Param('id', ParseIntPipe) id: number) {
-    return this.grading.finalizeAssignment(id);
+  finalize(@CurrentUser() user: JwtUser, @Param('id', ParseIntPipe) id: number) {
+    return this.grading.finalizeAssignment(user, id);
   }
 }

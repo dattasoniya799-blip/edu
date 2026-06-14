@@ -89,6 +89,8 @@ describe('作答/自动批改/复核/错题/掌握度(A5)', () => {
   let s3: string;
   let teacherB: string;
   let studentB: string;
+  // sec-back · #6:photoOssKey 须形如 `answer_photo/${orgId}/...` 才能通过归属校验
+  let photoKey: string;
 
   // 跨用例共享(按 it 顺序产生)
   let attemptId: number; // s1 的主作答
@@ -110,6 +112,7 @@ describe('作答/自动批改/复核/错题/掌握度(A5)', () => {
     app = await createApp();
     http = app.getHttpServer();
     fx = await createA5Org();
+    photoKey = `answer_photo/${Number(fx.orgId)}/202606/s1q4.jpg`;
     teacher = await login(fx.teacherPhone, A5_PASSWORD);
     teacherB = await login(fx.teacherBPhone, A5_PASSWORD);
     s1 = await studentLogin(fx.orgId, fx.s1Id, 'a5-fp-1');
@@ -196,7 +199,7 @@ describe('作答/自动批改/复核/错题/掌握度(A5)', () => {
   it('验收:solution 存 photoOssKey → judged=false 投递预批;断点快照回读已答 4 题', async () => {
     const res = await request(http)
       .put(`/api/v1/student/attempts/${attemptId}/answers/${qid(3)}`)
-      .set(auth(s1)).send({ response: { photoOssKey: 'answers/a5/s1-q4.jpg' }, timeSpentSec: 300, flagged: true })
+      .set(auth(s1)).send({ response: { photoOssKey: photoKey }, timeSpentSec: 300, flagged: true })
       .expect(200);
     expect(res.body.data).toEqual({ judged: false, isCorrect: null, correctAnswer: null, analysisLatex: null });
 
@@ -204,7 +207,7 @@ describe('作答/自动批改/复核/错题/掌握度(A5)', () => {
     const at: AttemptDto = snap.body.data;
     expect(at.answers.every((a) => a.response != null)).toBe(true);
     const a4 = at.answers.find((a) => a.questionId === qid(3))!;
-    expect(a4.response).toEqual({ photoOssKey: 'answers/a5/s1-q4.jpg' });
+    expect(a4.response).toEqual({ photoOssKey: photoKey });
     expect(a4.isCorrect).toBeNull();
     expect(a4.flagged).toBe(true);
 
@@ -280,7 +283,7 @@ describe('作答/自动批改/复核/错题/掌握度(A5)', () => {
     expect(item.studentName).toBe('A5学生一');
     expect(item.questionId).toBe(qid(3));
     expect(item.rubric).toEqual(A5_RUBRIC);
-    expect(item.photoUrl).toContain('answers/a5/s1-q4.jpg');
+    expect(item.photoUrl).toContain(photoKey);
     expect(item.photoUrl).toMatch(/exp=\d+&sig=[0-9a-f]{32}/);
     expect(item.textResponse).toBeNull();
     expect(item.aiScore).toBe(3);

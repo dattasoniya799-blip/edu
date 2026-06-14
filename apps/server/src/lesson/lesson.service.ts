@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import type { LessonDto, LessonSegmentDto } from '@qiming/contracts';
 import { iso, num } from '../admin/helpers';
+import type { JwtUser } from '../auth/auth.service';
 import { latestOpenSessions } from '../common/session-lookup';
 import { BizException, ERR_LESSON_CHECKLIST } from '../course/business.exception';
 import { PrismaService } from '../prisma/prisma.service';
@@ -49,9 +50,9 @@ export class LessonService {
     return this.toLessonDto(lesson, sessionByLesson.get(String(lesson.id)) ?? null);
   }
 
-  /** PUT /lessons/:id:改标题/时间 */
-  async update(id: number, dto: LessonUpdateDto): Promise<null> {
-    const lesson = await this.findOrThrow(id);
+  /** PUT /lessons/:id:改标题/时间(仅本人授课课程) */
+  async update(user: JwtUser, id: number, dto: LessonUpdateDto): Promise<null> {
+    const lesson = await this.findOwnedOrThrow(id, user);
     const start = dto.scheduledStart ? new Date(dto.scheduledStart) : lesson.scheduledStart;
     const end = dto.scheduledEnd ? new Date(dto.scheduledEnd) : lesson.scheduledEnd;
     if (start && end && start >= end)
@@ -93,9 +94,9 @@ export class LessonService {
     }));
   }
 
-  /** PUT /lessons/:id/segments:全量替换(事务),并同步重算 prep_checklist */
-  async replaceSegments(lessonId: number, segments: SegmentInputDto[]): Promise<null> {
-    const lesson = await this.findOrThrow(lessonId);
+  /** PUT /lessons/:id/segments:全量替换(事务),并同步重算 prep_checklist(仅本人授课课程) */
+  async replaceSegments(user: JwtUser, lessonId: number, segments: SegmentInputDto[]): Promise<null> {
+    const lesson = await this.findOwnedOrThrow(lessonId, user);
     if (lesson.status === 'in_progress' || lesson.status === 'finished')
       throw new ConflictException('讲次已开课/已结课,不可再编排');
 
@@ -191,8 +192,8 @@ export class LessonService {
    * 该 paper 必须 published。违反 → 4201 + 缺失项(empty / practice / homework),prep_checklist 同步落库;
    * 通过 → status=ready。
    */
-  async publish(id: number): Promise<null> {
-    const lesson = await this.findOrThrow(id);
+  async publish(user: JwtUser, id: number): Promise<null> {
+    const lesson = await this.findOwnedOrThrow(id, user);
     if (lesson.status === 'in_progress' || lesson.status === 'finished')
       throw new ConflictException('讲次已开课/已结课,无法发布');
 
@@ -261,6 +262,20 @@ export class LessonService {
     const l = await this.prisma.client.lesson.findFirst({ where: { id: BigInt(id) } });
     if (!l) throw new NotFoundException('讲次不存在');
     return l;
+  }
+
+  /**
+   * 写操作归属(sec-back · #4):讲次所属课程的 teacherId 必须 === 当前教师,
+   * 否则 404(同租户他班讲次不泄露存在性;跨租户已由租户注入挡为 404)。
+   */
+  private async findOwnedOrThrow(id: number, user: JwtUser) {
+    const lesson = await this.findOrThrow(id);
+    const course = await this.prisma.client.course.findFirst({
+      where: { id: lesson.courseId, teacherId: BigInt(user.uid) },
+      select: { id: true },
+    });
+    if (!course) throw new NotFoundException('讲次不存在');
+    return lesson;
   }
 
   private computeChecklist(segs: SegForCheck[]): Record<(typeof CHECKLIST_KEYS)[number], boolean> {

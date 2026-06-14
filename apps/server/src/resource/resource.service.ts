@@ -4,6 +4,7 @@ import { iso, num } from '../admin/helpers';
 import type { JwtUser } from '../auth/auth.service';
 import { BizException, ERR_RESOURCE_IN_USE } from '../course/business.exception';
 import { PrismaService } from '../prisma/prisma.service';
+import { assertOssKeyOwned } from '../upload/oss-key.util';
 import { ResourceCreateDto, ResourceListQueryDto, ResourceUpdateDto } from './resource.dto';
 
 const SEGMENT_JOIN = {
@@ -44,6 +45,9 @@ export class ResourceService {
   }
 
   async create(user: JwtUser, dto: ResourceCreateDto): Promise<ResourceDto> {
+    // 归属校验(sec-back · #6):课件 ossKey 必须形如 `resource/${orgId}/...` 且属本机构,
+    // 杜绝凭他人/异用途 ossKey 在资源库挂他人对象。
+    assertOssKeyOwned(dto.ossKey, user.orgId, ['resource']);
     if (dto.kpNodeId != null) await this.mustKpNode(dto.kpNodeId);
     const created = await this.prisma.client.resource.create({
       data: {

@@ -131,7 +131,7 @@ describe('C1 联调缺口后端(题面 + 批改名单)', () => {
   it('#A 主观题/公式填空作答(in_progress 待判)→ 仍不下发正确答案', async () => {
     // q4 solution 拍照、q5 公式填空文本 —— 投递 AI 预批,isCorrect=null 待复核
     const r4 = await request(http).put(`/api/v1/student/attempts/${attemptId}/answers/${qid(3)}`)
-      .set(auth(s1)).send({ response: { photoOssKey: 'answers/c1/s1-q4.jpg' } }).expect(200);
+      .set(auth(s1)).send({ response: { photoOssKey: `answer_photo/${Number(fx.orgId)}/202606/c1q4.jpg` } }).expect(200);
     expect(r4.body.data.judged).toBe(false);
     const r5 = await request(http).put(`/api/v1/student/attempts/${attemptId}/answers/${qid(4)}`)
       .set(auth(s1)).send({ response: { texts: ['\\frac{1}{2}'] } }).expect(200);
