@@ -17,6 +17,7 @@ import { UploadService } from './upload.service';
       inject: [ConfigService, REDIS],
       useFactory: (cfg: ConfigService, redis: Redis) => {
         const driver = cfg.get<string>('STORAGE_DRIVER', 'local');
+        // sec-back · #9:oss 驱动构造即抛(模块启动期),误配启动即暴露,而非每请求才报错。
         if (driver === 'oss') return new OssStorageAdapter();
         return new LocalStorageAdapter(
           redis,

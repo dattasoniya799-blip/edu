@@ -152,7 +152,7 @@ describe('C3-back 三项后端', () => {
 
     it('Resource 带 kpNodeId 创建 → 回填 kpNodeName;更新清空', async () => {
       const created = await request(http).post('/api/v1/resources').set(auth(teacherA))
-        .send({ type: 'pdf', name: 'C3 · 归档课件', ossKey: 'demo/c3/a.pdf', size: 10, kpNodeId: fx.kpNodeAId }).expect(200);
+        .send({ type: 'pdf', name: 'C3 · 归档课件', ossKey: `resource/${Number(fx.orgId)}/202606/a.pdf`, size: 10, kpNodeId: fx.kpNodeAId }).expect(200);
       const r = created.body.data as ResourceDto;
       expect(r.kpNodeId).toBe(fx.kpNodeAId);
       expect(r.kpNodeName).toBe(fx.kpNodeAName);
@@ -173,7 +173,7 @@ describe('C3-back 三项后端', () => {
 
     it('Resource / 内容包引用不存在知识点 → 404', async () => {
       await request(http).post('/api/v1/resources').set(auth(teacherA))
-        .send({ type: 'pdf', name: 'x', ossKey: 'k', size: 1, kpNodeId: 999999999 }).expect(404);
+        .send({ type: 'pdf', name: 'x', ossKey: `resource/${Number(fx.orgId)}/202606/x.pdf`, size: 1, kpNodeId: 999999999 }).expect(404);
       await request(http).put(`/api/v1/knowledge/content-packs/999999999`).set(auth(teacherA)).send({ summaryConfig: {} }).expect(404);
     });
 

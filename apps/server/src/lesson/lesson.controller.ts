@@ -10,7 +10,8 @@ import {
   Put,
   UseFilters,
 } from '@nestjs/common';
-import { Roles } from '../common/decorators';
+import { CurrentUser, Roles } from '../common/decorators';
+import type { JwtUser } from '../auth/auth.service';
 import { BizExceptionFilter } from '../course/business.exception';
 import { LessonUpdateDto, SegmentInputDto } from './lesson.dto';
 import { LessonService } from './lesson.service';
@@ -41,8 +42,12 @@ export class LessonController {
 
   @Put(':id')
   @Roles('teacher')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: LessonUpdateDto) {
-    return this.lessons.update(id, dto);
+  update(
+    @CurrentUser() user: JwtUser,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: LessonUpdateDto,
+  ) {
+    return this.lessons.update(user, id, dto);
   }
 
   @Get(':id/segments')
@@ -54,17 +59,18 @@ export class LessonController {
   @Put(':id/segments')
   @Roles('teacher')
   replaceSegments(
+    @CurrentUser() user: JwtUser,
     @Param('id', ParseIntPipe) id: number,
     @Body(new ParseArrayPipe({ items: SegmentInputDto, whitelist: true }))
     segments: SegmentInputDto[],
   ) {
-    return this.lessons.replaceSegments(id, segments);
+    return this.lessons.replaceSegments(user, id, segments);
   }
 
   @Post(':id/publish')
   @HttpCode(200)
   @Roles('teacher')
-  publish(@Param('id', ParseIntPipe) id: number) {
-    return this.lessons.publish(id);
+  publish(@CurrentUser() user: JwtUser, @Param('id', ParseIntPipe) id: number) {
+    return this.lessons.publish(user, id);
   }
 }

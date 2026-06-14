@@ -17,6 +17,7 @@ import { questionNeedsReview } from '../grading/formula-blank.util';
 import { GradingService } from '../grading/grading.service';
 import { PreGradingQueueService } from '../grading/pre-grading.queue';
 import { PrismaService } from '../prisma/prisma.service';
+import { assertOssKeyOwned } from '../upload/oss-key.util';
 import { SubmitAnswerDto } from './attempt.dto';
 
 export interface SubmitAnswerResultDto {
@@ -154,7 +155,7 @@ export class AttemptService {
     })) as QuestionRow | null;
     if (!question) throw new NotFoundException('题目不存在');
 
-    const response = this.validateResponse(question.type, dto.response);
+    const response = this.validateResponse(question.type, dto.response, user.orgId);
     const fullScore = dec(pq.score) ?? 0;
     // 公式填空(参考答案含 LaTeX)与 solution 同口径:不即时判分,走 AI 预批 + 教师复核
     const needsReview = questionNeedsReview(question.type, question.answer);
@@ -202,6 +203,7 @@ export class AttemptService {
   /** POST /student/attempts/:id/submit(交卷汇总分) */
   async submit(user: JwtUser, id: number): Promise<AttemptDto> {
     const at = await this.mustOwn(user, id);
+    // 快速路径(顺序重复交卷):状态已非 in_progress 直接拒
     if (at.status !== 'in_progress') throw new BizException(ERR_ATTEMPT_STATE, '请勿重复交卷');
 
     const answers = await this.prisma.client.answer.findMany({
@@ -212,8 +214,11 @@ export class AttemptService {
       answers.reduce((s, a) => s + (a.isCorrect != null ? (dec(a.score) ?? 0) : 0), 0),
     );
     const now = new Date();
-    await this.prisma.client.attempt.update({
-      where: { id: at.id },
+    // 并发安全(sec-back · #5):条件 CAS 原子夺取 in_progress→submitted,
+    // 杜绝 TOCTOU 下两个请求都通过状态判断而重复交卷/重复触发自动结算。
+    // 只有夺到这次状态转换的请求(count===1)才继续算分并走 finalizeAttempt。
+    const claimed = await this.prisma.client.attempt.updateMany({
+      where: { id: at.id, studentId: BigInt(user.uid), status: 'in_progress' },
       data: {
         status: 'submitted',
         submittedAt: now,
@@ -221,6 +226,7 @@ export class AttemptService {
         durationSec: Math.max(0, Math.round((now.getTime() - at.startedAt.getTime()) / 1000)),
       },
     });
+    if (claimed.count === 0) throw new BizException(ERR_ATTEMPT_STATE, '请勿重复交卷');
 
     // 卷面无需复核题(无 solution 且无公式填空,如纯客观错题重做)→ 自动出分:
     // graded + 错题入账 + mastery 任务;否则等教师复核后 finalize
@@ -247,7 +253,11 @@ export class AttemptService {
   }
 
   /** response 形状按题型校验,并裁剪为规范字段 */
-  private validateResponse(type: QuestionType, resp: Record<string, unknown>): AnswerResponse {
+  private validateResponse(
+    type: QuestionType,
+    resp: Record<string, unknown>,
+    orgId: number,
+  ): AnswerResponse {
     const fail = (msg: string) => {
       throw new BadRequestException(msg);
     };
@@ -272,8 +282,12 @@ export class AttemptService {
           fail('blank 题 response 需为 {texts[]}');
         return { texts: resp.texts as string[] };
       case 'solution':
-        if (typeof resp.photoOssKey === 'string' && resp.photoOssKey)
+        if (typeof resp.photoOssKey === 'string' && resp.photoOssKey) {
+          // 归属校验(sec-back · #6):仅接受本机构 answer_photo 前缀的 ossKey,
+          // 否则视为非法入参 → 400,杜绝凭他人/异用途 ossKey 占位提交。
+          assertOssKeyOwned(resp.photoOssKey, orgId, ['answer_photo'], 'badRequest');
           return { photoOssKey: resp.photoOssKey };
+        }
         if (typeof resp.text === 'string' && resp.text) return { text: resp.text };
         return fail('solution 题 response 需为 {photoOssKey} 或 {text}') as never;
     }

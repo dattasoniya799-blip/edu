@@ -171,7 +171,7 @@ describe('课程/讲次/编排/试卷/作业(A4)', () => {
     const res = await request(http)
       .post('/api/v1/resources')
       .set(auth(teacherA))
-      .send({ type: 'interactive', name: 'A4 函数图象动画', ossKey: 'courseware/a4/anim.html', size: 20480, meta: { pages: 24 } })
+      .send({ type: 'interactive', name: 'A4 函数图象动画', ossKey: `resource/${Number(fx.orgId)}/202606/anim.html`, size: 20480, meta: { pages: 24 } })
       .expect(200);
     const r: ResourceDto = res.body.data;
     exactKeys(r, RESOURCE_KEYS);
@@ -183,7 +183,7 @@ describe('课程/讲次/编排/试卷/作业(A4)', () => {
     const r2 = await request(http)
       .post('/api/v1/resources')
       .set(auth(teacherA))
-      .send({ type: 'video', name: 'A4 微课视频', ossKey: 'video/a4/v1.mp4', size: 1024 })
+      .send({ type: 'video', name: 'A4 微课视频', ossKey: `resource/${Number(fx.orgId)}/202606/v1.mp4`, size: 1024 })
       .expect(200);
     resource2Id = r2.body.data.id;
 
