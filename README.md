@@ -7,6 +7,9 @@
 >   `prisma generate` 现可正常使用。A1 起后端通过 Prisma Client(带租户注入)访问数据库。
 > - [2026-06-14,已批准·B6课堂] ClassSnapshot 增可选 `questions?`/`courseware?`(真实模式下发题面/
 >   课件);dto.ts 新增 CoursewarePageView/MiniQuizView。可选、向后兼容、无 schema 迁移。
+> - [2026-06-14,已批准·B6课堂] LessonDto 增**必填** `sessionId: number | null`(当前讲次最新未结束
+>   ClassSession id,供教师监控连 WS;无在开会话则 null)。取数复用 `latestOpenSessions`(列表批量 in
+>   查、detail 单查),与学生端 LessonTimelineItem.sessionId 先例同口径,无 schema 迁移。
 >
 > **A1 已交付**:后端骨架/认证/多租户/RBAC 见 `apps/server/README.md`(e2e 18/18)。
 

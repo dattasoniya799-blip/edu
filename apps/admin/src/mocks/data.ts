@@ -98,6 +98,8 @@ export const lessons: LessonDto[] = LESSON_TITLES.map((t, i) => {
     prepChecklist: (i === 3 ? { warmup: true, lecture: true, practice: true, homework: false } : {}) as Record<string, boolean>,
     // 契约 2026-06-13 新增必填:开场白配置(可空)
     openingConfig: i === 3 ? { resourceId: 1, text: '上节课我们学了图象平移,今天先回顾再练习。' } : null,
+    // [2026-06-14 B6 课堂] 当前讲次最新未结束 ClassSession id;已发布(ready)讲次带会话,其余 null
+    sessionId: i === 3 ? 401 : null,
   };
 });
 
