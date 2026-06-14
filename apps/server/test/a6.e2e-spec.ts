@@ -29,7 +29,17 @@ import { createApp, loginStudentById, raw } from './fixtures/setup';
 const exactKeys = (obj: object, keys: string[]) =>
   expect(Object.keys(obj).sort()).toEqual([...keys].sort());
 
-const SNAPSHOT_KEYS = ['session', 'me'];
+// B6:真实模式下 ClassSnapshot 新增可选增量键 questions/courseware(仅有对应内容时出现)。
+// 快照键校验改为「必含 session/me,其余键必属可选白名单」,而非严格全等(否则有 questions 即断)。
+const SNAPSHOT_REQUIRED_KEYS = ['session', 'me'];
+const SNAPSHOT_OPTIONAL_KEYS = ['questions', 'courseware'];
+const snapshotKeysValid = (snap: object) => {
+  const ks = Object.keys(snap);
+  SNAPSHOT_REQUIRED_KEYS.forEach((k) => expect(ks).toContain(k));
+  ks.forEach((k) => expect([...SNAPSHOT_REQUIRED_KEYS, ...SNAPSHOT_OPTIONAL_KEYS]).toContain(k));
+};
+const QUESTION_VIEW_KEYS = ['seq', 'questionId', 'score', 'type', 'stemLatex', 'figures', 'options', 'correctAnswer', 'analysisLatex'];
+const QUESTION_OPTION_KEYS = ['label', 'contentLatex'];
 const SESSION_KEYS = ['id', 'status', 'lessonTitle', 'segments', 'currentSegmentSeq', 'elapsedSec', 'mode'];
 const MODE_KEYS = ['guideOnly', 'stuckAlertMin', 'lockdown', 'syncSegments'];
 const SEGMENT_KEYS = ['seq', 'type', 'durationMin'];
@@ -210,7 +220,7 @@ describe('课堂实时 WebSocket(A6,/classroom)', () => {
     const snap = await join(s1);
 
     // —— 契约形状逐字段(ws-protocol.ts ClassSnapshot)——
-    exactKeys(snap, SNAPSHOT_KEYS);
+    snapshotKeysValid(snap); // session/me 必含;questions/courseware 为可选增量键(B6)
     exactKeys(snap.session, SESSION_KEYS);
     exactKeys(snap.session.mode, MODE_KEYS);
     exactKeys(snap.me, ME_KEYS);
@@ -246,6 +256,36 @@ describe('课堂实时 WebSocket(A6,/classroom)', () => {
       where: { sessionId: BigInt(sid()), studentId: fx.studentIds[0] },
     });
     expect(part?.joinAt).toBeTruthy();
+  });
+
+  it('B6 真实模式:join 快照携带随堂练题面(practice 卷),课中防作弊 correctAnswer/analysisLatex 为 null', async () => {
+    const snap = await join(s1); // join 幂等,复用已连接的 s1 拉快照
+
+    // 本会话 practice 段(seq=3)挂了随堂练卷 → questions 为非空增量键
+    expect(Array.isArray(snap.questions)).toBe(true);
+    expect(snap.questions).toHaveLength(2); // 随堂练卷:q1(single)+ q2(blank),卷面 seq 序
+    snap.questions!.forEach((q, i) => {
+      exactKeys(q, QUESTION_VIEW_KEYS); // 形状与 AttemptDto.questions 一致(复用 A5 映射口径)
+      expect(q.seq).toBe(i + 1);
+      expect(Array.isArray(q.figures)).toBe(true);
+      q.options.forEach((o) => exactKeys(o, QUESTION_OPTION_KEYS)); // 学生视图:不含 isCorrect
+      // 防作弊红线(课中 · session 未结束):正确答案与解析恒为 null
+      expect(q.correctAnswer).toBeNull();
+      expect(q.analysisLatex).toBeNull();
+    });
+    // 题面与卷面题目一一对应(questionId/seq 对齐 fixture practicePaper)
+    expect(snap.questions!.map((q) => q.questionId)).toEqual([qid(0), qid(1)]);
+    const q1 = snap.questions!.find((q) => q.questionId === qid(0))!;
+    expect(q1.type).toBe('single');
+    expect(q1.options).toHaveLength(4);
+    expect(q1.score).toBe(5);
+    expect(q1.stemLatex).toContain('A6-Q1');
+
+    // courseware:不断言其内容。真实数据源调查结论(任务卡)——本讲 lecture 段(seq=2)config={checkpoints:[]}
+    // 且未挂资源;即便演示库(seed)里 lecture 段,也只挂二进制交互课件(Resource type=interactive,
+    // oss_key 指向 HTML)+ 整数页码 checkpoints([3,8,12,18,22]),并无 title/body/narration 逐页文本。
+    // 服务端按「真实存在的结构化逐页内容」组装,无则省略该键(绝不编造 mock 文案),故此处 courseware 缺省。
+    expect(snap.courseware).toBeUndefined();
   });
 
   it('join 门禁:未选课学生 / 他租户教师 → 拒绝(本课成员校验,宪法 §7)', async () => {

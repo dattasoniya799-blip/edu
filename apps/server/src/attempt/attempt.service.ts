@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import type {
   AnswerResponse,
   AttemptDto,
@@ -37,6 +38,33 @@ export function normalizeBlank(s: string): string {
     .join('')
     .replace(/\s+/g, '');
 }
+
+/**
+ * 卷面题面视图(学生)所需字段:题干/选项/插图 + 答案/解析(按 revealed 决定是否下发)。
+ * toDto.questions 与课堂随堂练题面(B6)共用同一 select + 映射,保证形状一致。
+ */
+const PAPER_QUESTION_VIEW_SELECT = {
+  seq: true,
+  score: true,
+  questionId: true,
+  question: {
+    select: {
+      type: true,
+      stemLatex: true,
+      figures: true,
+      analysisLatex: true,
+      answer: true,
+      options: {
+        orderBy: { label: 'asc' },
+        select: { label: true, contentLatex: true },
+      },
+    },
+  },
+} satisfies Prisma.PaperQuestionSelect;
+
+type PaperQuestionViewRow = Prisma.PaperQuestionGetPayload<{
+  select: typeof PAPER_QUESTION_VIEW_SELECT;
+}>;
 
 type QuestionRow = {
   id: bigint;
@@ -303,24 +331,7 @@ export class AttemptService {
     const pqs = await this.prisma.client.paperQuestion.findMany({
       where: { paperId: at.assignment.paperId },
       orderBy: { seq: 'asc' },
-      select: {
-        seq: true,
-        score: true,
-        questionId: true,
-        question: {
-          select: {
-            type: true,
-            stemLatex: true,
-            figures: true,
-            analysisLatex: true,
-            answer: true,
-            options: {
-              orderBy: { label: 'asc' as const },
-              select: { label: true, contentLatex: true },
-            },
-          },
-        },
-      },
+      select: PAPER_QUESTION_VIEW_SELECT,
     });
     const byQuestion = new Map(at.answers.map((a) => [String(a.questionId), a]));
     // 交卷/已出分 → 全卷可下发正确答案与解析
@@ -345,28 +356,45 @@ export class AttemptService {
           flagged: a?.flagged ?? false,
         };
       }),
-      questions: pqs.map((pq): AttemptQuestionView => {
-        const a = byQuestion.get(String(pq.questionId));
-        // 该题已判定(客观题即时判分)或整卷已交卷 → 下发正确答案 + 解析
-        const revealed = attemptRevealed || a?.isCorrect != null;
-        return {
-          seq: pq.seq,
-          questionId: num(pq.questionId),
-          score: dec(pq.score) ?? 0,
-          type: pq.question.type,
-          stemLatex: pq.question.stemLatex,
-          // figures 题目级 Json,原样下发(含 anchor)
-          figures: (pq.question.figures ?? []) as unknown as QuestionFigure[],
-          // 学生视图:不含 isCorrect(沿用题目域学生序列化口径)
-          options: pq.question.options.map(
-            (o): QuestionOptionDto => ({ label: o.label, contentLatex: o.contentLatex }),
-          ),
-          correctAnswer: revealed
-            ? ((pq.question.answer ?? null) as QuestionAnswer | null)
-            : null,
-          analysisLatex: revealed ? pq.question.analysisLatex : null,
-        };
-      }),
+      // 该题已判定(客观题即时判分)或整卷已交卷 → 下发正确答案 + 解析
+      questions: pqs.map((pq): AttemptQuestionView =>
+        this.toQuestionView(pq, attemptRevealed || byQuestion.get(String(pq.questionId))?.isCorrect != null),
+      ),
     };
+  }
+
+  /**
+   * 卷面行 → 学生题面视图(AttemptQuestionView)。toDto 与课堂随堂练共用此口径。
+   * @param revealed 是否下发 correctAnswer/analysisLatex(false 时两者恒为 null,防作弊)。
+   */
+  private toQuestionView(pq: PaperQuestionViewRow, revealed: boolean): AttemptQuestionView {
+    return {
+      seq: pq.seq,
+      questionId: num(pq.questionId),
+      score: dec(pq.score) ?? 0,
+      type: pq.question.type,
+      stemLatex: pq.question.stemLatex,
+      // figures 题目级 Json,原样下发(含 anchor)
+      figures: (pq.question.figures ?? []) as unknown as QuestionFigure[],
+      // 学生视图:不含 isCorrect(沿用题目域学生序列化口径)
+      options: pq.question.options.map(
+        (o): QuestionOptionDto => ({ label: o.label, contentLatex: o.contentLatex }),
+      ),
+      correctAnswer: revealed ? ((pq.question.answer ?? null) as QuestionAnswer | null) : null,
+      analysisLatex: revealed ? pq.question.analysisLatex : null,
+    };
+  }
+
+  /**
+   * 某试卷的学生题面视图列表(seq 序),复用 toDto.questions 同一映射。
+   * 课堂随堂练题面(B6)以 revealed=false 调用 → 课中不下发正确答案/解析。
+   */
+  async paperQuestionViews(paperId: bigint, revealed: boolean): Promise<AttemptQuestionView[]> {
+    const pqs = await this.prisma.client.paperQuestion.findMany({
+      where: { paperId },
+      orderBy: { seq: 'asc' },
+      select: PAPER_QUESTION_VIEW_SELECT,
+    });
+    return pqs.map((pq) => this.toQuestionView(pq, revealed));
   }
 }

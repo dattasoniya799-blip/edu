@@ -4,8 +4,11 @@ import type Redis from 'ioredis';
 import type { Namespace, Socket } from 'socket.io';
 import type {
   AnswerResult,
+  AttemptQuestionView,
   ClassControl,
   ClassSnapshot,
+  CoursewarePageView,
+  MiniQuizView,
   ParticipantMonitor,
   ParticipantSelfState,
   ParticipantState,
@@ -568,10 +571,13 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
       elapsedSec: this.elapsedSec(meta),
       mode: JSON.parse(meta.mode),
     };
+    // 题面/课件为本讲静态内容(随堂练题面 + 课件分页),与角色无关,真实模式下随快照下发
+    const content = await this.buildLessonContent(BigInt(meta.lesson_id));
     if (user.role !== 'student') {
       return {
         session,
         me: { segment: session.currentSegmentSeq, currentQuestion: null, answers: [], wrongBookAdded: [], aiChatTail: [] },
+        ...content,
       };
     }
     const stu = await this.redis.hgetall(kStu(sid, user.uid));
@@ -585,7 +591,87 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
         wrongBookAdded: this.parseJson<number[]>(stu.wrong_qids, []),
         aiChatTail: this.parseJson(stu.ai_chat_tail, []),
       },
+      ...content,
     };
+  }
+
+  /**
+   * 本讲随堂练题面 + 课件分页(B6 真实模式)。两者均为可选:无内容时省略该键,前端优雅降级。
+   * - questions:遍历 practice 段试卷,复用 A5 AttemptService.paperQuestionViews(revealed=false:
+   *   课中 correctAnswer/analysisLatex 恒为 null,防作弊),形状与 AttemptDto.questions 一致。
+   * - courseware:遍历 lecture 段,仅按「真实存在的结构化逐页内容」组装,无则空(绝不编造)。
+   */
+  private async buildLessonContent(
+    lessonId: bigint,
+  ): Promise<Pick<ClassSnapshot, 'questions' | 'courseware'>> {
+    const segments = await this.prisma.client.lessonSegment.findMany({
+      where: { lessonId },
+      orderBy: { seq: 'asc' },
+      include: { resource: { select: { meta: true } } },
+    });
+    const out: { questions?: AttemptQuestionView[]; courseware?: CoursewarePageView[] } = {};
+
+    const questions: AttemptQuestionView[] = [];
+    for (const seg of segments) {
+      if (seg.type === 'practice' && seg.paperId != null) {
+        questions.push(...(await this.attempts.paperQuestionViews(seg.paperId, false)));
+      }
+    }
+    if (questions.length) out.questions = questions;
+
+    const courseware = this.buildCourseware(segments);
+    if (courseware.length) out.courseware = courseware;
+    return out;
+  }
+
+  /**
+   * 课件分页(lecture 段)。真实数据源调查结论(见任务卡):演示库 lecture 段只挂二进制交互课件
+   * (Resource type=interactive,oss_key 指向 HTML)+ 整数页码 checkpoints,**无逐页标题/正文/旁白文本**。
+   * 因此本函数仅在「config.pages 或 resource.meta.pages 为结构化逐页对象数组(含 title/body)」时组装,
+   * 否则返回空——既如实承载未来编排侧采集的逐页内容,又绝不为缺失内容编造 mock 文案。
+   */
+  private buildCourseware(
+    segments: { type: string; config: unknown; resource: { meta: unknown } | null }[],
+  ): CoursewarePageView[] {
+    const out: CoursewarePageView[] = [];
+    for (const seg of segments) {
+      if (seg.type !== 'lecture') continue;
+      const cfg = (seg.config ?? {}) as Record<string, unknown>;
+      const meta = (seg.resource?.meta ?? {}) as Record<string, unknown>;
+      out.push(...this.coursewarePages(cfg.pages ?? meta.pages));
+    }
+    return out;
+  }
+
+  /** 逐页内容数组(对象含 title/body 才视为可渲染逐页;数字总页数 / 整数 checkpoints 等非结构化值 → 跳过) */
+  private coursewarePages(raw: unknown): CoursewarePageView[] {
+    if (!Array.isArray(raw)) return [];
+    const out: CoursewarePageView[] = [];
+    for (const p of raw) {
+      if (!p || typeof p !== 'object') continue;
+      const o = p as Record<string, unknown>;
+      if (typeof o.title !== 'string' && typeof o.body !== 'string') continue;
+      const page: CoursewarePageView = {
+        title: typeof o.title === 'string' ? o.title : '',
+        body: typeof o.body === 'string' ? o.body : '',
+        narration: typeof o.narration === 'string' ? o.narration : '',
+      };
+      const quiz = this.miniQuiz(o.quiz);
+      if (quiz) page.quiz = quiz;
+      out.push(page);
+    }
+    return out;
+  }
+
+  /** 打点小测(lecture 翻页即时小测):stem + options 齐备才视为有效,否则缺省 */
+  private miniQuiz(raw: unknown): MiniQuizView | undefined {
+    if (!raw || typeof raw !== 'object') return undefined;
+    const o = raw as Record<string, unknown>;
+    if (typeof o.stem !== 'string' || !Array.isArray(o.options)) return undefined;
+    const options = o.options
+      .filter((x): x is Record<string, unknown> => !!x && typeof x === 'object')
+      .map((x) => ({ label: String(x.label ?? ''), contentLatex: String(x.contentLatex ?? '') }));
+    return { stem: o.stem, options, correct: String(o.correct ?? ''), hint: String(o.hint ?? '') };
   }
 
   /** 已答题与判定(作答本体在 PG:本讲 in_class assignment 的最新 attempt) */
