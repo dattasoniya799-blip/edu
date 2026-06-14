@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { AssignmentKind, CourseDto, LessonDto, MasteryItemDto } from '@qiming/contracts';
 import { daysAgoUtc, dec, iso, num, round2, utcDayStart } from '../admin/helpers';
+import { latestOpenSessions } from '../common/session-lookup';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { AssignmentService } from '../assignment/assignment.service';
 import type { JwtUser } from '../auth/auth.service';
@@ -114,7 +115,7 @@ export class StudentMiscService {
 
     // FIX4 · #5:当天讲次按开课时间升序后,优先"已发布"(status≠draft 或已建未结束会话)的一条,
     // 避免上午的草稿讲次挡住下午已发布的讲次;全为草稿时回退到最早一条(保持原行为)。
-    const sessionByLesson = await this.latestOpenSessions(lessons.map((l) => l.id));
+    const sessionByLesson = await latestOpenSessions(this.prisma.client, lessons.map((l) => l.id));
     const isPublished = (l: (typeof lessons)[number]) =>
       l.status !== 'draft' || sessionByLesson.has(String(l.id));
     const lesson = lessons.find(isPublished) ?? lessons[0];
@@ -129,25 +130,6 @@ export class StudentMiscService {
       canEnterAt: iso(new Date(lesson.scheduledStart!.getTime() - ENTER_AHEAD_MIN * 60_000)),
       sessionId: session,
     };
-  }
-
-  /**
-   * 一批讲次各自"最新未结束 class_session"的 id(口径同 /student/today.sessionId):
-   * lessonId(string)→ sessionId(number);无会话的讲次不入表。FIX4 · #1/#5 共用。
-   */
-  private async latestOpenSessions(lessonIds: bigint[]): Promise<Map<string, number>> {
-    const map = new Map<string, number>();
-    if (!lessonIds.length) return map;
-    const sessions = await this.prisma.client.classSession.findMany({
-      where: { lessonId: { in: lessonIds }, status: { not: 'ended' } },
-      orderBy: { id: 'desc' }, // 倒序 → 每讲首次写入即最新一条
-      select: { id: true, lessonId: true },
-    });
-    for (const s of sessions) {
-      const key = String(s.lessonId);
-      if (!map.has(key)) map.set(key, num(s.id));
-    }
-    return map;
   }
 
   private async buildTasks(user: JwtUser, sid: bigint): Promise<TodayTaskView[]> {
@@ -297,7 +279,7 @@ export class StudentMiscService {
     if (!lessons.length) return [];
 
     // FIX4 · #1:每讲未结束 class_session(口径同 /student/today),无则 null
-    const sessionByLesson = await this.latestOpenSessions(lessons.map((l) => l.id));
+    const sessionByLesson = await latestOpenSessions(this.prisma.client, lessons.map((l) => l.id));
 
     // 该课程各讲次的 homework 作业,可见性仍走 A4 唯一口径;每讲取最新一条(id 最大)
     const visible = await this.assignments.listForStudent(user, 'all');
@@ -369,6 +351,7 @@ export class StudentMiscService {
           status: l.status,
           prepChecklist: (l.prepChecklist ?? {}) as Record<string, boolean>,
           openingConfig: (l.openingConfig ?? null) as Record<string, unknown> | null,
+          sessionId: sessionByLesson.get(String(l.id)) ?? null,
         },
         sessionId: sessionByLesson.get(String(l.id)) ?? null,
         myHomework: hw

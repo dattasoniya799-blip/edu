@@ -62,6 +62,7 @@ const ALERT_UI = {
 export function MonitorPage() {
   const { id } = useParams();
   const lessonId = Number(id);
+  const useMock = import.meta.env.VITE_USE_MOCK !== 'false';
   const [lesson, setLesson] = useState<LessonDto | null>(null);
   /** seq → 环节名(取自讲次编排;mock 流的 segment=3 即随堂练) */
   const [segNames, setSegNames] = useState<Map<number, string>>(new Map());
@@ -85,10 +86,16 @@ export function MonitorPage() {
       .catch(() => {});
   }, [lessonId]);
 
+  // 真实模式需用真实 ClassSession id 连 WS(契约 LessonDto.sessionId,GET /lessons/:id 返回);
+  // 无在开会话(sessionId=null)则不连,渲染时给出提示。mock 模式流自带帧,sessionId 仅占位。
+  const sessionId = lesson?.sessionId ?? null;
+  const noSession = lesson != null && !useMock && sessionId == null;
+
   useEffect(() => {
-    // 真实模式:以本课教师身份 class:join 进监控房。sessionId 当前取路由参(lessonId)——
-    // 契约 LessonDto 暂未透出 ClassSession id,真实联调前需补 lesson→session 映射(详见 source.ts)。
-    const source = createMonitorSource({ sessionId: lessonId, token: getToken() });
+    if (lesson == null) return; // 等讲次加载,拿到真实 sessionId 再决定是否连
+    if (!useMock && sessionId == null) return; // 真实模式无进行中会话:不连 WS,避免 join 报错
+    // 真实模式以本课教师身份 class:join 进监控房(sessionId=真实 ClassSession id)
+    const source = createMonitorSource({ sessionId: sessionId ?? lessonId, token: getToken() });
     const stop = source.connect({
       onRoster: (e) => {
         setConnected(true);
@@ -98,7 +105,7 @@ export function MonitorPage() {
       onAlert: (e) => setAlerts((prev) => pushAlerts(prev, [e], Date.now())),
     });
     return stop;
-  }, [lessonId]);
+  }, [lessonId, sessionId, useMock, lesson]);
 
   const stats = useMemo(() => deriveStats(participants), [participants]);
 
@@ -114,7 +121,15 @@ export function MonitorPage() {
         sub={`上课中此页为实时视图,每 5 秒刷新;课后保留为回放数据${lesson?.scheduledStart ? ` · ${fmtDateTime(lesson.scheduledStart)}` : ''}`}
       />
 
-      {!connected ? (
+      {noSession ? (
+        <div className="rounded-lg border border-line bg-card shadow-card">
+          <EmptyState
+            icon="◷"
+            text="课堂未开始"
+            hint="该讲次暂无进行中的课堂会话;待教师发布/开课后,这里实时显示每个学生的进度。"
+          />
+        </div>
+      ) : !connected ? (
         <>
           <div className="mb-4 grid grid-cols-2 gap-4 xl:grid-cols-4">
             {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-24 w-full" />)}

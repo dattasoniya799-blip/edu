@@ -35,8 +35,9 @@ export interface MonitorSource {
 export interface MonitorSourceOptions {
   /**
    * 真实模式 class:join 的目标 ClassSession id(教师以本课教师身份进监控房)。
-   * ⚠ 联调缺口:监控路由当前以 lessonId 为参(/lessons/:id/monitor),契约 LessonDto 暂未透出
-   * 对应的 ClassSession id;真实联调前需后端/契约补充 lesson→session 映射(本任务不改契约)。
+   * 取自契约 LessonDto.sessionId(GET /lessons/:id;[2026-06-14 B6 课堂]补充的当前讲次最新未结束
+   * ClassSession id)。监控路由以 lessonId 为参,页面用拿到的 sessionId 连 WS;sessionId 为 null
+   * (无在开会话)时页面不连、给出"课堂未开始"提示。
    */
   sessionId: number;
   /** 握手 JWT(auth.token);取自 teacher auth/token */

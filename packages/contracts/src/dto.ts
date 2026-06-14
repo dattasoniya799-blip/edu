@@ -63,6 +63,7 @@ export interface LessonDto {
   scheduledStart: string | null; scheduledEnd: string | null;
   status: LessonStatus; prepChecklist: Record<string, boolean>;
   openingConfig: Record<string, unknown> | null;  // 开场白配置(可空,读写),如 {resourceId, text}
+  sessionId: number | null;  // [2026-06-14 批准·B6课堂] 当前讲次最新未结束 ClassSession id,供教师监控连 WS;无在开会话则 null
 }
 export interface LessonSegmentDto {
   id?: number; seq: number; type: SegmentType; durationMin: number;

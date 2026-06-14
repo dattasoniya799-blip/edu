@@ -7,7 +7,7 @@ import { courseArrangeTo, courseListTo, nextArrangeLessonId } from '../nav';
 
 const lesson = (id: number, status: LessonDto['status']): LessonDto => ({
   id, courseId: 1, seq: id, title: `第${id}讲`, scheduledStart: null, scheduledEnd: null,
-  status, prepChecklist: {}, openingConfig: null,
+  status, prepChecklist: {}, openingConfig: null, sessionId: null,
 });
 
 describe('课程入口落点', () => {

@@ -88,6 +88,9 @@ export const lessons: LessonDto[] = LESSON_TITLES.map((t, i) => {
     prepChecklist: (i === 3 ? { practice: true, homework: true } : {}) as Record<string, boolean>,
     // C2 #5:开场白配置(可空)
     openingConfig: i === 3 ? { enabled: true, text: '上节课我们认识了一次函数的图象,这节课一起研究图象的平移规律。', resourceId: null } : null,
+    // [2026-06-14 B6 课堂] 当前讲次最新未结束 ClassSession id;已发布(ready)讲次带会话(=401),其余 null
+    // (与 student-store.lessonTimeline 的 wrapper sessionId 同口径)
+    sessionId: i === 3 ? 401 : null,
   };
 });
 

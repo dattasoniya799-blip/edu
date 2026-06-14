@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import type { LessonDto, LessonSegmentDto } from '@qiming/contracts';
 import { iso, num } from '../admin/helpers';
+import { latestOpenSessions } from '../common/session-lookup';
 import { BizException, ERR_LESSON_CHECKLIST } from '../course/business.exception';
 import { PrismaService } from '../prisma/prisma.service';
 import { LessonUpdateDto, SegmentInputDto } from './lesson.dto';
@@ -36,12 +37,16 @@ export class LessonService {
       where: { courseId: course.id },
       orderBy: { seq: 'asc' },
     });
-    return rows.map((l) => this.toLessonDto(l));
+    // sessionId(B6 课堂):批量一次 in 查 N 个讲次的最新未结束会话,避免 N+1
+    const sessionByLesson = await latestOpenSessions(this.prisma.client, rows.map((l) => l.id));
+    return rows.map((l) => this.toLessonDto(l, sessionByLesson.get(String(l.id)) ?? null));
   }
 
   /** GET /lessons/:id */
   async detail(id: number): Promise<LessonDto> {
-    return this.toLessonDto(await this.findOrThrow(id));
+    const lesson = await this.findOrThrow(id);
+    const sessionByLesson = await latestOpenSessions(this.prisma.client, [lesson.id]);
+    return this.toLessonDto(lesson, sessionByLesson.get(String(lesson.id)) ?? null);
   }
 
   /** PUT /lessons/:id:改标题/时间 */
@@ -294,17 +299,20 @@ export class LessonService {
     }
   }
 
-  private toLessonDto(l: {
-    id: bigint;
-    courseId: bigint;
-    seq: number;
-    title: string;
-    scheduledStart: Date | null;
-    scheduledEnd: Date | null;
-    status: LessonDto['status'];
-    prepChecklist: unknown;
-    openingConfig?: unknown;
-  }): LessonDto {
+  private toLessonDto(
+    l: {
+      id: bigint;
+      courseId: bigint;
+      seq: number;
+      title: string;
+      scheduledStart: Date | null;
+      scheduledEnd: Date | null;
+      status: LessonDto['status'];
+      prepChecklist: unknown;
+      openingConfig?: unknown;
+    },
+    sessionId: number | null,
+  ): LessonDto {
     return {
       id: num(l.id),
       courseId: num(l.courseId),
@@ -315,6 +323,7 @@ export class LessonService {
       status: l.status,
       prepChecklist: (l.prepChecklist ?? {}) as Record<string, boolean>,
       openingConfig: (l.openingConfig ?? null) as Record<string, unknown> | null,
+      sessionId,
     };
   }
 }
