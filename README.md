@@ -5,6 +5,8 @@
 > **契约变更记录**(详见开工包 01-项目宪法.md 末尾):
 > - [2026-06-11,已批准] schema.prisma 枚举重排为合法多行格式,零语义变化;
 >   `prisma generate` 现可正常使用。A1 起后端通过 Prisma Client(带租户注入)访问数据库。
+> - [2026-06-14,已批准·B6课堂] ClassSnapshot 增可选 `questions?`/`courseware?`(真实模式下发题面/
+>   课件);dto.ts 新增 CoursewarePageView/MiniQuizView。可选、向后兼容、无 schema 迁移。
 >
 > **A1 已交付**:后端骨架/认证/多租户/RBAC 见 `apps/server/README.md`(e2e 18/18)。
 

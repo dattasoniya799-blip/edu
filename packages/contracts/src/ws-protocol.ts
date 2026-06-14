@@ -3,7 +3,10 @@
  * 对应《后端设计文档》7.3 事件协议 与 7.5 断线恢复 snapshot
  * 命名空间 /classroom;鉴权:握手 auth.token = JWT
  */
-import type { AnswerResponse, ParticipantState, SegmentType, SessionStatus } from './dto';
+import type {
+  AnswerResponse, ParticipantState, SegmentType, SessionStatus,
+  AttemptQuestionView, CoursewarePageView, // [2026-06-14 批准·B6课堂] 真实模式下发题面/课件
+} from './dto';
 
 // ---------------- Client → Server ----------------
 export interface C2SEvents {
@@ -64,6 +67,17 @@ export interface ClassSnapshot {
     wrongBookAdded: number[];   // 本堂新收错题 questionId
     aiChatTail: { role: 'user' | 'assistant'; text: string }[]; // 最近 10 条
   };
+  /**
+   * [2026-06-14 批准·B6课堂] 随堂练题面(practice 段试卷题目,学生安全视图)。
+   * 复用 AttemptQuestionView:课中 correctAnswer/analysisLatex 恒为 null 防作弊。
+   * 可选:无 practice 段或未挂卷时缺省;缺失时前端保留本地题面(优雅降级)。
+   */
+  questions?: AttemptQuestionView[];
+  /**
+   * [2026-06-14 批准·B6课堂] 课件分页(lecture 段讲解内容)。
+   * 可选:无 lecture 段或编排侧未采集逐页内容时缺省;缺失时前端降级。
+   */
+  courseware?: CoursewarePageView[];
 }
 
 export interface ParticipantSelfState {
