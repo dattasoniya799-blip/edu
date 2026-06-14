@@ -11,7 +11,7 @@ import type { JwtUser } from '../auth/auth.service';
 import { MasteryQueueService } from '../mastery/mastery.queue';
 import { PrismaService } from '../prisma/prisma.service';
 import { AccountItem, WrongBookService } from '../wrongbook/wrongbook.service';
-import { assertOssKeyOwned } from '../upload/oss-key.util';
+import { isOssKeyOwned } from '../upload/oss-key.util';
 import { signStorageUrl } from '../upload/storage/storage-sign.util';
 import { AI_GATEWAY, AiGateway } from './ai/ai-gateway';
 import { BizException, ERR_GRADING_PENDING } from './business.exception';
@@ -621,10 +621,11 @@ export class GradingService {
    * @Public GET /api/v1/storage/*(StorageDownloadController),修复此前 /storage 无路由 → 404。
    * HMAC 算法/secret 不变;生产切 OSS 时由 storage 适配器换成真实签名 URL,字段形状不变。
    */
-  private signPhotoUrl(ossKey: string, orgId: number): string {
-    // 纵深防御(sec-back · #6):签名前断言 ossKey 属本机构 answer_photo 前缀,
-    // 杜绝(即便是脏数据/越权写入的)跨租户原稿被签发可访问 URL。
-    assertOssKeyOwned(ossKey, orgId, ['answer_photo']);
+  private signPhotoUrl(ossKey: string, orgId: number): string | null {
+    // 纵深防御(sec-back · #6):签名前校验 ossKey 属本机构 answer_photo 前缀。
+    // 读/签名端软失败——不合规(历史脏数据/越权写入/跨租户)直接不签发(返回 null),
+    // 既杜绝跨租户原稿被签出可访问 URL,又不让历史脏 key 403 掉整张批改详情(摄入端 submit 已硬拒 400)。
+    if (!isOssKeyOwned(ossKey, orgId, ['answer_photo'])) return null;
     const base = this.cfg.get<string>(
       'UPLOAD_PUBLIC_BASE',
       `http://127.0.0.1:${this.cfg.get('PORT', '3000')}`,
