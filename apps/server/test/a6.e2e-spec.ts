@@ -281,11 +281,20 @@ describe('课堂实时 WebSocket(A6,/classroom)', () => {
     expect(q1.score).toBe(5);
     expect(q1.stemLatex).toContain('A6-Q1');
 
-    // courseware:不断言其内容。真实数据源调查结论(任务卡)——本讲 lecture 段(seq=2)config={checkpoints:[]}
-    // 且未挂资源;即便演示库(seed)里 lecture 段,也只挂二进制交互课件(Resource type=interactive,
-    // oss_key 指向 HTML)+ 整数页码 checkpoints([3,8,12,18,22]),并无 title/body/narration 逐页文本。
-    // 服务端按「真实存在的结构化逐页内容」组装,无则省略该键(绝不编造 mock 文案),故此处 courseware 缺省。
-    expect(snap.courseware).toBeUndefined();
+    // courseware(B6 正向覆盖):本讲 lecture 段(seq=2)config.pages 提供结构化逐页内容
+    // → 服务端 buildCourseware 组装并随快照下发(title/body/narration + 可选打点小测 quiz)。
+    // 无逐页内容时(数字总页数 / 整数 checkpoints)仍省略该键、绝不编造——见 buildCourseware 注释。
+    expect(Array.isArray(snap.courseware)).toBe(true);
+    expect(snap.courseware).toHaveLength(2);
+    const cw = snap.courseware!;
+    expect(cw[0].title).toBe('A6 课件页1');
+    expect(cw[0].body).toContain('一次函数');
+    expect(cw[0].narration).toBeTruthy();
+    expect(cw[0].quiz).toBeUndefined(); // 第1页无打点小测
+    expect(cw[1].quiz).toBeDefined();   // 第2页带打点小测
+    expect(cw[1].quiz!.correct).toBe('A');
+    expect(cw[1].quiz!.options).toHaveLength(2);
+    expect(cw[1].quiz!.options[0].label).toBe('A');
   });
 
   it('join 门禁:未选课学生 / 他租户教师 → 拒绝(本课成员校验,宪法 §7)', async () => {

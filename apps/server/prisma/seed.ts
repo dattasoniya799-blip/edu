@@ -136,9 +136,28 @@ async function business(c: Client) {
   for (let j = 0; j < 5; j++) await c.query(
     `INSERT INTO paper_questions(org_id,paper_id,question_id,seq,score) VALUES ($1,$2,$3,$4,$5)`,
     [orgId, practicePaper, qIds[j], j + 1, j === 4 ? 10 : 5]);
+  // 第4讲 lecture 段逐页讲义(B6 真实模式课件区下发;buildCourseware 读 config.pages)
+  const lecturePages = [
+    { title: '函数图象的平移:先看“形”',
+      body: '一次函数 $y=kx+b$ 的图象是一条直线。**平移**只改变直线的位置,不改变它的倾斜程度——斜率 $k$ 始终不变。',
+      narration: '这一讲我们研究直线的上下平移:斜率不变,只动截距 b。' },
+    { title: '平移规律:上加下减',
+      body: '直线 $y=kx+b$ 沿 $y$ 轴方向平移:\n\n- 向上平移 $m$ 个单位 → $y=kx+(b+m)$\n- 向下平移 $m$ 个单位 → $y=kx+(b-m)$\n\n口诀:**上加下减**(变化的永远是截距 $b$)。',
+      narration: '记住口诀:上加下减,改的是 b,k 不动。' },
+    { title: '例题:求平移后的解析式',
+      body: '将 $y=2x+1$ 向下平移 $3$ 个单位。\n\n解:$b$ 由 $1$ 变为 $1-3=-2$,所以平移后为 $y=2x-2$。',
+      narration: '下移 3 个单位,b 减 3,得到 y=2x−2。' },
+    { title: '随堂检验',
+      body: '想一想:把 $y=-x+4$ 向上平移 $2$ 个单位,解析式是什么?',
+      narration: '用口诀算一算,选出答案。',
+      quiz: { stem: '把 $y=-x+4$ 向上平移 $2$ 个单位,得到?',
+        options: [{ label: 'A', contentLatex: '$y=-x+6$' }, { label: 'B', contentLatex: '$y=-x+2$' },
+                  { label: 'C', contentLatex: '$y=-x-2$' }, { label: 'D', contentLatex: '$y=x+6$' }],
+        correct: 'A', hint: '上移 → b 加 2,$4+2=6$。' } },
+  ];
   const segs: [string, number, any, number | null, number | null][] = [
     ['warmup', 10, { source: 'auto_wrong', count: 3 }, null, null],
-    ['lecture', 35, { checkpoints: [3, 8, 12, 18, 22] }, res1, null],
+    ['lecture', 35, { checkpoints: [3, 8, 12, 18, 22], pages: lecturePages }, res1, null],
     ['practice', 30, { ai_guide: true, stuck_alert_min: 3 }, null, practicePaper],
     ['summary', 25, { personal_consolidation: { min: 2, max: 4 } }, null, null]];
   for (let j = 0; j < segs.length; j++) await c.query(

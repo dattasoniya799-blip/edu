@@ -155,7 +155,11 @@ export async function createA6Org(): Promise<A6Fixture> {
   await raw.lessonSegment.createMany({
     data: [
       { orgId, lessonId: lesson.id, seq: 1, type: 'warmup', durationMin: 5, config: { source: 'wrong_book', count: 2 } },
-      { orgId, lessonId: lesson.id, seq: 2, type: 'lecture', durationMin: 15, config: { checkpoints: [] } },
+      { orgId, lessonId: lesson.id, seq: 2, type: 'lecture', durationMin: 15, config: { checkpoints: [], pages: [
+        { title: 'A6 课件页1', body: '一次函数 $y=kx+b$ 的图象是一条直线。', narration: '先认识一次函数的图象。' },
+        { title: 'A6 课件页2', body: '平移规律:**上加下减**(改 $b$)。', narration: '记住口诀:上加下减。',
+          quiz: { stem: '把 $y=2x+1$ 向上平移 3 个单位,得?', options: [{ label: 'A', contentLatex: '$y=2x+4$' }, { label: 'B', contentLatex: '$y=2x-2$' }], correct: 'A', hint: '上移 → b 加。' } },
+      ] } },
       { orgId, lessonId: lesson.id, seq: 3, type: 'practice', durationMin: 15, config: { ai_guide: true, stuck_alert_min: A6_STUCK_ALERT_MIN }, paperId: practicePaper.id },
       { orgId, lessonId: lesson.id, seq: 4, type: 'summary', durationMin: 5, config: {} },
       { orgId, lessonId: lesson.id, seq: 5, type: 'homework', durationMin: 5, config: {}, paperId: homeworkPaper.id },
