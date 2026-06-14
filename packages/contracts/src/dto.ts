@@ -157,6 +157,27 @@ export interface AttemptQuestionView {
   stemLatex: string; figures: QuestionFigure[]; options: QuestionOptionDto[];
   correctAnswer: QuestionAnswer | null; analysisLatex: string | null;
 }
+/**
+ * 课件打点小测(lecture 环节翻页时的即时小测):客户端即时反馈,不走判分通道。
+ * correct 仅供客户端本地比对给软提示,后端不据此判分。
+ * [2026-06-14 批准·B6课堂] 原为 apps/student 本地类型,真实模式下发课件需提升进契约。
+ */
+export interface MiniQuizView {
+  stem: string;
+  options: { label: string; contentLatex: string }[];
+  correct: string; // 正确选项 label(A/B/C…)
+  hint: string;    // 答错时的提示文案
+}
+/**
+ * 课件单页视图(讲解环节分页):标题 + 正文(TexText 混排,Markdown+$LaTeX$)+ 翻到本页的 AI 旁白 + 可选打点小测。
+ * [2026-06-14 批准·B6课堂] 原为 apps/student 本地类型,真实模式下发课件需提升进契约。
+ */
+export interface CoursewarePageView {
+  title: string;
+  body: string;
+  narration: string;
+  quiz?: MiniQuizView;
+}
 export interface AnswerDto {
   questionId: number; response: AnswerResponse | null;
   isCorrect: boolean | null; score: number | null; flagged: boolean;
