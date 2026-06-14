@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import type { AnswerResponse, AssignmentDto } from '@qiming/contracts';
 import { Button, Modal, ProgressBar, Skeleton, useToast } from '@qiming/ui';
-import { api } from '../../api';
+import { api, uploadAnswerPhoto } from '../../api';
 import { AnswerCard } from './AnswerCard';
 import { allAnswered, answeredCount } from './machine';
 import { QuestionPanel } from './QuestionPanel';
@@ -157,7 +157,7 @@ export function HomeworkPage() {
             <span className="shrink-0 text-xs text-ink-3">已答 {answeredCount(quiz)} 题 · 不限时</span>
           </div>
 
-          <QuestionPanel q={q} item={item} draft={draft} redoKind={redoKind}
+          <QuestionPanel q={q} item={item} draft={draft} redoKind={redoKind} onUploadPhoto={uploadAnswerPhoto}
             onDraft={(r) => setDrafts((d) => ({ ...d, [q.questionId]: r }))} />
 
           {/* 底部操作 */}
