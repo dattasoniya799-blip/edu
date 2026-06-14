@@ -9,6 +9,7 @@ import { Link, useParams } from 'react-router-dom';
 import type { LessonDto, ParticipantMonitor } from '@qiming/contracts';
 import { Card, EmptyState, Skeleton, StatCard } from '@qiming/ui';
 import { api } from '../../api';
+import { getToken } from '../../auth/token';
 import { PageHead } from '../Shell';
 import { fmtClock, fmtDateTime } from '../course/lib/format';
 import { SEGMENT_LABEL } from '../lesson/lib/segments';
@@ -85,7 +86,9 @@ export function MonitorPage() {
   }, [lessonId]);
 
   useEffect(() => {
-    const source = createMonitorSource();
+    // 真实模式:以本课教师身份 class:join 进监控房。sessionId 当前取路由参(lessonId)——
+    // 契约 LessonDto 暂未透出 ClassSession id,真实联调前需补 lesson→session 映射(详见 source.ts)。
+    const source = createMonitorSource({ sessionId: lessonId, token: getToken() });
     const stop = source.connect({
       onRoster: (e) => {
         setConnected(true);

@@ -164,8 +164,8 @@ export function attachClassroomMock(
       const hot = hotOf(token);
       joined = true;
       void socket.join(`session:${state.session.id}`);
-      // mock 增量:questions/courseware(B5-1 形状,契约字段逐字不动;见 README B6-1)
-      ack({ ...snapshotOf(hot), questions: CD.CLASS_QUESTIONS, courseware: CD.CLASS_COURSEWARE } as ClassSnapshot);
+      // 真实模式下 ClassSnapshot 已含可选 questions/courseware([2026-06-14 批准·B6课堂]),类型自然通过,无需强制转换
+      ack({ ...snapshotOf(hot), questions: CD.CLASS_QUESTIONS, courseware: CD.CLASS_COURSEWARE });
       socket.emit('class:state', selfStateOf(hot));
       later(narrationDelayMs, () => {
         if (socket.connected) socket.emit('class:narration', { text: CD.SEGMENT_NARRATIONS[hot.segment] ?? '' });
