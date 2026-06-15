@@ -1,4 +1,4 @@
-import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import type Redis from 'ioredis';
 import type { AiFeature } from '@qiming/contracts';
 import { periodOf, round4 } from '../../admin/helpers';
@@ -6,7 +6,9 @@ import { AuditService } from '../../audit/audit.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { REDIS } from '../../redis/redis.module';
 import { BizException, ERR_AI_QUOTA_EXCEEDED } from '../ai.codes';
+import { DEFAULT_CONCURRENCY, PROVIDER_CONFIG_KEY } from './providers/openai-compatible.provider';
 import { RouteTableService } from './route-table.service';
+import { Semaphore } from './semaphore';
 import type { Chunk, LlmChatRequest, LlmGateway, LlmProvider, Usage } from './types';
 
 /** org 当月成本 Redis 键(a7: 前缀纪律;额度执行的唯一实时数据源,设计文档 §8.1) */
@@ -29,9 +31,11 @@ const OVER_POLICY_BLOCKS: Record<string, AiFeature[]> = {
  * 所有 LLM 调用必须经本网关(宪法 §4),业务模块不见任何供应商 SDK。
  */
 @Injectable()
-export class LlmGatewayService implements LlmGateway {
+export class LlmGatewayService implements LlmGateway, OnModuleInit {
   private readonly logger = new Logger('LlmGateway');
   private readonly providers = new Map<string, LlmProvider>();
+  /** 全局并发闸:同时在飞的 LLM 调用数(跨四能力的兜底,默认 8,运行态可调) */
+  private readonly sem = new Semaphore(DEFAULT_CONCURRENCY);
 
   constructor(
     private readonly prisma: PrismaService,
@@ -39,6 +43,29 @@ export class LlmGatewayService implements LlmGateway {
     private readonly audit: AuditService,
     @Inject(REDIS) private readonly redis: Redis,
   ) {}
+
+  /** 启动时按运行态配置初始化并发上限(PUT /admin/ai/config 后再经 setConcurrency 刷新) */
+  async onModuleInit(): Promise<void> {
+    const raw = await this.redis.get(PROVIDER_CONFIG_KEY).catch(() => null);
+    if (raw) {
+      try {
+        const n = Number((JSON.parse(raw) as { concurrency?: number }).concurrency);
+        if (n > 0) this.sem.setMax(n);
+      } catch {
+        // 损坏内容 → 保持默认上限
+      }
+    }
+  }
+
+  /** PUT /admin/ai/config 改并发上限时同步刷新闸门 */
+  setConcurrency(max: number): void {
+    this.sem.setMax(max);
+  }
+
+  /** 当前并发上限(可观测/测试用) */
+  concurrencyMax(): number {
+    return this.sem.getMax();
+  }
 
   /** AiModule 装配时注册供应商适配器 */
   register(provider: LlmProvider): void {
@@ -53,50 +80,56 @@ export class LlmGatewayService implements LlmGateway {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return (async function* () {
-      const quota = await self.quotaOf();
-      await self.enforceQuota(req, quota);
-      const route = await self.routes.resolve(req.feature);
-      const startedAt = Date.now();
-
-      // 主路由 → fallback(各供应商首块输出前的失败可切换)
-      let active = { provider: route.provider, model: route.model };
-      let stream: AsyncIterable<Chunk>;
+      // 全局并发闸:占名额。generator 的 finally 在迭代完成/提前 return/抛错时均触发 → 必释放。
+      await self.sem.acquire();
       try {
-        stream = self.mustProvider(active.provider).chat({ model: active.model, messages: req.messages, feature: req.feature });
-        stream = await self.primeStream(stream);
-      } catch (e) {
-        if (!route.fallback) {
-          await self.meter(req, active, { tokensIn: 0, tokensOut: 0 }, startedAt, 'error');
-          throw e;
-        }
-        self.logger.warn(`feature=${req.feature} 主路由 ${active.provider}/${active.model} 失败,切换 fallback:${(e as Error).message}`);
-        active = { provider: route.fallback.provider, model: route.fallback.model };
+        const quota = await self.quotaOf();
+        await self.enforceQuota(req, quota);
+        const route = await self.routes.resolve(req.feature);
+        const startedAt = Date.now();
+
+        // 主路由 → fallback(各供应商首块输出前的失败可切换)
+        let active = { provider: route.provider, model: route.model };
+        let stream: AsyncIterable<Chunk>;
         try {
           stream = self.mustProvider(active.provider).chat({ model: active.model, messages: req.messages, feature: req.feature });
           stream = await self.primeStream(stream);
-        } catch (e2) {
-          await self.meter(req, active, { tokensIn: 0, tokensOut: 0 }, startedAt, 'error');
-          throw e2;
+        } catch (e) {
+          if (!route.fallback) {
+            await self.meter(req, active, { tokensIn: 0, tokensOut: 0 }, startedAt, 'error');
+            throw e;
+          }
+          self.logger.warn(`feature=${req.feature} 主路由 ${active.provider}/${active.model} 失败,切换 fallback:${(e as Error).message}`);
+          active = { provider: route.fallback.provider, model: route.fallback.model };
+          try {
+            stream = self.mustProvider(active.provider).chat({ model: active.model, messages: req.messages, feature: req.feature });
+            stream = await self.primeStream(stream);
+          } catch (e2) {
+            await self.meter(req, active, { tokensIn: 0, tokensOut: 0 }, startedAt, 'error');
+            throw e2;
+          }
         }
-      }
 
-      let usage: Usage = { tokensIn: 0, tokensOut: 0 };
-      let outChars = 0;
-      try {
-        for await (const chunk of stream) {
-          if (chunk.usage) usage = chunk.usage;
-          outChars += chunk.delta.length;
-          yield chunk;
+        let usage: Usage = { tokensIn: 0, tokensOut: 0 };
+        let outChars = 0;
+        try {
+          for await (const chunk of stream) {
+            if (chunk.usage) usage = chunk.usage;
+            outChars += chunk.delta.length;
+            yield chunk;
+          }
+        } catch (e) {
+          await self.meter(req, active, usage, startedAt, 'error');
+          throw e;
         }
-      } catch (e) {
-        await self.meter(req, active, usage, startedAt, 'error');
-        throw e;
+        if (!usage.tokensIn && !usage.tokensOut) {
+          // 供应商没回 usage 的兜底估算(按字符数)
+          usage = { tokensIn: req.messages.reduce((s, m) => s + m.content.length, 0), tokensOut: outChars };
+        }
+        await self.meter(req, active, usage, startedAt, 'ok', quota);
+      } finally {
+        self.sem.release();
       }
-      if (!usage.tokensIn && !usage.tokensOut) {
-        // 供应商没回 usage 的兜底估算(按字符数)
-        usage = { tokensIn: req.messages.reduce((s, m) => s + m.content.length, 0), tokensOut: outChars };
-      }
-      await self.meter(req, active, usage, startedAt, 'ok', quota);
     })();
   }
 

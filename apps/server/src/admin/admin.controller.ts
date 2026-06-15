@@ -30,6 +30,8 @@ import {
   TeacherInputDto,
   TeacherListQueryDto,
 } from './admin.dto';
+import { AiFeatureRoutesInputDto, AiProviderConfigInputDto, AiTestInputDto } from '../ai/ai-admin.dto';
+import { AiAdminService } from '../ai/ai-admin.service';
 import { CoursesService } from './courses.service';
 import { InsightsService } from './insights.service';
 import { StudentsService } from './students.service';
@@ -43,6 +45,7 @@ export class AdminController {
     private readonly students: StudentsService,
     private readonly courses: CoursesService,
     private readonly insights: InsightsService,
+    private readonly aiAdmin: AiAdminService,
   ) {}
 
   // ================= 教师 =================
@@ -223,5 +226,32 @@ export class AdminController {
   @Get('audit-logs')
   auditLogs(@Query() q: PageQueryDto) {
     return this.insights.auditLogs(q);
+  }
+
+  // ================= AI 接口管理(运行态 LLM 配置 / 真假路由 / 测试连接) =================
+  @Get('ai/config')
+  aiConfigGet() {
+    return this.aiAdmin.getConfig();
+  }
+
+  @Put('ai/config')
+  aiConfigPut(@CurrentUser() user: JwtUser, @Body() dto: AiProviderConfigInputDto, @Ip() ip: string) {
+    return this.aiAdmin.putConfig(user, dto, ip);
+  }
+
+  @Get('ai/routes')
+  aiRoutesGet() {
+    return this.aiAdmin.getRoutes();
+  }
+
+  @Put('ai/routes')
+  aiRoutesPut(@CurrentUser() user: JwtUser, @Body() dto: AiFeatureRoutesInputDto, @Ip() ip: string) {
+    return this.aiAdmin.putRoutes(user, dto, ip);
+  }
+
+  @Post('ai/test')
+  @HttpCode(200)
+  aiTest(@Body() dto: AiTestInputDto) {
+    return this.aiAdmin.test(dto?.feature);
   }
 }

@@ -3,6 +3,7 @@ import type Redis from 'ioredis';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { REDIS } from '../redis/redis.module';
+import { AiAdminService } from './ai-admin.service';
 import { AiController } from './ai.controller';
 import { CompanionService } from './features/companion.service';
 import { DiagnosisService } from './features/diagnosis.service';
@@ -53,7 +54,15 @@ import { LocalOcrStub, OCR_SERVICE } from './ocr/ocr.service';
     QaService,
     CompanionService,
     DiagnosisService,
+    AiAdminService,
   ],
-  exports: [LlmGatewayService, LlmPreGradeGateway, CompanionService, DiagnosisService, OpenAiCompatibleProvider],
+  exports: [
+    LlmGatewayService,
+    LlmPreGradeGateway,
+    CompanionService,
+    DiagnosisService,
+    OpenAiCompatibleProvider,
+    AiAdminService,
+  ],
 })
 export class AiModule {}
