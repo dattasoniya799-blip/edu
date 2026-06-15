@@ -7,24 +7,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import type { LessonDto, LessonSegmentDto, PaperDto, QuestionDto } from '@qiming/contracts';
-import { Button, Card, EmptyState, Modal, Skeleton, Tag, TexText, useToast } from '@qiming/ui';
+import { Button, Card, EmptyState, Skeleton, Tag, useToast } from '@qiming/ui';
 import { api } from '../../api';
 import { PageHead } from '../Shell';
 import { bizError, newSegment, reseq } from '../lesson/lib/segments';
 import { fmtDateTime } from '../course/lib/format';
 import { defaultScore, toPaperInput, totalScore, validatePaper, type PaperItem } from './lib/paper';
-
-const TYPE_LABEL = { single: '单选', multi: '多选', blank: '填空', solution: '解答题' } as const;
-
-function DiffDots({ level }: { level: number }) {
-  return (
-    <span className="inline-flex gap-0.5 align-[-1px]">
-      {[1, 2, 3].map((i) => (
-        <i key={i} className={`h-[7px] w-[7px] rounded-[2px] ${i <= level ? 'bg-orange' : 'bg-line'}`} />
-      ))}
-    </span>
-  );
-}
+import { SelectedQuestionList } from './components/SelectedQuestionList';
+import { QuestionPicker } from './components/QuestionPicker';
 
 export function PaperBuilderPage() {
   const { id } = useParams();
@@ -42,7 +32,6 @@ export function PaperBuilderPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickKeyword, setPickKeyword] = useState('');
 
   useEffect(() => {
     setLoading(true);
@@ -153,9 +142,6 @@ export function PaperBuilderPage() {
     return <EmptyState icon="▦" text="讲次不存在" action={<Button onClick={() => navigate('/courses')}>返回讲次列表</Button>} />;
   }
 
-  const pickList = questions.filter((q) =>
-    !pickKeyword.trim() || q.stemLatex.includes(pickKeyword.trim()) || q.tags.some((t) => t.name.includes(pickKeyword.trim())));
-
   return (
     <div>
       <PageHead
@@ -182,53 +168,13 @@ export function PaperBuilderPage() {
           extra={<button type="button" className="font-semibold text-primary hover:underline" onClick={() => setPickerOpen(true)}>去题库选题 →</button>}
           bodyClassName="p-0"
         >
-          {items.length === 0 ? (
-            <EmptyState
-              icon="▤"
-              text="还没有选题"
-              hint="从题库挑选题目组成本次作业"
-              action={<Button variant="primary" onClick={() => setPickerOpen(true)}>从题库选题</Button>}
-            />
-          ) : (
-            items.map((it, i) => {
-              const q = qById.get(it.questionId);
-              return (
-                <div key={it.questionId} className="flex items-start gap-3.5 border-b border-line px-5 py-4 last:border-none">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-pill bg-primary-soft text-[13px] font-bold tabular-nums text-primary">
-                    {i + 1}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[13.5px] leading-[1.8]">
-                      {q ? <TexText src={q.stemLatex} /> : <span className="text-ink-3">题目 #{it.questionId}</span>}
-                    </div>
-                    {q && (
-                      <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-ink-3">
-                        <span>{TYPE_LABEL[q.type]}</span>
-                        {q.tags.find((t) => t.graphType === 'curriculum_knowledge') && (
-                          <span>{q.tags.find((t) => t.graphType === 'curriculum_knowledge')!.name}</span>
-                        )}
-                        <span className="inline-flex items-center gap-1.5">难度 <DiffDots level={q.difficulty} /></span>
-                        {q.stats.correctRate != null && <span className="tabular-nums">历史正确率 {q.stats.correctRate}%</span>}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex shrink-0 items-center gap-1.5 text-[12.5px] text-ink-2">
-                    <input
-                      type="number" min={1} max={100}
-                      className="w-14 rounded-[8px] border-[1.5px] border-line px-2 py-1 text-center text-[13px] tabular-nums focus:border-primary focus:outline-none"
-                      value={it.score}
-                      onChange={(e) => patchScore(it.questionId, Number(e.target.value))}
-                      aria-label={`第 ${i + 1} 题分值`}
-                    />
-                    分
-                  </div>
-                  <button type="button" className="shrink-0 text-[13px] font-medium text-red hover:underline" onClick={() => remove(it.questionId)}>
-                    移除
-                  </button>
-                </div>
-              );
-            })
-          )}
+          <SelectedQuestionList
+            items={items}
+            qById={qById}
+            onScoreChange={patchScore}
+            onRemove={remove}
+            onPick={() => setPickerOpen(true)}
+          />
         </Card>
 
         {/* 右:发布设置 */}
@@ -269,42 +215,13 @@ export function PaperBuilderPage() {
       </div>
 
       {/* 题库选题弹窗(B3 题库同源数据:仅已入库题) */}
-      <Modal open={pickerOpen} title="从题库选题" onClose={() => setPickerOpen(false)} width={720}
-        footer={<Button variant="primary" onClick={() => setPickerOpen(false)}>完成选题(已选 {items.length} 题)</Button>}
-      >
-        <input
-          className="mb-3 w-full rounded-[10px] border-[1.5px] border-line px-3 py-2 text-[13px] focus:border-primary focus:outline-none"
-          placeholder="搜索题干 / 知识点"
-          value={pickKeyword}
-          onChange={(e) => setPickKeyword(e.target.value)}
-        />
-        {pickList.length === 0 ? (
-          <EmptyState icon="▤" text="没有符合条件的已入库题目" hint="可先到「题库维护」录入并入库新题" />
-        ) : (
-          <div className="flex max-h-[50vh] flex-col gap-2 overflow-auto pr-1">
-            {pickList.map((q) => {
-              const selected = items.some((it) => it.questionId === q.id);
-              return (
-                <button
-                  key={q.id} type="button"
-                  onClick={() => (selected ? remove(q.id) : add(q))}
-                  className={`rounded-md border-[1.5px] px-3.5 py-2.5 text-left ${
-                    selected ? 'border-primary bg-primary-soft' : 'border-line hover:border-ink-3'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 text-xs text-ink-3">
-                    <Tag tone={q.type === 'solution' ? 'violet' : 'primary'}>{TYPE_LABEL[q.type]}</Tag>
-                    <span className="inline-flex items-center gap-1.5">难度 <DiffDots level={q.difficulty} /></span>
-                    {q.stats.correctRate != null && <span className="tabular-nums">正确率 {q.stats.correctRate}%</span>}
-                    <span className={`ml-auto font-bold ${selected ? 'text-primary' : 'text-ink-3'}`}>{selected ? '✓ 已选' : '加入'}</span>
-                  </div>
-                  <div className="mt-1 text-[13px] leading-[1.7]"><TexText src={q.stemLatex} /></div>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </Modal>
+      <QuestionPicker
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        questions={questions}
+        items={items}
+        onToggle={(q) => (items.some((it) => it.questionId === q.id) ? remove(q.id) : add(q))}
+      />
     </div>
   );
 }

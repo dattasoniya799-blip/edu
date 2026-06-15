@@ -199,6 +199,15 @@ function genQuestions(): QuestionDto[] {
 }
 export const questions: QuestionDto[] = genQuestions();
 
+// 试卷库:三类齐全 + 草稿/已发布两态(paper-lib 页集中浏览/搜索/复用)
+const examQuestions = questions.slice(5, 13).map((q, j) => ({
+  seq: j + 1, questionId: q.id, score: q.type === 'solution' ? 10 : 5, type: q.type, stemLatex: q.stemLatex,
+}));
+const draftQuestions = [14, 15, 16].map((qid, j) => {
+  const q = questions[qid - 1];
+  return { seq: j + 1, questionId: q.id, score: q.type === 'solution' ? 10 : 5, type: q.type, stemLatex: q.stemLatex };
+});
+
 export const papers: PaperDto[] = [
   {
     id: 1, name: '第4讲 · 随堂练', type: 'practice', totalScore: 30, status: 'published',
@@ -210,6 +219,14 @@ export const papers: PaperDto[] = [
       const q = questions[qid - 1];
       return { seq: j + 1, questionId: q.id, score: j === 4 ? 10 : 5, type: q.type, stemLatex: q.stemLatex };
     }),
+  },
+  {
+    id: 3, name: '期中考试卷 · 一次函数综合', type: 'exam', status: 'published',
+    totalScore: examQuestions.reduce((s, q) => s + q.score, 0), questions: examQuestions,
+  },
+  {
+    id: 4, name: '第5讲课后作业(草稿) · 一次函数应用', type: 'homework', status: 'draft',
+    totalScore: draftQuestions.reduce((s, q) => s + q.score, 0), questions: draftQuestions,
   },
 ];
 
