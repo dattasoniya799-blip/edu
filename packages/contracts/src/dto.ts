@@ -211,3 +211,34 @@ export interface AiUsageSummaryDto {
   monthlyLimit: number; usedPercent: number; avgCostPerLesson: number | null;
 }
 export interface AiUsageBreakdownDto { key: string; label: string; tokens: number; cost: number; percent: number }
+
+/** AI 接口管理(admin)· 运行态 LLM 供应商配置 —— 读(key 脱敏,绝不回明文) */
+export interface AiProviderConfigDto {
+  baseUrl: string;
+  model: string;
+  apiKeyMasked: string;            // 形如 "sk-****e86f3";未配置则空串
+  concurrency: number;             // 全局并发上限(同时在飞的 LLM 调用数)
+  source: 'runtime' | 'env';       // 当前生效来源:Redis 运行态 / env 兜底
+}
+/** AI 供应商配置 —— 写(apiKey 留空=保留现有,不覆盖) */
+export interface AiProviderConfigInput {
+  baseUrl: string;
+  model: string;
+  apiKey?: string;
+  concurrency: number;
+}
+/** 逐功能真假路由(比裸路由表更友好,供管理页开关) */
+export type AiFeatureMode = 'real' | 'mock';
+export interface AiFeatureRoutesDto {
+  qa: AiFeatureMode;
+  pre_grading: AiFeatureMode;
+  class_companion: AiFeatureMode;
+  diagnosis: AiFeatureMode;
+}
+/** 测试连接结果 */
+export interface AiTestResultDto {
+  ok: boolean;
+  latencyMs: number;
+  sample: string | null;           // 成功时模型回的一小段文本
+  error: string | null;            // 失败原因
+}

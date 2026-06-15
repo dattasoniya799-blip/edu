@@ -1312,6 +1312,185 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/ai/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 读取运行态 LLM 供应商配置(key 脱敏) [admin] */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: number;
+                            message: string;
+                            data: components["schemas"]["AiProviderConfig"];
+                        };
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        /** 写入运行态 LLM 供应商配置(apiKey 留空=不覆盖,运行态生效不重启) [admin] */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AiProviderConfigInput"];
+                };
+            };
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OkVoid"];
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/ai/routes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 读取逐功能真假路由 [admin] */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: number;
+                            message: string;
+                            data: components["schemas"]["AiFeatureRoutes"];
+                        };
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        /** 设置逐功能真假路由(逐功能切真实↔mock) [admin] */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AiFeatureRoutes"];
+                };
+            };
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OkVoid"];
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/ai/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 测试 LLM 连接(可选指定功能) [admin] */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        feature?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: number;
+                            message: string;
+                            data: components["schemas"]["AiTestResult"];
+                        };
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/settings": {
         parameters: {
             query?: never;
@@ -4208,6 +4387,44 @@ export interface components {
             tokens: number;
             cost: number;
             percent: number;
+        };
+        AiProviderConfig: {
+            baseUrl: string;
+            model: string;
+            /** @description 脱敏后的 key */
+            apiKeyMasked: string;
+            /** @description 全局并发上限(同时在飞的 LLM 调用数) */
+            concurrency: number;
+            /**
+             * @description 当前生效来源:runtime=Redis 运行态 / env=兜底
+             * @enum {string}
+             */
+            source: "runtime" | "env";
+        };
+        AiProviderConfigInput: {
+            baseUrl: string;
+            model: string;
+            /** @description 留空=保留现有 */
+            apiKey?: string;
+            concurrency: number;
+        };
+        AiFeatureRoutes: {
+            /** @enum {string} */
+            qa: "real" | "mock";
+            /** @enum {string} */
+            pre_grading: "real" | "mock";
+            /** @enum {string} */
+            class_companion: "real" | "mock";
+            /** @enum {string} */
+            diagnosis: "real" | "mock";
+        };
+        AiTestResult: {
+            ok: boolean;
+            latencyMs: number;
+            /** @description 成功时模型回的一小段文本 */
+            sample: null | string;
+            /** @description 失败原因 */
+            error: null | string;
         };
         StsCredential: {
             /** @description 预签名直传 URL(PUT) */
