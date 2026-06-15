@@ -546,6 +546,40 @@ components:
         tokens: { type: integer }
         cost: { type: number }
         percent: { type: number }
+    # ---- AI 接口管理(admin)· 运行态 LLM 配置;与 src/dto.ts 一一对应 ----
+    AiProviderConfig:
+      type: object
+      required: [baseUrl, model, apiKeyMasked, concurrency, source]
+      properties:
+        baseUrl: { type: string }
+        model: { type: string }
+        apiKeyMasked: { type: string, description: 脱敏后的 key,如 sk-****e86f3;未配置则空串(绝不回明文) }
+        concurrency: { type: integer, description: 全局并发上限(同时在飞的 LLM 调用数) }
+        source: { type: string, enum: [runtime, env], description: 当前生效来源:runtime=Redis 运行态 / env=兜底 }
+    AiProviderConfigInput:
+      type: object
+      required: [baseUrl, model, concurrency]
+      properties:
+        baseUrl: { type: string }
+        model: { type: string }
+        apiKey: { type: string, description: 留空=保留现有,不覆盖 }
+        concurrency: { type: integer }
+    AiFeatureRoutes:
+      type: object
+      required: [qa, pre_grading, class_companion, diagnosis]
+      properties:
+        qa: { type: string, enum: [real, mock] }
+        pre_grading: { type: string, enum: [real, mock] }
+        class_companion: { type: string, enum: [real, mock] }
+        diagnosis: { type: string, enum: [real, mock] }
+    AiTestResult:
+      type: object
+      required: [ok, latencyMs, sample, error]
+      properties:
+        ok: { type: boolean }
+        latencyMs: { type: integer }
+        sample: { oneOf: [{ type: 'null' }, { type: string }], description: 成功时模型回的一小段文本 }
+        error: { oneOf: [{ type: 'null' }, { type: string }], description: 失败原因 }
     StsCredential:
       type: object
       required: [uploadUrl, ossKey, expiresAt]
@@ -774,6 +808,37 @@ paths:
       requestBody: {required: true, content: {application/json: {schema: {type: object, required: [monthlyLimit, alertThreshold, overPolicy], properties: {monthlyLimit: {type: number}, alertThreshold: {type: integer, minimum: 50, maximum: 95}, overPolicy: {type: string, enum: [disable_qa, pause_all, record_only]}}}}}}
       responses:
         '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/ai/config:
+    get:
+      summary: 读取运行态 LLM 供应商配置(key 脱敏) [admin]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/AiProviderConfig'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+    put:
+      summary: 写入运行态 LLM 供应商配置(apiKey 留空=不覆盖,运行态生效不重启) [admin]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/AiProviderConfigInput'}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/ai/routes:
+    get:
+      summary: 读取逐功能真假路由 [admin]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/AiFeatureRoutes'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+    put:
+      summary: 设置逐功能真假路由(逐功能切真实↔mock) [admin]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/AiFeatureRoutes'}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/ai/test:
+    post:
+      summary: 测试 LLM 连接(可选指定功能) [admin]
+      requestBody: {content: {application/json: {schema: {type: object, properties: {feature: {type: string}}}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/AiTestResult'}}}}}}
         default: {$ref: '#/components/responses/Err'}
   /admin/settings:
     get:
