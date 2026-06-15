@@ -2,8 +2,8 @@
  * 试卷库(集中浏览/搜索/复用全机构试卷)
  * 痛点:试卷散在讲次编排的「选择已有卷」弹窗里,没有一站式入口。本页用现成端点拉全部试卷:
  *   GET /papers(全量,客户端按 type 页签 + 试卷名搜索过滤)→ 点卡片 GET /papers/{id} 展开题目。
- * 管理入口:试卷的新建/编辑沿用既有「组卷页」(/lessons/:id/paper,讲次内组卷),故本页统一引导到
- *   「我的课程 → 讲次 → 组卷」;已被作业引用的卷禁改(后端 4302),编辑入口置灰提示。
+ * 管理入口:本页直达「独立组卷」——新建 → /papers/new、编辑 → /papers/:id/edit(不依附讲次,只建/改卷);
+ *   已被作业引用的卷禁改(后端 4302),编辑入口置灰提示。
  * 引用态为尽力而为:GET /assignments(AssignmentBrief)仅带 paperName,故按试卷名匹配判定。
  */
 import { useEffect, useMemo, useState } from 'react';
@@ -84,8 +84,8 @@ export function PaperLibraryPage() {
         actions={(
           <Button
             variant="primary"
-            onClick={() => navigate('/courses')}
-            title="试卷在讲次「组卷」中新建:进入「我的课程」→ 讲次 → 课后作业/随堂练 组卷"
+            onClick={() => navigate('/papers/new')}
+            title="独立组卷:从题库挑题直接建一份试卷(不依附讲次)"
           >
             + 新建试卷
           </Button>
@@ -138,8 +138,8 @@ export function PaperLibraryPage() {
           <EmptyState
             icon="▥"
             text={keyword.trim() ? '没有匹配的试卷' : '该分类下还没有试卷'}
-            hint={keyword.trim() ? '换个关键词,或切换到「全部」' : '进入讲次「组卷」从题库挑题,即可在此集中复用'}
-            action={!keyword.trim() ? <Button variant="primary" onClick={() => navigate('/courses')}>去组卷</Button> : undefined}
+            hint={keyword.trim() ? '换个关键词,或切换到「全部」' : '点「新建试卷」从题库挑题,直接组一份独立卷'}
+            action={!keyword.trim() ? <Button variant="primary" onClick={() => navigate('/papers/new')}>新建试卷</Button> : undefined}
           />
         </div>
       ) : (
@@ -167,8 +167,8 @@ export function PaperLibraryPage() {
                       <Button disabled title="该试卷已被作业引用,禁止修改(可在库内新建一份)">编辑</Button>
                     ) : (
                       <Button
-                        onClick={() => navigate('/courses')}
-                        title="在「我的课程」对应讲次的「组卷」中编辑该试卷"
+                        onClick={() => navigate(`/papers/${p.id}/edit`)}
+                        title="独立编辑该试卷(改名/改题/调分)"
                       >
                         编辑
                       </Button>

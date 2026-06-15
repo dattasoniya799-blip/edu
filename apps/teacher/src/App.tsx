@@ -10,6 +10,7 @@ import { CourseLessonsPage } from './pages/course/CourseLessonsPage';
 import { LessonArrangePage } from './pages/lesson/LessonArrangePage';
 import { PaperBuilderPage } from './pages/paper/PaperBuilderPage';
 import { PaperLibraryPage } from './pages/paper/PaperLibraryPage';
+import { PaperEditorPage } from './pages/paper/PaperEditorPage';
 import { GradingHomePage } from './pages/grading/GradingHomePage';
 import { GradingReviewPage } from './pages/grading/GradingReviewPage';
 import { MonitorPage } from './pages/monitor/MonitorPage';
@@ -33,6 +34,8 @@ export function App() {
           <Route path="/grading" element={<GradingHomePage />} />
           <Route path="/grading/:assignmentId" element={<GradingReviewPage />} />
           <Route path="/papers" element={<PaperLibraryPage />} />
+          <Route path="/papers/new" element={<PaperEditorPage />} />
+          <Route path="/papers/:id/edit" element={<PaperEditorPage />} />
           <Route path="/bank" element={<BankList />} />
           <Route path="/bank/new" element={<EditorPage />} />
           <Route path="/bank/:id/edit" element={<EditorPage />} />
