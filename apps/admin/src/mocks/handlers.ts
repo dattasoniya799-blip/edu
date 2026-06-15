@@ -259,6 +259,28 @@ export const handlers = [
     D.aiUsageSummary.usedPercent = Math.round((D.aiUsageSummary.totalCost / body.monthlyLimit) * 100);
     return okVoid();
   })),
+  // ---- AI 接口管理(运行态 LLM 供应商 + 真假路由 + 测试连接)----
+  http.get(`${BASE}/admin/ai/config`, authed(() => ok(D.aiProviderConfig))),
+  http.put(`${BASE}/admin/ai/config`, authed(async ({ request }) => {
+    const body = (await request.json()) as { baseUrl: string; model: string; apiKey?: string; concurrency: number };
+    D.aiProviderConfig.baseUrl = body.baseUrl;
+    D.aiProviderConfig.model = body.model;
+    D.aiProviderConfig.concurrency = body.concurrency;
+    D.aiProviderConfig.source = 'runtime'; // 写入即转运行态
+    if (body.apiKey) { // 留空=不改;给了才换脱敏串
+      const k = body.apiKey;
+      D.aiProviderConfig.apiKeyMasked = `sk-****${k.slice(-5)}`;
+    }
+    return okVoid();
+  })),
+  http.get(`${BASE}/admin/ai/routes`, authed(() => ok(D.aiFeatureRoutes))),
+  http.put(`${BASE}/admin/ai/routes`, authed(async ({ request }) => {
+    const body = (await request.json()) as typeof D.aiFeatureRoutes;
+    Object.assign(D.aiFeatureRoutes, body); // 有状态:重新读取可见
+    return okVoid();
+  })),
+  http.post(`${BASE}/admin/ai/test`, authed(() => ok({ ok: true, latencyMs: 300, sample: 'ok', error: null }))),
+
   http.get(`${BASE}/admin/settings`, authed((info) => ok(currentUser(info.request)))),
   http.put(`${BASE}/admin/settings`, authed(async ({ request }) => {
     const body = (await request.json()) as { qaGuideOnly?: boolean; studentHours?: { start: string; end: string } };

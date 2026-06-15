@@ -9,6 +9,7 @@ import type {
   MeDto, TeacherDto, StudentDto, CourseDto, LessonDto, LessonSegmentDto, ResourceDto,
   KpGraphDto, KpNodeDto, QuestionDto, PaperDto, AssignmentDto, AttemptDto,
   WrongBookItemDto, MasteryItemDto, AiUsageSummaryDto, AiUsageBreakdownDto, GradingItemDto,
+  AiProviderConfigDto, AiFeatureRoutesDto,
 } from '@qiming/contracts';
 
 const ORG = '鲸云演示机构';
@@ -275,6 +276,23 @@ export const aiUsageBreakdown: AiUsageBreakdownDto[] = [
 ];
 
 export const aiQuota = { monthlyLimit: 3000, alertThreshold: 80, overPolicy: 'disable_qa' };
+
+/** AI 接口管理:运行态供应商配置(有状态,PUT 原地改;key 仅脱敏回显) */
+export const aiProviderConfig: AiProviderConfigDto = {
+  baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+  model: 'qwen-plus',
+  apiKeyMasked: 'sk-****e86f3',
+  concurrency: 8,
+  source: 'runtime',
+};
+
+/** 逐功能真假路由(有状态,PUT 原地改) */
+export const aiFeatureRoutes: AiFeatureRoutesDto = {
+  qa: 'real',
+  pre_grading: 'real',
+  class_companion: 'real',
+  diagnosis: 'mock',
+};
 
 export const auditLogs = [
   { actorName: '王校长', action: 'admin.student.create', targetType: 'user', createdAt: '2026-06-11T01:10:00.000Z' },

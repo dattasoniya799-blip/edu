@@ -8,6 +8,7 @@ import { Teachers } from './pages/Teachers';
 import { Students } from './pages/Students';
 import { Courses } from './pages/Courses';
 import { AiUsage } from './pages/AiUsage';
+import { AiConfig } from './pages/AiConfig';
 import { Settings } from './pages/Settings';
 import { Placeholder } from './pages/Placeholder';
 
@@ -22,6 +23,7 @@ export function App() {
           <Route path="/students" element={<Students />} />
           <Route path="/courses" element={<Courses />} />
           <Route path="/ai-usage" element={<AiUsage />} />
+          <Route path="/ai/config" element={<AiConfig />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Placeholder title="页面不存在" />} />
         </Route>
