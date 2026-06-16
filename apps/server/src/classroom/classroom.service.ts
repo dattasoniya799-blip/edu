@@ -16,10 +16,12 @@ import type {
   SessionStatus,
 } from '@qiming/contracts';
 import { dec, num } from '../admin/helpers';
+import { QaService } from '../ai/features/qa.service';
 import { AssignmentService } from '../assignment/assignment.service';
 import { AttemptService } from '../attempt/attempt.service';
 import type { JwtUser } from '../auth/auth.service';
 import { runAsUser } from '../common/tenant-context';
+import { BizException } from '../course/business.exception';
 import { PrismaService } from '../prisma/prisma.service';
 import { REDIS } from '../redis/redis.module';
 import {
@@ -35,6 +37,12 @@ import {
 /** 业务错误(gateway 捕获后向客户端 emit 'exception') */
 export class ClsError extends Error {}
 
+/** 课堂实时助教(class:ai_ask)等待 AI 回复上限:超过即给兜底引导,绝不让 WS 处理器挂死 */
+const AI_ASK_TIMEOUT_MS = 20_000;
+/** 超时 / 限流 / 上游异常时的兜底引导(不泄答案,保证助教总有响应) */
+const AI_ASK_FALLBACK =
+  '我先陪你理一理思路:把题目的已知条件逐条列出来,再看要求的是什么、它和已知之间差哪一步。你先试着写一写,卡在具体哪一步再告诉我~';
+
 const ROOM = (sid: number) => `session:${sid}`;
 const TEACHER_ROOM = (sid: number) => `session:${sid}:teacher`;
 
@@ -44,11 +52,6 @@ const NARRATION = {
   wrong: '这题先别急,对照解析想想是哪一步出了偏差。',
   pending: '过程已提交,老师稍后会查看你的解题步骤。',
 };
-/** 引导式答疑模板(guideOnly:不给最终答案,只给路径;A7 接真实网关后替换) */
-const QA_GUIDE_REPLY =
-  '我们一步步来:先把题目的已知条件逐条列出来,明确要求的量;' +
-  '再想想最近学过的方法里,哪一个能把已知和未知联系起来。' +
-  '先试着写出第一步,卡住了再告诉我你写到哪儿了。';
 
 interface MetaState {
   org_id: string;
@@ -97,6 +100,7 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
     @Inject(REDIS) private readonly redis: Redis,
     private readonly assignments: AssignmentService,
     private readonly attempts: AttemptService,
+    private readonly qa: QaService,
     cfg: ConfigService,
   ) {
     // 周期可注入(测试用短周期);roster 节流契约值 5s
@@ -273,7 +277,15 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  /** class:ai_ask:答疑,回复以 class:ai_chunk 流式下发(模板引导,A7 网关落地后替换) */
+  /**
+   * class:ai_ask:答疑,回复以 class:ai_chunk 流式下发。
+   * 复用 A7 QaService.ask(真实 AI):内部经 LlmGatewayService(真实/mock 由路由表决定,
+   * 上游失败有 fallback),含限流(每生 6 次/分,命中抛 4501 BizException)、当前题上下文、
+   * 引导模式(org.settings.ai.qaGuideOnly)、输出审查(qa-review.json)、计量自动落账(归因带 userId)。
+   * 取回完整回复后按原有分块方式经 class:ai_chunk 下发(末帧 done:true)。
+   * 限流命中的 4501 BizException 不在此捕获——交给网关 on() 统一转 'exception' 事件
+   *(其 message 即「提问太频繁啦,休息一分钟再来问我吧」,与 ai_ask 其它业务异常下发口径一致,不会让 WS 处理器未捕获崩)。
+   */
   async aiAsk(
     user: JwtUser,
     socket: Socket,
@@ -284,23 +296,41 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
     const message = String(p?.message ?? '').slice(0, 2000);
     if (!message) throw new ClsError('message 缺失');
 
+    // 复用 A7 QaService(真实/mock 由路由表;含限流/题面上下文/引导/审查/计量)。
+    // 兜底策略:超时(AI_ASK_TIMEOUT_MS)或上游异常 → 给兜底引导,学生端实时助教绝不挂死;
+    // 但限流命中的 4501 BizException 原样抛出 —— 交给网关 on() 统一转 'exception'
+    //(message 即「提问太频繁啦,休息一分钟再来问我吧」),与其它业务异常下发口径一致。
     const requestId = `qa-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-    const reply = QA_GUIDE_REPLY;
-    const step = Math.ceil(reply.length / 3);
-    for (let i = 0; i < reply.length; i += step) {
-      socket.emit('class:ai_chunk', { requestId, delta: reply.slice(i, i + step), done: false });
+    let text: string;
+    try {
+      const r = await Promise.race([
+        this.qa.ask(user, { questionId: p?.questionId ?? null, message }),
+        new Promise<{ text: string }>((_, reject) =>
+          setTimeout(() => reject(new Error('AI_ASK_TIMEOUT')), AI_ASK_TIMEOUT_MS),
+        ),
+      ]);
+      text = r.text;
+    } catch (e) {
+      if (e instanceof BizException) throw e; // 限流 4501 → 网关转 'exception',不吞
+      text = AI_ASK_FALLBACK; // 超时 / 上游异常 → 兜底引导
+    }
+
+    const step = Math.max(1, Math.ceil(text.length / 3));
+    for (let i = 0; i < text.length; i += step) {
+      socket.emit('class:ai_chunk', { requestId, delta: text.slice(i, i + step), done: false });
     }
     socket.emit('class:ai_chunk', { requestId, delta: '', done: true });
 
-    // 对话尾部(最近 10 条)+ 计数
+    // 课堂侧对话尾部(最近 10 条,供 ClassSnapshot.me.aiChatTail)+ 计数 + 事件流 + roster 脏标。
+    // (QaService 另存其自有 qa tail 供 REST 答疑上下文,两者并存无妨)
     const stuKey = kStu(sid, user.uid);
     const tail = this.parseJson<{ role: string; text: string }[]>(
       await this.redis.hget(stuKey, 'ai_chat_tail'), [],
     );
-    tail.push({ role: 'user', text: message }, { role: 'assistant', text: reply });
+    tail.push({ role: 'user', text: message }, { role: 'assistant', text });
     await this.redis.hset(stuKey, { ai_chat_tail: JSON.stringify(tail.slice(-10)) });
     await this.redis.hincrby(stuKey, 'ai_ask_count', 1);
-    await this.xadd(sid, 'ai_ask', user.uid, { questionId: p?.questionId ?? null, message, reply });
+    await this.xadd(sid, 'ai_ask', user.uid, { questionId: p?.questionId ?? null, message, reply: text });
     this.markDirty(sid);
   }
 

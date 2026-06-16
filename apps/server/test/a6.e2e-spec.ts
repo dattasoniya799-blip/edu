@@ -403,7 +403,9 @@ describe('课堂实时 WebSocket(A6,/classroom)', () => {
     expect(Number(a1.score)).toBe(5);
   });
 
-  it('class:ai_ask → class:ai_chunk 流式(requestId 一致,done 收尾)', async () => {
+  it('class:ai_ask → 真实 QaService → class:ai_chunk 流式(requestId 一致,done 收尾,回复非空)', async () => {
+    // 接 A7 QaService(隔离 e2e 无真实 key → 路由 mock,确定性引导回复);不再断言固定话术,
+    // 只验:收到非空 class:ai_chunk 流(done 收尾)+ 对话尾部落 user+assistant + ai_ask_count 自增。
     const chunks: { requestId: string; delta: string; done: boolean }[] = [];
     const doneP = new Promise<void>((resolve) => {
       const handler = (c: { requestId: string; delta: string; done: boolean }) => {
@@ -422,10 +424,19 @@ describe('课堂实时 WebSocket(A6,/classroom)', () => {
     const requestIds = new Set(chunks.map((c) => c.requestId));
     expect(requestIds.size).toBe(1);
     expect(chunks.slice(0, -1).every((c) => !c.done)).toBe(true);
+    expect(chunks[chunks.length - 1].done).toBe(true);
     const full = chunks.map((c) => c.delta).join('');
-    expect(full.length).toBeGreaterThan(0);
+    expect(full.length).toBeGreaterThan(0); // 真实/mock 回复非空(非固定常量)
     // ai_ask_count 进入热状态(roster 用)
     await waitFor(async () => (await redis.hget(`${keyPrefix()}:stu:${uid(0)}`, 'ai_ask_count')) === '1', 'ai_ask_count');
+    // 课堂侧对话尾部落了 user + assistant 两条(供 ClassSnapshot.me.aiChatTail)
+    const tailRaw = await redis.hget(`${keyPrefix()}:stu:${uid(0)}`, 'ai_chat_tail');
+    const tail = JSON.parse(tailRaw ?? '[]') as { role: string; text: string }[];
+    expect(tail.length).toBeGreaterThanOrEqual(2);
+    const [tu, ta] = tail.slice(-2);
+    expect(tu).toEqual({ role: 'user', text: '这道题我不知道从哪一步开始' });
+    expect(ta.role).toBe('assistant');
+    expect(ta.text.length).toBeGreaterThan(0);
   });
 
   it('class:hand_up → 教师房间 monitor:alert(hand_up)', async () => {

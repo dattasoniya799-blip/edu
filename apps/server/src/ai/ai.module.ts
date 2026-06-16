@@ -59,6 +59,7 @@ import { LocalOcrStub, OCR_SERVICE } from './ocr/ocr.service';
   exports: [
     LlmGatewayService,
     LlmPreGradeGateway,
+    QaService,
     CompanionService,
     DiagnosisService,
     OpenAiCompatibleProvider,
