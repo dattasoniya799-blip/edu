@@ -12,6 +12,9 @@ import { raw } from './setup';
 
 export const A6_PASSWORD = 'A6@Pass123';
 export const A6_STUDENT_COUNT = 20;
+/** 固定机构名(purge 据此清遗留孤儿:被杀的 run 跳过 dropA6Org 会残留同名 org) */
+const A6_ORG_NAME = 'A6课堂实时测试机构';
+const A6_ORG_B_NAME = 'A6跨租户机构B';
 /** mode.stuck_alert_min:心跳 idleSec 超过 2 分钟 → stuck */
 export const A6_STUCK_ALERT_MIN = 2;
 
@@ -36,9 +39,10 @@ export interface A6Fixture {
 
 export async function createA6Org(): Promise<A6Fixture> {
   const hash = await hashPassword(A6_PASSWORD);
+  await purgeStaleA6Orgs(); // 先清同名遗留孤儿,杜绝 studentNo 登录串到别 org(测试自愈)
   const org = await raw.org.create({
     data: {
-      name: 'A6课堂实时测试机构',
+      name: A6_ORG_NAME,
       settings: {
         ai: { qaGuideOnly: true, preGrading: true },
         studentHours: { start: '06:00', end: '22:30' },
@@ -192,7 +196,7 @@ export async function createA6Org(): Promise<A6Fixture> {
   // ---- 机构B(跨租户)----
   const orgB = await raw.org.create({
     data: {
-      name: 'A6跨租户机构B',
+      name: A6_ORG_B_NAME,
       settings: {
         ai: { qaGuideOnly: true, preGrading: true },
         studentHours: { start: '06:00', end: '22:30' },
@@ -222,30 +226,47 @@ export async function createA6Org(): Promise<A6Fixture> {
   };
 }
 
+/** 单 org 级联删除(子表先于父表) */
+async function cascadeDeleteOrg(oid: bigint): Promise<void> {
+  await raw.sessionEvent.deleteMany({ where: { orgId: oid } });
+  await raw.sessionParticipant.deleteMany({ where: { orgId: oid } });
+  await raw.classSession.deleteMany({ where: { orgId: oid } });
+  await raw.masterySnapshot.deleteMany({ where: { orgId: oid } });
+  await raw.wrongBookEntry.deleteMany({ where: { orgId: oid } });
+  await raw.gradingRecord.deleteMany({ where: { orgId: oid } });
+  await raw.answer.deleteMany({ where: { orgId: oid } });
+  await raw.attempt.deleteMany({ where: { orgId: oid } });
+  await raw.assignment.deleteMany({ where: { orgId: oid } });
+  await raw.lessonSegment.deleteMany({ where: { orgId: oid } });
+  await raw.lesson.deleteMany({ where: { orgId: oid } });
+  await raw.paperQuestion.deleteMany({ where: { orgId: oid } });
+  await raw.paper.deleteMany({ where: { orgId: oid } });
+  await raw.questionOption.deleteMany({ where: { orgId: oid } });
+  await raw.questionTag.deleteMany({ where: { orgId: oid } });
+  await raw.question.deleteMany({ where: { orgId: oid } });
+  await raw.courseStudent.deleteMany({ where: { orgId: oid } });
+  await raw.course.deleteMany({ where: { orgId: oid } });
+  await raw.device.deleteMany({ where: { orgId: oid } });
+  await raw.loginTicket.deleteMany({ where: { orgId: oid } });
+  await raw.auditLog.deleteMany({ where: { orgId: oid } });
+  await raw.user.deleteMany({ where: { orgId: oid } });
+  await raw.org.deleteMany({ where: { id: oid } });
+}
+
+/**
+ * 清掉所有同名遗留 A6 机构(幂等,防孤儿污染):被 SIGTERM 杀掉的 run 跳过 afterAll/dropA6Org,
+ * 会残留同名 org + 固定 studentNo 的学生;下一 run 用 studentNo 登录(org 内唯一、非全局唯一)
+ * 会串到孤儿 org 的学生 → join 本 run 的 session 报「课堂不存在」→ ack 超时级联。createA6Org
+ * 起始先 purge,保证测试自愈、与遗留数据无关。
+ */
+async function purgeStaleA6Orgs(): Promise<void> {
+  const stale = await raw.org.findMany({
+    where: { name: { in: [A6_ORG_NAME, A6_ORG_B_NAME] } },
+    select: { id: true },
+  });
+  for (const o of stale) await cascadeDeleteOrg(o.id);
+}
+
 export async function dropA6Org(orgId: bigint, orgBId: bigint): Promise<void> {
-  for (const oid of [orgId, orgBId]) {
-    await raw.sessionEvent.deleteMany({ where: { orgId: oid } });
-    await raw.sessionParticipant.deleteMany({ where: { orgId: oid } });
-    await raw.classSession.deleteMany({ where: { orgId: oid } });
-    await raw.masterySnapshot.deleteMany({ where: { orgId: oid } });
-    await raw.wrongBookEntry.deleteMany({ where: { orgId: oid } });
-    await raw.gradingRecord.deleteMany({ where: { orgId: oid } });
-    await raw.answer.deleteMany({ where: { orgId: oid } });
-    await raw.attempt.deleteMany({ where: { orgId: oid } });
-    await raw.assignment.deleteMany({ where: { orgId: oid } });
-    await raw.lessonSegment.deleteMany({ where: { orgId: oid } });
-    await raw.lesson.deleteMany({ where: { orgId: oid } });
-    await raw.paperQuestion.deleteMany({ where: { orgId: oid } });
-    await raw.paper.deleteMany({ where: { orgId: oid } });
-    await raw.questionOption.deleteMany({ where: { orgId: oid } });
-    await raw.questionTag.deleteMany({ where: { orgId: oid } });
-    await raw.question.deleteMany({ where: { orgId: oid } });
-    await raw.courseStudent.deleteMany({ where: { orgId: oid } });
-    await raw.course.deleteMany({ where: { orgId: oid } });
-    await raw.device.deleteMany({ where: { orgId: oid } });
-    await raw.loginTicket.deleteMany({ where: { orgId: oid } });
-    await raw.auditLog.deleteMany({ where: { orgId: oid } });
-    await raw.user.deleteMany({ where: { orgId: oid } });
-    await raw.org.deleteMany({ where: { id: oid } });
-  }
+  for (const oid of [orgId, orgBId]) await cascadeDeleteOrg(oid);
 }
