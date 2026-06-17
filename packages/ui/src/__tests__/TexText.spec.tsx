@@ -146,6 +146,38 @@ describe('renderMix · 标准 Markdown(C2 #6)', () => {
   });
 });
 
+describe('renderMix · 标准 LaTeX 定界符 \\(..\\) / \\[..\\](大模型默认输出)', () => {
+  it('L1 行内 \\(x^2\\) → katex', () => okInline(renderMix('结果是 \\(x^2\\) 哦')));
+  it('L2 行内 \\(\\frac{a}{b}\\) → katex,无残留定界符', () => {
+    const html = renderMix('比值 \\(\\frac{a}{b}\\) 为常数');
+    expect(html).toContain('class="katex"');
+    expect(html).not.toContain('\\(');
+    expect(html).not.toContain('\\)');
+  });
+  it('L3 块级 \\[a^2+b^2=c^2\\] → katex-display', () => {
+    const html = renderMix('勾股定理:\\[a^2+b^2=c^2\\]');
+    expect(html).toContain('katex-display');
+    expect(html).not.toContain('[公式语法错误]');
+  });
+  it('L4 与 $..$ 混用', () => {
+    const html = renderMix('已知 $y=2x$,则 \\(y(1)=2\\)');
+    expect(html.match(/class="katex"/g)?.length).toBeGreaterThanOrEqual(2);
+  });
+  it('L5 Markdown + \\(..\\) 混排', () => {
+    const html = renderMix('**结论**:斜率 \\(k=2\\)');
+    expect(html).toContain('<strong>结论</strong>');
+    expect(html).toContain('class="katex"');
+  });
+  it('L6 未闭合 \\( → 按原文输出', () => {
+    expect(renderMix('遗漏闭合 \\(x+1')).toBe('遗漏闭合 \\(x+1');
+  });
+  it('L7 列表项内含 \\(..\\)', () => {
+    const html = renderMix('- 当 \\(x=1\\) 时\n- 当 \\(x=-1\\) 时');
+    expect(html).toContain('<li>');
+    expect(html.match(/class="katex"/g)?.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
 describe('TexText 组件', () => {
   it('渲染公式且错误提示挂红色类', () => {
     const ok = renderToStaticMarkup(<TexText src="掌握 $y=kx+b$ 即可" />);

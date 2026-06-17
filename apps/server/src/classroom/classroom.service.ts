@@ -25,6 +25,7 @@ import { BizException } from '../course/business.exception';
 import { PrismaService } from '../prisma/prisma.service';
 import { REDIS } from '../redis/redis.module';
 import {
+  CLS_PREFIX,
   kEvents,
   kEventsCursor,
   kMeta,
@@ -959,20 +960,73 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  /** 随堂练习题 → 所属 in_class assignment(A5 通道载体) */
+  /**
+   * 随堂练习题 → 所属 in_class assignment(A5 判分通道载体)。
+   * 题源是本讲 practice 段挂的试卷(lessonSegment.type='practice'.paperId);in_class assignment
+   * 是判分载体。讲次发布流程不建该 assignment(历史仅测试 fixture 建),会导致学生作答时
+   * findInClassAssignment 找不到而抛错、提交失败 —— 故此处对"题目所属随堂练试卷"**懒建/幂等复用**
+   * in_class assignment(覆盖存量已发布讲次,自愈),Redis NX 去重避免并发首答重复建。
+   */
   private async findInClassAssignment(meta: MetaState, questionId: number): Promise<number> {
     if (!Number.isInteger(questionId)) throw new ClsError('questionId 缺失');
-    const list = await this.prisma.client.assignment.findMany({
-      where: { lessonId: BigInt(meta.lesson_id), kind: 'in_class' },
-      select: { id: true, paperId: true },
-    });
-    if (!list.length) throw new ClsError('本课未发布随堂练习');
+    const lessonId = BigInt(meta.lesson_id);
+
+    // 本讲随堂练题源(practice 段试卷)
+    const practicePapers = (
+      await this.prisma.client.lessonSegment.findMany({
+        where: { lessonId, type: 'practice', paperId: { not: null } },
+        select: { paperId: true },
+      })
+    ).map((s) => s.paperId as bigint);
+    if (!practicePapers.length) throw new ClsError('本课未发布随堂练习');
+
+    // 题目须属于本讲随堂练某卷(防越权/防作弊)
     const pq = await this.prisma.client.paperQuestion.findFirst({
-      where: { questionId: BigInt(questionId), paperId: { in: list.map((a) => a.paperId) } },
+      where: { questionId: BigInt(questionId), paperId: { in: practicePapers } },
       select: { paperId: true },
     });
     if (!pq) throw new ClsError('题目不在本课随堂练习中');
-    return num(list.find((a) => a.paperId === pq.paperId)!.id);
+
+    // 该卷的 in_class assignment:存在即复用,否则懒建
+    const found = await this.prisma.client.assignment.findFirst({
+      where: { lessonId, kind: 'in_class', paperId: pq.paperId },
+      select: { id: true },
+    });
+    if (found) return num(found.id);
+    return num(await this.createInClassAssignment(meta, pq.paperId));
+  }
+
+  /** 懒建本讲随堂练 in_class assignment(字段对齐既有判分载体);Redis NX 去重避免并发首答重复建 */
+  private async createInClassAssignment(meta: MetaState, paperId: bigint): Promise<bigint> {
+    const lessonId = BigInt(meta.lesson_id);
+    const reuse = async () =>
+      this.prisma.client.assignment.findFirst({
+        where: { lessonId, kind: 'in_class', paperId },
+        select: { id: true },
+      });
+    const lockKey = `${CLS_PREFIX}inclass_lock:${lessonId}:${paperId}`;
+    const got = await this.redis.set(lockKey, '1', 'EX', 10, 'NX').catch(() => null);
+    if (got !== 'OK') {
+      // 别的请求正在建 → 稍候复查,命中即复用
+      await new Promise((r) => setTimeout(r, 150));
+      const again = await reuse();
+      if (again) return again.id;
+    }
+    const exist = await reuse(); // 建前再核一次,收敛竞态窗口
+    if (exist) return exist.id;
+    const created = await this.prisma.client.assignment.create({
+      data: {
+        orgId: BigInt(meta.org_id),
+        paperId,
+        lessonId,
+        kind: 'in_class',
+        target: { courseId: Number(meta.course_id) },
+        gradingPolicy: { objective: 'instant' },
+        scoreCounted: true,
+      },
+      select: { id: true },
+    });
+    return created.id;
   }
 
   private async studentName(uid: number): Promise<string> {

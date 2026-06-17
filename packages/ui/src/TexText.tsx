@@ -90,29 +90,50 @@ function renderBlocks(src: string): string {
   return parts.join('');
 }
 
+/** 文本段中下一个公式定界符($ / \( / \[)的位置,无则 -1 */
+function nextDelim(src: string, from: number): number {
+  const cands = [src.indexOf('$', from), src.indexOf('\\(', from), src.indexOf('\\[', from)].filter(
+    (x) => x >= 0,
+  );
+  return cands.length ? Math.min(...cands) : -1;
+}
+
 /**
  * 标准 Markdown + LaTeX 混排 → HTML(纯函数,便于单测)。
- * 兼容旧行为:$..$ 行内、$$..$$ 块级、\ce{} 化学式、未闭合 $ 按原文输出、纯文本 HTML 转义。
+ * 兼容旧行为:$..$ 行内、$$..$$ 块级、\ce{} 化学式、未闭合按原文输出、纯文本 HTML 转义。
+ * 另支持标准 LaTeX 定界符 \(..\) 行内、\[..\] 块级(大模型/DeepSeek 默认输出此形式)。
  */
 export function renderMix(src: string): string {
   const tokens: string[] = [];
   let work = '';
   let i = 0;
+  const emit = (tex: string, disp: boolean) => {
+    tokens.push(safeTex(tex, disp));
+    work += ph(tokens.length - 1);
+  };
   while (i < src.length) {
     if (src.startsWith('$$', i)) {
       const j = src.indexOf('$$', i + 2);
       if (j < 0) { work += src.slice(i); break; } // 未闭合 → 原文
-      tokens.push(safeTex(src.slice(i + 2, j), true));
-      work += ph(tokens.length - 1);
+      emit(src.slice(i + 2, j), true);
+      i = j + 2;
+    } else if (src.startsWith('\\[', i)) {
+      const j = src.indexOf('\\]', i + 2);
+      if (j < 0) { work += src.slice(i); break; } // 未闭合 → 原文
+      emit(src.slice(i + 2, j), true);
+      i = j + 2;
+    } else if (src.startsWith('\\(', i)) {
+      const j = src.indexOf('\\)', i + 2);
+      if (j < 0) { work += src.slice(i); break; } // 未闭合 → 原文
+      emit(src.slice(i + 2, j), false);
       i = j + 2;
     } else if (src[i] === '$') {
       const j = src.indexOf('$', i + 1);
       if (j < 0) { work += src.slice(i); break; } // 未闭合 → 原文
-      tokens.push(safeTex(src.slice(i + 1, j), false));
-      work += ph(tokens.length - 1);
+      emit(src.slice(i + 1, j), false);
       i = j + 1;
     } else {
-      let j = src.indexOf('$', i);
+      let j = nextDelim(src, i);
       if (j < 0) j = src.length;
       work += src.slice(i, j);
       i = j;
