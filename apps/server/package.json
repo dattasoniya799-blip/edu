@@ -10,7 +10,8 @@
     "db:apply-sql": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f prisma/migrations/0001_init/migration.sql",
     "db:seed:base": "tsx prisma/seed.ts --phase base",
     "db:import-kp": "tsx tools/import-kp.ts --org 1 --dir ../../data/knowledge-graphs",
-    "db:seed:business": "tsx prisma/seed.ts --phase business"
+    "db:seed:business": "tsx prisma/seed.ts --phase business",
+    "init:prod": "tsx tools/init-prod.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.0",
