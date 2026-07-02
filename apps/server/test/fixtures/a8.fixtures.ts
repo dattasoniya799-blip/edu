@@ -120,7 +120,7 @@ export async function createA8Org(): Promise<A8Fixture> {
   });
   const assignment = await raw.assignment.create({
     data: {
-      orgId, paperId: paper.id, kind: 'homework',
+      orgId, paperId: paper.id, teacherId: teacher.id, kind: 'homework',
       target: { courseId: Number(course.id) }, scoreCounted: true,
     },
   });

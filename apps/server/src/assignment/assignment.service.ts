@@ -3,6 +3,7 @@ import type { AssignmentBriefDto, AssignmentDto } from '@qiming/contracts';
 import { iso, num } from '../admin/helpers';
 import type { JwtUser } from '../auth/auth.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { ownedAssignmentIds } from './assignment-ownership.util';
 import { AssignmentInputDto, AssignmentListQueryDto } from './assignment.dto';
 
 export interface AssignmentProgress {
@@ -39,7 +40,7 @@ export class AssignmentService {
   constructor(private readonly prisma: PrismaService) {}
 
   /** POST /assignments */
-  async create(_user: JwtUser, dto: AssignmentInputDto): Promise<AssignmentDto> {
+  async create(user: JwtUser, dto: AssignmentInputDto): Promise<AssignmentDto> {
     const paper = await this.prisma.client.paper.findFirst({
       where: { id: BigInt(dto.paperId) },
       select: { id: true },
@@ -65,6 +66,9 @@ export class AssignmentService {
       data: {
         paperId: paper.id,
         lessonId: dto.lessonId != null ? BigInt(dto.lessonId) : null,
+        // teacher 锚点(经用户批准的 schema 变更):教师发布=当前教师;
+        // 学生自发(错题本 wrong_redo 复用本入口)=null → 任何教师端读写不可见不可操作
+        teacherId: user.role === 'teacher' ? BigInt(user.uid) : null,
         kind: dto.kind,
         target: target as object,
         dueAt: dto.dueAt ? new Date(dto.dueAt) : null,
@@ -75,13 +79,15 @@ export class AssignmentService {
     return this.toDto(created as AssignmentRow);
   }
 
-  /** GET /assignments/:id/progress */
-  async progress(id: number): Promise<AssignmentProgress> {
+  /** GET /assignments/:id/progress(归属:teacher 锚点统一规则,非本人 → 404 不泄露存在性) */
+  async progress(user: JwtUser, id: number): Promise<AssignmentProgress> {
     const a = await this.prisma.client.assignment.findFirst({
       where: { id: BigInt(id) },
-      select: { id: true, paperId: true, target: true },
+      select: { id: true, paperId: true, teacherId: true, lessonId: true, target: true },
     });
     if (!a) throw new NotFoundException('作业不存在');
+    const owned = await ownedAssignmentIds(this.prisma.client, user, [a]);
+    if (!owned.has(String(a.id))) throw new NotFoundException('作业不存在');
 
     const target = a.target as { courseId?: number; studentIds?: number[] };
     const totalStudents =
@@ -124,7 +130,9 @@ export class AssignmentService {
 
   /**
    * GET /assignments 作业总览(C3-back #C,[teacher]):教师布置过的全部作业 + 进度概览。
-   * 归属:作业的 lesson.course 或 target.courseId 属于本教师课程(他师/跨租户天然不出现)。
+   * 归属(teacher 锚点统一规则):assignment.teacherId=本人;或 teacherId 为空(回填前
+   * 口径)且 lesson.course / target.courseId 属本教师课程。定向作业(studentIds 且无讲次)
+   * 凭 teacherId 出现在创建教师总览;学生自发(如 wrong_redo)任何教师不出现。
    * - submitted = 已交学生数(attempt status∈{submitted,graded},按学生去重)
    * - graded    = 已出分学生数(attempt status=graded 去重)
    * - status    = finished(已有提交且全部出分,即 finalize 完成)/ ongoing(其余)
@@ -135,7 +143,6 @@ export class AssignmentService {
       select: { id: true },
     });
     const myCourseIds = new Set(myCourses.map((c) => String(c.id)));
-    if (!myCourseIds.size) return [];
 
     const rows = await this.prisma.client.assignment.findMany({
       where: { ...(q.lessonId != null ? { lessonId: BigInt(q.lessonId) } : {}) },
@@ -152,8 +159,10 @@ export class AssignmentService {
       const lessonCourseId = a.lesson ? String(a.lesson.courseId) : null;
       const targetCourseId = t.courseId != null ? String(t.courseId) : null;
       const mine =
-        (lessonCourseId != null && myCourseIds.has(lessonCourseId)) ||
-        (targetCourseId != null && myCourseIds.has(targetCourseId));
+        a.teacherId != null
+          ? String(a.teacherId) === String(user.uid)
+          : (lessonCourseId != null && myCourseIds.has(lessonCourseId)) ||
+            (targetCourseId != null && myCourseIds.has(targetCourseId));
       if (!mine) return false;
       if (q.courseId != null) {
         const cid = String(q.courseId);

@@ -157,14 +157,14 @@ export async function createC3Org(): Promise<C3Fixture> {
   // ---- #C 作业 + 作答 ----
   // 进行中:s1 已出分(graded)、s2 已交未出分(submitted)→ submitted=2 graded=1 ongoing
   const aOngoing = await raw.assignment.create({
-    data: { orgId, paperId: hwPaper.id, lessonId: lessonHw.id, kind: 'homework', target: { courseId: Number(course.id) }, dueAt: new Date(todayNoon.getTime() - 86400_000) },
+    data: { orgId, paperId: hwPaper.id, lessonId: lessonHw.id, teacherId: teacherA.id, kind: 'homework', target: { courseId: Number(course.id) }, dueAt: new Date(todayNoon.getTime() - 86400_000) },
   });
   await raw.attempt.create({ data: { orgId, assignmentId: aOngoing.id, studentId: s1.id, status: 'graded', submittedAt: new Date(), score: 10 } });
   await raw.attempt.create({ data: { orgId, assignmentId: aOngoing.id, studentId: s2.id, status: 'submitted', submittedAt: new Date() } });
 
   // 已完成:s1、s2 均 graded → submitted=2 graded=2 finished
   const aFinished = await raw.assignment.create({
-    data: { orgId, paperId: hwPaper.id, lessonId: lessonHw.id, kind: 'homework', target: { courseId: Number(course.id) }, dueAt: new Date(todayNoon.getTime() - 86400_000) },
+    data: { orgId, paperId: hwPaper.id, lessonId: lessonHw.id, teacherId: teacherA.id, kind: 'homework', target: { courseId: Number(course.id) }, dueAt: new Date(todayNoon.getTime() - 86400_000) },
   });
   await raw.attempt.create({ data: { orgId, assignmentId: aFinished.id, studentId: s1.id, status: 'graded', submittedAt: new Date(), score: 10 } });
   await raw.attempt.create({ data: { orgId, assignmentId: aFinished.id, studentId: s2.id, status: 'graded', submittedAt: new Date(), score: 8 } });

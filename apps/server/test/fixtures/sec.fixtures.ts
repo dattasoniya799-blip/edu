@@ -109,7 +109,7 @@ export async function createSecOrg(): Promise<SecFixture> {
   });
   const assignmentA1 = await raw.assignment.create({
     data: {
-      orgId, paperId: paperA1.id, kind: 'homework', target: { courseId: Number(courseA.id) },
+      orgId, paperId: paperA1.id, teacherId: teacherA.id, kind: 'homework', target: { courseId: Number(courseA.id) },
       dueAt: new Date(Date.now() + 7 * 86400_000),
       gradingPolicy: { objective: 'instant' }, scoreCounted: true,
     },
@@ -126,7 +126,7 @@ export async function createSecOrg(): Promise<SecFixture> {
   });
   const assignmentA2 = await raw.assignment.create({
     data: {
-      orgId, paperId: paperA2.id, kind: 'homework', target: { courseId: Number(courseA.id) },
+      orgId, paperId: paperA2.id, teacherId: teacherA.id, kind: 'homework', target: { courseId: Number(courseA.id) },
       dueAt: new Date(Date.now() + 7 * 86400_000),
       gradingPolicy: { objective: 'instant', subjective: 'ai_pre_review' }, scoreCounted: true,
     },

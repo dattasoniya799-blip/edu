@@ -163,13 +163,14 @@ export async function createFix1Org(): Promise<Fix1Fixture> {
 
   // ---- 作业(创建顺序即 id 升序:A_hw < A_old < A_pend)----
   const aHw = await raw.assignment.create({
-    data: { orgId, paperId: hwPaper.id, lessonId: l1.id, kind: 'homework', target: { courseId: Number(c1.id) }, publishAt: new Date(now - 6 * DAY), dueAt: new Date(now - 5 * DAY), scoreCounted: true },
+    data: { orgId, paperId: hwPaper.id, lessonId: l1.id, teacherId: teacher.id, kind: 'homework', target: { courseId: Number(c1.id) }, publishAt: new Date(now - 6 * DAY), dueAt: new Date(now - 5 * DAY), scoreCounted: true },
   });
   const aOld = await raw.assignment.create({
+    // wrong_redo=学生自发:teacherId 留 null(teacher 锚点规则:任何教师不可见)
     data: { orgId, paperId: oldPaper.id, kind: 'wrong_redo', target: { studentIds: [Number(s1.id)] }, publishAt: new Date(now - 10 * DAY), dueAt: null, scoreCounted: false },
   });
   const aPend = await raw.assignment.create({
-    data: { orgId, paperId: pendPaper.id, kind: 'consolidation', target: { courseId: Number(c1.id) }, publishAt: new Date(now - 1 * DAY), dueAt: new Date(now + 3 * DAY), scoreCounted: true },
+    data: { orgId, paperId: pendPaper.id, teacherId: teacher.id, kind: 'consolidation', target: { courseId: Number(c1.id) }, publishAt: new Date(now - 1 * DAY), dueAt: new Date(now + 3 * DAY), scoreCounted: true },
   });
 
   // ---- s1 作答账本 ----

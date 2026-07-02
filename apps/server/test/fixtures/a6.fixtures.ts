@@ -176,6 +176,7 @@ export async function createA6Org(): Promise<A6Fixture> {
       orgId,
       paperId: practicePaper.id,
       lessonId: lesson.id,
+      teacherId: teacher.id,
       kind: 'in_class',
       target: { courseId: Number(course.id) },
       gradingPolicy: { objective: 'instant' },
