@@ -20,6 +20,7 @@ import { readFile } from 'fs/promises';
 import { resolve, sep } from 'path';
 import type { Request, Response } from 'express';
 import { CurrentUser, Public } from '../common/decorators';
+import { getJwtSecret } from '../common/env-assert';
 import { LocalStorageAdapter } from './storage/local-storage.adapter';
 import { signStorageUrl, verifyStorageSig } from './storage/storage-sign.util';
 import { STORAGE_ADAPTER, StorageAdapter } from './storage/storage.adapter';
@@ -65,7 +66,7 @@ export class UploadController {
       'UPLOAD_PUBLIC_BASE',
       `http://127.0.0.1:${this.cfg.get('PORT', '3000')}`,
     );
-    const secret = this.cfg.get<string>('JWT_SECRET', 'dev-secret-change-me');
+    const secret = getJwtSecret(this.cfg);
     return { url: signStorageUrl(base, secret, ossKey) };
   }
 
@@ -121,7 +122,7 @@ export class StorageDownloadController {
 
   constructor(cfg: ConfigService) {
     this.root = cfg.get<string>('UPLOAD_ROOT', './storage');
-    this.secret = cfg.get<string>('JWT_SECRET', 'dev-secret-change-me');
+    this.secret = getJwtSecret(cfg);
   }
 
   @Public()
