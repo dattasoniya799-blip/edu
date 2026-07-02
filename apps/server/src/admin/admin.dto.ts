@@ -21,6 +21,9 @@ import type { ClassType, UserStatus } from '@qiming/contracts';
 const USER_STATUS: UserStatus[] = ['active', 'disabled', 'pending'];
 const CLASS_TYPES: ClassType[] = ['group', 'one_on_one', 'one_on_three'];
 
+/** 中国大陆手机号:1 开头、第二位 3-9、共 11 位 */
+export const PHONE_PATTERN = /^1[3-9]\d{9}$/;
+
 // ---------------- 通用分页 ----------------
 export class PageQueryDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1)
@@ -43,7 +46,7 @@ export class TeacherInputDto {
   @IsString() @IsNotEmpty() @MaxLength(32)
   name!: string;
 
-  @IsString() @IsNotEmpty()
+  @IsString() @IsNotEmpty() @Matches(PHONE_PATTERN, { message: '手机号格式不正确' })
   phone!: string;
 
   /** 不传则自动生成 */
@@ -75,7 +78,7 @@ export class StudentInputDto {
   @IsString() @IsNotEmpty() @MaxLength(32)
   name!: string;
 
-  @IsString() @IsNotEmpty()
+  @IsString() @IsNotEmpty() @Matches(PHONE_PATTERN, { message: '手机号格式不正确' })
   parentPhone!: string;
 
   @IsOptional() @IsString() @MaxLength(20)

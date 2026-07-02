@@ -1,9 +1,11 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import type Redis from 'ioredis';
 import type { MasteryItemDto, PageResp, StudentDto } from '@qiming/contracts';
 import { AuditService } from '../audit/audit.service';
 import type { JwtUser } from '../auth/auth.service';
 import { hashPassword, randomReadablePassword } from '../auth/password.util';
+import { markPasswordReset } from '../auth/pwd-reset';
 import { PrismaService } from '../prisma/prisma.service';
 import { REDIS } from '../redis/redis.module';
 import { StudentInputDto, StudentListQueryDto } from './admin.dto';
@@ -14,6 +16,7 @@ export class StudentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly cfg: ConfigService,
     @Inject(REDIS) private readonly redis: Redis,
   ) {}
 
@@ -142,6 +145,7 @@ export class StudentsService {
       data: { passwordHash: await hashPassword(password) },
     });
     await this.revokeRefreshTokens(id); // 重置后旧刷新令牌全部作废(与 TeachersService 同口径)
+    await markPasswordReset(this.redis, this.cfg, id); // 旧 access token 也立即失效(守卫拦截)
     await this.audit.log({
       actorId: user.uid, orgId: user.orgId, action: 'admin.student.reset_password',
       targetType: 'user', targetId: id, ip,
