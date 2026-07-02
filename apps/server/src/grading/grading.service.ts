@@ -8,6 +8,7 @@ import type {
 } from '@qiming/contracts';
 import { dec, num, round1 } from '../admin/helpers';
 import type { JwtUser } from '../auth/auth.service';
+import { getJwtSecret } from '../common/env-assert';
 import { MasteryQueueService } from '../mastery/mastery.queue';
 import { PrismaService } from '../prisma/prisma.service';
 import { AccountItem, WrongBookService } from '../wrongbook/wrongbook.service';
@@ -630,7 +631,7 @@ export class GradingService {
       'UPLOAD_PUBLIC_BASE',
       `http://127.0.0.1:${this.cfg.get('PORT', '3000')}`,
     );
-    const secret = this.cfg.get<string>('JWT_SECRET', 'dev-secret-change-me');
+    const secret = getJwtSecret(this.cfg);
     return signStorageUrl(base, secret, ossKey);
   }
 }
