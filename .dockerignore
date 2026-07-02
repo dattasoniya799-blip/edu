@@ -1,0 +1,17 @@
+# D3 部署:Docker 构建上下文为仓库根(apps 通过 tsconfig paths/vite alias 引用 packages/ 源码,
+# 构建上下文必须包含 packages/),以下内容与镜像无关,排除以加速构建、防止密钥/宿主产物混入。
+.git
+data/
+**/node_modules
+**/dist
+**/.DS_Store
+**/*.log
+# 任何真实 env 一律不进镜像(示例文件保留);前端 .env.development(VITE_USE_MOCK=true)
+# 也被排除,双保险防生产构建误开 mock(生产所需 VITE_USE_MOCK=false 由 web.Dockerfile ENV 显式给定)
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.*.example
+# 本地上传落盘、备份产物
+apps/server/storage/
+deploy/backups/
