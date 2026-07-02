@@ -11,6 +11,16 @@ npm test            # e2e 验收(连真实 Postgres/Redis,用 seed 数据)
 npm run build && npm start   # 或 npm run start:dev;默认 :3000,healthz 在根路径
 ```
 
+## 生产初始化(真实上线,替代演示 seed)
+
+```bash
+# 空库先灌 schema:npm run db:apply-sql;然后(必须显式 DATABASE_URL):
+DATABASE_URL="postgresql://user:pass@host:5432/db" npm run init:prod -- \
+  --org-name 某某教育 --admin-name 王校长 --admin-phone 13900000001 [--admin-password 'Xxx@2026']
+```
+
+只建「机构 + 管理员」,不造演示数据;密码哈希复用运行时 argon2id(`src/auth/password.util.ts`)。缺省 `--admin-password` 时生成 16 位随机密码并只打印一次。同名机构 / 同手机号已存在 → 报错退出(exit 2),绝不追加。验收见 `test/d2-init-prod.e2e-spec.ts`。
+
 ## 实现概览(任务卡 A1)
 
 | 要求 | 落点 |
