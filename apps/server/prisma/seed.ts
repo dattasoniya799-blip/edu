@@ -79,8 +79,13 @@ async function business(c: Client) {
 
   const titles = ['一次函数的概念','函数的图象与性质','待定系数法求解析式','一次函数的图象平移','一次函数与方程、不等式','单元复习与测验'];
   const lessonIds: number[] = [];
+  // 排期锚点相对当前时间(绝对日期跨期后会导致"下次上课"等 e2e 对账失效):
+  // i=0..2 过去三周(finished)、i=3 昨天(ready)、i=4..5 未来(draft),每周一讲 06:00 UTC(+08 14:00)
+  const lessonAnchor = new Date();
+  lessonAnchor.setUTCHours(6, 0, 0, 0);
+  lessonAnchor.setUTCDate(lessonAnchor.getUTCDate() - 22);
   for (let i = 0; i < 6; i++) {
-    const start = new Date(Date.UTC(2026, 4, 23, 6, 0)); // 2026-05-23(周六) 14:00 +08
+    const start = new Date(lessonAnchor);
     start.setUTCDate(start.getUTCDate() + i * 7);
     const end = new Date(start.getTime() + 2 * 3600e3);
     const status = i < 3 ? 'finished' : i === 3 ? 'ready' : 'draft';
