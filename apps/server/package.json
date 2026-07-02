@@ -11,6 +11,7 @@
     "db:seed:base": "tsx prisma/seed.ts --phase base",
     "db:import-kp": "tsx tools/import-kp.ts --org 1 --dir ../../data/knowledge-graphs",
     "db:seed:business": "tsx prisma/seed.ts --phase business",
+    "loadtest": "tsx tools/loadtest/run-loadtest.ts",
     "init:prod": "tsx tools/init-prod.ts"
   },
   "dependencies": {
