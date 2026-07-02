@@ -80,7 +80,7 @@ describe('新建独立卷:仅 POST /papers,不挂讲次/不发作业', () => {
     expect(after.length).toBe(before.length);
 
     // 列表能查到这张新卷
-    const list = (await api.get('/papers', { query: { page: 1, size: 200 } })).data as { items: PaperDto[] };
+    const list = (await api.get('/papers', { query: { page: 1, size: 50 } })).data as { items: PaperDto[] };
     expect(list.items.some((p) => p.id === created.id)).toBe(true);
   });
 });
@@ -116,7 +116,7 @@ describe('编辑独立卷:GET 回填 → PUT 生效', () => {
     // 找一张已被作业引用的卷:seed 中作业引用的 paperId
     const assignments = (await api.get('/assignments')).data as { paperName: string }[];
     expect(assignments.length).toBeGreaterThan(0);
-    const papers = (await api.get('/papers', { query: { page: 1, size: 200 } })).data as { items: PaperDto[] };
+    const papers = (await api.get('/papers', { query: { page: 1, size: 50 } })).data as { items: PaperDto[] };
     const referenced = papers.items.find((p) => assignments.some((a) => a.paperName === p.name));
     expect(referenced).toBeTruthy();
 

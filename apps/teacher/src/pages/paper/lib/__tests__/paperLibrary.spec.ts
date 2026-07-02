@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { PaperDto } from '@qiming/contracts';
 import {
+  PAPER_LIBRARY_PAGE_SIZE,
   PAPER_TABS,
   PAPER_TYPE_LABEL,
   countByType,
+  collectPaperPages,
   filterPapers,
   paperStatusLabel,
 } from '../paperLibrary';
@@ -75,5 +77,27 @@ describe('paperStatusLabel(状态文案)', () => {
   it('published=已发布,其余=草稿', () => {
     expect(paperStatusLabel('published')).toBe('已发布');
     expect(paperStatusLabel('draft')).toBe('草稿');
+  });
+});
+
+describe('collectPaperPages', () => {
+  it('按后端分页上限 50 拉齐全量试卷,避免请求 size=200 被真实后端拒绝', async () => {
+    const pages = [
+      [mk(101, '卷 101', 'practice'), mk(102, '卷 102', 'homework')],
+      [mk(103, '卷 103', 'exam')],
+    ];
+    const calls: { page: number; size: number }[] = [];
+
+    const items = await collectPaperPages(async (page, size) => {
+      calls.push({ page, size });
+      return { items: pages[page - 1] ?? [], total: 3 };
+    });
+
+    expect(PAPER_LIBRARY_PAGE_SIZE).toBe(50);
+    expect(calls).toEqual([
+      { page: 1, size: 50 },
+      { page: 2, size: 50 },
+    ]);
+    expect(items.map((p) => p.id)).toEqual([101, 102, 103]);
   });
 });

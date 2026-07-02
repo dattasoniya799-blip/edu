@@ -1,7 +1,7 @@
 /**
  * 试卷库(集中浏览/搜索/复用全机构试卷)
  * 痛点:试卷散在讲次编排的「选择已有卷」弹窗里,没有一站式入口。本页用现成端点拉全部试卷:
- *   GET /papers(全量,客户端按 type 页签 + 试卷名搜索过滤)→ 点卡片 GET /papers/{id} 展开题目。
+ *   GET /papers(按后端上限分页拉全量,客户端按 type 页签 + 试卷名搜索过滤)→ 点卡片 GET /papers/{id} 展开题目。
  * 管理入口:本页直达「独立组卷」——新建 → /papers/new、编辑 → /papers/:id/edit(不依附讲次,只建/改卷);
  *   已被作业引用的卷禁改(后端 4302),编辑入口置灰提示。
  * 引用态为尽力而为:GET /assignments(AssignmentBrief)仅带 paperName,故按试卷名匹配判定。
@@ -16,6 +16,7 @@ import {
   PAPER_TABS,
   PAPER_TYPE_LABEL,
   PAPER_TYPE_TONE,
+  collectPaperPages,
   countByType,
   filterPapers,
   paperStatusLabel,
@@ -46,12 +47,15 @@ export function PaperLibraryPage() {
     setLoading(true);
     setError(false);
     Promise.all([
-      api.get('/papers', { query: { page: 1, size: 200 } }),
+      collectPaperPages(async (page, size) => {
+        const r = await api.get('/papers', { query: { page, size } });
+        return r.data as { items: PaperDto[]; total: number };
+      }),
       // 引用态尽力而为;作业拉取失败不阻塞主列表
       api.get('/assignments').catch(() => ({ data: [] as AssignmentBriefDto[] })),
     ])
-      .then(([pr, ar]) => {
-        setPapers((pr.data as { items: PaperDto[] }).items);
+      .then(([paperItems, ar]) => {
+        setPapers(paperItems);
         setReferencedNames(new Set((ar.data as AssignmentBriefDto[]).map((a) => a.paperName)));
       })
       .catch(() => setError(true))

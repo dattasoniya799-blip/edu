@@ -26,7 +26,7 @@ beforeEach(async () => {
 
 describe('GET /papers(试卷库列表)', () => {
   it('不带 type → 取全部,三类齐全', async () => {
-    const r = await api.get('/papers', { query: { page: 1, size: 200 } });
+    const r = await api.get('/papers', { query: { page: 1, size: 50 } });
     const items = (r.data as { items: PaperDto[]; total: number }).items;
     expect(items.length).toBeGreaterThanOrEqual(4);
     const types = new Set(items.map((p) => p.type));
@@ -46,7 +46,7 @@ describe('GET /papers(试卷库列表)', () => {
   });
 
   it('含 draft 草稿卷(状态可区分)', async () => {
-    const r = await api.get('/papers', { query: { page: 1, size: 200 } });
+    const r = await api.get('/papers', { query: { page: 1, size: 50 } });
     const items = (r.data as { items: PaperDto[] }).items;
     expect(items.some((p) => p.status === 'draft')).toBe(true);
     expect(items.some((p) => p.status === 'published')).toBe(true);

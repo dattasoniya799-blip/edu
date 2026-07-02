@@ -4,6 +4,27 @@
  */
 import type { PaperDto, PaperType } from '@qiming/contracts';
 
+/** 后端 PaperListQueryDto.size 的上限;试卷库按该上限分页拉齐全量。 */
+export const PAPER_LIBRARY_PAGE_SIZE = 50;
+
+type PaperPage = { items: PaperDto[]; total: number };
+
+export async function collectPaperPages(fetchPage: (page: number, size: number) => Promise<PaperPage>): Promise<PaperDto[]> {
+  const all: PaperDto[] = [];
+  let page = 1;
+  let total = Number.POSITIVE_INFINITY;
+
+  while (all.length < total) {
+    const r = await fetchPage(page, PAPER_LIBRARY_PAGE_SIZE);
+    all.push(...r.items);
+    total = r.total;
+    if (r.items.length === 0) break;
+    page += 1;
+  }
+
+  return all;
+}
+
 /** 试卷类型 → 中文(项目既有口径,勿另造) */
 export const PAPER_TYPE_LABEL: Record<PaperType, string> = {
   practice: '随堂练',
