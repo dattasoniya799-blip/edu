@@ -392,8 +392,8 @@ describe('管理员域(A2)', () => {
     });
 
     it('停用学生不消失、?status 过滤、可启用(#3):enable 置 active、写 audit_logs、跨租户 404', async () => {
-      // 停用(学生无 DELETE 端点,经业务/直改 status;停用不写 deletedAt)
-      await raw.user.update({ where: { id: BigInt(myStudentId) }, data: { status: 'disabled' } });
+      // 停用(经用户批准的契约增量 DELETE /admin/students/{id}:置 status=disabled,不写 deletedAt)
+      await del(`/admin/students/${myStudentId}`, adminAt).expect(200);
       // 默认列表仍可见;?status=disabled 命中;?status=active 不含
       const all = await get('/admin/students?keyword=A2测试学生&size=50', adminAt).expect(200);
       expect((all.body.data.items as StudentDto[]).map((s) => s.id)).toContain(myStudentId);
