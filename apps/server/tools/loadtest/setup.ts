@@ -72,7 +72,7 @@ export async function setup(opts: SetupOptions, rec: Recorder): Promise<SetupRes
     if (!s) {
       s = await admin.must('POST', '/api/v1/admin/students', {
         name: `压测学生${String(i + 1).padStart(2, '0')}`,
-        parentPhone: `1391${String(700000 + i)}`,
+        parentPhone: `13917${String(100000 + i)}`, // 11 位合规号段(服务端校验 ^1[3-9]\d{9}$)
         studentNo,
         grade: '初二',
         courseIds: [courseId],

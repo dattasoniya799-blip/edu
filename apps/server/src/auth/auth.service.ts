@@ -14,6 +14,7 @@ import { REDIS } from '../redis/redis.module';
 import { AuditService } from '../audit/audit.service';
 import { runWithoutTenant } from '../common/tenant-context';
 import { hashPassword, randomToken, verifyPassword } from './password.util';
+import { markPasswordReset, ttlSeconds } from './pwd-reset';
 
 export interface JwtUser {
   uid: number;
@@ -23,14 +24,6 @@ export interface JwtUser {
 
 const RT_KEY = (jti: string) => `rt:${jti}`;
 const RT_USER_KEY = (uid: number) => `rtu:${uid}`;
-
-/** '2h' / '14d' / '900s' → 秒 */
-function ttlSeconds(ttl: string): number {
-  const m = /^(\d+)([smhd])$/.exec(ttl.trim());
-  if (!m) return 7200;
-  const n = Number(m[1]);
-  return n * { s: 1, m: 60, h: 3600, d: 86400 }[m[2] as 's' | 'm' | 'h' | 'd'];
-}
 
 @Injectable()
 export class AuthService {
@@ -171,6 +164,7 @@ export class AuthService {
       data: { passwordHash: await hashPassword(newPassword) },
     });
     await this.revokeAllRefreshTokens(user.uid); // 改密后所有刷新令牌作废
+    await markPasswordReset(this.redis, this.cfg, user.uid); // 旧 access token 也立即失效(守卫拦截)
     await this.audit.log({
       actorId: user.uid, orgId: user.orgId, action: 'me.password_change',
       targetType: 'user', targetId: user.uid, ip,
