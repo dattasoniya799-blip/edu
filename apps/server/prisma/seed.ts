@@ -177,9 +177,10 @@ async function business(c: Client) {
   for (let j = 0; j < hwQs.length; j++) await c.query(
     `INSERT INTO paper_questions(org_id,paper_id,question_id,seq,score) VALUES ($1,$2,$3,$4,$5)`,
     [orgId, hwPaper, hwQs[j], j + 1, j === 4 ? 10 : 5]);
-  const assignment = (await c.query(`INSERT INTO assignments(org_id,paper_id,lesson_id,kind,target,due_at,grading_policy)
-    VALUES ($1,$2,$3,'homework',$4, now() - interval '1 day', '{"objective":"instant","subjective":"ai_pre_review"}') RETURNING id`,
-    [orgId, hwPaper, lessonIds[2], JSON.stringify({ courseId: Number(course) })])).rows[0].id;
+  // teacher_id = 授课教师 t1(与迁移 0002 回填规则一致:lesson→course→teacher)
+  const assignment = (await c.query(`INSERT INTO assignments(org_id,paper_id,lesson_id,teacher_id,kind,target,due_at,grading_policy)
+    VALUES ($1,$2,$3,$4,'homework',$5, now() - interval '1 day', '{"objective":"instant","subjective":"ai_pre_review"}') RETURNING id`,
+    [orgId, hwPaper, lessonIds[2], t1, JSON.stringify({ courseId: Number(course) })])).rows[0].id;
 
   const qTypes = (await c.query(`SELECT id, type, answer FROM questions WHERE id = ANY($1)`, [hwQs])).rows;
   const typeOf = new Map(qTypes.map((r: any) => [String(r.id), r]));

@@ -7,6 +7,10 @@ import type {
   RubricStep,
 } from '@qiming/contracts';
 import { dec, num, round1 } from '../admin/helpers';
+import {
+  AssignmentAnchor,
+  ownedAssignmentIds,
+} from '../assignment/assignment-ownership.util';
 import type { JwtUser } from '../auth/auth.service';
 import { getJwtSecret } from '../common/env-assert';
 import { MasteryQueueService } from '../mastery/mastery.queue';
@@ -108,7 +112,7 @@ export class GradingService {
 
   // ================= 教师复核 =================
 
-  /** GET /grading/pending:submitted attempt 中未复核的主观题,按作业聚合(仅本人课程的作业) */
+  /** GET /grading/pending:submitted attempt 中未复核的主观题,按作业聚合(仅归属当前教师的作业) */
   async pending(user: JwtUser): Promise<PendingGroupDto[]> {
     const rows = await this.prisma.client.answer.findMany({
       where: { isCorrect: null, attempt: { status: 'submitted' } },
@@ -118,23 +122,25 @@ export class GradingService {
         attempt: {
           select: {
             assignment: {
-              select: { id: true, lessonId: true, target: true, paper: { select: { name: true } } },
+              select: {
+                id: true,
+                teacherId: true,
+                lessonId: true,
+                target: true,
+                paper: { select: { name: true } },
+              },
             },
           },
         },
       },
     });
-    // 归属过滤(sec-back · #4):只保留当前教师拥有课程的作业;
-    // 无 course 锚点的作业(target={studentIds} 且 lessonId=null)本波不在此拦(留后续)。
+    // 归属过滤(统一规则,见 assignment-ownership.util):teacherId=本人,
+    // 或 teacherId 为空且 course 锚点属本人;学生自发(无 teacher 无锚点,如 wrong_redo)任何教师不可见。
     const assignments = [
       ...new Map(rows.map((r) => [String(r.attempt.assignment.id), r.attempt.assignment])).values(),
     ];
-    const courseByAssignment = await this.resolveAssignmentCourses(assignments);
-    const mine = await this.myCourseIds(user);
-    const ownable = (assignmentId: bigint): boolean => {
-      const c = courseByAssignment.get(String(assignmentId)) ?? null;
-      return c == null || mine.has(c);
-    };
+    const owned = await ownedAssignmentIds(this.prisma.client, user, assignments);
+    const ownable = (assignmentId: bigint): boolean => owned.has(String(assignmentId));
     // 待复核题 = solution + 公式填空(均 isCorrect=null);需按题目 answer 判定公式填空
     const reviewIds = new Set(
       (
@@ -251,13 +257,13 @@ export class GradingService {
         attempt: {
           select: {
             student: { select: { id: true, name: true } },
-            assignment: { select: { id: true, lessonId: true, target: true } },
+            assignment: { select: { id: true, teacherId: true, lessonId: true, target: true } },
           },
         },
       },
     });
     if (!ans) throw new NotFoundException('作答不存在');
-    await this.assertAssignmentOwned(user, ans.attempt.assignment); // 归属:仅本人课程
+    await this.assertAssignmentOwned(user, ans.attempt.assignment); // 归属:teacher 锚点统一规则
     const question = await this.prisma.client.question.findFirst({
       where: { id: ans.questionId },
       select: { stemLatex: true, rubric: true },
@@ -298,13 +304,15 @@ export class GradingService {
             id: true,
             status: true,
             objectiveScore: true,
-            assignment: { select: { id: true, lessonId: true, target: true, paperId: true } },
+            assignment: {
+              select: { id: true, teacherId: true, lessonId: true, target: true, paperId: true },
+            },
           },
         },
       },
     });
     if (!ans) throw new NotFoundException('作答不存在');
-    await this.assertAssignmentOwned(user, ans.attempt.assignment); // 归属:仅本人课程
+    await this.assertAssignmentOwned(user, ans.attempt.assignment); // 归属:teacher 锚点统一规则
     const question = await this.prisma.client.question.findFirst({
       where: { id: ans.questionId },
       select: { type: true, answer: true },
@@ -552,69 +560,23 @@ export class GradingService {
   private async mustAssignment(user: JwtUser, id: number) {
     const assignment = await this.prisma.client.assignment.findFirst({
       where: { id: BigInt(id) },
-      select: { id: true, kind: true, paperId: true, lessonId: true, target: true },
+      select: { id: true, kind: true, paperId: true, teacherId: true, lessonId: true, target: true },
     });
     if (!assignment) throw new NotFoundException('作业不存在');
     await this.assertAssignmentOwned(user, assignment);
     return assignment;
   }
 
-  // ---------------- 批改归属(sec-back · #4,仅"有课程锚点"部分)----------------
-
-  /** 当前教师拥有(teacherId=本人)的课程 id 集合 */
-  private async myCourseIds(user: JwtUser): Promise<Set<string>> {
-    const courses = await this.prisma.client.course.findMany({
-      where: { teacherId: BigInt(user.uid) },
-      select: { id: true },
-    });
-    return new Set(courses.map((c) => String(c.id)));
-  }
+  // ---------------- 批改归属(teacher 锚点统一规则,经用户批准的 schema 变更)----------------
 
   /**
-   * 解析一批作业的 course 锚点:
-   * - lessonId 非空 → lesson.courseId;
-   * - 否则 target.courseId(整班作业);
-   * - 二者皆无(target={studentIds} 且 lessonId=null,如错题自助 wrong_redo)→ null(无锚点)。
+   * 作业归属断言(统一规则,见 assignment-ownership.util):
+   * teacherId=本人,或 teacherId 为空且 course 锚点课程属本人,否则 404(不泄露存在性)。
+   * 学生自发作业(teacherId 为空且无锚点,如 wrong_redo)→ 任何教师 404。
    */
-  private async resolveAssignmentCourses(
-    assignments: { id: bigint; lessonId: bigint | null; target: unknown }[],
-  ): Promise<Map<string, string | null>> {
-    const lessonIds = [
-      ...new Set(assignments.filter((a) => a.lessonId != null).map((a) => a.lessonId as bigint)),
-    ];
-    const lessons = lessonIds.length
-      ? await this.prisma.client.lesson.findMany({
-          where: { id: { in: lessonIds } },
-          select: { id: true, courseId: true },
-        })
-      : [];
-    const courseByLesson = new Map(lessons.map((l) => [String(l.id), String(l.courseId)]));
-    const out = new Map<string, string | null>();
-    for (const a of assignments) {
-      let courseId: string | null = null;
-      if (a.lessonId != null) {
-        courseId = courseByLesson.get(String(a.lessonId)) ?? null;
-      } else {
-        const t = a.target as { courseId?: number } | null;
-        if (t?.courseId != null) courseId = String(t.courseId);
-      }
-      out.set(String(a.id), courseId);
-    }
-    return out;
-  }
-
-  /**
-   * 作业归属断言:作业的 course 锚点必须 ∈ 当前教师拥有的课程,否则 404(不泄露存在性)。
-   * 无 course 锚点的作业(留后续:需 schema 给作业加 teacher 锚点)本波不强制,直接放行。
-   */
-  private async assertAssignmentOwned(
-    user: JwtUser,
-    assignment: { id: bigint; lessonId: bigint | null; target: unknown },
-  ): Promise<void> {
-    const courseId = (await this.resolveAssignmentCourses([assignment])).get(String(assignment.id)) ?? null;
-    if (courseId == null) return; // 无 course 锚点 → 本波不拦(留后续)
-    const mine = await this.myCourseIds(user);
-    if (!mine.has(courseId)) throw new NotFoundException('作业不存在');
+  private async assertAssignmentOwned(user: JwtUser, assignment: AssignmentAnchor): Promise<void> {
+    const owned = await ownedAssignmentIds(this.prisma.client, user, [assignment]);
+    if (!owned.has(String(assignment.id))) throw new NotFoundException('作业不存在');
   }
 
   /**

@@ -1019,6 +1019,8 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
         orgId: BigInt(meta.org_id),
         paperId,
         lessonId,
+        // teacher 锚点(经用户批准的 schema 变更):随堂练归本课授课教师(meta.teacher_id=course.teacherId)
+        teacherId: BigInt(meta.teacher_id),
         kind: 'in_class',
         target: { courseId: Number(meta.course_id) },
         gradingPolicy: { objective: 'instant' },

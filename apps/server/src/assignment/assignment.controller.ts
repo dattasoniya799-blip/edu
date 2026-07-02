@@ -34,7 +34,7 @@ export class AssignmentController {
 
   @Get(':id/progress')
   @Roles('teacher')
-  progress(@Param('id', ParseIntPipe) id: number) {
-    return this.assignments.progress(id);
+  progress(@CurrentUser() user: JwtUser, @Param('id', ParseIntPipe) id: number) {
+    return this.assignments.progress(user, id);
   }
 }

@@ -104,7 +104,7 @@ export async function createImplOrg(): Promise<ImplFixture> {
   });
   const assignment = await raw.assignment.create({
     data: {
-      orgId, paperId: paper.id, kind: 'homework',
+      orgId, paperId: paper.id, teacherId: teacher.id, kind: 'homework',
       target: { courseId: Number(course.id) },
       dueAt: new Date(Date.now() + 7 * 86400_000),
       gradingPolicy: { objective: 'instant', subjective: 'ai_pre_review' },

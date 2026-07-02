@@ -106,14 +106,14 @@ export async function createRevOrg(): Promise<RevFixture> {
   });
   const hwAssignment = await raw.assignment.create({
     data: {
-      orgId, paperId: pObj.id, kind: 'homework', target: { courseId: Number(course.id) },
+      orgId, paperId: pObj.id, teacherId: teacher.id, kind: 'homework', target: { courseId: Number(course.id) },
       dueAt: new Date(Date.now() + 7 * 86400_000),
       gradingPolicy: { objective: 'instant' }, scoreCounted: true,
     },
   });
   const conAssignment = await raw.assignment.create({
     data: {
-      orgId, paperId: pObj.id, kind: 'consolidation', target: { studentIds: [Number(s1.id)] },
+      orgId, paperId: pObj.id, teacherId: teacher.id, kind: 'consolidation', target: { studentIds: [Number(s1.id)] },
       dueAt: new Date(Date.now() + 7 * 86400_000),
       gradingPolicy: { objective: 'instant' }, scoreCounted: false,
     },
@@ -131,7 +131,7 @@ export async function createRevOrg(): Promise<RevFixture> {
   });
   const subAssignment = await raw.assignment.create({
     data: {
-      orgId, paperId: pSub.id, kind: 'homework', target: { courseId: Number(course.id) },
+      orgId, paperId: pSub.id, teacherId: teacher.id, kind: 'homework', target: { courseId: Number(course.id) },
       dueAt: new Date(Date.now() + 7 * 86400_000),
       gradingPolicy: { objective: 'instant', subjective: 'ai_pre_review' }, scoreCounted: true,
     },

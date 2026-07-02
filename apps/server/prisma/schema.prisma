@@ -469,6 +469,9 @@ model Assignment {
   orgId         BigInt         @map("org_id")
   paperId       BigInt         @map("paper_id")
   lessonId      BigInt?        @map("lesson_id")
+  // teacher 锚点(经用户批准的 schema 变更,迁移 0002):教师发布=发布者;系统/学生自发(wrong_redo 等)=null。
+  // 类型与 users.id / courses.teacher_id 对齐用 BigInt(契约 DTO 不暴露该字段)。
+  teacherId     BigInt?        @map("teacher_id")
   kind          AssignmentKind
   target        Json           // {courseId} 或 {studentIds:[...]}
   publishAt     DateTime       @default(now()) @map("publish_at")
@@ -480,6 +483,7 @@ model Assignment {
   lesson        Lesson?        @relation(fields: [lessonId], references: [id])
   attempts      Attempt[]
   @@index([orgId, lessonId])
+  @@index([orgId, teacherId])
   @@map("assignments")
 }
 
