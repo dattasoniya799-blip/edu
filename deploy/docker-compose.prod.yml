@@ -1,0 +1,91 @@
+# =============================================================================
+# 启明智学 · 生产编排(D3)
+#
+# 用法(在仓库根执行;.env.prod 从 deploy/.env.prod.example 复制并填好,绝不入库):
+#   docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod build
+#   docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod up -d
+# 说明:
+#   - --env-file 同时用于 compose 变量替换(宿主端口等)与 server 容器 env_file;
+#   - postgres/redis 不暴露宿主端口,仅 compose 内网互联(server 用服务名 postgres/redis 访问);
+#   - 数据全部落命名卷:pgdata / redisdata / serverstorage(本地上传文件);
+#   - 日志统一 json-file + 轮转,防磁盘打满。
+# =============================================================================
+
+name: qiming-prod   # 默认项目名;本机验证用 -p 覆盖(如 -p qiming-prod-test),与 dev 栈完全隔离
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-qiming}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?请在 .env.prod 设置 POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-qiming}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-qiming} -d ${POSTGRES_DB:-qiming}"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    logging: *default-logging
+    # 不暴露宿主端口(内网互联);排障需临时进库:docker compose exec postgres psql -U qiming -d qiming
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    # AOF 持久化:课堂会话/BullMQ 队列/上传一次性 token 都在 Redis,重启不丢
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    logging: *default-logging
+
+  server:
+    build:
+      context: ..                        # 仓库根:apps 引用 packages/ 源码,上下文必须包含 packages/
+      dockerfile: apps/server/Dockerfile
+    image: qiming-server:prod
+    restart: unless-stopped
+    env_file:
+      - .env.prod                        # 相对本 compose 文件(deploy/.env.prod)
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - serverstorage:/app/storage       # STORAGE_DRIVER=local 上传落盘(UPLOAD_ROOT)
+    logging: *default-logging
+    # 端口仅内网(nginx 反代);healthcheck 内建于镜像(/healthz,db+redis 全通才 healthy)
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/web.Dockerfile
+    image: qiming-web:prod
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      # 默认端口分端:80 学生端 / 8081 管理端 / 8082 教师端;宿主端口可在 .env.prod 覆盖
+      - "${STUDENT_HTTP_PORT:-80}:80"
+      - "${ADMIN_HTTP_PORT:-8081}:8081"
+      - "${TEACHER_HTTP_PORT:-8082}:8082"
+    logging: *default-logging
+
+volumes:
+  pgdata:
+  redisdata:
+  serverstorage:

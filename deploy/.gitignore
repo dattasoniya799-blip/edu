@@ -1,0 +1,6 @@
+# 真实密钥/环境文件绝不入库(示例除外)
+.env.prod
+.env.*
+!.env.*.example
+# 备份产物
+backups/
