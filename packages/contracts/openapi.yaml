@@ -701,6 +701,12 @@ paths:
       responses:
         '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
         default: {$ref: '#/components/responses/Err'}
+    delete:
+      summary: 停用学生(软删) [admin]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
   /admin/students/{id}/profile:
     get:
       summary: 学生档案(课程+设备+学情摘要) [admin/teacher]

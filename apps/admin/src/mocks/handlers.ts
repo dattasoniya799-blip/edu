@@ -158,6 +158,11 @@ export const handlers = [
     return ok(created);
   })),
   http.put(`${BASE}/admin/students/:id`, authed(() => okVoid())),
+  http.delete(`${BASE}/admin/students/:id`, authed(({ params }) => {
+    const s = D.students.find((x) => x.id === Number(params.id));
+    if (s) s.status = 'disabled'; // 停用(与教师同口径:不软删,仍可在「已停用」筛选看到)
+    return okVoid();
+  })),
   http.get(`${BASE}/admin/students/:id/profile`, authed(({ params }) => {
     const s = D.students.find((x) => x.id === Number(params.id));
     if (!s) return err(404, 4040, '学生不存在');

@@ -92,4 +92,14 @@ describe('状态筛选 + 停用/恢复启用(IMPL #3)', () => {
     const active = (await api.get('/admin/teachers', { query: { page: 1, size: 50, status: 'active' } })).data;
     expect(active.items.some((t) => t.id === 3)).toBe(true);
   });
+
+  it('学生:DELETE 停用后在已停用筛选可见,enable 后恢复正常(经批准的契约增量)', async () => {
+    await api.del('/admin/students/{id}', { params: { id: 5 } });
+    const disabled = (await api.get('/admin/students', { query: { page: 1, size: 50, status: 'disabled' } })).data;
+    expect(disabled.items.some((s) => s.id === 5)).toBe(true);
+
+    await api.post('/admin/students/{id}/enable', { params: { id: 5 } });
+    const active = (await api.get('/admin/students', { query: { page: 1, size: 50, status: 'active' } })).data;
+    expect(active.items.some((s) => s.id === 5)).toBe(true);
+  });
 });

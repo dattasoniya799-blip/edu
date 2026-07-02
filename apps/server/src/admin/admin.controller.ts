@@ -109,6 +109,11 @@ export class AdminController {
     return this.students.update(user, id, dto, ip);
   }
 
+  @Delete('students/:id')
+  disableStudent(@CurrentUser() user: JwtUser, @Param('id', ParseIntPipe) id: number, @Ip() ip: string) {
+    return this.students.disable(user, id, ip);
+  }
+
   @Get('students/:id/profile')
   @Roles('admin', 'teacher')
   studentProfile(@Param('id', ParseIntPipe) id: number) {

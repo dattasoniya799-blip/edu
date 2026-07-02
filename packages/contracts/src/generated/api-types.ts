@@ -625,7 +625,30 @@ export interface paths {
             };
         };
         post?: never;
-        delete?: never;
+        /** 停用学生(软删) [admin] */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["idPath"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OkVoid"];
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;

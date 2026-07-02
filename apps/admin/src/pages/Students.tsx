@@ -1,8 +1,9 @@
-/** 学生管理(原型 a-students):筛选 + 列表 + 添加 + 档案 + 重置密码 + 解绑(档案内) */
+/** 学生管理(原型 a-students):筛选 + 列表 + 添加 + 档案 + 重置密码 + 停用 + 解绑(档案内) */
 import { useCallback, useEffect, useState } from 'react';
 import type { CourseDto, StudentDto, UserStatus } from '@qiming/contracts';
 import { Button, Card, Table, Tag, useToast } from '@qiming/ui';
 import { api } from '../api';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { Select, TextInput, Toolbar, LinkButton } from '../components/controls';
 import { ResetPasswordModal, type ResetPasswordTarget } from '../components/ResetPasswordModal';
 import { Pager } from '../components/Pager';
@@ -28,6 +29,7 @@ export function Students() {
   const [addOpen, setAddOpen] = useState(false);
   const [profileId, setProfileId] = useState<number | null>(null);
   const [resetStudent, setResetStudent] = useState<ResetPasswordTarget | null>(null);
+  const [disableTarget, setDisableTarget] = useState<StudentDto | null>(null);
   const { toast } = useToast();
 
   const load = useCallback(async () => {
@@ -50,6 +52,19 @@ export function Students() {
       setLoading(false);
     }
   }, [page, keyword, status, courseId, deviceBound, toast]);
+
+  const disableStudent = async () => {
+    if (!disableTarget) return;
+    // 与 Teachers 页同口径:停用失败不静默
+    try {
+      await api.del('/admin/students/{id}', { params: { id: disableTarget.id } });
+      toast(`已停用 ${disableTarget.name} 的账号`);
+      setDisableTarget(null);
+      await load();
+    } catch {
+      toast('停用失败,请重试');
+    }
+  };
 
   const enableStudent = async (s: StudentDto) => {
     try {
@@ -132,9 +147,12 @@ export function Students() {
                   {s.status === 'disabled' ? (
                     <LinkButton onClick={() => void enableStudent(s)}>恢复启用</LinkButton>
                   ) : (
-                    <LinkButton onClick={() => setResetStudent({ id: s.id, name: s.name, no: s.studentNo, role: 'student' })}>
-                      重置密码
-                    </LinkButton>
+                    <>
+                      <LinkButton onClick={() => setResetStudent({ id: s.id, name: s.name, no: s.studentNo, role: 'student' })}>
+                        重置密码
+                      </LinkButton>
+                      <LinkButton danger onClick={() => setDisableTarget(s)}>停用</LinkButton>
+                    </>
                   )}
                 </span>
               ),
@@ -161,6 +179,15 @@ export function Students() {
         onResetPassword={(t) => setResetStudent(t)}
       />
       <ResetPasswordModal target={resetStudent} onClose={() => setResetStudent(null)} />
+      <ConfirmModal
+        open={!!disableTarget}
+        title="停用学生账号"
+        confirmText="确认停用"
+        onConfirm={disableStudent}
+        onClose={() => setDisableTarget(null)}
+      >
+        停用后 <b className="text-ink">{disableTarget?.name}</b> 将无法登录,其学习数据保留。确定停用吗?
+      </ConfirmModal>
     </div>
   );
 }

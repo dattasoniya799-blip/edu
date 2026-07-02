@@ -160,6 +160,21 @@ export class StudentsService {
     await this.redis.del(`rtu:${uid}`);
   }
 
+  // ---------------- 停用(仅置 status=disabled,非删除,不写 deletedAt;与 TeachersService.disable 同口径) ----------------
+  async disable(user: JwtUser, id: number, ip?: string): Promise<null> {
+    const s = await this.findStudentOr404(id);
+    await this.prisma.client.user.update({
+      where: { id: s.id },
+      data: { status: 'disabled' },
+    });
+    await this.revokeRefreshTokens(id); // 停用即作废其全部刷新令牌
+    await this.audit.log({
+      actorId: user.uid, orgId: user.orgId, action: 'admin.student.disable',
+      targetType: 'user', targetId: id, ip,
+    });
+    return null;
+  }
+
   // ---------------- 启用(置 status=active) ----------------
   async enable(user: JwtUser, id: number, ip?: string): Promise<null> {
     const s = await this.findStudentOr404(id);
