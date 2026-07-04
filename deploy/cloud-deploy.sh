@@ -38,6 +38,15 @@ if ! command -v docker >/dev/null 2>&1; then
   apt-get install -y docker.io docker-compose-v2 git || apt-get install -y docker.io docker-compose git
 fi
 systemctl enable --now docker
+
+# 国内服务器连不上 Docker Hub(registry-1.docker.io i/o timeout),配镜像加速(幂等)
+if [ ! -f /etc/docker/daemon.json ] || ! grep -q registry-mirrors /etc/docker/daemon.json 2>/dev/null; then
+  mkdir -p /etc/docker
+  printf '%s\n' '{"registry-mirrors":["https://docker.m.daocloud.io","https://docker.1ms.run","https://hub-mirror.c.163.com","https://mirror.baidubce.com"]}' > /etc/docker/daemon.json
+  systemctl restart docker
+  sleep 3
+  echo "已配置 Docker 国内镜像加速(daocloud/1ms/163/baidu)"
+fi
 docker version >/dev/null || { echo "!! Docker 未就绪,终止"; exit 1; }
 docker compose version >/dev/null 2>&1 || { echo "!! docker compose 插件缺失,终止"; exit 1; }
 echo "Docker: $(docker --version)"
