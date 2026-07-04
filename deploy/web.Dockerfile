@@ -30,9 +30,10 @@ COPY --from=pkgs /repo/packages /repo/packages
 COPY apps/student ./
 RUN npm run build
 
-# ---------- 管理端 ----------
+# ---------- 管理端(子路径 /admin/,同托管在 80 端口下) ----------
 FROM node:22-slim AS build-admin
 ENV VITE_USE_MOCK=false
+ENV VITE_BASE=/admin/
 WORKDIR /repo/apps/admin
 COPY apps/admin/package.json apps/admin/package-lock.json ./
 RUN npm ci
@@ -40,9 +41,10 @@ COPY --from=pkgs /repo/packages /repo/packages
 COPY apps/admin ./
 RUN npm run build
 
-# ---------- 教师端 ----------
+# ---------- 教师端(子路径 /teacher/,同托管在 80 端口下) ----------
 FROM node:22-slim AS build-teacher
 ENV VITE_USE_MOCK=false
+ENV VITE_BASE=/teacher/
 WORKDIR /repo/apps/teacher
 COPY apps/teacher/package.json apps/teacher/package-lock.json ./
 RUN npm ci
@@ -56,7 +58,7 @@ COPY deploy/nginx/qiming.conf /etc/nginx/conf.d/default.conf
 COPY --from=build-student /repo/apps/student/dist /usr/share/nginx/html/student
 COPY --from=build-admin   /repo/apps/admin/dist   /usr/share/nginx/html/admin
 COPY --from=build-teacher /repo/apps/teacher/dist /usr/share/nginx/html/teacher
-# 80=学生端 8081=管理端 8082=教师端(宿主映射见 docker-compose.prod.yml,可 env 覆盖)
-EXPOSE 80 8081 8082
+# 单端口·路径分端:80 端口下 / 学生、/admin/ 管理、/teacher/ 教师(见 nginx/qiming.conf)
+EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD wget -q -O /dev/null http://127.0.0.1:80/ || exit 1

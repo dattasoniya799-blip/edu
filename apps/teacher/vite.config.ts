@@ -12,6 +12,9 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, __dirname, '');
   const useMock = env.VITE_USE_MOCK !== 'false';
   return {
+    // 生产可通过 VITE_BASE 指定子路径部署(如 /teacher/),三端同托管在 80 端口下不同路径,
+    // 规避国内网络对 8081/8082 等非标准端口的拦截。默认 '/'。
+    base: process.env.VITE_BASE || '/',
     plugins: [react()],
     resolve: {
       alias: {

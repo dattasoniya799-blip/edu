@@ -65,7 +65,7 @@ DATABASE_URL=postgresql://qiming:${PG_PW}@postgres:5432/qiming
 REDIS_URL=redis://redis:6379
 PORT=3000
 JWT_SECRET=${JWT}
-CORS_ORIGINS=http://${PUBLIC_IP},http://${PUBLIC_IP}:8081,http://${PUBLIC_IP}:8082
+CORS_ORIGINS=http://${PUBLIC_IP}
 UPLOAD_PUBLIC_BASE=http://${PUBLIC_IP}
 STORAGE_DRIVER=local
 UPLOAD_ROOT=/app/storage
@@ -108,10 +108,10 @@ log "[6/6] 冒烟检查"
 sleep 3
 echo "-- healthz(应含 db:true redis:true)--"
 curl -s http://localhost/healthz; echo
-echo "-- 三端端口(应 200)--"
-for p in 80 8081 8082; do
-  echo "port ${p}: $(curl -s -o /dev/null -w '%{http_code}' http://localhost:${p}/)"
-done
+echo "-- 三端(单端口路径分端,应 200)--"
+echo "学生端 /         : $(curl -s -o /dev/null -w '%{http_code}' http://localhost/)"
+echo "管理端 /admin/   : $(curl -s -o /dev/null -w '%{http_code}' http://localhost/admin/)"
+echo "教师端 /teacher/ : $(curl -s -o /dev/null -w '%{http_code}' http://localhost/teacher/)"
 echo "-- WebSocket 升级(应 101)--"
 curl -s -o /dev/null -w '%{http_code}' "http://localhost/socket.io/?EIO=4&transport=websocket" \
   -H "Connection: Upgrade" -H "Upgrade: websocket" \
@@ -121,7 +121,7 @@ $COMPOSE ps
 
 log "部署完成"
 echo "访问(在你自己的浏览器):"
-echo "  学生端 http://${PUBLIC_IP}"
-echo "  管理端 http://${PUBLIC_IP}:8081"
-echo "  教师端 http://${PUBLIC_IP}:8082"
+echo "  学生端 http://${PUBLIC_IP}/"
+echo "  管理端 http://${PUBLIC_IP}/admin/"
+echo "  教师端 http://${PUBLIC_IP}/teacher/"
 echo "管理员账号见上方 [5/6] init:prod 打印的手机号与密码(请立即保存)。"

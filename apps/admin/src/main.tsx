@@ -51,9 +51,11 @@ async function prepare(): Promise<void> {
 }
 
 prepare().then(() => {
+  // 子路径部署(构建时 VITE_BASE=/admin/)时,路由 basename 必须与之匹配,否则刷新/深链失效
+  const routerBase = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
-      <BrowserRouter>
+      <BrowserRouter basename={routerBase}>
         <ToastProvider>
           <App />
         </ToastProvider>
