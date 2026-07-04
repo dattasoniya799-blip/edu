@@ -1,0 +1,2149 @@
+{
+  "metadata": {
+    "code": "physics_junior_pep_v1",
+    "graph_type": "curriculum_knowledge",
+    "subject": "物理",
+    "grade_range": [
+      "初二",
+      "初三"
+    ],
+    "curriculum": "PEP junior physics 2012-2013",
+    "publisher": "人民教育出版社",
+    "status": "draft",
+    "version": 1,
+    "notes": "初中物理教材知识图谱首版:按 力学/声/光/热/电/电磁/能量/科学方法 分章,节点两级(章→知识点),知识点命名对齐人教版八上/八下/九年级全一册章节及中考真题常见考点关键词,用于真题导入时的 curriculum_knowledge 打标。"
+  },
+  "sources": [
+    {
+      "id": "pep-physics-8a",
+      "textbook": "物理八年级上册",
+      "url": "https://www.pep.com.cn/products/jc/czjks/wl/"
+    },
+    {
+      "id": "pep-physics-8b",
+      "textbook": "物理八年级下册",
+      "url": "https://www.pep.com.cn/products/jc/czjks/wl/"
+    },
+    {
+      "id": "pep-physics-9",
+      "textbook": "物理九年级全一册",
+      "url": "https://www.pep.com.cn/products/jc/czjks/wl/"
+    }
+  ],
+  "nodes": [
+    {
+      "code": "PHY-MECH-000",
+      "name": "力学",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 1,
+      "chapter": "力学",
+      "section": null,
+      "difficulty": 1,
+      "ability_tags": [],
+      "exam_weight": 0.5,
+      "summary": "力学模块,包含本模块下的教材章节知识点。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-001",
+      "name": "参照物",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第一章 机械运动",
+      "section": "1.1",
+      "difficulty": 1,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.5,
+      "summary": "参照物的选取与机械运动的相对性判断。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-002",
+      "name": "质量与天平的使用",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第六章 质量与密度",
+      "section": "6.1",
+      "difficulty": 2,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.5,
+      "summary": "质量的概念、单位换算与托盘天平的使用规范。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-003",
+      "name": "密度公式",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第六章 质量与密度",
+      "section": "6.2",
+      "difficulty": 2,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.7,
+      "summary": "密度概念与公式 ρ=m/V 的理解和计算。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-004",
+      "name": "密度测量与量筒读数",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第六章 质量与密度",
+      "section": "6.3",
+      "difficulty": 3,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.7,
+      "summary": "用天平和量筒测量固体和液体的密度,量筒的正确读数方法。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-005",
+      "name": "力的作用效果",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第七章 力",
+      "section": "7.1",
+      "difficulty": 1,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.6,
+      "summary": "力可以改变物体的形状和运动状态。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-006",
+      "name": "力的作用是相互的",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第七章 力",
+      "section": "7.2",
+      "difficulty": 1,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.6,
+      "summary": "物体间力的作用是相互的,施力物体同时也是受力物体。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-007",
+      "name": "弹力与弹簧测力计",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第七章 力",
+      "section": "7.3",
+      "difficulty": 2,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.5,
+      "summary": "弹力的产生条件与弹簧测力计的原理和使用。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-008",
+      "name": "牛顿第一定律与惯性",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第八章 运动和力",
+      "section": "8.1",
+      "difficulty": 2,
+      "ability_tags": [
+        "理解",
+        "应用"
+      ],
+      "exam_weight": 0.8,
+      "summary": "牛顿第一定律的内容与惯性现象的解释。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-009",
+      "name": "平衡力与相互作用力",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第八章 运动和力",
+      "section": "8.2",
+      "difficulty": 3,
+      "ability_tags": [
+        "辨析"
+      ],
+      "exam_weight": 0.8,
+      "summary": "二力平衡的条件,平衡力与相互作用力的区别。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-010",
+      "name": "增大摩擦与减小摩擦",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第八章 运动和力",
+      "section": "8.3",
+      "difficulty": 2,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.6,
+      "summary": "摩擦力的影响因素及增大摩擦、减小摩擦的方法。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-011",
+      "name": "受力分析",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第八章 运动和力",
+      "section": "8.4",
+      "difficulty": 3,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.7,
+      "summary": "对物体进行受力分析,画出力的示意图。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-012",
+      "name": "运动状态与力",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第八章 运动和力",
+      "section": "8.5",
+      "difficulty": 2,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.6,
+      "summary": "力与运动状态改变的关系。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-013",
+      "name": "压强",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第九章 压强",
+      "section": "9.1",
+      "difficulty": 2,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.7,
+      "summary": "压力与压强的概念,公式 p=F/S 及增大减小压强的方法。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-014",
+      "name": "液体压强",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第九章 压强",
+      "section": "9.2",
+      "difficulty": 3,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.7,
+      "summary": "液体内部压强的特点与公式 p=ρgh。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-015",
+      "name": "浮力",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第十章 浮力",
+      "section": "10.1",
+      "difficulty": 2,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.8,
+      "summary": "浮力的概念、方向与产生原因,称重法测浮力。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-016",
+      "name": "阿基米德原理",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第十章 浮力",
+      "section": "10.2",
+      "difficulty": 3,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.8,
+      "summary": "阿基米德原理 F浮=G排=ρ液gV排 及其应用。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-017",
+      "name": "浮沉条件与漂浮条件",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第十章 浮力",
+      "section": "10.3",
+      "difficulty": 3,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.8,
+      "summary": "物体的浮沉条件,漂浮、悬浮时浮力与重力的关系。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-018",
+      "name": "功与做功的条件",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第十一章 功和机械能",
+      "section": "11.1",
+      "difficulty": 2,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.6,
+      "summary": "功的概念、做功的两个必要条件与功的计算。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-019",
+      "name": "功率",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第十一章 功和机械能",
+      "section": "11.2",
+      "difficulty": 2,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.6,
+      "summary": "功率的物理意义与公式 P=W/t 的计算。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-020",
+      "name": "动能",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第十一章 功和机械能",
+      "section": "11.3",
+      "difficulty": 2,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.6,
+      "summary": "动能的概念及其与质量、速度的关系。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-021",
+      "name": "重力势能",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第十一章 功和机械能",
+      "section": "11.4",
+      "difficulty": 2,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.6,
+      "summary": "重力势能的概念及其与质量、高度的关系。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-022",
+      "name": "机械能及其转化",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第十一章 功和机械能",
+      "section": "11.5",
+      "difficulty": 2,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.6,
+      "summary": "动能与势能的相互转化,机械能守恒的条件。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-023",
+      "name": "滑轮组",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第十二章 简单机械",
+      "section": "12.2",
+      "difficulty": 3,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.7,
+      "summary": "定滑轮、动滑轮与滑轮组的特点及绳子股数分析。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MECH-024",
+      "name": "机械效率",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-MECH-000",
+      "chapter": "第十二章 简单机械",
+      "section": "12.3",
+      "difficulty": 3,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.7,
+      "summary": "有用功、额外功、总功与机械效率的计算。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-SND-000",
+      "name": "声现象",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 1,
+      "chapter": "声现象",
+      "section": null,
+      "difficulty": 1,
+      "ability_tags": [],
+      "exam_weight": 0.5,
+      "summary": "声现象模块,包含本模块下的教材章节知识点。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-SND-001",
+      "name": "声音的产生与传播",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-SND-000",
+      "chapter": "第二章 声现象",
+      "section": "2.1",
+      "difficulty": 1,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.6,
+      "summary": "声音由物体振动产生,传播需要介质。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-SND-002",
+      "name": "声速",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-SND-000",
+      "chapter": "第二章 声现象",
+      "section": "2.2",
+      "difficulty": 1,
+      "ability_tags": [
+        "识记"
+      ],
+      "exam_weight": 0.4,
+      "summary": "声速的大小与介质种类、温度的关系。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-SND-003",
+      "name": "音调",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-SND-000",
+      "chapter": "第二章 声现象",
+      "section": "2.3",
+      "difficulty": 2,
+      "ability_tags": [
+        "辨析"
+      ],
+      "exam_weight": 0.6,
+      "summary": "音调由发声体振动的频率决定。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-SND-004",
+      "name": "响度",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-SND-000",
+      "chapter": "第二章 声现象",
+      "section": "2.4",
+      "difficulty": 2,
+      "ability_tags": [
+        "辨析"
+      ],
+      "exam_weight": 0.6,
+      "summary": "响度由发声体的振幅和距离决定。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-SND-005",
+      "name": "音色",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-SND-000",
+      "chapter": "第二章 声现象",
+      "section": "2.5",
+      "difficulty": 1,
+      "ability_tags": [
+        "辨析"
+      ],
+      "exam_weight": 0.5,
+      "summary": "音色由发声体本身的材料和结构决定,是辨别声源的依据。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-SND-006",
+      "name": "超声波与次声波",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-SND-000",
+      "chapter": "第二章 声现象",
+      "section": "2.6",
+      "difficulty": 1,
+      "ability_tags": [
+        "识记"
+      ],
+      "exam_weight": 0.4,
+      "summary": "超声波与次声波的特点及其应用。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-OPT-000",
+      "name": "光学",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 1,
+      "chapter": "光学",
+      "section": null,
+      "difficulty": 1,
+      "ability_tags": [],
+      "exam_weight": 0.5,
+      "summary": "光学模块,包含本模块下的教材章节知识点。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-OPT-001",
+      "name": "光的直线传播与影子的形成",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-OPT-000",
+      "chapter": "第四章 光现象",
+      "section": "4.1",
+      "difficulty": 1,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.6,
+      "summary": "光在同种均匀介质中沿直线传播,影子、小孔成像等现象。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-OPT-002",
+      "name": "光的反射",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-OPT-000",
+      "chapter": "第四章 光现象",
+      "section": "4.2",
+      "difficulty": 2,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.7,
+      "summary": "光的反射定律,镜面反射与漫反射。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-OPT-003",
+      "name": "平面镜成像",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-OPT-000",
+      "chapter": "第四章 光现象",
+      "section": "4.3",
+      "difficulty": 2,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.8,
+      "summary": "平面镜成像的特点:等大、等距、虚像。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-OPT-004",
+      "name": "透镜",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-OPT-000",
+      "chapter": "第五章 透镜及其应用",
+      "section": "5.1",
+      "difficulty": 1,
+      "ability_tags": [
+        "识记"
+      ],
+      "exam_weight": 0.5,
+      "summary": "凸透镜与凹透镜对光的作用,焦点与焦距。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-OPT-005",
+      "name": "凸透镜成像规律",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-OPT-000",
+      "chapter": "第五章 透镜及其应用",
+      "section": "5.2",
+      "difficulty": 3,
+      "ability_tags": [
+        "实验探究",
+        "应用"
+      ],
+      "exam_weight": 0.9,
+      "summary": "凸透镜成像规律及物距、像距变化的动态分析。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-OPT-006",
+      "name": "实像与虚像",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-OPT-000",
+      "chapter": "第五章 透镜及其应用",
+      "section": "5.3",
+      "difficulty": 2,
+      "ability_tags": [
+        "辨析"
+      ],
+      "exam_weight": 0.6,
+      "summary": "实像与虚像的区别,倒立/正立、放大/缩小的判断。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-OPT-007",
+      "name": "放大镜与生活中的透镜",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-OPT-000",
+      "chapter": "第五章 透镜及其应用",
+      "section": "5.4",
+      "difficulty": 2,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.5,
+      "summary": "放大镜、照相机、投影仪的成像原理。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-STA-000",
+      "name": "物态变化",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 1,
+      "chapter": "物态变化",
+      "section": null,
+      "difficulty": 1,
+      "ability_tags": [],
+      "exam_weight": 0.5,
+      "summary": "物态变化模块,包含本模块下的教材章节知识点。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-STA-001",
+      "name": "汽化与液化",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-STA-000",
+      "chapter": "第三章 物态变化",
+      "section": "3.3",
+      "difficulty": 2,
+      "ability_tags": [
+        "辨析"
+      ],
+      "exam_weight": 0.7,
+      "summary": "汽化(蒸发、沸腾)与液化现象及吸放热规律。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-STA-002",
+      "name": "沸腾",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-STA-000",
+      "chapter": "第三章 物态变化",
+      "section": "3.4",
+      "difficulty": 2,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.7,
+      "summary": "沸腾的条件与沸腾的特点(吸热、温度保持不变)。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-STA-003",
+      "name": "沸点与气压",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-STA-000",
+      "chapter": "第三章 物态变化",
+      "section": "3.5",
+      "difficulty": 2,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.6,
+      "summary": "沸点的概念及沸点随气压变化的规律。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-STA-004",
+      "name": "升华与凝华",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-STA-000",
+      "chapter": "第三章 物态变化",
+      "section": "3.6",
+      "difficulty": 2,
+      "ability_tags": [
+        "辨析"
+      ],
+      "exam_weight": 0.6,
+      "summary": "升华与凝华现象的辨识及吸放热。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-STA-005",
+      "name": "温度—时间图像",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-STA-000",
+      "chapter": "第三章 物态变化",
+      "section": "3.7",
+      "difficulty": 3,
+      "ability_tags": [
+        "图像分析"
+      ],
+      "exam_weight": 0.6,
+      "summary": "物态变化过程的温度—时间图像分析。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-THM-000",
+      "name": "内能与热机",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 1,
+      "chapter": "内能与热机",
+      "section": null,
+      "difficulty": 1,
+      "ability_tags": [],
+      "exam_weight": 0.5,
+      "summary": "内能与热机模块,包含本模块下的教材章节知识点。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-THM-001",
+      "name": "分子热运动与扩散现象",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-THM-000",
+      "chapter": "第十三章 内能",
+      "section": "13.1",
+      "difficulty": 1,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.6,
+      "summary": "分子动理论,扩散现象表明分子在不停地做无规则运动。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-THM-002",
+      "name": "内能",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-THM-000",
+      "chapter": "第十三章 内能",
+      "section": "13.2",
+      "difficulty": 2,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.7,
+      "summary": "内能的概念,内能与温度的关系。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-THM-003",
+      "name": "改变内能的方式(做功与热传递)",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-THM-000",
+      "chapter": "第十三章 内能",
+      "section": "13.3",
+      "difficulty": 2,
+      "ability_tags": [
+        "辨析"
+      ],
+      "exam_weight": 0.7,
+      "summary": "做功和热传递是改变物体内能的两种方式。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-THM-004",
+      "name": "热量与比热容",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-THM-000",
+      "chapter": "第十三章 内能",
+      "section": "13.4",
+      "difficulty": 3,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.7,
+      "summary": "热量的计算 Q=cmΔt 与比热容的物理意义。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-THM-005",
+      "name": "热机原理",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-THM-000",
+      "chapter": "第十四章 内能的利用",
+      "section": "14.1",
+      "difficulty": 2,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.6,
+      "summary": "热机(内燃机)的工作原理与四个冲程。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-THM-006",
+      "name": "热值",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-THM-000",
+      "chapter": "第十四章 内能的利用",
+      "section": "14.2",
+      "difficulty": 2,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.6,
+      "summary": "燃料的热值与完全燃烧放热的计算 Q=mq。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-THM-007",
+      "name": "热机效率与热效率",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-THM-000",
+      "chapter": "第十四章 内能的利用",
+      "section": "14.3",
+      "difficulty": 3,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.6,
+      "summary": "热机效率、热效率的含义与计算。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-THM-008",
+      "name": "能量转化与守恒",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-THM-000",
+      "chapter": "第十四章 内能的利用",
+      "section": "14.4",
+      "difficulty": 2,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.6,
+      "summary": "能量的转化和转移,能量守恒定律。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-ELE-000",
+      "name": "电学",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 1,
+      "chapter": "电学",
+      "section": null,
+      "difficulty": 1,
+      "ability_tags": [],
+      "exam_weight": 0.5,
+      "summary": "电学模块,包含本模块下的教材章节知识点。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-ELE-001",
+      "name": "电流",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-ELE-000",
+      "chapter": "第十五章 电流和电路",
+      "section": "15.1",
+      "difficulty": 2,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.6,
+      "summary": "电流的形成、方向规定与电流表的使用,串并联电路的电流规律。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-ELE-002",
+      "name": "串联电路",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-ELE-000",
+      "chapter": "第十五章 电流和电路",
+      "section": "15.2",
+      "difficulty": 2,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.8,
+      "summary": "串联电路的连接特点及电流、电压、电阻规律。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-ELE-003",
+      "name": "并联电路",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-ELE-000",
+      "chapter": "第十五章 电流和电路",
+      "section": "15.3",
+      "difficulty": 2,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.8,
+      "summary": "并联电路的连接特点及电流、电压、电阻规律。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-ELE-004",
+      "name": "电路故障分析",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-ELE-000",
+      "chapter": "第十五章 电流和电路",
+      "section": "15.4",
+      "difficulty": 3,
+      "ability_tags": [
+        "分析"
+      ],
+      "exam_weight": 0.7,
+      "summary": "断路、短路等电路故障的判断与分析。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-ELE-005",
+      "name": "电压表的使用与读数",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-ELE-000",
+      "chapter": "第十六章 电压 电阻",
+      "section": "16.1",
+      "difficulty": 2,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.6,
+      "summary": "电压表的连接方法、量程选择与读数。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-ELE-006",
+      "name": "热敏电阻与传感器电路",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-ELE-000",
+      "chapter": "第十六章 电压 电阻",
+      "section": "16.2",
+      "difficulty": 3,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.6,
+      "summary": "热敏电阻、光敏电阻等传感器在自动控制电路中的应用。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-ELE-007",
+      "name": "欧姆定律",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-ELE-000",
+      "chapter": "第十七章 欧姆定律",
+      "section": "17.1",
+      "difficulty": 3,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.9,
+      "summary": "欧姆定律 I=U/R 及其在串并联电路中的应用。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-ELE-008",
+      "name": "探究电流与电压的关系",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-ELE-000",
+      "chapter": "第十七章 欧姆定律",
+      "section": "17.2",
+      "difficulty": 3,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.7,
+      "summary": "控制电阻不变,探究电流与电压的关系实验。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-ELE-009",
+      "name": "伏安法测电阻",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-ELE-000",
+      "chapter": "第十七章 欧姆定律",
+      "section": "17.3",
+      "difficulty": 3,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.7,
+      "summary": "用电压表和电流表(伏安法)测量电阻。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-ELE-010",
+      "name": "I-U图像",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-ELE-000",
+      "chapter": "第十七章 欧姆定律",
+      "section": "17.4",
+      "difficulty": 3,
+      "ability_tags": [
+        "图像分析"
+      ],
+      "exam_weight": 0.6,
+      "summary": "I-U(电流—电压)图像的分析与应用。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-ELE-011",
+      "name": "电功率",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-ELE-000",
+      "chapter": "第十八章 电功率",
+      "section": "18.1",
+      "difficulty": 3,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.9,
+      "summary": "电功率的概念与公式 P=UI=W/t 的计算,额定功率与实际功率。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-ELE-012",
+      "name": "家庭电路",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-ELE-000",
+      "chapter": "第十九章 生活用电",
+      "section": "19.1",
+      "difficulty": 2,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.7,
+      "summary": "家庭电路的组成、连接方式与家庭电路应用。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-ELE-013",
+      "name": "火线与零线(左零右火)",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-ELE-000",
+      "chapter": "第十九章 生活用电",
+      "section": "19.2",
+      "difficulty": 2,
+      "ability_tags": [
+        "识记"
+      ],
+      "exam_weight": 0.6,
+      "summary": "火线与零线的辨别,插座左零右火的接线规范。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-ELE-014",
+      "name": "保险丝与短路保护",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-ELE-000",
+      "chapter": "第十九章 生活用电",
+      "section": "19.3",
+      "difficulty": 2,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.5,
+      "summary": "保险丝的作用与家庭电路电流过大的原因。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-ELE-015",
+      "name": "安全用电原则",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-ELE-000",
+      "chapter": "第十九章 生活用电",
+      "section": "19.4",
+      "difficulty": 1,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.6,
+      "summary": "安全用电的基本原则与触电防护。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MAG-000",
+      "name": "电与磁",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 1,
+      "chapter": "电与磁",
+      "section": null,
+      "difficulty": 1,
+      "ability_tags": [],
+      "exam_weight": 0.5,
+      "summary": "电与磁模块,包含本模块下的教材章节知识点。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MAG-001",
+      "name": "磁现象与磁体的性质",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-MAG-000",
+      "chapter": "第二十章 电与磁",
+      "section": "20.1",
+      "difficulty": 1,
+      "ability_tags": [
+        "识记"
+      ],
+      "exam_weight": 0.6,
+      "summary": "磁体的性质、磁极间的相互作用。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MAG-002",
+      "name": "磁化",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-MAG-000",
+      "chapter": "第二十章 电与磁",
+      "section": "20.2",
+      "difficulty": 1,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.5,
+      "summary": "磁化现象:使原来没有磁性的物体获得磁性。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MAG-003",
+      "name": "指南针与地磁场",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-MAG-000",
+      "chapter": "第二十章 电与磁",
+      "section": "20.3",
+      "difficulty": 1,
+      "ability_tags": [
+        "识记"
+      ],
+      "exam_weight": 0.5,
+      "summary": "指南针的原理与地磁场。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MAG-004",
+      "name": "电动机",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-MAG-000",
+      "chapter": "第二十章 电与磁",
+      "section": "20.4",
+      "difficulty": 2,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.7,
+      "summary": "电动机的构造与工作原理(磁场对通电线圈的作用)。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MAG-005",
+      "name": "通电导体在磁场中受力",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-MAG-000",
+      "chapter": "第二十章 电与磁",
+      "section": "20.5",
+      "difficulty": 2,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.7,
+      "summary": "通电导体在磁场中受力,受力方向与电流、磁场方向的关系。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MAG-006",
+      "name": "电磁感应",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-MAG-000",
+      "chapter": "第二十章 电与磁",
+      "section": "20.6",
+      "difficulty": 3,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.7,
+      "summary": "电磁感应现象与发电机的原理。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-MAG-007",
+      "name": "感应电流与切割磁感线",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-MAG-000",
+      "chapter": "第二十章 电与磁",
+      "section": "20.7",
+      "difficulty": 3,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.7,
+      "summary": "闭合电路的部分导体做切割磁感线运动时产生感应电流。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-ENG-000",
+      "name": "能量与能源",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 1,
+      "chapter": "能量与能源",
+      "section": null,
+      "difficulty": 1,
+      "ability_tags": [],
+      "exam_weight": 0.5,
+      "summary": "能量与能源模块,包含本模块下的教材章节知识点。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-ENG-001",
+      "name": "能源利用与开发",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-ENG-000",
+      "chapter": "第二十二章 能源与可持续发展",
+      "section": "22.1",
+      "difficulty": 1,
+      "ability_tags": [
+        "识记"
+      ],
+      "exam_weight": 0.5,
+      "summary": "能源的分类(可再生/不可再生)与能源利用、新能源开发。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-ENG-002",
+      "name": "节能减排与环境保护",
+      "subject": "物理",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "PHY-ENG-000",
+      "chapter": "第二十二章 能源与可持续发展",
+      "section": "22.2",
+      "difficulty": 1,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.5,
+      "summary": "节能减排措施、环境保护与能源可持续发展。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-EXP-000",
+      "name": "科学探究与物理方法",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 1,
+      "chapter": "科学探究与物理方法",
+      "section": null,
+      "difficulty": 1,
+      "ability_tags": [],
+      "exam_weight": 0.5,
+      "summary": "科学探究与物理方法模块,包含本模块下的教材章节知识点。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-EXP-001",
+      "name": "控制变量法",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-EXP-000",
+      "chapter": "科学探究与物理方法",
+      "section": "M.1",
+      "difficulty": 2,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.7,
+      "summary": "控制变量法在物理实验探究中的应用。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-EXP-002",
+      "name": "等效替代法",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-EXP-000",
+      "chapter": "科学探究与物理方法",
+      "section": "M.2",
+      "difficulty": 2,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.5,
+      "summary": "等效替代法(如平面镜成像实验中用相同蜡烛替代像)。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-EXP-003",
+      "name": "误差分析",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-EXP-000",
+      "chapter": "科学探究与物理方法",
+      "section": "M.3",
+      "difficulty": 3,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.6,
+      "summary": "实验误差的来源分析与减小误差的方法。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-EXP-004",
+      "name": "实验评估",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-EXP-000",
+      "chapter": "科学探究与物理方法",
+      "section": "M.4",
+      "difficulty": 3,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.5,
+      "summary": "对实验方案与实验结果的评估和改进。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    },
+    {
+      "code": "PHY-EXP-005",
+      "name": "多次测量寻找普遍规律",
+      "subject": "物理",
+      "grade": "初二",
+      "level": 2,
+      "parent_code": "PHY-EXP-000",
+      "chapter": "科学探究与物理方法",
+      "section": "M.5",
+      "difficulty": 2,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.5,
+      "summary": "多次测量以寻找普遍规律或减小误差。",
+      "curriculum": "PEP junior physics 2012-2013",
+      "version": 1
+    }
+  ],
+  "edges": [
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-001",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-002",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-003",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-004",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-005",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-006",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-007",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-008",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-009",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-010",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-011",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-012",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-013",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-014",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-015",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-016",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-017",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-018",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-019",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-020",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-021",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-022",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-023",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MECH-000",
+      "to_code": "PHY-MECH-024",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-SND-000",
+      "to_code": "PHY-SND-001",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-SND-000",
+      "to_code": "PHY-SND-002",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-SND-000",
+      "to_code": "PHY-SND-003",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-SND-000",
+      "to_code": "PHY-SND-004",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-SND-000",
+      "to_code": "PHY-SND-005",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-SND-000",
+      "to_code": "PHY-SND-006",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-OPT-000",
+      "to_code": "PHY-OPT-001",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-OPT-000",
+      "to_code": "PHY-OPT-002",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-OPT-000",
+      "to_code": "PHY-OPT-003",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-OPT-000",
+      "to_code": "PHY-OPT-004",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-OPT-000",
+      "to_code": "PHY-OPT-005",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-OPT-000",
+      "to_code": "PHY-OPT-006",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-OPT-000",
+      "to_code": "PHY-OPT-007",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-STA-000",
+      "to_code": "PHY-STA-001",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-STA-000",
+      "to_code": "PHY-STA-002",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-STA-000",
+      "to_code": "PHY-STA-003",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-STA-000",
+      "to_code": "PHY-STA-004",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-STA-000",
+      "to_code": "PHY-STA-005",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-THM-000",
+      "to_code": "PHY-THM-001",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-THM-000",
+      "to_code": "PHY-THM-002",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-THM-000",
+      "to_code": "PHY-THM-003",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-THM-000",
+      "to_code": "PHY-THM-004",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-THM-000",
+      "to_code": "PHY-THM-005",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-THM-000",
+      "to_code": "PHY-THM-006",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-THM-000",
+      "to_code": "PHY-THM-007",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-THM-000",
+      "to_code": "PHY-THM-008",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-ELE-000",
+      "to_code": "PHY-ELE-001",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-ELE-000",
+      "to_code": "PHY-ELE-002",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-ELE-000",
+      "to_code": "PHY-ELE-003",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-ELE-000",
+      "to_code": "PHY-ELE-004",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-ELE-000",
+      "to_code": "PHY-ELE-005",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-ELE-000",
+      "to_code": "PHY-ELE-006",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-ELE-000",
+      "to_code": "PHY-ELE-007",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-ELE-000",
+      "to_code": "PHY-ELE-008",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-ELE-000",
+      "to_code": "PHY-ELE-009",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-ELE-000",
+      "to_code": "PHY-ELE-010",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-ELE-000",
+      "to_code": "PHY-ELE-011",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-ELE-000",
+      "to_code": "PHY-ELE-012",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-ELE-000",
+      "to_code": "PHY-ELE-013",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-ELE-000",
+      "to_code": "PHY-ELE-014",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-ELE-000",
+      "to_code": "PHY-ELE-015",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MAG-000",
+      "to_code": "PHY-MAG-001",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MAG-000",
+      "to_code": "PHY-MAG-002",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MAG-000",
+      "to_code": "PHY-MAG-003",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MAG-000",
+      "to_code": "PHY-MAG-004",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MAG-000",
+      "to_code": "PHY-MAG-005",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MAG-000",
+      "to_code": "PHY-MAG-006",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-MAG-000",
+      "to_code": "PHY-MAG-007",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-ENG-000",
+      "to_code": "PHY-ENG-001",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-ENG-000",
+      "to_code": "PHY-ENG-002",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-EXP-000",
+      "to_code": "PHY-EXP-001",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-EXP-000",
+      "to_code": "PHY-EXP-002",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-EXP-000",
+      "to_code": "PHY-EXP-003",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-EXP-000",
+      "to_code": "PHY-EXP-004",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "PHY-EXP-000",
+      "to_code": "PHY-EXP-005",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    }
+  ]
+}

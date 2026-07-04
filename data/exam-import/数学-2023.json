@@ -1,0 +1,492 @@
+{
+  "subject": "数学",
+  "sourceName": "2023年内蒙古包头市初中学业水平考试数学试卷（2023年内蒙古包头市中考数学真题）",
+  "year": 2023,
+  "region": "内蒙古包头市",
+  "sourceUrl": "https://www.tthaoke.com/shijuan_32471.html",
+  "questions": [
+    {
+      "type": "single",
+      "stemLatex": "下列各式计算结果为 $a^5$ 的是（  ）",
+      "options": [
+        {
+          "key": "A",
+          "textLatex": "$(a^3)^2$"
+        },
+        {
+          "key": "B",
+          "textLatex": "$a^{10}\\div a^2$"
+        },
+        {
+          "key": "C",
+          "textLatex": "$a^4\\cdot a$"
+        },
+        {
+          "key": "D",
+          "textLatex": "$(-1)^{-1}a^5$"
+        }
+      ],
+      "answer": {
+        "choice": "C"
+      },
+      "analysisLatex": "A. $(a^3)^2=a^6$，不符合；B. $a^{10}\\div a^2=a^8$，不符合；C. $a^4\\cdot a=a^5$，符合题意；D. $(-1)^{-1}a^5=-a^5$，不符合。故选 C。",
+      "difficulty": 1,
+      "chapter": "幂的运算",
+      "kpKeywords": [
+        "同底数幂的乘除",
+        "幂的乘方",
+        "负整数指数幂"
+      ]
+    },
+    {
+      "type": "single",
+      "stemLatex": "关于 $x$ 的一元一次不等式 $x-1\\le m$ 的解集在数轴上的表示如图所示（数轴上实心点标在 $3$ 处，折线向左，即解集为 $x\\le 3$），则 $m$ 的值为（  ）",
+      "options": [
+        {
+          "key": "A",
+          "textLatex": "$3$"
+        },
+        {
+          "key": "B",
+          "textLatex": "$2$"
+        },
+        {
+          "key": "C",
+          "textLatex": "$1$"
+        },
+        {
+          "key": "D",
+          "textLatex": "$0$"
+        }
+      ],
+      "answer": {
+        "choice": "B"
+      },
+      "analysisLatex": "由 $x-1\\le m$ 解得 $x\\le m+1$。由数轴表示的解集知 $m+1=3$，解得 $m=2$。故选 B。",
+      "difficulty": 1,
+      "chapter": "一元一次不等式",
+      "kpKeywords": [
+        "不等式的解集",
+        "数轴表示解集"
+      ]
+    },
+    {
+      "type": "single",
+      "stemLatex": "定义新运算“$\\otimes$”，规定：$a\\otimes b=a^2-|b|$，则 $(-2)\\otimes(-1)$ 的运算结果为（  ）",
+      "options": [
+        {
+          "key": "A",
+          "textLatex": "$-5$"
+        },
+        {
+          "key": "B",
+          "textLatex": "$-3$"
+        },
+        {
+          "key": "C",
+          "textLatex": "$5$"
+        },
+        {
+          "key": "D",
+          "textLatex": "$3$"
+        }
+      ],
+      "answer": {
+        "choice": "D"
+      },
+      "analysisLatex": "$(-2)\\otimes(-1)=(-2)^2-|-1|=4-1=3$。故选 D。",
+      "difficulty": 1,
+      "chapter": "有理数的混合运算",
+      "kpKeywords": [
+        "新定义运算",
+        "绝对值",
+        "乘方"
+      ]
+    },
+    {
+      "type": "single",
+      "stemLatex": "如图，直线 $a\\parallel b$，直线 $l$ 与直线 $a,b$ 分别相交于点 $A,B$，点 $C$ 在直线 $b$ 上，且 $CA=CB$（$\\angle 1$ 为点 $C$ 处 $CA$ 与 $CB$ 所成的角，$\\angle 2$ 为点 $A$ 处直线 $l$ 与直线 $a$ 所成的角）。若 $\\angle 1=32^\\circ$，则 $\\angle 2$ 的度数为（  ）",
+      "options": [
+        {
+          "key": "A",
+          "textLatex": "$32^\\circ$"
+        },
+        {
+          "key": "B",
+          "textLatex": "$58^\\circ$"
+        },
+        {
+          "key": "C",
+          "textLatex": "$74^\\circ$"
+        },
+        {
+          "key": "D",
+          "textLatex": "$75^\\circ$"
+        }
+      ],
+      "answer": {
+        "choice": "C"
+      },
+      "analysisLatex": "因为 $CA=CB$，$\\angle 1=32^\\circ$，所以 $\\angle CBA=\\angle CAB=\\dfrac{180^\\circ-\\angle 1}{2}=74^\\circ$。又 $a\\parallel b$，由平行线的性质得 $\\angle 2=\\angle CBA=74^\\circ$。故选 C。",
+      "difficulty": 2,
+      "chapter": "平行线与等腰三角形",
+      "kpKeywords": [
+        "平行线的性质",
+        "等边对等角",
+        "三角形内角和"
+      ]
+    },
+    {
+      "type": "single",
+      "stemLatex": "从 $1$，$2$，$3$ 这三个数中随机抽取两个不同的数，分别记作 $m$ 和 $n$。若点 A 的坐标记作 $(m,n)$，则点 A 在双曲线 $y=\\dfrac{6}{x}$ 上的概率是（  ）",
+      "options": [
+        {
+          "key": "A",
+          "textLatex": "$\\dfrac{1}{3}$"
+        },
+        {
+          "key": "B",
+          "textLatex": "$\\dfrac{1}{2}$"
+        },
+        {
+          "key": "C",
+          "textLatex": "$\\dfrac{2}{3}$"
+        },
+        {
+          "key": "D",
+          "textLatex": "$\\dfrac{5}{6}$"
+        }
+      ],
+      "answer": {
+        "choice": "A"
+      },
+      "analysisLatex": "点 A 的坐标共有 6 种等可能情况：$(1,2)$，$(2,1)$，$(1,3)$，$(3,1)$，$(2,3)$，$(3,2)$。其中在 $y=\\dfrac{6}{x}$ 上的有 $(2,3)$，$(3,2)$ 两种，所以概率 $P=\\dfrac{2}{6}=\\dfrac{1}{3}$。故选 A。",
+      "difficulty": 2,
+      "chapter": "概率初步",
+      "kpKeywords": [
+        "列举法求概率",
+        "反比例函数图象上点的特征"
+      ]
+    },
+    {
+      "type": "single",
+      "stemLatex": "如图是源于我国汉代数学家赵爽的弦图，它是由四个全等直角三角形与一个小正方形拼成的一个大正方形。若小正方形的面积为 $1$，大正方形的面积为 $25$，直角三角形中较小的锐角为 $\\alpha$，则 $\\cos\\alpha$ 的值为（  ）",
+      "options": [
+        {
+          "key": "A",
+          "textLatex": "$\\dfrac{3}{4}$"
+        },
+        {
+          "key": "B",
+          "textLatex": "$\\dfrac{4}{3}$"
+        },
+        {
+          "key": "C",
+          "textLatex": "$\\dfrac{3}{5}$"
+        },
+        {
+          "key": "D",
+          "textLatex": "$\\dfrac{4}{5}$"
+        }
+      ],
+      "answer": {
+        "choice": "D"
+      },
+      "analysisLatex": "小正方形边长为 $1$，大正方形边长为 $5$。设直角三角形短直角边为 $a$，则较长直角边为 $a+1$，由勾股定理 $a^2+(a+1)^2=5^2$，解得 $a=3$，$a+1=4$。斜边为 $5$，较小锐角 $\\alpha$ 的邻边为 $4$，所以 $\\cos\\alpha=\\dfrac{4}{5}$。故选 D。",
+      "difficulty": 2,
+      "chapter": "勾股定理与锐角三角函数",
+      "kpKeywords": [
+        "赵爽弦图",
+        "勾股定理",
+        "余弦"
+      ]
+    },
+    {
+      "type": "single",
+      "stemLatex": "在平面直角坐标系中，将正比例函数 $y=-2x$ 的图象向右平移 $3$ 个单位长度得到一次函数 $y=kx+b\\,(k\\ne 0)$ 的图象，则该一次函数的解析式为（  ）",
+      "options": [
+        {
+          "key": "A",
+          "textLatex": "$y=-2x+3$"
+        },
+        {
+          "key": "B",
+          "textLatex": "$y=-2x+6$"
+        },
+        {
+          "key": "C",
+          "textLatex": "$y=-2x-3$"
+        },
+        {
+          "key": "D",
+          "textLatex": "$y=-2x-6$"
+        }
+      ],
+      "answer": {
+        "choice": "B"
+      },
+      "analysisLatex": "向右平移 $3$ 个单位：$y=-2(x-3)=-2x+6$。故选 B。",
+      "difficulty": 2,
+      "chapter": "一次函数",
+      "kpKeywords": [
+        "函数图象的平移"
+      ]
+    },
+    {
+      "type": "single",
+      "stemLatex": "如图，$\\odot O$ 是锐角三角形 $ABC$ 的外接圆，$OD\\perp AB$，$OE\\perp BC$，$OF\\perp AC$，垂足分别为 $D,E,F$，连接 $DE,EF,FD$。若 $DE+DF=6.5$，$\\triangle ABC$ 的周长为 $21$，则 $EF$ 的长为（  ）",
+      "options": [
+        {
+          "key": "A",
+          "textLatex": "$8$"
+        },
+        {
+          "key": "B",
+          "textLatex": "$4$"
+        },
+        {
+          "key": "C",
+          "textLatex": "$3.5$"
+        },
+        {
+          "key": "D",
+          "textLatex": "$3$"
+        }
+      ],
+      "answer": {
+        "choice": "B"
+      },
+      "analysisLatex": "由垂径定理知 $D,E,F$ 分别是 $AB,BC,AC$ 的中点，故 $DF=\\dfrac{1}{2}BC$，$DE=\\dfrac{1}{2}AC$，$EF=\\dfrac{1}{2}AB$（中位线）。由周长 $AB+BC+CA=21$ 得 $DE+DF+EF=10.5$，又 $DE+DF=6.5$，所以 $EF=4$。故选 B。",
+      "difficulty": 3,
+      "chapter": "圆与三角形中位线",
+      "kpKeywords": [
+        "垂径定理",
+        "三角形中位线",
+        "外接圆"
+      ]
+    },
+    {
+      "type": "single",
+      "stemLatex": "如图，在平面直角坐标系中，$\\triangle OAB$ 三个顶点的坐标分别为 $O(0,0)$，$A(2\\sqrt{3},0)$，$B(\\sqrt{3},1)$，$\\triangle OA'B$ 与 $\\triangle OAB$ 关于直线 $OB$ 对称，反比例函数 $y=\\dfrac{k}{x}\\,(k>0,x>0)$ 的图象与 $A'B$ 交于点 $C$。若 $A'C=BC$，则 $k$ 的值为（  ）",
+      "options": [
+        {
+          "key": "A",
+          "textLatex": "$2\\sqrt{3}$"
+        },
+        {
+          "key": "B",
+          "textLatex": "$\\dfrac{3\\sqrt{3}}{2}$"
+        },
+        {
+          "key": "C",
+          "textLatex": "$\\sqrt{3}$"
+        },
+        {
+          "key": "D",
+          "textLatex": "$\\dfrac{\\sqrt{3}}{2}$"
+        }
+      ],
+      "answer": {
+        "choice": "A"
+      },
+      "analysisLatex": "过点 $B$ 作 $BD\\perp x$ 轴于 $D$，则 $BD=1$，$OD=\\sqrt{3}$，$\\tan\\angle BOA=\\dfrac{\\sqrt{3}}{3}$，故 $\\angle BOA=\\angle BAO=30^\\circ$，$OB=AB=2$，$\\angle OBD=\\angle ABD=60^\\circ$，$\\angle OBA=120^\\circ$。由对称得 $\\angle OBA'=120^\\circ$，于是 $\\angle OBA'+\\angle OBD=180^\\circ$，即 $A'$，$B$，$D$ 三点共线，且 $A'B=AB=2$。由 $A'C=BC$ 得 $BC=1$，$CD=2$，所以 $C(\\sqrt{3},2)$，代入 $y=\\dfrac{k}{x}$ 得 $k=2\\sqrt{3}$。故选 A。",
+      "difficulty": 4,
+      "chapter": "反比例函数综合",
+      "kpKeywords": [
+        "轴对称",
+        "特殊角三角函数",
+        "反比例函数解析式"
+      ]
+    },
+    {
+      "type": "blank",
+      "stemLatex": "若 $a,b$ 为两个连续整数，且 $a<\\sqrt{3}<b$，则 $a+b=$________.",
+      "answer": {
+        "texts": [
+          "3"
+        ]
+      },
+      "analysisLatex": "因为 $1<3<2^2$，所以 $1<\\sqrt{3}<2$，故 $a=1$，$b=2$，$a+b=3$。",
+      "difficulty": 1,
+      "chapter": "实数（无理数估算）",
+      "kpKeywords": [
+        "无理数的估算",
+        "算术平方根"
+      ]
+    },
+    {
+      "type": "blank",
+      "stemLatex": "若 $x_1,x_2$ 是一元二次方程 $x^2-2x-8=0$ 的两个实数根，则 $\\dfrac{x_1+x_2}{x_1x_2}=$________.",
+      "answer": {
+        "texts": [
+          "$-\\dfrac{1}{4}$"
+        ]
+      },
+      "analysisLatex": "由根与系数的关系得 $x_1+x_2=2$，$x_1x_2=-8$，所以 $\\dfrac{x_1+x_2}{x_1x_2}=\\dfrac{2}{-8}=-\\dfrac{1}{4}$。",
+      "difficulty": 2,
+      "chapter": "一元二次方程",
+      "kpKeywords": [
+        "根与系数的关系（韦达定理）"
+      ]
+    },
+    {
+      "type": "blank",
+      "stemLatex": "已知二次函数 $y=-ax^2+2ax+3\\,(a>0)$，若点 $P(m,3)$ 在该函数的图象上，且 $m\\ne 0$，则 $m$ 的值为________.",
+      "answer": {
+        "texts": [
+          "2"
+        ]
+      },
+      "analysisLatex": "将 $P(m,3)$ 代入得 $3=-am^2+2am+3$，即 $-am(m-2)=0$。因为 $a>0$，$m\\ne 0$，所以 $m=2$。",
+      "difficulty": 2,
+      "chapter": "二次函数",
+      "kpKeywords": [
+        "二次函数图象上点的坐标特征"
+      ]
+    },
+    {
+      "type": "blank",
+      "stemLatex": "如图，在 $\\mathrm{Rt}\\triangle ABC$ 中，$\\angle ACB=90^\\circ$，$AC=3$，$BC=1$，将 $\\triangle ABC$ 绕点 $A$ 逆时针方向旋转 $90^\\circ$，得到 $\\triangle AB'C'$。连接 $BB'$，交 $AC$ 于点 $D$，则 $\\dfrac{AD}{DC}$ 的值为________.",
+      "answer": {
+        "texts": [
+          "5"
+        ]
+      },
+      "analysisLatex": "过点 $D$ 作 $DF\\perp AB$ 于 $F$。由勾股定理 $AB=\\sqrt{3^2+1^2}=\\sqrt{10}$。由旋转性质 $AB=AB'$，$\\angle BAB'=90^\\circ$，故 $\\triangle ABB'$ 是等腰直角三角形，$\\angle ABB'=45^\\circ$，从而 $\\triangle DFB$ 是等腰直角三角形，$DF=BF$。由 $S_{\\triangle ADB}=\\dfrac{1}{2}BC\\cdot AD=\\dfrac{1}{2}DF\\cdot AB$ 得 $AD=\\sqrt{10}\\,DF$。又 $\\triangle AFD\\sim\\triangle ACB$，得 $\\dfrac{DF}{BC}=\\dfrac{AF}{AC}$，即 $AF=3DF$；而 $AF=\\sqrt{10}-BF=\\sqrt{10}-DF$，故 $DF=\\dfrac{\\sqrt{10}}{4}$，$AD=\\dfrac{5}{2}$，$CD=3-\\dfrac{5}{2}=\\dfrac{1}{2}$，所以 $\\dfrac{AD}{DC}=5$。",
+      "difficulty": 4,
+      "chapter": "旋转与相似",
+      "kpKeywords": [
+        "旋转的性质",
+        "等腰直角三角形",
+        "相似三角形",
+        "勾股定理"
+      ]
+    },
+    {
+      "type": "blank",
+      "stemLatex": "如图，$AC,AD,CE$ 是正五边形 $ABCDE$ 的对角线，$AD$ 与 $CE$ 相交于点 $F$。下列结论：①$CF$ 平分 $\\angle ACD$；②$AF=2DF$；③四边形 $ABCF$ 是菱形；④$AB^2=AD\\cdot EF$。其中正确的结论是________（填写所有正确结论的序号）.",
+      "answer": {
+        "texts": [
+          "①③④"
+        ]
+      },
+      "analysisLatex": "正五边形每个内角为 $108^\\circ$，各边相等。①由 $\\angle BAC=\\angle BCA=\\angle DAE=\\angle ADE=\\angle DCE=\\angle CED=36^\\circ$ 得 $\\angle ACE=108^\\circ-36^\\circ-36^\\circ=36^\\circ=\\angle DCE$，故 $CF$ 平分 $\\angle ACD$，正确；②由 $\\triangle DEF\\sim\\triangle ACF$ 得 $\\dfrac{DF}{AF}=\\dfrac{DE}{AC}$，而 $DE=AB$，$2AB>AC$（即 $AC\\ne 2DE$），故 $AF\\ne 2DF$，错误；③由 $\\angle BAC=\\angle ACE=36^\\circ$ 及 $\\angle ABC+\\angle BAD=108^\\circ+36^\\circ+36^\\circ=180^\\circ$ 得 $BC\\parallel AD$，$AB\\parallel CE$，故四边形 $ABCF$ 是平行四边形，又 $AB=BC$，所以是菱形，正确；④由 $\\angle CED=\\angle DAE=36^\\circ$，$\\angle EDF=\\angle ADE$ 得 $\\triangle DEF\\sim\\triangle DAE$，所以 $\\dfrac{DE}{AD}=\\dfrac{EF}{AE}$，即 $DE\\cdot AE=AD\\cdot EF$，而 $DE=AE=AB$，故 $AB^2=AD\\cdot EF$，正确。故答案为①③④。",
+      "difficulty": 4,
+      "chapter": "正多边形与相似",
+      "kpKeywords": [
+        "正五边形的性质",
+        "相似三角形",
+        "菱形的判定"
+      ]
+    },
+    {
+      "type": "solution",
+      "stemLatex": "（1）先化简，再求值：$(a+2b)^2+(a+2b)(a-2b)$，其中 $a=-1$，$b=\\dfrac{1}{4}$；（2）解方程：$\\dfrac{3}{x-1}=5+\\dfrac{3x}{1-x}$.",
+      "answer": {
+        "referenceLatex": "（1）原式 $=a^2+4ab+4b^2+a^2-4b^2=2a^2+4ab$。当 $a=-1$，$b=\\dfrac{1}{4}$ 时，原式 $=2\\times(-1)^2+4\\times(-1)\\times\\dfrac{1}{4}=2-1=1$。（2）方程两边乘 $(x-1)$，得 $3=5(x-1)-3x$，解得 $x=4$。检验：当 $x=4$ 时 $x-1=3\\ne 0$，所以 $x=4$ 是原方程的根。"
+      },
+      "analysisLatex": "（1）利用完全平方公式和平方差公式展开后合并同类项，再代入求值；（2）按解分式方程的一般步骤去分母求解，注意检验。",
+      "difficulty": 2,
+      "chapter": "整式乘法与分式方程",
+      "kpKeywords": [
+        "完全平方公式",
+        "平方差公式",
+        "分式方程"
+      ]
+    },
+    {
+      "type": "solution",
+      "stemLatex": "在推进碳达峰、碳中和进程中，我国新能源汽车产销两旺，连续 8 年保持全球第一。图为我国某自主品牌车企 2022 年下半年新能源汽车的月销量统计图（7 月至 12 月的月销量依次为 $15.9$、$16.9$、$19.2$、$21.8$、$23.0$、$23.5$ 万辆）。请根据所给信息，解答下列问题：（1）通过计算判断该车企 2022 年下半年的月均销量是否超过 20 万辆；（2）通过分析数据说明该车企 2022 年下半年月销量的特点（写出一条即可），并提出一条增加月销量的合理化建议.",
+      "answer": {
+        "referenceLatex": "（1）$\\bar{x}=\\dfrac{15.9+16.9+19.2+21.8+23.0+23.5}{6}=20.05$（万辆），因为 $20.05>20$，所以该车企 2022 年下半年的月均销量超过 20 万辆。（2）特点（写出一条即可）：月销量呈递增趋势；12 月的销量最大；有三个月的销量超过了 20 万辆；中位数为 20.5 万辆；月均销量超过 20 万辆等。建议：充分了解客户需求，及时处理客户反馈，提供优质的售后服务等（合理即可）。"
+      },
+      "analysisLatex": "（1）根据平均数的定义计算并与 20 比较；（2）利用条形统计图中的数据从趋势、最值、中位数等角度阐述，建议合理即可。",
+      "difficulty": 2,
+      "chapter": "数据的分析",
+      "kpKeywords": [
+        "平均数",
+        "中位数",
+        "统计图表分析"
+      ]
+    },
+    {
+      "type": "solution",
+      "stemLatex": "为了增强学生体质、锤炼学生意志，某校组织一次定向越野拉练活动。如图，$A$ 点为出发点，途中设置两个检查点，分别为 $B$ 点和 $C$ 点，行进路线为 $A\\to B\\to C\\to A$。$B$ 点在 $A$ 点南偏东 $25^\\circ$ 方向 $3\\sqrt{2}\\,\\mathrm{km}$ 处，$C$ 点在 $A$ 点的北偏东 $80^\\circ$ 方向，行进路线 $AB$ 和 $BC$ 所在直线的夹角 $\\angle ABC$ 为 $45^\\circ$。（1）求行进路线 $BC$ 和 $CA$ 所在直线的夹角 $\\angle BCA$ 的度数；（2）求检查点 $B$ 和 $C$ 之间的距离（结果保留根号）.",
+      "answer": {
+        "referenceLatex": "（1）由题意得 $\\angle NAC=80^\\circ$，$\\angle SAB=25^\\circ$，$\\angle ABC=45^\\circ$。因为 $\\angle NAS=180^\\circ$，所以 $\\angle CAB=180^\\circ-80^\\circ-25^\\circ=75^\\circ$。在 $\\triangle ABC$ 中，$\\angle BCA=180^\\circ-75^\\circ-45^\\circ=60^\\circ$。（2）过点 $A$ 作 $AD\\perp BC$，垂足为 $D$，则 $\\angle ADB=\\angle ADC=90^\\circ$。因为 $\\angle ABD=45^\\circ$，所以 $\\angle BAD=45^\\circ$，$AD=BD$。在 $\\mathrm{Rt}\\triangle ABD$ 中，$\\sin\\angle ABD=\\dfrac{AD}{AB}$，所以 $AD=3\\sqrt{2}\\times\\dfrac{\\sqrt{2}}{2}=3\\,(\\mathrm{km})$，$BD=AD=3\\,(\\mathrm{km})$。在 $\\mathrm{Rt}\\triangle ACD$ 中，$\\tan\\angle BCA=\\dfrac{AD}{CD}$，所以 $CD=\\dfrac{3}{\\sqrt{3}}=\\sqrt{3}\\,(\\mathrm{km})$，故 $BC=BD+CD=(3+\\sqrt{3})\\,\\mathrm{km}$。即检查点 $B$ 和 $C$ 之间的距离为 $(3+\\sqrt{3})\\,\\mathrm{km}$。"
+      },
+      "analysisLatex": "（1）利用方位角与平角关系求出 $\\angle CAB=75^\\circ$，再用三角形内角和求 $\\angle BCA$；（2）作 $AD\\perp BC$ 构造直角三角形，由 $45^\\circ$ 角得 $AD=BD$，再用正弦、正切求解。",
+      "difficulty": 3,
+      "chapter": "解直角三角形的应用",
+      "kpKeywords": [
+        "方位角",
+        "解直角三角形",
+        "特殊角三角函数"
+      ]
+    },
+    {
+      "type": "solution",
+      "stemLatex": "随着科技的发展，扫地机器人已广泛应用于生活中。某公司推出一款新型扫地机器人，经统计该产品 2022 年每个月的销售情况发现，每台的销售价格随销售月份的变化而变化。设该产品 2022 年第 $x$（$x$ 为整数）个月每台的销售价格为 $y$（单位：元），$y$ 与 $x$ 的函数关系如图所示（图中 $ABC$ 为一折线，$A(1,2850)$，$B(10,1500)$，$C(12,1500)$）。（1）当 $1\\le x\\le 10$ 时，求每台的销售价格 $y$ 与 $x$ 之间的函数关系式；（2）设该产品 2022 年第 $x$ 个月的销售数量为 $m$（单位：万台），$m$ 与 $x$ 的关系可以用 $m=\\dfrac{1}{10}x+1$ 来描述，求哪个月的销售收入最多，最多为多少万元？（销售收入＝每台的销售价格 $\\times$ 销售数量）",
+      "answer": {
+        "referenceLatex": "（1）当 $1\\le x\\le 10$ 时，设 $y=kx+b\\,(k\\ne 0)$。因为图象过 $A(1,2850)$，$B(10,1500)$ 两点，所以 $\\begin{cases}k+b=2850,\\\\ 10k+b=1500,\\end{cases}$ 解得 $\\begin{cases}k=-150,\\\\ b=3000.\\end{cases}$ 所以当 $1\\le x\\le 10$ 时，$y=-150x+3000$。（2）设销售收入为 $w$ 万元。①当 $1\\le x\\le 10$ 时，$w=(-150x+3000)\\left(\\dfrac{1}{10}x+1\\right)=-15(x-5)^2+3375$，因为 $-15<0$，所以当 $x=5$ 时，$w_{\\max}=3375$（万元）；②当 $10<x\\le 12$ 时，$w=1500\\left(\\dfrac{1}{10}x+1\\right)=150x+1500$，$w$ 随 $x$ 增大而增大，当 $x=12$ 时，$w_{\\max}=3300$（万元）。因为 $3375>3300$，所以第 5 个月的销售收入最多，最多为 3375 万元。"
+      },
+      "analysisLatex": "（1）用待定系数法求一次函数解析式；（2）按分段讨论销售收入 $w$ 与 $x$ 的函数关系，利用二次函数与一次函数的性质求最大值并比较。",
+      "difficulty": 3,
+      "chapter": "一次函数与二次函数的应用",
+      "kpKeywords": [
+        "待定系数法",
+        "二次函数最值",
+        "分段函数"
+      ]
+    },
+    {
+      "type": "solution",
+      "stemLatex": "如图，$AB$ 是 $\\odot O$ 的直径，$AC$ 是弦，$D$ 是 $\\overset{\\frown}{AC}$ 上一点，$P$ 是 $AB$ 延长线上一点，连接 $AD,DC,CP$。（1）求证：$\\angle ADC-\\angle BAC=90^\\circ$（请用两种证法解答）；（2）若 $\\angle ACP=\\angle ADC$，$\\odot O$ 的半径为 $3$，$CP=4$，求 $AP$ 的长.",
+      "answer": {
+        "referenceLatex": "（1）证法一：连接 $BD$。因为 $\\overset{\\frown}{BC}=\\overset{\\frown}{BC}$，所以 $\\angle BDC=\\angle BAC$。因为 $AB$ 是 $\\odot O$ 的直径，所以 $\\angle ADB=90^\\circ$。于是 $\\angle ADC=\\angle ADB+\\angle BDC=90^\\circ+\\angle BAC$，即 $\\angle ADC-\\angle BAC=90^\\circ$。证法二：连接 $BC$。因为四边形 $ABCD$ 是 $\\odot O$ 的内接四边形，所以 $\\angle ADC+\\angle ABC=180^\\circ$，即 $\\angle ABC=180^\\circ-\\angle ADC$。因为 $AB$ 是直径，所以 $\\angle ACB=90^\\circ$，故 $\\angle BAC+\\angle ABC=90^\\circ$，即 $\\angle BAC+180^\\circ-\\angle ADC=90^\\circ$，所以 $\\angle ADC-\\angle BAC=90^\\circ$。（2）连接 $OC$。因为 $\\angle ACP=\\angle ADC$，且 $\\angle ADC-\\angle BAC=90^\\circ$，所以 $\\angle ACP-\\angle BAC=90^\\circ$。因为 $OA=OC$，所以 $\\angle BAC=\\angle ACO$，于是 $\\angle ACP-\\angle ACO=90^\\circ$，即 $\\angle OCP=90^\\circ$。因为 $\\odot O$ 的半径为 3，所以 $AO=OC=3$。在 $\\mathrm{Rt}\\triangle OCP$ 中，$OP^2=OC^2+CP^2=3^2+4^2=25$，所以 $OP=5$，故 $AP=AO+OP=8$。"
+      },
+      "analysisLatex": "（1）法一利用直径所对圆周角为直角及同弧所对圆周角相等；法二利用圆内接四边形对角互补及直径性质；（2）连接 $OC$，证 $\\angle OCP=90^\\circ $ 后用勾股定理求 $OP$，再得 $AP$。",
+      "difficulty": 3,
+      "chapter": "圆",
+      "kpKeywords": [
+        "圆周角定理",
+        "圆内接四边形",
+        "勾股定理"
+      ]
+    },
+    {
+      "type": "solution",
+      "stemLatex": "如图，在菱形 $ABCD$ 中，对角线 $AC,BD$ 相交于点 $O$，点 $P,Q$ 分别是边 $BC$、线段 $OD$ 上的点，连接 $AP,QP$，$AP$ 与 $OB$ 相交于点 $E$。（1）如图 1，连接 $QA$。当 $QA=QP$ 时，试判断点 $Q$ 是否在线段 $PC$ 的垂直平分线上，并说明理由；（2）如图 2，若 $\\angle APB=90^\\circ$，且 $\\angle BAP=\\angle ADB$。①求证：$AE=2EP$；②当 $OQ=OE$ 时，设 $EP=a$，求 $PQ$ 的长（用含 $a$ 的代数式表示）.",
+      "answer": {
+        "referenceLatex": "（1）点 $Q$ 在线段 $PC$ 的垂直平分线上。理由：连接 $QC$。因为四边形 $ABCD$ 是菱形，所以 $BD\\perp AC$，$OA=OC$，即 $BD$ 垂直平分 $AC$，所以 $QA=QC$。又 $QA=QP$，所以 $QC=QP$，故点 $Q$ 在线段 $PC$ 的垂直平分线上。（2）①证明：因为四边形 $ABCD$ 是菱形，所以 $AB=BC=CD=DA$，$\\angle ABD=\\angle ADB$，$\\angle CBD=\\angle CDB$，且 $BD\\perp AC$，可得 $\\angle ABD=\\angle CBD=\\angle ADB$。因为 $\\angle BAP=\\angle ADB$，所以 $\\angle BAP=\\angle ABD=\\angle ABE$，所以 $AE=BE$。因为 $\\angle APB=90^\\circ$，所以 $\\angle BAP+\\angle ABP=90^\\circ$，从而 $\\angle BAP=\\angle ABD=\\angle CBD=30^\\circ$。在 $\\mathrm{Rt}\\triangle BPE$ 中，$\\angle PBE=30^\\circ$，所以 $EP=\\dfrac{1}{2}BE=\\dfrac{1}{2}AE$，即 $AE=2EP$。②连接 $QC$。因为 $AB=BC$，$\\angle ABC=60^\\circ$，所以 $\\triangle ABC$ 是等边三角形。因为 $\\angle APB=90^\\circ$，所以 $BP=CP$（三线合一），且 $EP=a$，$AE=2a$，$AP=3a$。在 $\\mathrm{Rt}\\triangle APB$ 中，$\\tan\\angle ABP=\\dfrac{AP}{BP}=\\dfrac{\\sqrt{3}}{3}$，所以 $BP=\\sqrt{3}a$，$CP=BP=\\sqrt{3}a$。因为 $AO=CO$，$\\angle AOE=\\angle COQ$，$OE=OQ$，所以 $\\triangle AOE\\cong\\triangle COQ$，所以 $CQ=AE=2a$，$\\angle EAO=\\angle QCO$，所以 $AE\\parallel CQ$。因为 $\\angle APB=90^\\circ$，所以 $\\angle QCP=90^\\circ$。在 $\\mathrm{Rt}\\triangle PCQ$ 中，由勾股定理 $PQ^2=PC^2+CQ^2=(\\sqrt{3}a)^2+(2a)^2=7a^2$，所以 $PQ=\\sqrt{7}a$。"
+      },
+      "analysisLatex": "（1）利用菱形对角线互相垂直平分得 $QA=QC$，再由 $QA=QP$ 传递；（2）①由菱形性质与等角关系得 $AE=BE$ 及 $30^\\circ$ 角，利用含 $30^\\circ$ 角直角三角形性质；②连接 $QC$，证 $\\triangle AOE\\cong\\triangle COQ$ 得 $CQ=2a$，再在直角三角形中用勾股定理。",
+      "difficulty": 4,
+      "chapter": "菱形与解直角三角形",
+      "kpKeywords": [
+        "菱形的性质",
+        "全等三角形",
+        "垂直平分线",
+        "勾股定理",
+        "含30度角的直角三角形"
+      ]
+    },
+    {
+      "type": "solution",
+      "stemLatex": "如图，在平面直角坐标系中，抛物线 $y=-x^2+3x+1$ 交 $y$ 轴于点 A，直线 $y=-\\dfrac{1}{3}x+2$ 交抛物线于 $B,C$ 两点（点 $B$ 在点 $C$ 的左侧），交 $y$ 轴于点 $D$，交 $x$ 轴于点 $E$。（1）求点 $D,E,C$ 的坐标；（2）$F$ 是线段 $OE$ 上一点 $(OF<EF)$，连接 $AF,DF,CF$，且 $AF^2+EF^2=21$。①求证：$\\triangle DFC$ 是直角三角形；②$\\angle DFC$ 的平分线 $FK$ 交线段 $DC$ 于点 $K$，$P$ 是直线 $BC$ 上方抛物线上一动点，当 $3\\tan\\angle PFK=1$ 时，求点 $P$ 的坐标.",
+      "answer": {
+        "referenceLatex": "（1）对直线 $y=-\\dfrac{1}{3}x+2$：令 $x=0$ 得 $y=2$，所以 $D(0,2)$；令 $y=0$ 得 $x=6$，所以 $E(6,0)$。联立 $-x^2+3x+1=-\\dfrac{1}{3}x+2$，解得 $x=3$ 或 $x=\\dfrac{1}{3}$，因为点 $B$ 在点 $C$ 左侧，所以 $C(3,1)$。（2）①设 $F(m,0)$（$0\\le m<3$）。$A(0,1)$，则 $AF^2=m^2+1$，$EF=6-m$。由 $AF^2+EF^2=21$ 得 $m^2+1+(6-m)^2=21$，解得 $m=2$ 或 $m=4$（舍，因 $OF<EF$），所以 $F(2,0)$。于是 $DF^2=2^2+2^2=8$，$CF^2=(3-2)^2+1^2=2$，$DC^2=3^2+1^2=10$，因为 $DF^2+CF^2=DC^2$，所以 $\\triangle DFC$ 是直角三角形（$\\angle DFC=90^\\circ$）。②由 $3\\tan\\angle PFK=1$ 得 $\\tan\\angle PFK=\\dfrac{1}{3}$。设 $P(t,-t^2+3t+1)$，且 $\\dfrac{1}{3}<t<3$。分两种情况：（i）当点 $P$ 在直线 $KF$ 左侧时，解得 $t=1$，此时 $P(1,3)$；（ii）当点 $P$ 在直线 $KF$ 右侧时，解得 $t=\\sqrt{7}$，此时 $P(\\sqrt{7},3\\sqrt{7}-6)$。综上，点 $P$ 的坐标为 $(1,3)$ 或 $(\\sqrt{7},3\\sqrt{7}-6)$。"
+      },
+      "analysisLatex": "（1）利用直线与坐标轴交点及直线与抛物线联立求交点；（2）①设 $F(m,0)$，由 $AF^2+EF^2=21$ 求出 $F(2,0)$，再用勾股定理逆定理证明 $\\angle DFC=90^\\circ$；②利用角平分线及 $\\tan\\angle PFK=\\dfrac{1}{3}$，设 $P(t,-t^2+3t+1)$，分点 $P$ 在直线 $FK$ 左、右两侧两种情况求解。",
+      "difficulty": 5,
+      "chapter": "二次函数综合",
+      "kpKeywords": [
+        "二次函数与一次函数交点",
+        "勾股定理逆定理",
+        "锐角三角函数",
+        "动点问题",
+        "压轴题"
+      ]
+    }
+  ]
+}

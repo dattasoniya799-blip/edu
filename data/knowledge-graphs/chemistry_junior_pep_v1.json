@@ -1,0 +1,1371 @@
+{
+  "metadata": {
+    "code": "chemistry_junior_pep_v1",
+    "graph_type": "curriculum_knowledge",
+    "subject": "化学",
+    "grade_range": [
+      "初三"
+    ],
+    "curriculum": "PEP junior chemistry 2012",
+    "publisher": "人民教育出版社",
+    "status": "draft",
+    "version": 1,
+    "notes": "初中化学教材知识图谱首版:按 物质变化/组成分类/微粒构成/化学方程式/碳/燃料/金属/溶液/酸碱盐/科学探究 分章,节点两级(章→知识点),知识点命名对齐人教版九年级上下册单元及中考真题常见考点关键词,用于真题导入时的 curriculum_knowledge 打标。"
+  },
+  "sources": [
+    {
+      "id": "pep-chem-9a",
+      "textbook": "化学九年级上册",
+      "url": "https://www.pep.com.cn/products/jc/czjks/hx/"
+    },
+    {
+      "id": "pep-chem-9b",
+      "textbook": "化学九年级下册",
+      "url": "https://www.pep.com.cn/products/jc/czjks/hx/"
+    }
+  ],
+  "nodes": [
+    {
+      "code": "CHE-INTRO-000",
+      "name": "走进化学世界",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 1,
+      "chapter": "走进化学世界",
+      "section": null,
+      "difficulty": 1,
+      "ability_tags": [],
+      "exam_weight": 0.5,
+      "summary": "走进化学世界模块,包含本模块下的教材章节知识点。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-INTRO-001",
+      "name": "化学变化",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-INTRO-000",
+      "chapter": "第一单元 走进化学世界",
+      "section": "1.1",
+      "difficulty": 1,
+      "ability_tags": [
+        "辨析"
+      ],
+      "exam_weight": 0.7,
+      "summary": "化学变化的特征:生成新物质,常伴随发光放热等现象。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-INTRO-002",
+      "name": "物理变化",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-INTRO-000",
+      "chapter": "第一单元 走进化学世界",
+      "section": "1.2",
+      "difficulty": 1,
+      "ability_tags": [
+        "辨析"
+      ],
+      "exam_weight": 0.7,
+      "summary": "物理变化:没有生成新物质的变化,与化学变化的判别。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-CLS-000",
+      "name": "物质的组成与分类",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 1,
+      "chapter": "物质的组成与分类",
+      "section": null,
+      "difficulty": 1,
+      "ability_tags": [],
+      "exam_weight": 0.5,
+      "summary": "物质的组成与分类模块,包含本模块下的教材章节知识点。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-CLS-001",
+      "name": "物质的分类",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-CLS-000",
+      "chapter": "物质的分类",
+      "section": "2.1",
+      "difficulty": 2,
+      "ability_tags": [
+        "辨析"
+      ],
+      "exam_weight": 0.7,
+      "summary": "物质按组成分类:混合物、纯净物、单质、化合物、氧化物、酸、碱、盐。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-CLS-002",
+      "name": "纯净物与混合物",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-CLS-000",
+      "chapter": "物质的分类",
+      "section": "2.2",
+      "difficulty": 1,
+      "ability_tags": [
+        "辨析"
+      ],
+      "exam_weight": 0.6,
+      "summary": "纯净物与混合物的概念与判别。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-CLS-003",
+      "name": "单质与化合物",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-CLS-000",
+      "chapter": "物质的分类",
+      "section": "2.3",
+      "difficulty": 1,
+      "ability_tags": [
+        "辨析"
+      ],
+      "exam_weight": 0.6,
+      "summary": "单质与化合物的概念与判别。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-ATM-000",
+      "name": "物质构成的奥秘",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 1,
+      "chapter": "物质构成的奥秘",
+      "section": null,
+      "difficulty": 1,
+      "ability_tags": [],
+      "exam_weight": 0.5,
+      "summary": "物质构成的奥秘模块,包含本模块下的教材章节知识点。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-ATM-001",
+      "name": "物质的构成微粒",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-ATM-000",
+      "chapter": "第三单元 物质构成的奥秘",
+      "section": "3.1",
+      "difficulty": 2,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.7,
+      "summary": "构成物质的微粒:分子、原子、离子。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-ATM-002",
+      "name": "分子",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-ATM-000",
+      "chapter": "第三单元 物质构成的奥秘",
+      "section": "3.2",
+      "difficulty": 1,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.6,
+      "summary": "分子是保持物质化学性质的最小微粒。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-ATM-003",
+      "name": "原子",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-ATM-000",
+      "chapter": "第三单元 物质构成的奥秘",
+      "section": "3.3",
+      "difficulty": 1,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.6,
+      "summary": "原子是化学变化中的最小微粒。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-ATM-004",
+      "name": "离子",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-ATM-000",
+      "chapter": "第三单元 物质构成的奥秘",
+      "section": "3.4",
+      "difficulty": 2,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.6,
+      "summary": "离子的形成、离子符号与离子核外电子数。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-ATM-005",
+      "name": "分子运动与分子间隔",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-ATM-000",
+      "chapter": "第三单元 物质构成的奥秘",
+      "section": "3.5",
+      "difficulty": 2,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.6,
+      "summary": "分子在不停运动、分子间有间隔的实验证据与解释。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-ATM-006",
+      "name": "质子数与核外电子数",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-ATM-000",
+      "chapter": "第三单元 物质构成的奥秘",
+      "section": "3.6",
+      "difficulty": 2,
+      "ability_tags": [
+        "识记"
+      ],
+      "exam_weight": 0.6,
+      "summary": "原子结构:质子数=核电荷数=核外电子数,离子的电子数变化。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-ATM-007",
+      "name": "元素与元素周期表",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-ATM-000",
+      "chapter": "第三单元 物质构成的奥秘",
+      "section": "3.7",
+      "difficulty": 2,
+      "ability_tags": [
+        "识记"
+      ],
+      "exam_weight": 0.7,
+      "summary": "元素的概念与元素周期表单元格信息的应用。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-AIR-000",
+      "name": "空气与自然界的水",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 1,
+      "chapter": "空气与自然界的水",
+      "section": null,
+      "difficulty": 1,
+      "ability_tags": [],
+      "exam_weight": 0.5,
+      "summary": "空气与自然界的水模块,包含本模块下的教材章节知识点。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-AIR-001",
+      "name": "氮气",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-AIR-000",
+      "chapter": "第二单元 我们周围的空气",
+      "section": "2.1",
+      "difficulty": 1,
+      "ability_tags": [
+        "识记"
+      ],
+      "exam_weight": 0.4,
+      "summary": "空气的组成,氮气的化学性质稳定及其用途。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-AIR-002",
+      "name": "氧气的性质与制取",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-AIR-000",
+      "chapter": "第二单元 我们周围的空气",
+      "section": "2.2",
+      "difficulty": 2,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.7,
+      "summary": "氧气的性质、实验室制取与催化剂。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-AIR-003",
+      "name": "水的组成与净化",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-AIR-000",
+      "chapter": "第四单元 自然界的水",
+      "section": "4.1",
+      "difficulty": 2,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.6,
+      "summary": "电解水实验、水的组成与净化方法。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-AIR-004",
+      "name": "水资源保护",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-AIR-000",
+      "chapter": "第四单元 自然界的水",
+      "section": "4.2",
+      "difficulty": 1,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.5,
+      "summary": "爱护水资源:节约用水与防治水体污染。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-AIR-005",
+      "name": "化学式与化合价",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-AIR-000",
+      "chapter": "第四单元 自然界的水",
+      "section": "4.3",
+      "difficulty": 2,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.8,
+      "summary": "化学式的书写与化合价规则的应用。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-EQN-000",
+      "name": "化学反应与化学方程式",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 1,
+      "chapter": "化学反应与化学方程式",
+      "section": null,
+      "difficulty": 1,
+      "ability_tags": [],
+      "exam_weight": 0.5,
+      "summary": "化学反应与化学方程式模块,包含本模块下的教材章节知识点。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-EQN-001",
+      "name": "质量守恒定律",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-EQN-000",
+      "chapter": "第五单元 化学方程式",
+      "section": "5.1",
+      "difficulty": 2,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.8,
+      "summary": "质量守恒定律的内容、微观解释与应用。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-EQN-002",
+      "name": "化学反应的实质与微观示意图",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-EQN-000",
+      "chapter": "第五单元 化学方程式",
+      "section": "5.2",
+      "difficulty": 3,
+      "ability_tags": [
+        "分析"
+      ],
+      "exam_weight": 0.7,
+      "summary": "化学反应的实质:分子分解为原子、原子重新组合;微观示意图分析。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-EQN-003",
+      "name": "化学方程式书写与配平",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-EQN-000",
+      "chapter": "第五单元 化学方程式",
+      "section": "5.3",
+      "difficulty": 2,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.8,
+      "summary": "化学方程式的书写原则、配平与反应条件标注。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-EQN-004",
+      "name": "化学方程式计算",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-EQN-000",
+      "chapter": "第五单元 化学方程式",
+      "section": "5.4",
+      "difficulty": 3,
+      "ability_tags": [
+        "计算"
+      ],
+      "exam_weight": 0.8,
+      "summary": "利用化学方程式的简单计算。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-EQN-005",
+      "name": "元素质量比的计算",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-EQN-000",
+      "chapter": "第五单元 化学方程式",
+      "section": "5.5",
+      "difficulty": 2,
+      "ability_tags": [
+        "计算"
+      ],
+      "exam_weight": 0.6,
+      "summary": "根据化学式计算元素质量比与元素质量分数。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-EQN-006",
+      "name": "化合反应与分解反应",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-EQN-000",
+      "chapter": "第五单元 化学方程式",
+      "section": "5.6",
+      "difficulty": 2,
+      "ability_tags": [
+        "辨析"
+      ],
+      "exam_weight": 0.6,
+      "summary": "四种基本反应类型中的化合反应与分解反应。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-CO2-000",
+      "name": "碳和碳的氧化物",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 1,
+      "chapter": "碳和碳的氧化物",
+      "section": null,
+      "difficulty": 1,
+      "ability_tags": [],
+      "exam_weight": 0.5,
+      "summary": "碳和碳的氧化物模块,包含本模块下的教材章节知识点。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-CO2-001",
+      "name": "二氧化碳的性质与制取",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-CO2-000",
+      "chapter": "第六单元 碳和碳的氧化物",
+      "section": "6.1",
+      "difficulty": 2,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.7,
+      "summary": "二氧化碳的性质与实验室制取。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-CO2-002",
+      "name": "二氧化碳的检验",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-CO2-000",
+      "chapter": "第六单元 碳和碳的氧化物",
+      "section": "6.2",
+      "difficulty": 2,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.7,
+      "summary": "用澄清石灰水检验二氧化碳。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-CO2-003",
+      "name": "温室气体与碳中和",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-CO2-000",
+      "chapter": "第六单元 碳和碳的氧化物",
+      "section": "6.3",
+      "difficulty": 1,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.6,
+      "summary": "二氧化碳与温室效应,低碳生活与碳中和。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-CO2-004",
+      "name": "碳酸与碳酸钙",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-CO2-000",
+      "chapter": "第六单元 碳和碳的氧化物",
+      "section": "6.4",
+      "difficulty": 2,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.7,
+      "summary": "碳酸的不稳定性,碳酸钙的性质与碳酸盐的转化。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-FUEL-000",
+      "name": "燃料及其利用",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 1,
+      "chapter": "燃料及其利用",
+      "section": null,
+      "difficulty": 1,
+      "ability_tags": [],
+      "exam_weight": 0.5,
+      "summary": "燃料及其利用模块,包含本模块下的教材章节知识点。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-FUEL-001",
+      "name": "燃烧的条件与着火点",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-FUEL-000",
+      "chapter": "第七单元 燃料及其利用",
+      "section": "7.1",
+      "difficulty": 2,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.7,
+      "summary": "燃烧的三个条件与着火点的概念。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-FUEL-002",
+      "name": "灭火原理与方法",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-FUEL-000",
+      "chapter": "第七单元 燃料及其利用",
+      "section": "7.2",
+      "difficulty": 2,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.7,
+      "summary": "灭火原理:清除可燃物、隔绝氧气、降温到着火点以下。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-MET-000",
+      "name": "金属和金属材料",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 1,
+      "chapter": "金属和金属材料",
+      "section": null,
+      "difficulty": 1,
+      "ability_tags": [],
+      "exam_weight": 0.5,
+      "summary": "金属和金属材料模块,包含本模块下的教材章节知识点。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-MET-001",
+      "name": "合金",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-MET-000",
+      "chapter": "第八单元 金属和金属材料",
+      "section": "8.1",
+      "difficulty": 1,
+      "ability_tags": [
+        "识记"
+      ],
+      "exam_weight": 0.5,
+      "summary": "合金的概念与合金性质(硬度大、熔点低等)。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-MET-002",
+      "name": "金属的化学性质",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-MET-000",
+      "chapter": "第八单元 金属和金属材料",
+      "section": "8.2",
+      "difficulty": 2,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.8,
+      "summary": "金属与氧气、酸、盐溶液的反应。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-MET-003",
+      "name": "金属活动性顺序",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-MET-000",
+      "chapter": "第八单元 金属和金属材料",
+      "section": "8.3",
+      "difficulty": 3,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.8,
+      "summary": "金属活动性顺序及其在置换反应判断中的应用。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-SOL-000",
+      "name": "溶液",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 1,
+      "chapter": "溶液",
+      "section": null,
+      "difficulty": 1,
+      "ability_tags": [],
+      "exam_weight": 0.5,
+      "summary": "溶液模块,包含本模块下的教材章节知识点。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-SOL-001",
+      "name": "溶解度",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-SOL-000",
+      "chapter": "第九单元 溶液",
+      "section": "9.1",
+      "difficulty": 3,
+      "ability_tags": [
+        "图像分析"
+      ],
+      "exam_weight": 0.8,
+      "summary": "固体溶解度的概念与溶解度曲线的应用。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-SOL-002",
+      "name": "饱和溶液与不饱和溶液",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-SOL-000",
+      "chapter": "第九单元 溶液",
+      "section": "9.2",
+      "difficulty": 2,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.7,
+      "summary": "饱和溶液与不饱和溶液的概念及相互转化。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-SOL-003",
+      "name": "结晶方法",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-SOL-000",
+      "chapter": "第九单元 溶液",
+      "section": "9.3",
+      "difficulty": 2,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.7,
+      "summary": "蒸发结晶与降温结晶方法的选择。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-SOL-004",
+      "name": "溶质质量分数",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-SOL-000",
+      "chapter": "第九单元 溶液",
+      "section": "9.4",
+      "difficulty": 2,
+      "ability_tags": [
+        "计算"
+      ],
+      "exam_weight": 0.7,
+      "summary": "溶质质量分数的概念与计算,溶液的配制。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-ACID-000",
+      "name": "酸碱盐与化学肥料",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 1,
+      "chapter": "酸碱盐与化学肥料",
+      "section": null,
+      "difficulty": 1,
+      "ability_tags": [],
+      "exam_weight": 0.5,
+      "summary": "酸碱盐与化学肥料模块,包含本模块下的教材章节知识点。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-ACID-001",
+      "name": "常见的酸与浓硫酸的稀释",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-ACID-000",
+      "chapter": "第十单元 酸和碱",
+      "section": "10.1",
+      "difficulty": 2,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.7,
+      "summary": "盐酸、硫酸的性质,浓硫酸的稀释操作(酸入水)。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-ACID-002",
+      "name": "中和反应",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-ACID-000",
+      "chapter": "第十单元 酸和碱",
+      "section": "10.2",
+      "difficulty": 2,
+      "ability_tags": [
+        "理解"
+      ],
+      "exam_weight": 0.8,
+      "summary": "酸与碱作用生成盐和水的中和反应及其应用。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-ACID-003",
+      "name": "常见的盐",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-ACID-000",
+      "chapter": "第十一单元 盐 化肥",
+      "section": "11.1",
+      "difficulty": 2,
+      "ability_tags": [
+        "识记"
+      ],
+      "exam_weight": 0.7,
+      "summary": "氯化钠、碳酸钠、碳酸氢钠、碳酸钙等常见的盐的性质与用途。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-ACID-004",
+      "name": "复分解反应",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-ACID-000",
+      "chapter": "第十一单元 盐 化肥",
+      "section": "11.2",
+      "difficulty": 3,
+      "ability_tags": [
+        "应用"
+      ],
+      "exam_weight": 0.8,
+      "summary": "复分解反应的概念与发生条件。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-ACID-005",
+      "name": "化学肥料",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-ACID-000",
+      "chapter": "第十一单元 盐 化肥",
+      "section": "11.3",
+      "difficulty": 1,
+      "ability_tags": [
+        "识记"
+      ],
+      "exam_weight": 0.5,
+      "summary": "氮肥、磷肥、钾肥的作用与判别。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-ACID-006",
+      "name": "氮肥与铵态氮肥",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-ACID-000",
+      "chapter": "第十一单元 盐 化肥",
+      "section": "11.4",
+      "difficulty": 2,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.5,
+      "summary": "铵态氮肥的检验(与碱混合研磨放出氨气)及使用注意事项。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-EXP-000",
+      "name": "科学探究与化学实验",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 1,
+      "chapter": "科学探究与化学实验",
+      "section": null,
+      "difficulty": 1,
+      "ability_tags": [],
+      "exam_weight": 0.5,
+      "summary": "科学探究与化学实验模块,包含本模块下的教材章节知识点。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-EXP-001",
+      "name": "物质的鉴别",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-EXP-000",
+      "chapter": "科学探究与化学实验",
+      "section": "E.1",
+      "difficulty": 3,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.7,
+      "summary": "利用物质的特征性质进行鉴别的方案设计。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-EXP-002",
+      "name": "物质的除杂",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-EXP-000",
+      "chapter": "科学探究与化学实验",
+      "section": "E.2",
+      "difficulty": 3,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.7,
+      "summary": "除杂(提纯)的原则与常见除杂方法。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-EXP-003",
+      "name": "定量实验",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-EXP-000",
+      "chapter": "科学探究与化学实验",
+      "section": "E.3",
+      "difficulty": 3,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.6,
+      "summary": "定量实验的设计与数据处理。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-EXP-004",
+      "name": "实验误差分析",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-EXP-000",
+      "chapter": "科学探究与化学实验",
+      "section": "E.4",
+      "difficulty": 3,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.6,
+      "summary": "实验误差分析:偏大偏小的原因讨论。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    },
+    {
+      "code": "CHE-EXP-005",
+      "name": "实验方案设计与评价",
+      "subject": "化学",
+      "grade": "初三",
+      "level": 2,
+      "parent_code": "CHE-EXP-000",
+      "chapter": "科学探究与化学实验",
+      "section": "E.5",
+      "difficulty": 3,
+      "ability_tags": [
+        "实验探究"
+      ],
+      "exam_weight": 0.7,
+      "summary": "化学实验方案设计与评价的一般思路。",
+      "curriculum": "PEP junior chemistry 2012",
+      "version": 1
+    }
+  ],
+  "edges": [
+    {
+      "from_code": "CHE-INTRO-000",
+      "to_code": "CHE-INTRO-001",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-INTRO-000",
+      "to_code": "CHE-INTRO-002",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-CLS-000",
+      "to_code": "CHE-CLS-001",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-CLS-000",
+      "to_code": "CHE-CLS-002",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-CLS-000",
+      "to_code": "CHE-CLS-003",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-ATM-000",
+      "to_code": "CHE-ATM-001",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-ATM-000",
+      "to_code": "CHE-ATM-002",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-ATM-000",
+      "to_code": "CHE-ATM-003",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-ATM-000",
+      "to_code": "CHE-ATM-004",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-ATM-000",
+      "to_code": "CHE-ATM-005",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-ATM-000",
+      "to_code": "CHE-ATM-006",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-ATM-000",
+      "to_code": "CHE-ATM-007",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-AIR-000",
+      "to_code": "CHE-AIR-001",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-AIR-000",
+      "to_code": "CHE-AIR-002",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-AIR-000",
+      "to_code": "CHE-AIR-003",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-AIR-000",
+      "to_code": "CHE-AIR-004",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-AIR-000",
+      "to_code": "CHE-AIR-005",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-EQN-000",
+      "to_code": "CHE-EQN-001",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-EQN-000",
+      "to_code": "CHE-EQN-002",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-EQN-000",
+      "to_code": "CHE-EQN-003",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-EQN-000",
+      "to_code": "CHE-EQN-004",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-EQN-000",
+      "to_code": "CHE-EQN-005",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-EQN-000",
+      "to_code": "CHE-EQN-006",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-CO2-000",
+      "to_code": "CHE-CO2-001",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-CO2-000",
+      "to_code": "CHE-CO2-002",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-CO2-000",
+      "to_code": "CHE-CO2-003",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-CO2-000",
+      "to_code": "CHE-CO2-004",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-FUEL-000",
+      "to_code": "CHE-FUEL-001",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-FUEL-000",
+      "to_code": "CHE-FUEL-002",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-MET-000",
+      "to_code": "CHE-MET-001",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-MET-000",
+      "to_code": "CHE-MET-002",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-MET-000",
+      "to_code": "CHE-MET-003",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-SOL-000",
+      "to_code": "CHE-SOL-001",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-SOL-000",
+      "to_code": "CHE-SOL-002",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-SOL-000",
+      "to_code": "CHE-SOL-003",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-SOL-000",
+      "to_code": "CHE-SOL-004",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-ACID-000",
+      "to_code": "CHE-ACID-001",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-ACID-000",
+      "to_code": "CHE-ACID-002",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-ACID-000",
+      "to_code": "CHE-ACID-003",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-ACID-000",
+      "to_code": "CHE-ACID-004",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-ACID-000",
+      "to_code": "CHE-ACID-005",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-ACID-000",
+      "to_code": "CHE-ACID-006",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-EXP-000",
+      "to_code": "CHE-EXP-001",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-EXP-000",
+      "to_code": "CHE-EXP-002",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-EXP-000",
+      "to_code": "CHE-EXP-003",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-EXP-000",
+      "to_code": "CHE-EXP-004",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-EXP-000",
+      "to_code": "CHE-EXP-005",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
+    }
+  ]
+}

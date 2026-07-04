@@ -1,0 +1,319 @@
+{
+  "subject": "数学",
+  "sourceName": "2024年内蒙古自治区通辽市中考数学试卷",
+  "year": 2024,
+  "region": "内蒙古通辽",
+  "sourceUrl": "https://www.renrendoc.com/paper/348596467.html",
+  "questions": [
+    {
+      "type": "single",
+      "stemLatex": "下列说法错误的是（  ）",
+      "options": [
+        {
+          "key": "A",
+          "textLatex": "通过平移或旋转得到的图形与原图形全等"
+        },
+        {
+          "key": "B",
+          "textLatex": "“对顶角相等”的逆命题是真命题"
+        },
+        {
+          "key": "C",
+          "textLatex": "圆内接正六边形的边长等于半径"
+        },
+        {
+          "key": "D",
+          "textLatex": "“经过有交通信号灯的路口，遇到红灯”是随机事件"
+        }
+      ],
+      "answer": {
+        "choice": "B"
+      },
+      "analysisLatex": "“对顶角相等”的逆命题是“相等的角是对顶角”，为假命题，故 B 错误；A、C、D 均正确。",
+      "difficulty": 2,
+      "chapter": "命题与定理",
+      "kpKeywords": [
+        "命题真假",
+        "逆命题",
+        "随机事件",
+        "圆内接多边形"
+      ]
+    },
+    {
+      "type": "single",
+      "stemLatex": "一个几何体的主视图和左视图都是边长为 $6$ 的等边三角形，俯视图是直径为 $6$ 的圆，则此几何体的全面积是（  ）",
+      "options": [
+        {
+          "key": "A",
+          "textLatex": "$18\\pi$"
+        },
+        {
+          "key": "B",
+          "textLatex": "$24\\pi$"
+        },
+        {
+          "key": "C",
+          "textLatex": "$27\\pi$"
+        },
+        {
+          "key": "D",
+          "textLatex": "$42\\pi$"
+        }
+      ],
+      "answer": {
+        "choice": "C"
+      },
+      "analysisLatex": "该几何体为圆锥，底面半径 $r=3$，母线 $l=6$。全面积 $=\\pi r^2+\\pi r l=\\pi\\times3^2+\\pi\\times3\\times6=9\\pi+18\\pi=27\\pi$。",
+      "difficulty": 3,
+      "chapter": "三视图与圆锥",
+      "kpKeywords": [
+        "三视图",
+        "圆锥表面积"
+      ]
+    },
+    {
+      "type": "single",
+      "stemLatex": "$\\odot O$ 的半径为 $10$，圆心 $O$ 到弦 $AB$ 的距离为 $5$，则弦 $AB$ 所对的圆周角的度数是（  ）",
+      "options": [
+        {
+          "key": "A",
+          "textLatex": "$30^\\circ$"
+        },
+        {
+          "key": "B",
+          "textLatex": "$60^\\circ$"
+        },
+        {
+          "key": "C",
+          "textLatex": "$30^\\circ$ 或 $150^\\circ$"
+        },
+        {
+          "key": "D",
+          "textLatex": "$60^\\circ$ 或 $120^\\circ$"
+        }
+      ],
+      "answer": {
+        "choice": "D"
+      },
+      "analysisLatex": "作 $OD\\perp AB$ 于 $D$，则 $OD=5$，$OA=10$，$\\cos\\angle AOD=\\dfrac{5}{10}=\\dfrac12$，$\\angle AOD=60^\\circ$，圆心角 $\\angle AOB=120^\\circ$。优弧所对圆周角为 $60^\\circ$，劣弧所对圆周角为 $120^\\circ$。",
+      "difficulty": 3,
+      "chapter": "圆",
+      "kpKeywords": [
+        "垂径定理",
+        "圆周角定理",
+        "特殊角三角函数"
+      ]
+    },
+    {
+      "type": "single",
+      "stemLatex": "一商店以每件 $150$ 元的价格卖出两件不同的商品，其中一件盈利 $25\\%$，另一件亏损 $25\\%$，则商店卖这两件商品总的盈亏情况是（  ）",
+      "options": [
+        {
+          "key": "A",
+          "textLatex": "亏损 $20$ 元"
+        },
+        {
+          "key": "B",
+          "textLatex": "盈利 $30$ 元"
+        },
+        {
+          "key": "C",
+          "textLatex": "亏损 $50$ 元"
+        },
+        {
+          "key": "D",
+          "textLatex": "不盈不亏"
+        }
+      ],
+      "answer": {
+        "choice": "A"
+      },
+      "analysisLatex": "设盈利商品进价为 $x$，$150-x=25\\%x$，得 $x=120$；设亏损商品进价为 $y$，$150-y=-25\\%y$，得 $y=200$。总进价 $320$ 元，总售价 $300$ 元，故共亏损 $20$ 元。",
+      "difficulty": 3,
+      "chapter": "一元一次方程应用",
+      "kpKeywords": [
+        "一元一次方程",
+        "利润问题"
+      ]
+    },
+    {
+      "type": "single",
+      "stemLatex": "如图，$\\square ABCD$ 的对角线 $AC$、$BD$ 交于点 $O$，$DE$ 平分 $\\angle ADC$ 交 $AB$ 于点 $E$，$\\angle BCD=60^\\circ$，$AD=AB$，连接 $OE$，设 $DE$ 与 $AC$ 交于点 $F$。下列结论：① $S_{\\square ABCD}=AD\\cdot BD$；② $DB$ 平分 $\\angle CDE$；③ $AO=DE$；④ $S_{\\triangle ADE}=5S_{\\triangle OFE}$。其中正确的个数有（  ）",
+      "options": [
+        {
+          "key": "A",
+          "textLatex": "$1$ 个"
+        },
+        {
+          "key": "B",
+          "textLatex": "$2$ 个"
+        },
+        {
+          "key": "C",
+          "textLatex": "$3$ 个"
+        },
+        {
+          "key": "D",
+          "textLatex": "$4$ 个"
+        }
+      ],
+      "answer": {
+        "choice": "B"
+      },
+      "analysisLatex": "由 $\\angle BAD=60^\\circ$、$DE$ 平分 $\\angle ADC$ 知 $\\triangle ADE$ 为等边三角形，$E$ 为 $AB$ 中点，$\\angle ADB=90^\\circ$，故 $S_{\\square ABCD}=AD\\cdot BD$，①正确；$\\angle CDB=\\angle BDE=30^\\circ$，②正确；$Rt\\triangle AOD$ 中 $AO>AD>DE$，③错误；$OE$ 为 $\\triangle ABD$ 的中位线，可得 $S_{\\triangle ADE}=6S_{\\triangle OFE}$，④错误。故正确的有 $2$ 个。",
+      "difficulty": 4,
+      "chapter": "平行四边形",
+      "kpKeywords": [
+        "平行四边形性质",
+        "等边三角形",
+        "相似三角形",
+        "三角形中位线"
+      ]
+    },
+    {
+      "type": "blank",
+      "stemLatex": "$2024$ 年 $5$ 月 $13$ 日，我国第一艘国产航母出海试航，据估测该航母的满载排水量约 $67500$ 吨，将 $67500$ 用科学记数法表示为 ______。",
+      "answer": {
+        "texts": [
+          "$6.75\\times10^4$"
+        ]
+      },
+      "analysisLatex": "科学记数法形如 $a\\times10^n$（$1\\le|a|<10$，$n$ 为整数），$67500=6.75\\times10^4$。",
+      "difficulty": 1,
+      "chapter": "科学记数法",
+      "kpKeywords": [
+        "科学记数法"
+      ]
+    },
+    {
+      "type": "blank",
+      "stemLatex": "如图，$\\angle AOB$ 的一边 $OA$ 为平面镜，$\\angle AOB=37^\\circ45'$，在 $OB$ 边上有一点 $E$，从点 $E$ 射出一束光线经平面镜反射后，反射光线 $DC$ 恰好与 $OB$ 平行，则 $\\angle DEB$ 的度数是 ______。",
+      "answer": {
+        "texts": [
+          "$75^\\circ30'$"
+        ]
+      },
+      "analysisLatex": "由 $CD\\parallel OB$ 得 $\\angle ADC=\\angle AOB$，又反射角 $\\angle EDO=\\angle CDA$，故 $\\angle EDO=\\angle AOB=37^\\circ45'$，$\\angle DEB=\\angle AOB+\\angle EDO=2\\times37^\\circ45'=75^\\circ30'$。",
+      "difficulty": 3,
+      "chapter": "相交线与平行线",
+      "kpKeywords": [
+        "平行线性质",
+        "度分秒换算",
+        "光的反射"
+      ]
+    },
+    {
+      "type": "blank",
+      "stemLatex": "一组数据 $2$，$x$，$1$，$3$，$5$，$4$，若这组数据的中位数是 $3$，则这组数据的方差是 ______。",
+      "answer": {
+        "texts": [
+          "$\\dfrac{5}{3}$"
+        ]
+      },
+      "analysisLatex": "从小到大排列为 $1,2,3,x,4,5$，中位数为 $3$ 得 $x=3$。平均数 $=\\dfrac{1+2+3+3+4+5}{6}=3$，方差 $=\\dfrac{1}{6}\\left[(1-3)^2+(2-3)^2+0+0+(4-3)^2+(5-3)^2\\right]=\\dfrac{10}{6}=\\dfrac{5}{3}$。",
+      "difficulty": 3,
+      "chapter": "统计",
+      "kpKeywords": [
+        "中位数",
+        "方差"
+      ]
+    },
+    {
+      "type": "blank",
+      "stemLatex": "如图是“赵爽弦图”，$AE=3$，$BE=2$，若向正方形 $ABCD$ 内随意投掷飞镖（落在正方形 $ABCD$ 内任何一点的机会均等），则恰好落在正方形 $EFGH$ 内的概率为 ______。",
+      "answer": {
+        "texts": [
+          "$\\dfrac{1}{13}$"
+        ]
+      },
+      "analysisLatex": "$AB^2=AE^2+BE^2=3^2+2^2=13$，故 $S_{\\text{正方形}ABCD}=13$；小正方形边长 $EF=AE-BF=3-2=1$，$S_{\\text{正方形}EFGH}=1$。由几何概率得所求概率 $=\\dfrac{1}{13}$。",
+      "difficulty": 3,
+      "chapter": "几何概率",
+      "kpKeywords": [
+        "几何概率",
+        "勾股定理",
+        "正方形"
+      ]
+    },
+    {
+      "type": "blank",
+      "stemLatex": "为开展“市长杯”足球比赛，赛制为单循环形式（每两队之间赛一场）。现计划安排 $21$ 场比赛，应邀请多少个球队参赛？设邀请 $x$ 个球队参赛，根据题意，可列方程为 ______。",
+      "answer": {
+        "texts": [
+          "$\\dfrac{1}{2}x(x-1)=21$"
+        ]
+      },
+      "analysisLatex": "单循环赛中 $x$ 个球队共赛 $\\dfrac{x(x-1)}{2}$ 场，故所列方程为 $\\dfrac{1}{2}x(x-1)=21$。",
+      "difficulty": 2,
+      "chapter": "一元二次方程",
+      "kpKeywords": [
+        "一元二次方程",
+        "实际问题建模"
+      ]
+    },
+    {
+      "type": "blank",
+      "stemLatex": "如图，在 $\\triangle ABC$ 中，按下列步骤作图：① 分别以点 $A$ 和点 $C$ 为圆心，以大于 $\\dfrac{1}{2}AC$ 的长为半径作弧，两弧相交于 $M$、$N$ 两点；② 作直线 $MN$ 交 $BC$ 于点 $D$，连接 $AD$。若 $AB=BD$，$AB=6$，$\\angle C=30^\\circ$，则 $\\triangle ACD$ 的面积为 ______。",
+      "answer": {
+        "texts": [
+          "$9\\sqrt{3}$"
+        ]
+      },
+      "analysisLatex": "$MN$ 垂直平分 $AC$，故 $DA=DC$，$\\angle DAC=\\angle C=30^\\circ$，$\\angle ADB=60^\\circ$。又 $AB=BD$，故 $\\triangle ABD$ 为等边三角形，$AD=BD=DC=6$。因 $BD=DC$，$S_{\\triangle ACD}=S_{\\triangle ABD}=\\dfrac{\\sqrt{3}}{4}\\times6^2=9\\sqrt{3}$。",
+      "difficulty": 4,
+      "chapter": "尺规作图与三角形",
+      "kpKeywords": [
+        "线段垂直平分线",
+        "等边三角形",
+        "三角形面积"
+      ]
+    },
+    {
+      "type": "solution",
+      "stemLatex": "某国道修建过程中经过一座山峰。山脚 $A$、$C$ 两地海拔高度约为 $1000$ 米，山顶 $B$ 处海拔高度约为 $1400$ 米，由 $B$ 处望山脚 $A$ 处的俯角为 $30^\\circ$，由 $B$ 处望山脚 $C$ 处的俯角为 $45^\\circ$。若在 $A$、$C$ 两地间打通一隧道，求隧道最短为多少米（结果取整数，参考数据 $\\sqrt{3}\\approx1.732$）。",
+      "answer": {
+        "referenceLatex": "作 $BD\\perp AC$ 于 $D$，则 $BD=1400-1000=400$ 米，$\\angle BAC=30^\\circ$，$\\angle BCA=45^\\circ$。在 $Rt\\triangle ABD$ 中，$AD=\\dfrac{BD}{\\tan30^\\circ}=400\\sqrt{3}\\approx692.8$ 米；在 $Rt\\triangle BCD$ 中，$CD=\\dfrac{BD}{\\tan45^\\circ}=400$ 米。故 $AC=AD+CD=400\\sqrt{3}+400\\approx1092.8\\approx1093$ 米。即隧道最短约为 $1093$ 米。"
+      },
+      "analysisLatex": "过 $B$ 作 $AC$ 的垂线构造两个直角三角形，分别用 $\\tan30^\\circ$、$\\tan45^\\circ$ 求水平距离后相加。",
+      "difficulty": 3,
+      "chapter": "解直角三角形",
+      "kpKeywords": [
+        "俯角",
+        "解直角三角形",
+        "特殊角三角函数"
+      ]
+    },
+    {
+      "type": "solution",
+      "stemLatex": "如图，$\\triangle ABC$ 中，$D$ 是 $BC$ 边上一点，$E$ 是 $AD$ 的中点，过点 $A$ 作 $BC$ 的平行线交 $BE$ 的延长线于点 $F$，且 $AF=CD$，连接 $CF$。（1）求证：$\\triangle AEF\\cong\\triangle DEB$；（2）若 $AB=AC$，试判断四边形 $ADCF$ 的形状，并证明你的结论。",
+      "answer": {
+        "referenceLatex": "（1）∵ $E$ 是 $AD$ 的中点，∴ $AE=DE$。∵ $AF\\parallel BC$，∴ $\\angle AFE=\\angle DBE$，$\\angle EAF=\\angle EDB$，∴ $\\triangle AEF\\cong\\triangle DEB$（AAS）。（2）四边形 $ADCF$ 是矩形。证明：由 $\\triangle AEF\\cong\\triangle DEB$ 得 $AF=DB$，又 $AF=CD$，故 $DB=DC$，即 $D$ 为 $BC$ 中点；又 $AF\\parallel CD$ 且 $AF=CD$，故四边形 $ADCF$ 是平行四边形。∵ $AB=AC$ 且 $D$ 为 $BC$ 中点，∴ $AD\\perp BC$，$\\angle ADC=90^\\circ$，∴ 平行四边形 $ADCF$ 是矩形。"
+      },
+      "analysisLatex": "第（1）问用 AAS 证全等；第（2）问先证平行四边形，再由等腰三角形三线合一得直角，从而判定矩形。",
+      "difficulty": 3,
+      "chapter": "全等三角形与特殊四边形",
+      "kpKeywords": [
+        "全等三角形",
+        "平行四边形判定",
+        "矩形判定",
+        "等腰三角形三线合一"
+      ]
+    },
+    {
+      "type": "solution",
+      "stemLatex": "某网店销售甲、乙两种羽毛球，甲种羽毛球每筒的售价比乙种多 $15$ 元，王老师购买了 $2$ 筒甲种和 $3$ 筒乙种，共花费 $255$ 元。（1）甲、乙两种羽毛球每筒的售价各是多少元？（2）该网店决定用不超过 $8780$ 元购进甲、乙两种羽毛球共 $200$ 筒，且甲种数量大于乙种数量的 $\\dfrac{3}{5}$，甲种每筒进价 $50$ 元，乙种每筒进价 $40$ 元。① 设购进甲种 $m$ 筒，该网店有哪几种进货方案？② 若均全部售出，求利润 $W$（元）与 $m$（筒）的函数关系式，并说明 $m$ 为何值时利润最大，最大利润是多少？",
+      "answer": {
+        "referenceLatex": "（1）设甲种每筒售价 $x$ 元，乙种每筒售价 $y$ 元，由 $\\begin{cases}x-y=15\\\\2x+3y=255\\end{cases}$ 解得 $x=60$，$y=45$。即甲种每筒 $60$ 元，乙种每筒 $45$ 元。（2）① 设购进甲种 $m$ 筒，则乙种 $(200-m)$ 筒，由 $\\begin{cases}50m+40(200-m)\\le8780\\\\m>\\dfrac{3}{5}(200-m)\\end{cases}$ 解得 $75<m\\le78$。$m$ 为整数，故 $m=76,77,78$，共 $3$ 种进货方案。② $W=(60-50)m+(45-40)(200-m)=5m+1000$。∵ $5>0$，$W$ 随 $m$ 增大而增大，且 $75<m\\le78$，∴ 当 $m=78$ 时 $W$ 最大，最大利润为 $5\\times78+1000=1390$ 元。"
+      },
+      "analysisLatex": "第（1）问列二元一次方程组；第（2）问由费用与数量约束列不等式组求整数解得方案，再由一次函数单调性求最大利润。",
+      "difficulty": 4,
+      "chapter": "一次函数与方程不等式应用",
+      "kpKeywords": [
+        "二元一次方程组",
+        "一元一次不等式组",
+        "一次函数最值",
+        "方案问题"
+      ]
+    }
+  ]
+}

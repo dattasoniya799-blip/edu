@@ -1,0 +1,190 @@
+{
+  "subject": "数学",
+  "sourceName": "2025年内蒙古自治区中考数学真题试卷",
+  "year": 2025,
+  "region": "内蒙古自治区",
+  "sourceUrl": "https://www.renrendoc.com/paper/469758845.html",
+  "questions": [
+    {
+      "type": "single",
+      "stemLatex": "我国是历史上最早认识和使用负数的国家．若盈利$100$元记作$+100$元，则亏损$200$元应记作（  ）",
+      "options": [
+        { "key": "A", "textLatex": "$+200$元" },
+        { "key": "B", "textLatex": "$-200$元" },
+        { "key": "C", "textLatex": "$+100$元" },
+        { "key": "D", "textLatex": "$-100$元" }
+      ],
+      "answer": { "choice": "B" },
+      "analysisLatex": "根据正负数表示具有相反意义的量：盈利记作正数，则亏损应用负数表示，故亏损$200$元记作$-200$元．故选B．",
+      "difficulty": 1,
+      "chapter": "有理数",
+      "kpKeywords": ["正负数", "相反意义的量"]
+    },
+    {
+      "type": "single",
+      "stemLatex": "如图，在平面直角坐标系中，$\\triangle OAB$的顶点坐标分别是$O(0,0)$，$A(2,1)$，$B(1,2)$，以原点$O$为位似中心，在第三象限画$\\triangle OA'B'$与$\\triangle OAB$位似，若$\\triangle OA'B'$与$\\triangle OAB$的相似比为$2:1$，则点$A$的对应点$A'$的坐标为（  ）",
+      "options": [
+        { "key": "A", "textLatex": "$(-2,-1)$" },
+        { "key": "B", "textLatex": "$(-4,-2)$" },
+        { "key": "C", "textLatex": "$(-1,-2)$" },
+        { "key": "D", "textLatex": "$(-2,-4)$" }
+      ],
+      "answer": { "choice": "B" },
+      "analysisLatex": "位似图形对应点的坐标之比等于相似比．相似比为$2:1$，且$\\triangle OA'B'$在第三象限（与原图形位于位似中心异侧），故$A(2,1)$的对应点为$A'(2\\times(-2),\\ 1\\times(-2))=(-4,-2)$．故选B．",
+      "difficulty": 2,
+      "chapter": "图形的相似",
+      "kpKeywords": ["位似变换", "坐标与图形变化", "相似比"]
+    },
+    {
+      "type": "single",
+      "stemLatex": "如图，$ABCD$是一个矩形草坪，对角线$AC$，$BD$相交于点$O$，$H$是$BC$边的中点，连接$OH$，且$OH=20\\,\\mathrm{m}$，$AD=30\\,\\mathrm{m}$，则该草坪的面积为（  ）",
+      "options": [
+        { "key": "A", "textLatex": "$2400\\,\\mathrm{m}^2$" },
+        { "key": "B", "textLatex": "$1800\\,\\mathrm{m}^2$" },
+        { "key": "C", "textLatex": "$1200\\,\\mathrm{m}^2$" },
+        { "key": "D", "textLatex": "$600\\,\\mathrm{m}^2$" }
+      ],
+      "answer": { "choice": "C" },
+      "analysisLatex": "矩形对角线互相平分，故$O$是$AC$的中点；又$H$是$BC$的中点，所以$OH$是$\\triangle ABC$的中位线，$AB=2OH=40\\,\\mathrm{m}$．草坪面积$=AB\\cdot AD=40\\times30=1200\\,\\mathrm{m}^2$．故选C．",
+      "difficulty": 2,
+      "chapter": "矩形",
+      "kpKeywords": ["矩形的性质", "三角形中位线定理"]
+    },
+    {
+      "type": "single",
+      "stemLatex": "如图，直线$AB\\parallel CD$，点$E$，$F$分别在直线$AB$，$CD$上，连接$EF$，以点$E$为圆心，适当长为半径画弧，交射线$EA$于点$M$，交$EF$于点$N$，再分别以点$M$，$N$为圆心，大于$\\frac{1}{2}MN$的长为半径画弧（两弧半径相等），两弧在$\\angle AEF$的内部相交于点$H$，画射线$EH$交$CD$于点$G$．若$\\angle AEF=80^\\circ$，则$\\angle EGF$的度数为（  ）",
+      "options": [
+        { "key": "A", "textLatex": "$100^\\circ$" },
+        { "key": "B", "textLatex": "$80^\\circ$" },
+        { "key": "C", "textLatex": "$50^\\circ$" },
+        { "key": "D", "textLatex": "$40^\\circ$" }
+      ],
+      "answer": { "choice": "D" },
+      "analysisLatex": "由作图可知$EG$平分$\\angle AEF$，所以$\\angle AEG=\\angle FEG=\\frac{1}{2}\\times80^\\circ=40^\\circ$．因为$AB\\parallel CD$，由两直线平行内错角相等得$\\angle EGF=\\angle AEG=40^\\circ$．故选D．",
+      "difficulty": 2,
+      "chapter": "相交线与平行线",
+      "kpKeywords": ["尺规作图", "角平分线", "平行线的性质"]
+    },
+    {
+      "type": "single",
+      "stemLatex": "在闭合电路中，通过定值电阻的电流$I$（单位：$\\mathrm{A}$）是它两端的电压$U$（单位：$\\mathrm{V}$）的正比例函数，其图象如图所示（图象经过点$(5,4)$），当该电阻两端的电压为$15\\,\\mathrm{V}$时，通过它的电流为（  ）",
+      "options": [
+        { "key": "A", "textLatex": "$12\\,\\mathrm{A}$" },
+        { "key": "B", "textLatex": "$8\\,\\mathrm{A}$" },
+        { "key": "C", "textLatex": "$6\\,\\mathrm{A}$" },
+        { "key": "D", "textLatex": "$4\\,\\mathrm{A}$" }
+      ],
+      "answer": { "choice": "A" },
+      "analysisLatex": "设$I=kU\\ (k\\neq0)$，由图象过点$(5,4)$得$5k=4$，$k=0.8$，即$I=0.8U$．当$U=15$时，$I=0.8\\times15=12\\,\\mathrm{A}$．故选A．",
+      "difficulty": 2,
+      "chapter": "一次函数",
+      "kpKeywords": ["正比例函数", "待定系数法", "函数的实际应用"]
+    },
+    {
+      "type": "single",
+      "stemLatex": "已知点$A(m,y_1)$，$B(m+1,y_2)$都在反比例函数$y=-\\frac{3}{x}$的图象上，则下列结论一定正确的是（  ）",
+      "options": [
+        { "key": "A", "textLatex": "$y_1>y_2$" },
+        { "key": "B", "textLatex": "$y_1<y_2$" },
+        { "key": "C", "textLatex": "当$m<0$时，$y_1<y_2$" },
+        { "key": "D", "textLatex": "当$m<-1$时，$y_1<y_2$" }
+      ],
+      "answer": { "choice": "D" },
+      "analysisLatex": "反比例函数$y=-\\frac{3}{x}$中$k=-3<0$，在每个象限内$y$随$x$的增大而增大．因为$m<m+1$：当$m<-1$时，$m<m+1<0$，两点在同一分支上，$y_1<y_2$；当$m>0$时，$0<m<m+1$，也有$y_1<y_2$；当$-1<m<0$时，$A$在第二象限（$y_1>0$），$B$在第四象限（$y_2<0$），$y_1>y_2$．所以只有当$m<-1$时结论一定成立．故选D．",
+      "difficulty": 3,
+      "chapter": "反比例函数",
+      "kpKeywords": ["反比例函数的图象与性质", "增减性", "分类讨论"]
+    },
+    {
+      "type": "blank",
+      "stemLatex": "在单词$\\mathrm{class}$（班级）中随机选择一个字母，则选中字母“$\\mathrm{s}$”的概率是________．",
+      "answer": { "texts": ["$\\frac{2}{5}$"] },
+      "analysisLatex": "单词$\\mathrm{class}$共有$5$个字母，其中字母“$\\mathrm{s}$”有$2$个，由等可能事件的概率公式得$P=\\frac{2}{5}$．",
+      "difficulty": 1,
+      "chapter": "概率初步",
+      "kpKeywords": ["概率公式", "等可能事件"]
+    },
+    {
+      "type": "blank",
+      "stemLatex": "冰糖葫芦是我国传统小吃，若大串冰糖葫芦每根穿$5$个山楂，小串冰糖葫芦每根穿$3$个山楂，则穿$m$根大串和$n$根小串冰糖葫芦需要的山楂总个数用代数式表示为________．",
+      "answer": { "texts": ["$5m+3n$"] },
+      "analysisLatex": "$m$根大串需要$5m$个山楂，$n$根小串需要$3n$个山楂，总个数为$5m+3n$．",
+      "difficulty": 1,
+      "chapter": "整式的加减",
+      "kpKeywords": ["列代数式"]
+    },
+    {
+      "type": "blank",
+      "stemLatex": "如图，因地形原因，湖泊两端$A$，$B$的距离不易测量，某科技小组需要用无人机进行测量．他们将无人机上升并飞行至距湖面$90\\,\\mathrm{m}$的点$C$处．从$C$点测得$A$点的俯角为$60^\\circ$，测得$B$点的俯角为$30^\\circ$（$A$，$B$，$C$三点在同一竖直平面内），则湖泊两端$A$，$B$的距离为________$\\mathrm{m}$（结果保留根号）．",
+      "answer": { "texts": ["$120\\sqrt{3}$"] },
+      "analysisLatex": "过点$C$作$CD\\perp AB$于点$D$，则$CD=90\\,\\mathrm{m}$．由俯角定义得$\\angle CAD=60^\\circ$，$\\angle CBD=30^\\circ$．$AD=\\frac{CD}{\\tan60^\\circ}=\\frac{90}{\\sqrt{3}}=30\\sqrt{3}$，$BD=\\frac{CD}{\\tan30^\\circ}=90\\sqrt{3}$，所以$AB=AD+BD=120\\sqrt{3}\\,\\mathrm{m}$．",
+      "difficulty": 3,
+      "chapter": "解直角三角形",
+      "kpKeywords": ["俯角", "特殊角的三角函数值", "解直角三角形的应用"]
+    },
+    {
+      "type": "blank",
+      "stemLatex": "如图，在菱形$ABCD$中，$AB=4\\sqrt{5}$，对角线$BD$的长为$16$，$E$是$AD$的中点，$F$是$BD$上一点，连接$EF$．若$BF=3$，则$EF$的长为________．",
+      "answer": { "texts": ["$\\sqrt{85}$"] },
+      "analysisLatex": "连接$AC$交$BD$于点$O$，过点$E$作$EG\\perp BD$于点$G$．由菱形性质：$AO\\perp BD$，$OD=\\frac{1}{2}BD=8$，$AO=\\sqrt{AD^2-OD^2}=\\sqrt{80-64}=4$．由$EG\\parallel AO$得$\\triangle DEG\\sim\\triangle DAO$，$E$是$AD$中点，故$EG=\\frac{1}{2}AO=2$，$DG=\\frac{1}{2}OD=4$．$FG=BD-BF-DG=16-3-4=9$，所以$EF=\\sqrt{EG^2+FG^2}=\\sqrt{4+81}=\\sqrt{85}$．",
+      "difficulty": 4,
+      "chapter": "菱形",
+      "kpKeywords": ["菱形的性质", "相似三角形的判定与性质", "勾股定理"]
+    },
+    {
+      "type": "solution",
+      "stemLatex": "计算：\n(1) $|-5|+\\sqrt{4}+(-6)\\times\\frac{1}{3}$；\n(2) $\\frac{x^2-1}{x}\\cdot\\frac{x}{x^2+2x+1}$．",
+      "answer": {
+        "referenceLatex": "(1) 原式$=5+2+(-2)=5$．\n(2) 原式$=\\frac{(x+1)(x-1)}{x}\\cdot\\frac{x}{(x+1)^2}=\\frac{x-1}{x+1}$．"
+      },
+      "analysisLatex": "(1) 先化简绝对值和算术平方根，再按运算顺序计算；(2) 先将分子、分母分解因式，再约分化简．",
+      "difficulty": 2,
+      "chapter": "实数与分式",
+      "kpKeywords": ["绝对值", "算术平方根", "分式的乘法", "因式分解"]
+    },
+    {
+      "type": "solution",
+      "stemLatex": "每年的$6$月$6$日是全国爱眼日，某校为了解八年级学生的视力健康状况，从该年级学生今年的体检结果中随机抽取了$40$名学生的视力数据，将所得视力数据进行整理后分为$5$组，得到如下的频数分布表：\nA组：$1.0\\le x<4.2$，$2$人；B组：$4.2\\le x<4.5$，$8$人；C组：$4.5\\le x<4.8$，$14$人；D组：$4.8\\le x<5.1$，$12$人；E组：$5.1\\le x\\le5.3$，$4$人．\n请根据所给信息，解答下列问题：\n(1) 这$40$名学生视力的中位数落在哪个组内？\n(2) 该校八年级共有$500$名学生．\n① 根据上表数据，请估计这$500$名八年级学生的视力在$4.8\\le x\\le5.3$范围内的人数；\n② 从去年同期这$500$名学生的体检结果中可知，视力在$4.8\\le x\\le5.3$范围内的人数为$263$人．如果你是该校的一名学生，请说明这$500$名学生今年和去年视力在$4.8\\le x\\le5.3$范围内的人数变化情况，并为学校提一条保护学生视力的合理化建议．",
+      "answer": {
+        "referenceLatex": "(1) 共$40$个数据，中位数为第$20$、$21$个数据的平均数．累计频数：A组$2$人，A、B两组共$10$人，A、B、C三组共$24$人，故第$20$、$21$个数据都在C组，中位数落在C组．\n(2) ① $500\\times\\frac{12+4}{40}=200$（人），估计这$500$名学生中视力在$4.8\\le x\\le5.3$范围内的约有$200$人．\n② 因为$200<263$，所以今年学生视力在$4.8\\le x\\le5.3$范围内的人数相比去年减少了．建议：读书时坐姿端正，不在光线不好的地方看书；减少电子产品的使用；保证充足的睡眠（合理即可）．"
+      },
+      "analysisLatex": "(1) 由中位数的意义，找第$20$、$21$个数据所在组；(2) ①用样本估计总体；②比较两年数据后提出合理建议．",
+      "difficulty": 2,
+      "chapter": "数据的分析",
+      "kpKeywords": ["频数分布表", "中位数", "用样本估计总体"]
+    },
+    {
+      "type": "solution",
+      "stemLatex": "智能机器人的广泛应用是智慧农业的发展趋势之一．某品牌苹果采摘机器人的机械手能自动对成熟的苹果进行采摘，一个机器人可以搭载多个机械手同时工作．在正常工作状态下，该机器人的每一个机械手平均$a$秒采摘一个成熟的苹果，它的一个机械手用$800$秒采摘苹果的个数比用$600$秒采摘苹果的个数多$25$个．\n(1) 求$a$的值；\n(2) 现需要一定数量的苹果发往外地，采摘工作由多个机器人共同完成．每个机器人搭载$4$个相同的机械手，那么至少需要多少个这样的机器人同时工作$1$小时，才能使采摘的苹果个数不少于$10000$个？",
+      "answer": {
+        "referenceLatex": "(1) 由题意得$\\frac{800}{a}-\\frac{600}{a}=25$，解得$a=8$．经检验，$a=8$是原方程的解且符合题意，故$a$的值为$8$．\n(2) $1$小时$=3600$秒，每个机械手$1$小时可采摘$\\frac{3600}{8}=450$个苹果．设需要$x$个机器人，由题意得$4\\times450x\\ge10000$，即$1800x\\ge10000$，解得$x\\ge\\frac{50}{9}$．因为$x$为正整数，所以$x$的最小值为$6$．答：至少需要$6$个这样的机器人．"
+      },
+      "analysisLatex": "(1) 根据“用$800$秒采摘的个数比用$600$秒采摘的个数多$25$个”列分式方程求解，注意检验；(2) 由总采摘量不少于$10000$个建立一元一次不等式，结合$x$为正整数取最小值．",
+      "difficulty": 3,
+      "chapter": "分式方程",
+      "kpKeywords": ["分式方程的应用", "一元一次不等式的应用"]
+    },
+    {
+      "type": "solution",
+      "stemLatex": "如图，$AB$是$\\odot O$的直径，半径$OC\\perp AB$，垂足为$O$，$OC=2$，$P$是$BA$延长线上一点，连接$CP$，交$\\odot O$于点$D$，连接$AD$，$\\angle OCP=60^\\circ$．过点$P$作$\\odot O$的切线，切点为$E$，交$CO$的延长线于点$F$．\n(1) 求$\\overset{\\frown}{CD}$的长；\n(2) 求$\\angle DAB$的度数；\n(3) 求$\\cos\\angle OFP$的值．",
+      "answer": {
+        "referenceLatex": "(1) 连接$OD$．在$\\odot O$中$OC=OD$，又$\\angle OCP=60^\\circ$，所以$\\triangle OCD$是等边三角形，$\\angle COD=60^\\circ$．由弧长公式，$\\overset{\\frown}{CD}$的长$=\\frac{60\\pi\\times2}{180}=\\frac{2\\pi}{3}$．\n(2) 因为$OC\\perp AB$，所以$\\angle AOC=90^\\circ$，$\\angle AOD=\\angle AOC-\\angle COD=90^\\circ-60^\\circ=30^\\circ$．因为$OA=OD$，由等腰三角形性质得$\\angle DAB=\\frac{180^\\circ-30^\\circ}{2}=75^\\circ$．\n(3) 连接$OE$．在$\\mathrm{Rt}\\triangle OCP$中，$\\angle POC=90^\\circ$，$\\angle OCP=60^\\circ$，故$\\angle CPO=30^\\circ$，$OP=OC\\cdot\\tan60^\\circ=2\\sqrt{3}$．因为$PF$是$\\odot O$的切线，切点为$E$，所以$OE\\perp PF$，$OE=2$．在$\\mathrm{Rt}\\triangle POF$中（$\\angle POF=90^\\circ$），$OE$是斜边$PF$上的高，由$OE\\cdot PF=OP\\cdot OF$得$2\\sqrt{OP^2+OF^2}=2\\sqrt{3}\\,OF$，解得$OF=\\sqrt{6}$，$PF=\\sqrt{12+6}=3\\sqrt{2}$．所以$\\cos\\angle OFP=\\frac{OF}{PF}=\\frac{\\sqrt{6}}{3\\sqrt{2}}=\\frac{\\sqrt{3}}{3}$．"
+      },
+      "analysisLatex": "(1) 由$OC=OD$与$\\angle OCP=60^\\circ$判定$\\triangle OCD$为等边三角形，得圆心角后用弧长公式；(2) 由$\\angle AOD=30^\\circ$及$OA=OD$等边对等角求解；(3) 利用切线性质$OE\\perp PF$，在直角三角形中借助斜边上的高求出$OF$、$PF$，再求余弦值．",
+      "difficulty": 4,
+      "chapter": "圆",
+      "kpKeywords": ["切线的性质", "弧长公式", "等边三角形", "解直角三角形", "锐角三角函数"]
+    },
+    {
+      "type": "solution",
+      "stemLatex": "问题背景：综合与实践课上，老师让同学们设计一个家电装置图案，某小组设计的效果图如图所示．\n外形参数：如图1，装置整体图案为轴对称图形，外形由上方的抛物线$L_1$，中间的矩形$ABCD$和下方的抛物线$L_2$组成．抛物线$L_1$的高度为$8\\,\\mathrm{cm}$，矩形$ABCD$的边$AB=8\\,\\mathrm{cm}$，$BC=6\\,\\mathrm{cm}$，抛物线$L_2$的高度为$4\\,\\mathrm{cm}$．在装置内部安装矩形电子显示屏$EFGH$，点$E$，$F$在抛物线$L_1$上，点$G$，$H$在抛物线$L_2$上．\n问题解决：如图2，该小组以矩形$ABCD$的顶点$A$为原点，以$AB$边所在的直线为$x$轴，以$AD$边所在的直线为$y$轴，建立平面直角坐标系．请结合外形参数，完成以下任务：\n(1) 直接写出$B$，$C$，$D$三点的坐标；\n(2) 直接写出抛物线$L_1$和$L_2$的顶点坐标，并分别求出抛物线$L_1$和$L_2$的解析式；\n(3) 为满足矩形电子显示屏$EFGH$的空间要求，需要$EH$边的长为$15\\,\\mathrm{cm}$，求此时$EF$的长．",
+      "answer": {
+        "referenceLatex": "(1) $B(8,0)$，$C(8,6)$，$D(0,6)$．\n(2) 装置整体为轴对称图形，对称轴为直线$x=4$．抛物线$L_1$的高度为$8\\,\\mathrm{cm}$（在矩形上方），顶点为$(4,14)$；抛物线$L_2$的高度为$4\\,\\mathrm{cm}$（在矩形下方），顶点为$(4,-4)$．设$L_1$：$y=a(x-4)^2+14$，把$D(0,6)$代入得$16a+14=6$，$a=-\\frac{1}{2}$，故$L_1$：$y=-\\frac{1}{2}(x-4)^2+14$；设$L_2$：$y=b(x-4)^2-4$，把$A(0,0)$代入得$16b-4=0$，$b=\\frac{1}{4}$，故$L_2$：$y=\\frac{1}{4}(x-4)^2-4$．\n(3) 由对称性，设$E(4-t,\\ -\\frac{1}{2}t^2+14)$在$L_1$上，$H(4-t,\\ \\frac{1}{4}t^2-4)$在$L_2$上（$t>0$），则$EH=\\left(-\\frac{1}{2}t^2+14\\right)-\\left(\\frac{1}{4}t^2-4\\right)=18-\\frac{3}{4}t^2$．由$EH=15$得$18-\\frac{3}{4}t^2=15$，解得$t=2$．所以$EF=2t=4\\,\\mathrm{cm}$．"
+      },
+      "analysisLatex": "(1) 由矩形边长直接写出坐标；(2) 利用轴对称性确定顶点，再用待定系数法求解析式（可验证$L_1$过$C(8,6)$、$L_2$过$B(8,0)$）；(3) 设$E$、$H$横坐标相同，用两抛物线纵坐标之差表示$EH$，列方程求解．",
+      "difficulty": 5,
+      "chapter": "二次函数",
+      "kpKeywords": ["二次函数的应用", "待定系数法", "轴对称", "综合与实践"]
+    }
+  ]
+}
