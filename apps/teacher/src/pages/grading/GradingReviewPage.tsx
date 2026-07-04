@@ -2,7 +2,9 @@
  * 解答题复核(原型 v0.4 id=t-grade)
  * 名单经真实端点 GET /grading/assignments/{id}/answers(GradingAnswerBriefDto[])驱动学生切换条;
  * 点一项 → GET /grading/answers/{answerId} 看详情复核;review 后该项 pending→graded 刷新;支持只看 pending。
- * 流程:学生切换条 → 作答原稿(照片/文字)→ AI 逐步预批 → 改分+评语 → 确认下一份;全部采纳 AI 分;出分
+ * 流程:学生切换条 → 作答原稿(照片/文字)→ 解答题人工判分 / 公式填空看 AI 预批 → 改分+评语 → 确认下一份 → 出分
+ * 判分口径:解答题(拍照手写,photoUrl 有)由老师人工判分、隐藏 AI 预批卡,评语引导写"哪些知识点掌握不好";
+ *          公式填空(文字 LaTeX)仍走 AI 预批,保留预批卡供老师参考。
  */
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -69,10 +71,12 @@ export function GradingReviewPage() {
     return () => { alive = false; };
   }, [currentId]);
 
-  // 详情就绪 → 回填得分/评语(已复核回填 finalScore,否则用 AI 建议分)
+  // 详情就绪 → 回填得分/评语:已复核回填 finalScore;
+  // 解答题(人工判分)留空由老师填,公式填空回填 AI 建议分作参考
   useEffect(() => {
     if (!detail) return;
-    setScore(String(detail.finalScore ?? detail.aiScore ?? 0));
+    if (detail.finalScore != null) setScore(String(detail.finalScore));
+    else setScore(detail.photoUrl != null ? '' : String(detail.aiScore ?? 0));
     setComment(detail.comment ?? '');
   }, [detail]);
 
@@ -80,9 +84,12 @@ export function GradingReviewPage() {
   // 「只看 pending」客户端过滤(端点亦支持 ?status=pending);保留全量以维持准确计数
   const visible = pendingOnly ? briefs.filter((b) => b.status === 'pending') : briefs;
   const full = detail ? fullScore(detail) : 10;
+  // 解答题 = 拍照/手写(photoUrl 有)→ 人工判分、隐藏 AI 预批卡;公式填空 = 文字作答 → 保留 AI 预批
+  const isSolution = detail?.photoUrl != null;
 
   const confirmAndNext = async () => {
     if (!detail) return;
+    if (score.trim() === '') { toast('请先填写得分'); return; }
     const value = Number(score);
     if (!Number.isFinite(value) || value < 0 || value > full) {
       toast(`得分需在 0–${full} 之间`);
@@ -108,24 +115,6 @@ export function GradingReviewPage() {
       }
     } catch (e) {
       toast(e instanceof Error ? e.message : '提交失败');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const adoptAll = async () => {
-    setBusy(true);
-    try {
-      await api.post('/grading/assignments/{id}/adopt-ai', { params: { id: assignmentId } });
-      const list = await loadBriefs();
-      setBriefs(list);
-      if (currentId != null) {
-        const r = await api.get('/grading/answers/{id}', { params: { id: currentId } }).catch(() => null);
-        if (r) setDetail(r.data as GradingItemDto);
-      }
-      toast('已采纳全部 AI 预批分数,确认无误后可出分');
-    } catch (e) {
-      toast(e instanceof Error ? e.message : '操作失败');
     } finally {
       setBusy(false);
     }
@@ -183,12 +172,9 @@ export function GradingReviewPage() {
             <span className="text-ink-3"> / </span>{paperName || '课后作业'} · 主观题复核
           </span>
         )}
-        sub={`客观题已自动批改完成 · ${briefs.length} 份待复核(解答题 / 公式填空)AI 已预批,逐份复核后出分(剩余 ${pendingCount} 份)`}
+        sub={`客观题已自动批改完成 · ${briefs.length} 份待判分:解答题人工判分、公式填空 AI 预批参考,逐份处理后出分(剩余 ${pendingCount} 份)`}
         actions={(
-          <>
-            <Button onClick={adoptAll} disabled={busy || pendingCount === 0}>全部采纳 AI 分</Button>
-            <Button variant="primary" onClick={finalize} disabled={busy}>完成复核,出分</Button>
-          </>
+          <Button variant="primary" onClick={finalize} disabled={busy}>完成复核,出分</Button>
         )}
       />
 
@@ -252,28 +238,31 @@ export function GradingReviewPage() {
             )}
           </Card>
 
-          {/* 右:AI 预批 + 教师复核 */}
+          {/* 右:AI 预批(仅公式填空)+ 教师复核 */}
           <div className="flex flex-col gap-3.5">
-            <Card title={<span className="inline-flex items-center gap-2">AI 预批 <span className="rounded-[6px] bg-violet-soft px-1.5 py-px text-[11px] font-bold text-violet">AI</span></span>}>
-              <div className="flex flex-col gap-2 text-[13px] leading-relaxed">
-                {detail.aiSteps.map((st) => {
-                  const rubricStep = detail.rubric.find((r) => r.step === st.step);
-                  return (
-                    <div key={st.step} className={st.ok ? 'text-green' : 'text-red'}>
-                      {st.ok ? '✓' : '✕'} 步骤 {st.step}:{rubricStep?.desc ?? ''}
-                      ({st.ok ? rubricStep?.score ?? 0 : 0} / {rubricStep?.score ?? 0} 分)
-                      {st.comment && <div className="mt-0.5 pl-4 text-[12.5px] text-ink-2"><TexText src={st.comment} /></div>}
-                    </div>
-                  );
-                })}
-                <div className="mt-1 border-t border-line pt-2 text-[12.5px] text-ink-2">
-                  AI 建议得分 <b className="tabular-nums text-ink">{detail.aiScore ?? '—'} / {full}</b>
-                  {detail.aiErrorTags.length > 0 && <> · 错因标签:{detail.aiErrorTags.join('、')}</>}
+            {/* 解答题(拍照手写)由老师人工判分,隐藏 AI 预批卡;公式填空仍走预批,保留供参考 */}
+            {!isSolution && (
+              <Card title={<span className="inline-flex items-center gap-2">AI 预批 <span className="rounded-[6px] bg-violet-soft px-1.5 py-px text-[11px] font-bold text-violet">AI</span></span>}>
+                <div className="flex flex-col gap-2 text-[13px] leading-relaxed">
+                  {detail.aiSteps.map((st) => {
+                    const rubricStep = detail.rubric.find((r) => r.step === st.step);
+                    return (
+                      <div key={st.step} className={st.ok ? 'text-green' : 'text-red'}>
+                        {st.ok ? '✓' : '✕'} 步骤 {st.step}:{rubricStep?.desc ?? ''}
+                        ({st.ok ? rubricStep?.score ?? 0 : 0} / {rubricStep?.score ?? 0} 分)
+                        {st.comment && <div className="mt-0.5 pl-4 text-[12.5px] text-ink-2"><TexText src={st.comment} /></div>}
+                      </div>
+                    );
+                  })}
+                  <div className="mt-1 border-t border-line pt-2 text-[12.5px] text-ink-2">
+                    AI 建议得分 <b className="tabular-nums text-ink">{detail.aiScore ?? '—'} / {full}</b>
+                    {detail.aiErrorTags.length > 0 && <> · 错因标签:{detail.aiErrorTags.join('、')}</>}
+                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            )}
 
-            <Card title="教师复核">
+            <Card title={isSolution ? '人工判分' : '教师复核'}>
               <div className="flex items-center gap-2.5">
                 <span className="text-[13px] font-semibold">最终得分</span>
                 <input
@@ -287,10 +276,11 @@ export function GradingReviewPage() {
                 {detail.finalScore != null && <Tag tone="green" className="ml-auto">已复核</Tag>}
               </div>
               <label className="mt-3.5 flex flex-col gap-1.5">
-                <span className="text-xs font-semibold text-ink-2">评语(将随解析推送给学生)</span>
+                <span className="text-xs font-semibold text-ink-2">点评(将随解析推送给学生)</span>
                 <textarea
                   rows={3}
                   className="resize-y rounded-[10px] border-[1.5px] border-line px-3 py-2 text-[13px] leading-relaxed focus:border-primary focus:outline-none"
+                  placeholder="点评:该生哪些知识点掌握不好、错在哪一步、下一步怎么补…"
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                 />

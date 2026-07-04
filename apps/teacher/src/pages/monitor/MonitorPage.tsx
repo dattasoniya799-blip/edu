@@ -118,7 +118,7 @@ export function MonitorPage() {
             <span className="text-ink-3"> / </span>{lesson?.title ?? '课堂'} · 课堂监控
           </span>
         )}
-        sub={`上课中此页为实时视图,每 5 秒刷新;课后保留为回放数据${lesson?.scheduledStart ? ` · ${fmtDateTime(lesson.scheduledStart)}` : ''}`}
+        sub={`本页仅上课中实时可用,每 5 秒刷新;课后无回放${lesson?.scheduledStart ? ` · ${fmtDateTime(lesson.scheduledStart)}` : ''}`}
       />
 
       {noSession ? (

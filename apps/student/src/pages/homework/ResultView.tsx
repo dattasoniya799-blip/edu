@@ -84,9 +84,9 @@ export function ResultView({ attempt, assignment }: { attempt: AttemptWithQuesti
             </div>
             <AnalysisView
               className="mt-3"
-              brief={(q as typeof q & { analysisBriefLatex?: string | null }).analysisBriefLatex}
+              brief={q.analysisBriefLatex}
               normal={q.analysisLatex}
-              detail={(q as typeof q & { analysisDetailLatex?: string | null }).analysisDetailLatex}
+              detail={q.analysisDetailLatex}
               extra={<QuestionFigures figures={q.figures} target="analysis" resolveSrc={resolveFigureSrc} />}
             />
           </div>

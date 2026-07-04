@@ -23,7 +23,6 @@ export function Students() {
   const [keyword, setKeyword] = useState('');
   const [status, setStatus] = useState('');
   const [courseId, setCourseId] = useState('');
-  const [deviceBound, setDeviceBound] = useState('');
   const [courses, setCourses] = useState<CourseDto[]>([]);
   // 弹窗状态
   const [addOpen, setAddOpen] = useState(false);
@@ -41,7 +40,6 @@ export function Students() {
           ...(keyword.trim() ? { keyword: keyword.trim() } : {}),
           ...(status ? { status: status as UserStatus } : {}),
           ...(courseId ? { courseId: Number(courseId) } : {}),
-          ...(deviceBound ? { deviceBound: deviceBound === 'true' } : {}),
         },
       });
       setRows(r.data.items);
@@ -51,7 +49,7 @@ export function Students() {
     } finally {
       setLoading(false);
     }
-  }, [page, keyword, status, courseId, deviceBound, toast]);
+  }, [page, keyword, status, courseId, toast]);
 
   const disableStudent = async () => {
     if (!disableTarget) return;
@@ -110,11 +108,6 @@ export function Students() {
             <option value="">全部课程</option>
             {courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </Select>
-          <Select value={deviceBound} onChange={(e) => { setDeviceBound(e.target.value); setPage(1); }}>
-            <option value="">设备绑定状态</option>
-            <option value="true">已绑定平板</option>
-            <option value="false">未绑定</option>
-          </Select>
         </Toolbar>
         <Table<StudentDto>
           loading={loading}
@@ -132,10 +125,6 @@ export function Students() {
                     {s.courses.map((c) => <Tag key={c.id} tone={CLASS_TYPE_TONE[c.classType]}>{c.name}</Tag>)}
                   </span>
                 ) : '—',
-            },
-            {
-              key: 'device', title: '绑定设备',
-              render: (s) => (s.device ? <Tag tone="green">{s.device.name} · 已绑定</Tag> : <Tag>未绑定</Tag>),
             },
             { key: 'weekStudySec', title: '近 7 日学习时长', render: (s) => formatDurationHM(s.weekStudySec) },
             { key: 'status', title: '状态', render: (s) => <Tag tone={STUDENT_STATUS[s.status].tone}>{STUDENT_STATUS[s.status].label}</Tag> },
@@ -175,7 +164,6 @@ export function Students() {
       <StudentProfileModal
         studentId={profileId}
         onClose={() => setProfileId(null)}
-        onChanged={() => void load()}
         onResetPassword={(t) => setResetStudent(t)}
       />
       <ResetPasswordModal target={resetStudent} onClose={() => setResetStudent(null)} />

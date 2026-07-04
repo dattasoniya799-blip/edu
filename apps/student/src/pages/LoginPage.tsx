@@ -95,7 +95,7 @@ export function LoginPage() {
                     id="studentNo"
                     value={studentNo}
                     onChange={(e) => setStudentNo(e.target.value)}
-                    placeholder="输入学号(mock 演示:S-0001)"
+                    placeholder="请输入老师发放的学号"
                     autoComplete="username"
                     className="min-h-touch w-full rounded-[11px] border-[1.5px] border-line bg-card px-3.5 py-[11px] text-sm outline-none transition-colors focus:border-primary"
                   />
@@ -107,7 +107,7 @@ export function LoginPage() {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="输入密码(mock 演示:Student@123)"
+                    placeholder="请输入密码"
                     autoComplete="current-password"
                     className="min-h-touch w-full rounded-[11px] border-[1.5px] border-line bg-card px-3.5 py-[11px] text-sm outline-none transition-colors focus:border-primary"
                   />

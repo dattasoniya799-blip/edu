@@ -40,12 +40,6 @@ export class GradingController {
     return this.grading.review(user, id, dto);
   }
 
-  @Post('assignments/:id/adopt-ai')
-  @HttpCode(200)
-  adoptAi(@CurrentUser() user: JwtUser, @Param('id', ParseIntPipe) id: number) {
-    return this.grading.adoptAi(user, id);
-  }
-
   @Post('assignments/:id/finalize')
   @HttpCode(200)
   finalize(@CurrentUser() user: JwtUser, @Param('id', ParseIntPipe) id: number) {

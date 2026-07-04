@@ -51,7 +51,7 @@ type PaperQMeta = { type: string; fullScore: number; needsReview: boolean };
 /**
  * 批改域(任务卡 A5):
  * - AI 预批 worker 回调 processPreGrade(经 AiGateway,本卡 stub)
- * - 教师复核:pending(按作业聚合)/ answers/:id 详情 / review / adopt-ai / finalize
+ * - 教师复核:pending(按作业聚合)/ answers/:id 详情 / review / finalize
  * - finalize 出分:主观题 final_score → answers.score,attempt 写
  *   score/subjective_score 并置 graded → 错题入账 → 投递 mastery 重算
  * - 客观题专属卷(无 solution 题)在交卷时由 AttemptService 走同一 finalizeAttempt 自动出分
@@ -76,8 +76,10 @@ export class GradingService {
       where: { id: ans.questionId },
       select: { type: true, answer: true, rubric: true },
     });
-    // solution 恒走预批;blank 仅公式填空(参考答案含 LaTeX)走预批
-    if (!question || !questionNeedsReview(question.type, question.answer)) return;
+    // solution 大题不跑 AI 预批(仅进教师人工复核);blank 仅公式填空(参考答案含 LaTeX)走预批。
+    // 即便有历史/误投的 solution 预批任务到达,这里也短路,保证大题绝不被 AI 预批。
+    if (!question || question.type === 'solution' || !questionNeedsReview(question.type, question.answer))
+      return;
 
     const resp = ans.response as
       | { text?: string; photoOssKey?: string; texts?: string[] }
@@ -401,26 +403,6 @@ export class GradingService {
     });
   }
 
-  /** POST /grading/assignments/:id/adopt-ai:全部采纳 AI 分(仅未复核且有 AI 分的) */
-  async adoptAi(user: JwtUser, assignmentId: number): Promise<null> {
-    await this.mustAssignment(user, assignmentId);
-    const records = await this.prisma.client.gradingRecord.findMany({
-      where: {
-        finalScore: null,
-        aiScore: { not: null },
-        answer: { attempt: { assignmentId: BigInt(assignmentId), status: 'submitted' } },
-      },
-      select: { id: true, aiScore: true },
-    });
-    for (const r of records) {
-      await this.prisma.client.gradingRecord.update({
-        where: { id: r.id },
-        data: { finalScore: r.aiScore, reviewerId: BigInt(user.uid), reviewedAt: new Date() },
-      });
-    }
-    return null;
-  }
-
   /** POST /grading/assignments/:id/finalize:出分(全部主观题须已复核,否则 4501) */
   async finalizeAssignment(user: JwtUser, assignmentId: number): Promise<null> {
     const assignment = await this.mustAssignment(user, assignmentId);
@@ -439,7 +421,7 @@ export class GradingService {
       }
     }
     if (pendingAnswerIds.length)
-      throw new BizException(ERR_GRADING_PENDING, '仍有主观题/公式填空未复核,请先 review 或 adopt-ai', {
+      throw new BizException(ERR_GRADING_PENDING, '仍有主观题/公式填空未复核,请先 review', {
         pendingAnswerIds,
       });
 

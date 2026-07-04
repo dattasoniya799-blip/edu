@@ -82,10 +82,6 @@ export function Shell() {
           <div className="text-[13px] text-ink-2">
             {CRUMB_PREFIX} / <b className="text-ink">{current}</b>
           </div>
-          <div className="ml-auto flex w-[250px] items-center gap-2 rounded-[10px] bg-bg px-3.5 py-2 text-[13px] text-ink-3">⌕ 搜索…</div>
-          <div className="relative flex h-9 w-9 items-center justify-center rounded-[10px] bg-bg text-ink-2">
-            ◷<span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-pill bg-red" />
-          </div>
         </div>
         <div className="flex-1 p-7">
           <Outlet />

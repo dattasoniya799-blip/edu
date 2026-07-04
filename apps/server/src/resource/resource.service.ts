@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { PageResp, ResourceDto } from '@qiming/contracts';
 import { iso, num } from '../admin/helpers';
 import type { JwtUser } from '../auth/auth.service';
@@ -64,8 +64,9 @@ export class ResourceService {
     return this.toDto(created);
   }
 
-  async update(id: number, dto: ResourceUpdateDto): Promise<null> {
+  async update(user: JwtUser, id: number, dto: ResourceUpdateDto): Promise<null> {
     const r = await this.findOrThrow(id);
+    this.assertOwner(user, r.ownerId);
     // C3-back #A:kpNodeId 缺省不改、显式 null 清空、给值则校验同 org 存在
     if (dto.kpNodeId != null) await this.mustKpNode(dto.kpNodeId);
     await this.prisma.client.resource.update({
@@ -82,8 +83,9 @@ export class ResourceService {
   }
 
   /** DELETE /resources/:id:被讲次引用 → 4303;否则软删 */
-  async remove(id: number): Promise<null> {
+  async remove(user: JwtUser, id: number): Promise<null> {
     const r = await this.findOrThrow(id);
+    this.assertOwner(user, r.ownerId);
     const usedBy = this.usedByLessons(r.segments);
     if (usedBy.length > 0)
       throw new BizException(ERR_RESOURCE_IN_USE, '资源已被讲次引用,禁止删除', usedBy);
@@ -95,6 +97,12 @@ export class ResourceService {
   }
 
   // ---------------- 内部 ----------------
+
+  /** 归属写校验:仅资源创建者本人或 admin 可改/删,否则 403 */
+  private assertOwner(user: JwtUser, ownerId: bigint): void {
+    if (user.role !== 'admin' && num(ownerId) !== user.uid)
+      throw new ForbiddenException('无权修改他人上传的资源');
+  }
 
   private async findOrThrow(id: number) {
     const r = await this.prisma.client.resource.findFirst({

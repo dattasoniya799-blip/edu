@@ -8,7 +8,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ResourceDto, ResourceType } from '@qiming/contracts';
 import { Button, EmptyState, Skeleton, Tag, useToast } from '@qiming/ui';
-import { api } from '../../api';
+import { api, resolveFigureSrc } from '../../api';
 import { PageHead } from '../Shell';
 import { ACCEPT_RESOURCE, TYPE_META, formatResourceMeta, formatUsedBy } from './lib/resource';
 
@@ -77,6 +77,27 @@ export function ResourcesPage() {
       toast(e instanceof Error ? e.message : '上传失败');
     } finally {
       setUploading(false);
+    }
+  };
+
+  /** 预览/下载:走 ossKey → 签名直链(与题库插图同口径:mock 占位、真实换 view-url 签名直链) */
+  const openResource = async (r: ResourceDto, download: boolean) => {
+    try {
+      const url = await resolveFigureSrc(r.ossKey);
+      if (!url) { toast('暂时无法获取该资源直链,请稍后重试'); return; }
+      if (download) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = r.name;
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } else {
+        window.open(url, '_blank', 'noopener');
+      }
+    } catch {
+      toast(download ? '下载失败,请重试' : '预览失败,请重试');
     }
   };
 
@@ -167,7 +188,8 @@ export function ResourcesPage() {
                     <div className="text-[12px] tabular-nums text-ink-3">{formatResourceMeta(r)}</div>
                     <div className={`text-[12px] ${used.referenced ? 'text-ink-2' : 'text-orange'}`}>{used.text}</div>
                     <div className="mt-auto flex items-center gap-3.5 pt-1.5 text-[13px] font-semibold">
-                      <span className="text-ink-3">挂载到讲次</span>
+                      <button type="button" className="text-primary hover:underline" onClick={() => openResource(r, false)}>预览</button>
+                      <button type="button" className="text-primary hover:underline" onClick={() => openResource(r, true)}>下载</button>
                       {!used.referenced && (
                         <button type="button" className="ml-auto text-red" onClick={() => onDelete(r)}>删除</button>
                       )}

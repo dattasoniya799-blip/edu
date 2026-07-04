@@ -38,13 +38,13 @@ export class ResourceController {
 
   @Put(':id')
   @Roles('teacher')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: ResourceUpdateDto) {
-    return this.resources.update(id, dto);
+  update(@CurrentUser() user: JwtUser, @Param('id', ParseIntPipe) id: number, @Body() dto: ResourceUpdateDto) {
+    return this.resources.update(user, id, dto);
   }
 
   @Delete(':id')
   @Roles('teacher')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.resources.remove(id);
+  remove(@CurrentUser() user: JwtUser, @Param('id', ParseIntPipe) id: number) {
+    return this.resources.remove(user, id);
   }
 }

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { PageResp, PaperDto } from '@qiming/contracts';
 import { num } from '../admin/helpers';
 import type { JwtUser } from '../auth/auth.service';
@@ -72,8 +72,11 @@ export class PaperService {
   }
 
   /** PUT /papers/:id:增删题/调分,重算 totalScore;已被 assignment 引用 → 4302 */
-  async update(id: number, dto: PaperInputDto): Promise<null> {
+  async update(user: JwtUser, id: number, dto: PaperInputDto): Promise<null> {
     const paper = await this.findOrThrow(id);
+    // 归属写校验:仅创建者本人或 admin 可改,否则 403
+    if (user.role !== 'admin' && num(paper.creatorId) !== user.uid)
+      throw new ForbiddenException('无权修改他人创建的试卷');
     const assigned = await this.prisma.client.assignment.count({ where: { paperId: paper.id } });
     if (assigned > 0)
       throw new BizException(ERR_PAPER_ASSIGNED, '试卷已被作业引用,禁止修改', {

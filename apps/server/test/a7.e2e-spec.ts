@@ -197,13 +197,13 @@ describe('AI 网关:供应商抽象 + 计量 + 四能力(A7)', () => {
 
   // ================= 预批(验收:JSON Schema 校验通过;A5 队列真实链路) =================
 
-  it('验收:预批走 A5 BullMQ 链路 → LlmPreGradeGateway(mock)→ grading_records 结构严格符合 Schema', async () => {
+  it('验收:公式填空预批走 A5 BullMQ 链路 → LlmPreGradeGateway(mock)→ grading_records 结构严格符合 Schema', async () => {
     const start = await request(http).post('/api/v1/student/attempts').set(auth(s1))
       .send({ assignmentId: fx.assignmentId }).expect(200);
     const attemptId = start.body.data.id as number;
     await request(http)
       .put(`/api/v1/student/attempts/${attemptId}/answers/${num(fx.questionId)}`)
-      .set(auth(s1)).send({ response: { text: '设 y=kx+b,代入两点 √2,解得 k=2,b=3。' } }).expect(200);
+      .set(auth(s1)).send({ response: { texts: ['设 y=kx+b,代入两点 √2,解得 k=2,b=3。'] } }).expect(200);
     await request(http).post(`/api/v1/student/attempts/${attemptId}/submit`).set(auth(s1)).expect(200);
 
     const ansRow = await raw.answer.findFirstOrThrow({

@@ -1,7 +1,7 @@
 # 知识图谱导入对账报告
 
 - 目标机构 org_id: 1
-- 导入时间: 2026-06-11T13:30:39.398Z
+- 导入时间: 2026-07-04T14:10:33.867Z
 
 ## math_junior_ability_v1.json
 - 图谱: math_junior_ability_v1(problem_solving_ability)

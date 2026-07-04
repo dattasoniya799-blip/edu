@@ -16,6 +16,7 @@ import type {
   SessionStatus,
 } from '@qiming/contracts';
 import { dec, num } from '../admin/helpers';
+import { CompanionService } from '../ai/features/companion.service';
 import { QaService } from '../ai/features/qa.service';
 import { AssignmentService } from '../assignment/assignment.service';
 import { AttemptService } from '../attempt/attempt.service';
@@ -47,12 +48,18 @@ const AI_ASK_FALLBACK =
 const ROOM = (sid: number) => `session:${sid}`;
 const TEACHER_ROOM = (sid: number) => `session:${sid}:teacher`;
 
-/** 旁白模板(宪法 §4:业务模块不接 LLM,A7 AiGateway 落地后替换文案来源) */
+/**
+ * 旁白模板兜底(受 org.settings.ai.classCompanion 关闭、或 LLM 失败/超时时回退):
+ * classCompanion 开启时改由 AiModule 的 CompanionService.narration()(feature=class_companion)生成。
+ */
 const NARRATION = {
   correct: '回答正确,继续保持这个思路!',
   wrong: '这题先别急,对照解析想想是哪一步出了偏差。',
   pending: '过程已提交,老师稍后会查看你的解题步骤。',
 };
+
+/** 旁白等待 LLM 上限:随堂作答内联,超时即回退模板,绝不阻塞作答返回 */
+const NARRATION_TIMEOUT_MS = 4_000;
 
 interface MetaState {
   org_id: string;
@@ -102,6 +109,7 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
     private readonly assignments: AssignmentService,
     private readonly attempts: AttemptService,
     private readonly qa: QaService,
+    private readonly companion: CompanionService,
     cfg: ConfigService,
   ) {
     // 周期可注入(测试用短周期);roster 节流契约值 5s
@@ -264,7 +272,7 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
       isCorrect: r.isCorrect,
     });
 
-    const narration = r.judged ? (r.isCorrect ? NARRATION.correct : NARRATION.wrong) : NARRATION.pending;
+    const narration = await this.buildNarration(meta, r);
     socket.emit('class:state', await this.selfState(sid, user.uid));
     socket.emit('class:narration', { text: narration });
     this.markDirty(sid);
@@ -1037,6 +1045,42 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
       select: { name: true },
     });
     return u?.name ?? '';
+  }
+
+  /**
+   * 随堂作答旁白:org.settings.ai.classCompanion 开启时经 CompanionService(feature=class_companion)
+   * 生成(受额度/计量护栏);关闭或 LLM 失败/超时(NARRATION_TIMEOUT_MS)→ 回退原模板文案。
+   * 绝不阻塞作答返回:任何异常/超时都返回模板兜底。
+   */
+  private async buildNarration(
+    meta: MetaState,
+    r: { judged: boolean; isCorrect: boolean | null },
+  ): Promise<string> {
+    const kind = r.judged
+      ? r.isCorrect
+        ? ('answer_correct' as const)
+        : ('answer_wrong' as const)
+      : ('answer_pending' as const);
+    const fallback = r.judged ? (r.isCorrect ? NARRATION.correct : NARRATION.wrong) : NARRATION.pending;
+    if (!(await this.classCompanionEnabled())) return fallback;
+    try {
+      const text = await Promise.race([
+        this.companion.narration({ orgId: Number(meta.org_id), kind, vars: {} }),
+        new Promise<string>((_, reject) =>
+          setTimeout(() => reject(new Error('NARRATION_TIMEOUT')), NARRATION_TIMEOUT_MS),
+        ),
+      ]);
+      return text && text.trim() ? text : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  /** org.settings.ai.classCompanion 开关(默认关:未显式开启则用模板兜底) */
+  private async classCompanionEnabled(): Promise<boolean> {
+    const org = await this.prisma.client.org.findFirst({ select: { settings: true } });
+    const ai = (org?.settings as { ai?: { classCompanion?: boolean } } | null)?.ai;
+    return ai?.classCompanion === true;
   }
 
   private async xadd(sid: number, type: string, studentId: number | null, payload: object): Promise<void> {

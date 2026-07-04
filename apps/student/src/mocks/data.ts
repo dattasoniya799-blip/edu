@@ -16,7 +16,6 @@ const ORG = '鲸云演示机构';
 const orgSettings: MeDto['orgSettings'] = {
   ai: { qaGuideOnly: true, preGrading: true },
   studentHours: { start: '06:00', end: '22:30' },
-  deviceBinding: true,
 };
 
 export const ME_ADMIN: MeDto = { id: 1, orgId: 1, role: 'admin', name: '王校长', orgName: ORG, orgSettings };
@@ -49,8 +48,6 @@ export const students: StudentDto[] = STUDENT_NAMES.map((name, i) => ({
     { id: 1, name: '初二数学提高班', classType: 'group' as const },
     ...(name === '李一诺' ? [{ id: 2, name: '李一诺 · 数学培优', classType: 'one_on_one' as const }] : []),
   ],
-  device: i === 0 ? { name: 'iPad (A2602)', boundAt: '2026-03-02T08:00:00.000Z' }
-    : i === 1 ? { name: '小米平板 6', boundAt: '2026-03-05T08:00:00.000Z' } : null,
   weekStudySec: 3600 * 4 + i * 1234,
 }));
 
@@ -296,16 +293,13 @@ const WRONG_SEED: { qid: number; wrongCount: number; tags: string[]; source: str
  * 错题项视图(FIX3 问题5):WrongBookItem 已正式含 `subject: string`(2026-06-13 批准,
  * 源自题目学科)。mock 直接产出契约字段;当前 seed 为数学单科 → 学科筛选优雅退化(不显示)。
  */
-// C2 #7:契约 WrongBookItemDto 仅 analysisLatex;mock 前瞻下发简单/详细两档(后端补齐即生效)
-export type WrongBookItemView = WrongBookItemDto & {
-  analysisBriefLatex?: string | null;
-  analysisDetailLatex?: string | null;
-};
+// C2 #7:契约 WrongBookItemDto 现已正式含简单/详细两档解析(可选);mock 直接产出契约字段
+export type WrongBookItemView = WrongBookItemDto;
 export const wrongBook: WrongBookItemView[] = WRONG_SEED.map((w, i) => {
   const q = questions[w.qid - 1];
   return {
     id: i + 1, questionId: q.id, type: q.type, stemLatex: q.stemLatex, analysisLatex: q.analysisLatex,
-    analysisBriefLatex: q.analysisBriefLatex, analysisDetailLatex: q.analysisDetailLatex,
+    analysisBriefLatex: q.analysisBriefLatex ?? undefined, analysisDetailLatex: q.analysisDetailLatex ?? undefined,
     wrongCount: w.wrongCount, correctRedoCount: 0, errorTags: w.tags, status: 'open',
     sourceName: w.source, createdAt: w.at, subject: q.subject,
   };

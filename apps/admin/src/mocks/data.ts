@@ -15,9 +15,8 @@ import type {
 const ORG = '鲸云演示机构';
 /** 全机构设置(各 Me 共享同一引用;PUT /admin/settings 时由 handlers 原地修改) */
 export const orgSettings: MeDto['orgSettings'] = {
-  ai: { qaGuideOnly: true, preGrading: true },
+  ai: { qaGuideOnly: true, preGrading: true, classCompanion: true, diagnosis: true },
   studentHours: { start: '06:00', end: '22:30' },
-  deviceBinding: true,
 };
 
 export const ME_ADMIN: MeDto = { id: 1, orgId: 1, role: 'admin', name: '王校长', orgName: ORG, orgSettings };
@@ -51,8 +50,6 @@ export const students: StudentDto[] = STUDENT_NAMES.map((name, i) => ({
     { id: 1, name: '初二数学提高班', classType: 'group' as const },
     ...(name === '李一诺' ? [{ id: 2, name: '李一诺 · 数学培优', classType: 'one_on_one' as const }] : []),
   ],
-  device: i === 0 ? { name: 'iPad (A2602)', boundAt: '2026-03-02T08:00:00.000Z' }
-    : i === 1 ? { name: '小米平板 6', boundAt: '2026-03-05T08:00:00.000Z' } : null,
   weekStudySec: 3600 * 4 + i * 1234,
 }));
 

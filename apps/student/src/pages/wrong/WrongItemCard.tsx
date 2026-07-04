@@ -10,10 +10,10 @@ const TYPE_LABEL: Record<string, string> = { single: '单选题', multi: '多选
 
 export interface WrongItemCardProps {
   /**
-   * 契约 WrongBookItemDto 仅含 analysisLatex(正常解析);简单/详细为前瞻可选字段
-   * (mock 已下发,后端补齐后即自动出现切换 —— 见 README「与后端对接假设」)。
+   * 契约 WrongBookItemDto 现已含 analysisLatex(正常解析)与 analysisBriefLatex/analysisDetailLatex
+   * (简单/详细解析,交卷/判定后由后端可选下发);有则出简单/详细切换,无则仅显示正常解析。
    */
-  item: WrongBookItemDto & { analysisBriefLatex?: string | null; analysisDetailLatex?: string | null };
+  item: WrongBookItemDto;
   onRedo: (id: number) => void;
   redoing?: boolean;
   /** FIX3 问题5:多学科时显示学科标(单科退化为不传 → 不显示) */

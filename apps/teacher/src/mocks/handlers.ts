@@ -190,18 +190,15 @@ export const handlers = [
     const url = new URL(request.url);
     const kw = url.searchParams.get('keyword') ?? '';
     const courseId = url.searchParams.get('courseId');
-    const deviceBound = url.searchParams.get('deviceBound');
     let list = D.students.filter((s) => !kw || s.name.includes(kw) || s.studentNo.includes(kw));
     if (courseId) list = list.filter((s) => s.courses.some((c) => c.id === Number(courseId)));
-    if (deviceBound !== null && deviceBound !== undefined && deviceBound !== '')
-      list = list.filter((s) => (deviceBound === 'true' ? !!s.device : !s.device));
     return ok(paginate(list, url));
   })),
   http.post(`${BASE}/admin/students`, authed(async ({ request }) => {
     const body = (await request.json()) as { name: string; parentPhone: string; grade: string; studentNo?: string };
     return ok({
       id: 200, name: body.name, studentNo: body.studentNo ?? 'S-0200', parentPhone: body.parentPhone,
-      grade: body.grade, status: 'pending', courses: [], device: null, weekStudySec: 0,
+      grade: body.grade, status: 'pending', courses: [], weekStudySec: 0,
     });
   })),
   http.put(`${BASE}/admin/students/:id`, authed(() => okVoid())),
@@ -212,7 +209,6 @@ export const handlers = [
   })),
   http.post(`${BASE}/admin/students/:id/reset-password`, authed(({ params }) =>
     ok({ password: `Qm-${String(params.id).padStart(4, '0')}-${Math.random().toString(36).slice(2, 6)}` }))),
-  http.delete(`${BASE}/admin/students/:id/device`, authed(() => okVoid())),
 
   http.get(`${BASE}/admin/courses`, authed(({ request }) => {
     const url = new URL(request.url);
@@ -527,10 +523,6 @@ export const handlers = [
     g.comment = body.comment ?? null;
     return okVoid();
   })),
-  http.post(`${BASE}/grading/assignments/:id/adopt-ai`, authed(() => {
-    for (const g of D.gradingAnswers) if (g.finalScore == null) g.finalScore = g.aiScore ?? 0;
-    return okVoid();
-  })),
   // 出分:仍有未复核 → 4501 + detail=pendingAnswerIds(A5 口径)
   http.post(`${BASE}/grading/assignments/:id/finalize`, authed(() => {
     const pendingIds = D.gradingAnswers.filter((g) => g.finalScore == null).map((g) => g.answerId);
@@ -584,6 +576,7 @@ export const handlers = [
   http.get(`${BASE}/analytics/courses/:id/attention`, authed(() => ok(D.courseAttention))),
   http.get(`${BASE}/analytics/students/:id`, authed(() =>
     ok({ mastery: D.mastery, wrongOpenCount: D.wrongBook.length, attempts30d: 6 }))),
+  http.post(`${BASE}/analytics/students/:id/diagnose`, authed(() => ok(D.aiDiagnosis))),
 
   // ================= AI =================
   http.post(`${BASE}/ai/qa`, authed(() => {

@@ -1,7 +1,7 @@
 /**
  * A7 测试夹具(自建自清,不触碰 seed 数据,手机号 1396 开头):
  * - 机构A:admin / 教师 / 学生×2(s1 常规用例,s2 专用限流用例)+ 选课
- *   + 1 道主观题(rubric 3+4+3=10)+ 作业卷(10 分)+ homework assignment(整班)
+ *   + 1 道公式填空题(参考答案含 LaTeX,rubric 3+4+3=10)+ 作业卷(10 分)+ homework assignment(整班)
  * - 机构B:学生(跨租户 404 用例,宪法 §7)
  */
 import { hashPassword } from '../../src/auth/password.util';
@@ -60,11 +60,12 @@ export async function createA7Org(): Promise<A7Fixture> {
     data: [s1.id, s2.id].map((sid) => ({ orgId, courseId: course.id, studentId: sid })),
   });
 
+  // 公式填空题(参考答案含 LaTeX 控制符 → 走 AI 预批 + 教师复核管线,验证真实 BullMQ 预批链路)
   const question = await raw.question.create({
     data: {
-      orgId, ownerId: teacher.id, type: 'solution', stage: '初中', subject: '数学',
-      stemLatex: 'A7-Q1 已知一次函数过 $(0,3)$ 与 $(1,5)$,求解析式(写出完整过程)。',
-      answer: { referenceLatex: '$y=2x+3$' },
+      orgId, ownerId: teacher.id, type: 'blank', stage: '初中', subject: '数学',
+      stemLatex: 'A7-Q1 已知一次函数过 $(0,3)$ 与 $(1,5)$,填出解析式(公式填空,写出完整过程)。',
+      answer: { texts: ['y=2x+3\\,'] },
       rubric: A7_RUBRIC,
       analysisLatex: '设 $y=kx+b$,代入两点解出 $k=2,b=3$。',
       difficulty: 3, status: 'published',

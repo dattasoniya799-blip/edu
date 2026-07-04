@@ -68,13 +68,6 @@ describe('批改名单端点驱动切换/复核', () => {
     expect(gradedOnly.map((b) => b.answerId)).toEqual([41]);
   });
 
-  it('全部采纳 AI 分后名单全部 graded', async () => {
-    await api.post('/grading/assignments/{id}/adopt-ai', { params: { id: 1 } });
-    const after = await listAnswers(1);
-    expect(after.every((b) => b.status === 'graded')).toBe(true);
-    expect(after.find((b) => b.answerId === 41)!.finalScore).toBe(7); // 采纳 aiScore
-  });
-
   it('无主观题的作业 → 空名单', async () => {
     const list = await listAnswers(999);
     expect(list).toEqual([]);

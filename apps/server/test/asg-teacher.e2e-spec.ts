@@ -25,8 +25,8 @@ describe('Assignment teacher 锚点(定向作业归属 + wrong_redo 隔离 + 回
   let directedId: number; // A 发布的定向 consolidation
   let directedAttemptId: number;
   let directedSolAnswerId: number;
-  let redoId: number; // s1 自发 wrong_redo(含 solution)
-  let redoSolAnswerId: number;
+  let redoId: number; // s1 自发 wrong_redo(仅客观题;solution 已被排除出重练卷)
+  let redoAnswerId: number; // 重练卷中客观题作答 id(供归属 404 校验)
 
   const auth = (t: string) => ({ Authorization: `Bearer ${t}` });
   const login = async (phone: string) => {
@@ -156,22 +156,23 @@ describe('Assignment teacher 锚点(定向作业归属 + wrong_redo 隔离 + 回
     expect(row.lessonId).toBeNull(); // 无 course 锚点
   });
 
-  it('② s1 作答 wrong_redo(含 solution)→ submitted;不进任何教师 pending/总览', async () => {
+  it('② s1 作答 wrong_redo(仅客观题;solution 已排除)→ 交卷自动出分 graded;不进任何教师 pending/总览', async () => {
     const start = await request(http).post('/api/v1/student/attempts').set(auth(s1))
       .send({ assignmentId: redoId }).expect(200);
     const atId = start.body.data.id as number;
+    // B 项:solution 被排除出重练卷 → 该题不在本卷 → 404
+    await request(http).put(`/api/v1/student/attempts/${atId}/answers/${Number(fx.qSolId)}`)
+      .set(auth(s1)).send({ response: { text: 'x=2(重做)' } }).expect(404);
     await request(http).put(`/api/v1/student/attempts/${atId}/answers/${Number(fx.qSingleId)}`)
       .set(auth(s1)).send({ response: { choice: 'B' } }).expect(200); // 对
-    await request(http).put(`/api/v1/student/attempts/${atId}/answers/${Number(fx.qSolId)}`)
-      .set(auth(s1)).send({ response: { text: 'x=2(重做)' } }).expect(200);
     await request(http).post(`/api/v1/student/attempts/${atId}/submit`).set(auth(s1)).expect(200);
-    // 含 solution → 不自动出分,停在 submitted(见 spec 头注:如实记录,无教师批改路径)
+    // 纯客观卷(无 solution/公式填空)→ 交卷即自动出分 graded(无教师批改路径)
     const at = await raw.attempt.findFirstOrThrow({ where: { id: BigInt(atId) } });
-    expect(at.status).toBe('submitted');
+    expect(at.status).toBe('graded');
     const ans = await raw.answer.findFirstOrThrow({
-      where: { attemptId: BigInt(atId), questionId: fx.qSolId },
+      where: { attemptId: BigInt(atId), questionId: fx.qSingleId },
     });
-    redoSolAnswerId = Number(ans.id);
+    redoAnswerId = Number(ans.id);
 
     // 两位教师的 pending / 总览均不含 wrong_redo
     for (const t of [teacherA, teacherB]) {
@@ -185,11 +186,10 @@ describe('Assignment teacher 锚点(定向作业归属 + wrong_redo 隔离 + 回
   it('② 任何教师对 wrong_redo 的读写(名单/详情/review/finalize/progress)→ 404', async () => {
     for (const t of [teacherA, teacherB]) {
       await request(http).get(`/api/v1/grading/assignments/${redoId}/answers`).set(auth(t)).expect(404);
-      await request(http).get(`/api/v1/grading/answers/${redoSolAnswerId}`).set(auth(t)).expect(404);
-      await request(http).put(`/api/v1/grading/answers/${redoSolAnswerId}/review`).set(auth(t))
+      await request(http).get(`/api/v1/grading/answers/${redoAnswerId}`).set(auth(t)).expect(404);
+      await request(http).put(`/api/v1/grading/answers/${redoAnswerId}/review`).set(auth(t))
         .send({ finalScore: 1 }).expect(404);
       await request(http).post(`/api/v1/grading/assignments/${redoId}/finalize`).set(auth(t)).expect(404);
-      await request(http).post(`/api/v1/grading/assignments/${redoId}/adopt-ai`).set(auth(t)).expect(404);
       await request(http).get(`/api/v1/assignments/${redoId}/progress`).set(auth(t)).expect(404);
     }
   });

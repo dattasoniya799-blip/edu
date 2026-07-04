@@ -43,7 +43,7 @@ export class PaperController {
 
   @Put(':id')
   @Roles('teacher')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: PaperInputDto) {
-    return this.papers.update(id, dto);
+  update(@CurrentUser() user: JwtUser, @Param('id', ParseIntPipe) id: number, @Body() dto: PaperInputDto) {
+    return this.papers.update(user, id, dto);
   }
 }

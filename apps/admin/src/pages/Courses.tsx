@@ -77,21 +77,15 @@ export function Courses() {
                 <span>到课率 {c.attendanceRate != null ? `${c.attendanceRate}%` : '—'}</span>
                 <span>作业完成率 {c.homeworkRate != null ? `${c.homeworkRate}%` : '—'}</span>
               </div>
-              <div className="mt-auto flex gap-2.5 pt-1">
+              <div className="mt-auto flex flex-col gap-2 pt-1">
                 <button
                   type="button"
-                  className="flex-1 rounded-[10px] border-[1.5px] border-line py-[9px] text-[12.5px] font-bold text-ink-2 transition-colors hover:border-ink-3"
+                  className="w-full rounded-[10px] border-[1.5px] border-line py-[9px] text-[12.5px] font-bold text-ink-2 transition-colors hover:border-ink-3"
                   onClick={() => setRosterCourse(c)}
                 >
                   学生名单
                 </button>
-                <button
-                  type="button"
-                  className="flex-1 rounded-[10px] bg-primary py-[9px] text-[12.5px] font-bold text-card shadow-btn-sm transition-colors hover:bg-primary-deep"
-                  onClick={() => toast('管理员为只读视图,完整讲次详情见教师端「我的课程」')}
-                >
-                  讲次与学情
-                </button>
+                <div className="text-[11.5px] text-ink-3">管理员为只读视图,完整讲次与学情见教师端「我的课程」</div>
               </div>
             </div>
           ))}

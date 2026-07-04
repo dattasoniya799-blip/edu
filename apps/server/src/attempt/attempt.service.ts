@@ -54,6 +54,8 @@ const PAPER_QUESTION_VIEW_SELECT = {
       stemLatex: true,
       figures: true,
       analysisLatex: true,
+      analysisBriefLatex: true,
+      analysisDetailLatex: true,
       answer: true,
       options: {
         orderBy: { label: 'asc' },
@@ -187,8 +189,12 @@ export class AttemptService {
     });
 
     if (needsReview) {
-      // 主观题 / 公式填空:投递 AI 预批任务(BullMQ,stub 网关),isCorrect=null 待复核
-      await this.preGradingQueue.enqueue(user.orgId, num(saved.id));
+      // solution 大题:不跑 AI 预批,直接进教师人工复核(isCorrect=null 待复核)。
+      // 公式填空(blank + 参考答案含 LaTeX):仍走 AI 预批,但受 org.settings.ai.preGrading 开关控制
+      //(关则不入队,仍 needsReview=true 待复核)。
+      if (question.type === 'blank' && (await this.preGradingEnabled())) {
+        await this.preGradingQueue.enqueue(user.orgId, num(saved.id));
+      }
       return { judged: false, isCorrect: null, correctAnswer: null, analysisLatex: null };
     }
     return {
@@ -242,6 +248,13 @@ export class AttemptService {
   }
 
   // ---------------- 内部 ----------------
+
+  /** org.settings.ai.preGrading 开关(默认开:保持既有公式填空 AI 预批行为;显式 false 才关闭) */
+  private async preGradingEnabled(): Promise<boolean> {
+    const org = await this.prisma.client.org.findFirst({ select: { settings: true } });
+    const ai = (org?.settings as { ai?: { preGrading?: boolean } } | null)?.ai;
+    return ai?.preGrading !== false;
+  }
 
   private async mustOwn(user: JwtUser, id: number) {
     const at = await this.prisma.client.attempt.findFirst({
@@ -396,6 +409,9 @@ export class AttemptService {
       ),
       correctAnswer: revealed ? ((pq.question.answer ?? null) as QuestionAnswer | null) : null,
       analysisLatex: revealed ? pq.question.analysisLatex : null,
+      // 两档解析(简单/详细):与 analysisLatex 同 revealed 门禁,课中(revealed=false)不下发
+      analysisBriefLatex: revealed ? (pq.question.analysisBriefLatex ?? undefined) : undefined,
+      analysisDetailLatex: revealed ? (pq.question.analysisDetailLatex ?? undefined) : undefined,
     };
   }
 

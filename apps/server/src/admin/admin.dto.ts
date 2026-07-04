@@ -1,5 +1,5 @@
 /** A2 · /admin/* 请求 DTO(校验规则严格对齐 openapi.yaml,类型对齐 @qiming/contracts) */
-import { Transform, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import {
   ArrayNotEmpty,
   IsArray,
@@ -67,11 +67,6 @@ export class StudentListQueryDto extends PageQueryDto {
 
   @IsOptional() @Type(() => Number) @IsInt()
   courseId?: number;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === 'true' ? true : value === 'false' ? false : value))
-  @IsBoolean()
-  deviceBound?: boolean;
 }
 
 export class StudentInputDto {
@@ -155,6 +150,18 @@ export class StudentHoursDto {
 export class SettingsInputDto {
   @IsOptional() @IsBoolean()
   qaGuideOnly?: boolean;
+
+  /** 公式填空 AI 预批开关(见 attempt.service 预批入队门禁) */
+  @IsOptional() @IsBoolean()
+  preGrading?: boolean;
+
+  /** 课堂伴学旁白接真实 LLM 开关(见 classroom.service narration) */
+  @IsOptional() @IsBoolean()
+  classCompanion?: boolean;
+
+  /** AI 学情诊断端点开关(见 analytics diagnose) */
+  @IsOptional() @IsBoolean()
+  diagnosis?: boolean;
 
   @IsOptional() @ValidateNested() @Type(() => StudentHoursDto)
   studentHours?: StudentHoursDto;

@@ -132,11 +132,6 @@ export class AdminController {
     return this.students.enable(user, id, ip);
   }
 
-  @Delete('students/:id/device')
-  unbindDevice(@CurrentUser() user: JwtUser, @Param('id', ParseIntPipe) id: number, @Ip() ip: string) {
-    return this.students.unbindDevice(user, id, ip);
-  }
-
   // ================= 课程 =================
   @Get('courses')
   listCourses(@Query() q: CourseListQueryDto) {

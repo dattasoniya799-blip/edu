@@ -9,14 +9,14 @@ import type {
   MeDto, TeacherDto, StudentDto, CourseDto, LessonDto, LessonSegmentDto, ResourceDto,
   KpGraphDto, KpNodeDto, QuestionDto, PaperDto, AssignmentDto, AttemptDto,
   WrongBookItemDto, MasteryItemDto, AiUsageSummaryDto, AiUsageBreakdownDto, GradingItemDto,
+  AiDiagnosisDto,
 } from '@qiming/contracts';
 import { abilityNodes, strategyNodes } from './kpAbilityStrategyNodes';
 
 const ORG = '鲸云演示机构';
 const orgSettings: MeDto['orgSettings'] = {
-  ai: { qaGuideOnly: true, preGrading: true },
+  ai: { qaGuideOnly: true, preGrading: true, classCompanion: true, diagnosis: true },
   studentHours: { start: '06:00', end: '22:30' },
-  deviceBinding: true,
 };
 
 export const ME_ADMIN: MeDto = { id: 1, orgId: 1, role: 'admin', name: '王校长', orgName: ORG, orgSettings };
@@ -49,8 +49,6 @@ export const students: StudentDto[] = STUDENT_NAMES.map((name, i) => ({
     { id: 1, name: '初二数学提高班', classType: 'group' as const },
     ...(name === '李一诺' ? [{ id: 2, name: '李一诺 · 数学培优', classType: 'one_on_one' as const }] : []),
   ],
-  device: i === 0 ? { name: 'iPad (A2602)', boundAt: '2026-03-02T08:00:00.000Z' }
-    : i === 1 ? { name: '小米平板 6', boundAt: '2026-03-05T08:00:00.000Z' } : null,
   weekStudySec: 3600 * 4 + i * 1234,
 }));
 
@@ -294,7 +292,7 @@ function scriptPhoto(lines: string[]): string {
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
-/** 4 份待复核解答题(有状态:review/adopt-ai 实改 finalScore/comment) */
+/** 4 份待判分作答(3 份解答题拍照手写 + 1 份公式填空;review 实改 finalScore/comment) */
 export const gradingAnswers: GradingItemDto[] = [
   {
     answerId: 41, studentId: 8, studentName: '许诺', questionId: 4,
@@ -317,7 +315,12 @@ export const gradingAnswers: GradingItemDto[] = [
   {
     answerId: 42, studentId: 5, studentName: '周子航', questionId: 4,
     stemLatex: questions[3].stemLatex, rubric: questions[3].rubric,
-    photoUrl: null,
+    photoUrl: scriptPhoto([
+      '解:设平移后的直线为 y = kx + b\'',
+      '代入两点:k + b\' = 9,-k + b\' = -1',
+      '解得 k = 4,b\' = 5(解方程出错)',
+      '平移后 y = 4x + 5,原直线 y = 4x + 5',
+    ]),
     textResponse: '设平移后直线 y=kx+b\';代入两点:k+b\'=9,-k+b\'=-1;解得 k=4,b\'=5(解方程出错);平移后 y=4x+5,原直线 y=4x+5。',
     aiScore: 3,
     aiSteps: [
@@ -330,7 +333,11 @@ export const gradingAnswers: GradingItemDto[] = [
   {
     answerId: 43, studentId: 4, studentName: '林小满', questionId: 4,
     stemLatex: questions[3].stemLatex, rubric: questions[3].rubric,
-    photoUrl: null,
+    photoUrl: scriptPhoto([
+      '解:设平移后的直线为 y = kx + b\'',
+      '代入 A、B 两点解得 k = 5,b\' = 4',
+      '平移后 y = 5x + 4;原直线 y = 5x',
+    ]),
     textResponse: '设平移后直线 y=kx+b\';代入 A、B 两点解得 k=5,b\'=4,平移后 y=5x+4;原直线 y=5x。',
     aiScore: 7,
     aiSteps: [
@@ -435,6 +442,18 @@ export const courseAttention = [
   { studentId: 6, name: '吴佳怡', reason: '连续 2 次作业低于 60 分' },
   { studentId: 9, name: '刘思琪', reason: '「图象的平移」掌握率 48%' },
 ];
+
+/** AI 学情诊断(POST /analytics/students/{id}/diagnose):整体诊断 + 薄弱知识点 */
+export const aiDiagnosis: AiDiagnosisDto = {
+  summary:
+    '近 30 天该生共作答 6 套练习,客观题正确率尚可,但主观题(解答题)失分集中在「图象平移的还原方向」与「二元一次方程组求解」两处。' +
+    '建议下一讲课前针对性重讲平移「上加下减」口诀,并布置 2 道待定系数法专项巩固。',
+  weakPoints: [
+    { kpName: '一次函数图象的平移', reason: '3 次作业均在还原方向上失分,常把「向下平移」写成减法' },
+    { kpName: '二元一次方程组求解', reason: '代入两点后消元计算出错,导致 k、b 求解错误' },
+  ],
+  generatedAt: '2026-06-11T12:00:00.000Z',
+};
 
 export const aiHealth = {
   providers: [

@@ -233,20 +233,12 @@ describe('作答/自动批改/复核/错题/掌握度(A5)', () => {
     expect((done.body.data as AssignmentDto[]).some((x) => x.id === fx.assignmentId)).toBe(true);
   });
 
-  it('验收:AI stub 预批 —— BullMQ 真实执行,grading_records 写入 aiScore/steps/errorTags', async () => {
-    const rec = await waitFor(
-      () => raw.gradingRecord.findFirst({ where: { answerId: BigInt(q4AnswerId), aiScore: { not: null } } }),
-      'pre_grading 任务完成',
-    );
-    // stub 规则:拍照(无 OCR 标记)→ 仅 rubric 第 1 步 ok → aiScore = 3
-    expect(Number(rec.aiScore)).toBe(A5_RUBRIC[0].score);
-    expect(rec.aiSteps).toEqual([
-      { step: 1, ok: true },
-      { step: 2, ok: false, comment: `未完成:${A5_RUBRIC[1].desc}` },
-      { step: 3, ok: false, comment: `未完成:${A5_RUBRIC[2].desc}` },
-    ]);
-    expect(rec.aiErrorTags).toEqual([A5_RUBRIC[1].desc, A5_RUBRIC[2].desc]);
-    expect(rec.finalScore).toBeNull(); // 教师未复核
+  it('验收:solution 大题不走 AI 预批 —— 不入队、grading_records 无 aiScore(仅进人工复核)', async () => {
+    // solution 提交后 needsReview=true 进教师复核,但不投递预批队列、不写 AI 分。
+    // 留出时间让(若被误投的)预批 worker 有机会执行,再断言仍无任何 AI 记录。
+    await new Promise((r) => setTimeout(r, 1000));
+    const rec = await raw.gradingRecord.findFirst({ where: { answerId: BigInt(q4AnswerId) } });
+    expect(rec?.aiScore ?? null).toBeNull();
   });
 
   it('交卷后继续作答被拒 → 4502', async () => {
@@ -264,8 +256,8 @@ describe('作答/自动批改/复核/错题/掌握度(A5)', () => {
     expect(group).toBeDefined();
     exactKeys(group, PENDING_KEYS);
     expect(group.paperName).toBe('A5 · 第1讲课后作业');
-    expect(group.pendingCount).toBe(1);
-    expect(group.aiAvgScore).toBe(3);
+    expect(group.pendingCount).toBe(1); // solution q4 仍待教师人工复核
+    expect(group.aiAvgScore).toBeNull(); // solution 不预批 → 无 AI 分可平均
   });
 
   it('finalize 在复核完成前被拒 → 4501 + pendingAnswerIds', async () => {
@@ -286,8 +278,8 @@ describe('作答/自动批改/复核/错题/掌握度(A5)', () => {
     expect(item.photoUrl).toContain(photoKey);
     expect(item.photoUrl).toMatch(/exp=\d+&sig=[0-9a-f]{32}/);
     expect(item.textResponse).toBeNull();
-    expect(item.aiScore).toBe(3);
-    expect(item.aiSteps).toHaveLength(3);
+    expect(item.aiScore).toBeNull(); // solution 不预批 → 无 AI 分
+    expect(item.aiSteps).toHaveLength(0); // 无 AI 步骤
     expect(item.finalScore).toBeNull();
   });
 
@@ -312,7 +304,7 @@ describe('作答/自动批改/复核/错题/掌握度(A5)', () => {
     expect(at.answers.find((a) => a.questionId === qid(3))!.score).toBe(8);
   });
 
-  it('验收:错题入账 —— q2(客观错)+ q4(主观未满分),q4 错因取 AI 预批', async () => {
+  it('验收:错题入账 —— q2(客观错)+ q4(主观未满分);solution 无 AI 错因标签', async () => {
     const res = await request(http).get('/api/v1/student/wrong-book').set(auth(s1)).expect(200);
     expect(res.body.data.total).toBe(2);
     const items: WrongBookItemDto[] = res.body.data.items;
@@ -327,9 +319,10 @@ describe('作答/自动批改/复核/错题/掌握度(A5)', () => {
     wrongQ2EntryId = eQ2.id;
 
     const eQ4 = items.find((it) => it.questionId === qid(3))!;
-    expect(eQ4.status).toBe('open');
-    expect(eQ4.errorTags).toEqual([A5_RUBRIC[1].desc, A5_RUBRIC[2].desc]);
     wrongQ4EntryId = eQ4.id;
+    expect(eQ4.status).toBe('open');
+    // solution 不再走 AI 预批 → 无 AI 错因标签(错因由教师人工复核 comment 承载,不落错题 errorTags)
+    expect(eQ4.errorTags).toEqual([]);
   });
 
   it('验收:掌握度 —— mastery 任务完成,数值=独立手算(N1/N2 各 50,样本 2)', async () => {
@@ -403,13 +396,11 @@ describe('作答/自动批改/复核/错题/掌握度(A5)', () => {
     await expectMasteryMatches(fx.s1Id);
   });
 
-  it('redo-all:仅 q4 仍 open → 生成 1 题重练卷;已 cleared 错题再 redo → 4503', async () => {
-    const res = await request(http).post('/api/v1/student/wrong-book/redo-all').set(auth(s1)).expect(200);
-    const a: AssignmentDto = res.body.data;
-    expect(a.kind).toBe('wrong_redo');
-    expect(a.scoreCounted).toBe(false);
-    expect(a.questionCount).toBe(1);
-    expect(a.totalScore).toBe(10); // q4 来源卷面分
+  it('redo-all:唯一 open 为 solution q4 → 无客观题可重练 → 4503;已 cleared 错题再 redo → 4503', async () => {
+    // B 项:重练卷只纳客观题,solution/公式填空被排除。此刻唯一 open 错题是 q4(solution)
+    // → 过滤后为空 → 不建空卷,抛 ERR_WRONG_NOT_REDOABLE(4503)。
+    const res = await request(http).post('/api/v1/student/wrong-book/redo-all').set(auth(s1)).expect(409);
+    expect(res.body.code).toBe(4503);
 
     const denied = await request(http).post(`/api/v1/student/wrong-book/${wrongQ2EntryId}/redo`).set(auth(s1)).expect(409);
     expect(denied.body.code).toBe(4503);
@@ -417,50 +408,6 @@ describe('作答/自动批改/复核/错题/掌握度(A5)', () => {
     const filtered = await request(http).get('/api/v1/student/wrong-book?status=open').set(auth(s1)).expect(200);
     expect(filtered.body.data.total).toBe(1);
     expect(filtered.body.data.items[0].id).toBe(wrongQ4EntryId);
-  });
-
-  // ================= adopt-ai 路线(s2,文本作答) =================
-
-  it('adopt-ai:s2 文本作答含 √ 标记 → AI 满分,采纳后 finalize;满分不入错题本', async () => {
-    const start = await request(http).post('/api/v1/student/attempts').set(auth(s2))
-      .send({ assignmentId: fx.assignmentId }).expect(200);
-    const atId = start.body.data.id;
-    await request(http).put(`/api/v1/student/attempts/${atId}/answers/${qid(3)}`)
-      .set(auth(s2)).send({ response: { text: '设 y=kx+b,代入两点 √2;还原平移 √3,得 y=2x+3。' } }).expect(200);
-    await request(http).post(`/api/v1/student/attempts/${atId}/submit`).set(auth(s2)).expect(200);
-
-    const ansRow = await raw.answer.findFirstOrThrow({
-      where: { attemptId: BigInt(atId), questionId: fx.questionIds[3] },
-    });
-    const rec = await waitFor(
-      () => raw.gradingRecord.findFirst({ where: { answerId: ansRow.id, aiScore: { not: null } } }),
-      's2 预批完成',
-    );
-    expect(Number(rec.aiScore)).toBe(10); // 三步标记齐 → 满分
-    expect(rec.aiErrorTags).toEqual([]);
-
-    // 详情:textResponse 回显,photoUrl 为 null
-    const detail = await request(http).get(`/api/v1/grading/answers/${Number(ansRow.id)}`).set(auth(teacher)).expect(200);
-    expect(detail.body.data.textResponse).toContain('√2');
-    expect(detail.body.data.photoUrl).toBeNull();
-
-    await request(http).post(`/api/v1/grading/assignments/${fx.assignmentId}/adopt-ai`).set(auth(teacher)).expect(200);
-    await request(http).post(`/api/v1/grading/assignments/${fx.assignmentId}/finalize`).set(auth(teacher)).expect(200);
-
-    const at = await request(http).get(`/api/v1/student/attempts/${atId}`).set(auth(s2)).expect(200);
-    expect(at.body.data.status).toBe('graded');
-    expect(at.body.data.objectiveScore).toBe(0); // 客观题未作答
-    expect(at.body.data.subjectiveScore).toBe(10);
-    expect(at.body.data.score).toBe(10);
-
-    // 主观题拿满分 → 不入错题本;且 s2 无客观样本 → 无掌握度快照
-    const wb = await request(http).get('/api/v1/student/wrong-book').set(auth(s2)).expect(200);
-    expect(wb.body.data.total).toBe(0);
-    expect(await raw.masterySnapshot.count({ where: { studentId: fx.s2Id } })).toBe(0);
-
-    // s1 的成绩不受 s2 finalize 影响
-    const orig = await request(http).get(`/api/v1/student/attempts/${attemptId}`).set(auth(s1)).expect(200);
-    expect(orig.body.data.score).toBe(18);
   });
 
   // ================= 安全与契约边界 =================
@@ -471,7 +418,6 @@ describe('作答/自动批改/复核/错题/掌握度(A5)', () => {
     await request(http).put(`/api/v1/grading/answers/${q4AnswerId}/review`).set(auth(teacherB))
       .send({ finalScore: 1 }).expect(404);
     await request(http).post(`/api/v1/grading/assignments/${fx.assignmentId}/finalize`).set(auth(teacherB)).expect(404);
-    await request(http).post(`/api/v1/grading/assignments/${fx.assignmentId}/adopt-ai`).set(auth(teacherB)).expect(404);
     // 机构B学生查机构A的作答/作业/错题
     await request(http).get(`/api/v1/student/attempts/${attemptId}`).set(auth(studentB)).expect(404);
     await request(http).post('/api/v1/student/attempts').set(auth(studentB))
@@ -492,20 +438,18 @@ describe('作答/自动批改/复核/错题/掌握度(A5)', () => {
   });
 
   it('response 形状与题型不符 → 400;非本卷题目 → 404', async () => {
-    // 新开一次 redo-all 的 attempt 用于 400 校验(q4 卷)
-    const list = await request(http).get('/api/v1/student/assignments?status=pending').set(auth(s1)).expect(200);
-    const redoAll = (list.body.data as AssignmentDto[]).find((x) => x.kind === 'wrong_redo' && x.totalScore === 10)!;
+    // 用 q2(multi)错题重练卷(redoAssignment,含 1 道 multi)再开一次 attempt 做形状校验
     const start = await request(http).post('/api/v1/student/attempts').set(auth(s1))
-      .send({ assignmentId: redoAll.id }).expect(200);
+      .send({ assignmentId: redoAssignment.id }).expect(200);
     const atId = start.body.data.id;
-    // q4 是 solution:给 choice → 400
-    await request(http).put(`/api/v1/student/attempts/${atId}/answers/${qid(3)}`)
+    // q2 是 multi:给 single {choice} → 形状不符 400
+    await request(http).put(`/api/v1/student/attempts/${atId}/answers/${qid(1)}`)
       .set(auth(s1)).send({ response: { choice: 'B' } }).expect(400);
     // q1 不在重练卷上 → 404
     await request(http).put(`/api/v1/student/attempts/${atId}/answers/${qid(0)}`)
-      .set(auth(s1)).send({ response: { choice: 'B' } }).expect(404);
+      .set(auth(s1)).send({ response: { choices: ['A'] } }).expect(404);
     // 缺 response → 400(DTO 校验)
-    await request(http).put(`/api/v1/student/attempts/${atId}/answers/${qid(3)}`)
+    await request(http).put(`/api/v1/student/attempts/${atId}/answers/${qid(1)}`)
       .set(auth(s1)).send({}).expect(400);
   });
 });

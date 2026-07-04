@@ -17,6 +17,7 @@ import { MonitorPage } from './pages/monitor/MonitorPage';
 import { ResourcesPage } from './pages/resources/ResourcesPage';
 import { KnowledgePage } from './pages/knowledge/KnowledgePage';
 import { AssignmentsPage } from './pages/assignments/AssignmentsPage';
+import { AnalyticsPage } from './pages/analytics/AnalyticsPage';
 import { Placeholder } from './pages/Placeholder';
 
 export function App() {
@@ -41,7 +42,7 @@ export function App() {
           <Route path="/bank/:id/edit" element={<EditorPage />} />
           <Route path="/knowledge" element={<KnowledgePage />} />
           <Route path="/resources" element={<ResourcesPage />} />
-          <Route path="/analytics" element={<Placeholder title="学情分析" sub="知识点掌握热力 + 待关注名单(MVP 口径)" hint="B4 任务接 /analytics/*" />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="*" element={<Placeholder title="页面不存在" />} />
         </Route>
       </Routes>

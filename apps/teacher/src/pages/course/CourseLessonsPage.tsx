@@ -149,9 +149,8 @@ export function CourseLessonsPage() {
                 <div className="mt-3 flex flex-wrap items-center gap-4">
                   {lesson.status === 'finished' ? (
                     <>
-                      <Link className={LINK_CLS} to={`/lessons/${lesson.id}/monitor`}>课堂回放数据</Link>
                       <Link className={LINK_CLS} to="/grading">作业批改</Link>
-                      <Link className={LINK_CLS} to="/analytics">本讲学情</Link>
+                      <Link className={LINK_CLS} to={`/analytics?courseId=${courseId}`}>本讲学情</Link>
                     </>
                   ) : isNext ? (
                     <Button variant="primary" className="!px-3.5 !py-[7px]" onClick={() => navigate(`/lessons/${lesson.id}/arrange`)}>

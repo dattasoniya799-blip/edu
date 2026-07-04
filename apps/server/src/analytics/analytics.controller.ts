@@ -1,5 +1,6 @@
-import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
-import { Roles } from '../common/decorators';
+import { Controller, Get, HttpCode, Param, ParseIntPipe, Post } from '@nestjs/common';
+import type { JwtUser } from '../auth/auth.service';
+import { CurrentUser, Roles } from '../common/decorators';
 import { AnalyticsService } from './analytics.service';
 
 /**
@@ -7,6 +8,7 @@ import { AnalyticsService } from './analytics.service';
  * - GET /analytics/courses/:id/mastery   课程知识点掌握热力 [teacher]
  * - GET /analytics/courses/:id/attention 重点关注学生 [teacher]
  * - GET /analytics/students/:id          单生 30 天报告 [teacher/admin]
+ * - POST /analytics/students/:id/diagnose AI 学情诊断 [teacher/admin](受 org.settings.ai.diagnosis 开关控制)
  * 角色门禁严格按 openapi 标注;org 内不再细分 owner(A4 既定口径,契约未要求)。
  */
 @Controller('analytics')
@@ -29,5 +31,12 @@ export class AnalyticsController {
   @Roles('teacher', 'admin')
   studentReport(@Param('id', ParseIntPipe) id: number) {
     return this.analytics.studentReport(id);
+  }
+
+  @Post('students/:id/diagnose')
+  @HttpCode(200)
+  @Roles('teacher', 'admin')
+  diagnose(@CurrentUser() user: JwtUser, @Param('id', ParseIntPipe) id: number) {
+    return this.analytics.diagnose(user, id);
   }
 }

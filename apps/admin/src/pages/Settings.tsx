@@ -43,6 +43,23 @@ export function Settings() {
     }
   };
 
+  /** AI 能力开关(classCompanion / preGrading / diagnosis):乐观更新 + PUT /admin/settings */
+  const toggleAi = async (patch: Partial<OrgSettings['ai']>, msg: string) => {
+    if (!settings) return;
+    setSaving(true);
+    const prev = settings;
+    setSettings({ ...settings, ai: { ...settings.ai, ...patch } }); // 乐观更新
+    try {
+      await api.put('/admin/settings', { body: patch });
+      toast(msg);
+    } catch {
+      setSettings(prev);
+      toast('保存失败,请重试');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const saveHours = async (start: string, end: string) => {
     await api.put('/admin/settings', { body: { studentHours: { start, end } } });
     toast('学生端使用时段已更新,对全机构生效');
@@ -65,7 +82,12 @@ export function Settings() {
           <Card title={<span className="flex items-center gap-2">AI 能力 <Tag tone="violet">AI</Tag></span>}>
             <div className="flex flex-col gap-4">
               <SettingRow title="课堂 AI 伴学" desc="上课场景核心能力:按教师编排的流程带学生上课">
-                <Tag tone="green">已开启</Tag>
+                <Switch
+                  checked={!!settings.ai.classCompanion}
+                  disabled={saving}
+                  label="课堂 AI 伴学"
+                  onChange={(v) => void toggleAi({ classCompanion: v }, v ? '已开启课堂 AI 伴学,对全机构生效' : '已关闭课堂 AI 伴学')}
+                />
               </SettingRow>
               <SettingRow title="AI 答疑助教" desc="做题时可向 AI 提问;开启后「仅引导不报答案」">
                 <span className="flex items-center gap-2.5">
@@ -73,22 +95,26 @@ export function Settings() {
                   <Switch checked={settings.ai.qaGuideOnly} disabled={saving} label="仅引导不报答案" onChange={(v) => void toggleGuideOnly(v)} />
                 </span>
               </SettingRow>
-              <SettingRow title="主观题预批改" desc="解答题先由 AI 预批,教师复核后才出分">
-                <Tag tone="green">已开启</Tag>
+              <SettingRow title="公式题AI预批" desc="公式题先由 AI 预批,教师复核后才出分">
+                <Switch
+                  checked={!!settings.ai.preGrading}
+                  disabled={saving}
+                  label="公式题AI预批"
+                  onChange={(v) => void toggleAi({ preGrading: v }, v ? '已开启公式题 AI 预批,对全机构生效' : '已关闭公式题 AI 预批')}
+                />
               </SettingRow>
-              <SettingRow title="学情诊断" desc="错题自动归因到知识点,生成课程与个人薄弱点分析" last>
-                <Tag tone="green">已开启</Tag>
+              <SettingRow title="AI 学情诊断" desc="错题自动归因到知识点,生成课程与个人薄弱点分析" last>
+                <Switch
+                  checked={!!settings.ai.diagnosis}
+                  disabled={saving}
+                  label="AI 学情诊断"
+                  onChange={(v) => void toggleAi({ diagnosis: v }, v ? '已开启 AI 学情诊断,对全机构生效' : '已关闭 AI 学情诊断')}
+                />
               </SettingRow>
             </div>
           </Card>
           <Card title="账号与安全">
             <div className="flex flex-col gap-4">
-              <SettingRow title="学生设备绑定" desc="学生平板首次登录后绑定本机,限制 1 人 1 机">
-                <Tag tone="green">已开启</Tag>
-              </SettingRow>
-              <SettingRow title="课堂模式锁定" desc="上课期间平板锁定在课堂应用内,防止切出">
-                <Tag tone="green">已开启</Tag>
-              </SettingRow>
               <SettingRow
                 title="学生端使用时段"
                 desc={`每日 ${settings.studentHours.start} – ${settings.studentHours.end} 可登录,超时自动锁定`}

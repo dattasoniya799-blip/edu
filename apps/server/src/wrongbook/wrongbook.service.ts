@@ -4,6 +4,7 @@ import { dec, iso, num } from '../admin/helpers';
 import { AssignmentService } from '../assignment/assignment.service';
 import type { JwtUser } from '../auth/auth.service';
 import { BizException, ERR_WRONG_NOT_REDOABLE } from '../grading/business.exception';
+import { questionNeedsReview } from '../grading/formula-blank.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { WrongBookQueryDto } from './wrongbook.dto';
 
@@ -65,7 +66,15 @@ export class WrongBookService {
     const questions = qIds.length
       ? await this.prisma.client.question.findMany({
           where: { id: { in: qIds } },
-          select: { id: true, type: true, subject: true, stemLatex: true, analysisLatex: true },
+          select: {
+            id: true,
+            type: true,
+            subject: true,
+            stemLatex: true,
+            analysisLatex: true,
+            analysisBriefLatex: true,
+            analysisDetailLatex: true,
+          },
         })
       : [];
     const qMap = new Map(questions.map((it) => [String(it.id), it]));
@@ -78,6 +87,8 @@ export class WrongBookService {
           type: (question?.type ?? 'single') as WrongBookItemDto['type'],
           stemLatex: question?.stemLatex ?? '',
           analysisLatex: question?.analysisLatex ?? null,
+          analysisBriefLatex: question?.analysisBriefLatex ?? undefined,
+          analysisDetailLatex: question?.analysisDetailLatex ?? undefined,
           wrongCount: r.wrongCount,
           correctRedoCount: r.correctRedoCount,
           errorTags: (r.errorTags as string[]) ?? [],
@@ -170,9 +181,22 @@ export class WrongBookService {
     entries: { questionId: bigint; sourceAnswerId: bigint }[],
     paperName: string,
   ): Promise<AssignmentDto> {
+    // 错题重做仅限客观题:排除 solution 与公式填空(需 join question.type/answer 判定),
+    // 主观类题目无法即时判分自动清账,不纳入重做卷;过滤后为空则不建空卷,抛 ERR_WRONG_NOT_REDOABLE。
+    const qMeta = await this.prisma.client.question.findMany({
+      where: { id: { in: entries.map((e) => e.questionId) } },
+      select: { id: true, type: true, answer: true },
+    });
+    const reviewable = new Set(
+      qMeta.filter((q) => questionNeedsReview(q.type, q.answer)).map((q) => String(q.id)),
+    );
+    const redoable = entries.filter((e) => !reviewable.has(String(e.questionId)));
+    if (!redoable.length)
+      throw new BizException(ERR_WRONG_NOT_REDOABLE, '错题均为主观题/公式填空,暂不支持重做');
+
     // 来源卷面分:source_answer → attempt → assignment.paper 的 paper_questions.score
     const scores: number[] = [];
-    for (const e of entries) {
+    for (const e of redoable) {
       const src = await this.prisma.client.answer.findFirst({
         where: { id: e.sourceAnswerId },
         select: { attempt: { select: { assignment: { select: { paperId: true } } } } },
@@ -197,7 +221,7 @@ export class WrongBookService {
         } as never,
       });
       await tx.paperQuestion.createMany({
-        data: entries.map((e, i) => ({
+        data: redoable.map((e, i) => ({
           paperId: created.id,
           questionId: e.questionId,
           seq: i + 1,

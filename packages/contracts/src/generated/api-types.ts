@@ -524,7 +524,6 @@ export interface paths {
                     keyword?: components["parameters"]["keyword"];
                     status?: components["schemas"]["UserStatus"];
                     courseId?: number;
-                    deviceBound?: boolean;
                 };
                 header?: never;
                 path?: never;
@@ -780,45 +779,6 @@ export interface paths {
             };
         };
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/students/{id}/device": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** 解绑设备 [admin] */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["idPath"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description ok */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["OkVoid"];
-                    };
-                };
-                default: components["responses"]["Err"];
-            };
-        };
         options?: never;
         head?: never;
         patch?: never;
@@ -1547,7 +1507,7 @@ export interface paths {
                 default: components["responses"]["Err"];
             };
         };
-        /** 修改设置(引导模式/使用时段) [admin] */
+        /** 修改设置(引导模式/使用时段/AI 功能开关) [admin] */
         put: {
             parameters: {
                 query?: never;
@@ -1559,6 +1519,9 @@ export interface paths {
                 content: {
                     "application/json": {
                         qaGuideOnly?: boolean;
+                        preGrading?: boolean;
+                        classCompanion?: boolean;
+                        diagnosis?: boolean;
                         studentHours?: {
                             start: string;
                             end: string;
@@ -2983,45 +2946,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/grading/assignments/{id}/adopt-ai": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 全部采纳 AI 分 [teacher] */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: components["parameters"]["idPath"];
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description ok */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["OkVoid"];
-                    };
-                };
-                default: components["responses"]["Err"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/grading/assignments/{id}/finalize": {
         parameters: {
             query?: never;
@@ -3817,6 +3741,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/analytics/students/{id}/diagnose": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** AI 学情诊断 [teacher/admin] */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["idPath"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: number;
+                            message: string;
+                            data: components["schemas"]["AiDiagnosis"];
+                        };
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/ai/qa": {
         parameters: {
             query?: never;
@@ -3961,12 +3928,13 @@ export interface components {
                 ai: {
                     qaGuideOnly: boolean;
                     preGrading: boolean;
+                    classCompanion?: boolean;
+                    diagnosis?: boolean;
                 };
                 studentHours: {
                     start: string;
                     end: string;
                 };
-                deviceBinding: boolean;
             };
         };
         Teacher: {
@@ -4001,11 +3969,6 @@ export interface components {
                 name: string;
                 classType: components["schemas"]["ClassType"];
             }[];
-            device: null | {
-                name: string;
-                /** Format: date-time */
-                boundAt: string;
-            };
             weekStudySec: number;
         };
         StudentInput: {
@@ -4334,6 +4297,10 @@ export interface components {
             options: components["schemas"]["QuestionOption"][];
             correctAnswer: null | components["schemas"]["QuestionAnswer"];
             analysisLatex: null | string;
+            /** @description 简单解析(可选 */
+            analysisBriefLatex?: string;
+            /** @description 详细解析(可选 */
+            analysisDetailLatex?: string;
         };
         GradingAnswerBrief: {
             answerId: number;
@@ -4388,6 +4355,10 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
             subject: string;
+            /** @description 简单解析(可选) */
+            analysisBriefLatex?: string;
+            /** @description 详细解析(可选) */
+            analysisDetailLatex?: string;
         };
         MasteryItem: {
             nodeId: number;
@@ -4455,6 +4426,18 @@ export interface components {
             ossKey: string;
             /** Format: date-time */
             expiresAt: string;
+        };
+        /** @description AI 学情诊断结果:整体诊断文字 + 薄弱知识点列表 */
+        AiDiagnosis: {
+            /** @description 整体诊断文字 */
+            summary: string;
+            /** @description 薄弱知识点列表 */
+            weakPoints?: {
+                kpName: string;
+                reason: string;
+            }[];
+            /** Format: date-time */
+            generatedAt?: string;
         };
     };
     responses: {

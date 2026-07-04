@@ -36,9 +36,8 @@ export interface MeDto {
   orgName: string; orgSettings: OrgSettings;
 }
 export interface OrgSettings {
-  ai: { qaGuideOnly: boolean; preGrading: boolean };
+  ai: { qaGuideOnly: boolean; preGrading: boolean; classCompanion?: boolean; diagnosis?: boolean };
   studentHours: { start: string; end: string };
-  deviceBinding: boolean;
 }
 export interface TeacherDto {
   id: number; name: string; teacherNo: string; phone: string;
@@ -49,7 +48,6 @@ export interface StudentDto {
   id: number; name: string; studentNo: string; parentPhone: string;
   grade: string; status: UserStatus;
   courses: { id: number; name: string; classType: ClassType }[];
-  device: { name: string; boundAt: string } | null;
   weekStudySec: number;
 }
 export interface CourseDto {
@@ -157,6 +155,8 @@ export interface AttemptQuestionView {
   seq: number; questionId: number; score: number; type: QuestionType;
   stemLatex: string; figures: QuestionFigure[]; options: QuestionOptionDto[];
   correctAnswer: QuestionAnswer | null; analysisLatex: string | null;
+  analysisBriefLatex?: string;   // 简单解析(可选,交卷/判定后下发)
+  analysisDetailLatex?: string;  // 详细解析(可选,交卷/判定后下发)
 }
 /**
  * 课件打点小测(lecture 环节翻页时的即时小测):客户端即时反馈,不走判分通道。
@@ -204,8 +204,16 @@ export interface WrongBookItemDto {
   analysisLatex: string | null; wrongCount: number; correctRedoCount: number;
   errorTags: string[]; status: WrongStatus; sourceName: string; createdAt: string;
   subject: string; // [2026-06-13 批准] 错题本按学科分组;源自题目 subject
+  analysisBriefLatex?: string;   // 简单解析(可选)
+  analysisDetailLatex?: string;  // 详细解析(可选)
 }
 export interface MasteryItemDto { nodeId: number; nodeName: string; graphType: GraphType; mastery: number; sampleCount: number }
+/** AI 学情诊断结果:整体诊断文字 + 薄弱知识点列表 */
+export interface AiDiagnosisDto {
+  summary: string;                                        // 整体诊断文字
+  weakPoints?: { kpName: string; reason: string }[];      // 薄弱知识点列表
+  generatedAt?: string;
+}
 export interface AiUsageSummaryDto {
   period: string; totalTokens: number; totalCost: number;
   monthlyLimit: number; usedPercent: number; avgCostPerLesson: number | null;

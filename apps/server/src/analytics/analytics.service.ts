@@ -1,6 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import type { MasteryItemDto } from '@qiming/contracts';
-import { daysAgoUtc, num } from '../admin/helpers';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import type { AiDiagnosisDto, MasteryItemDto } from '@qiming/contracts';
+import { DiagnosisService } from '../ai/features/diagnosis.service';
+import { daysAgoUtc, iso, num } from '../admin/helpers';
+import type { JwtUser } from '../auth/auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 /**
@@ -40,7 +42,10 @@ const REPORT_DAYS = 30;
 
 @Injectable()
 export class AnalyticsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly diagnosis: DiagnosisService,
+  ) {}
 
   // ---------------- 课程掌握热力 ----------------
   async courseMastery(courseId: number): Promise<CourseMasteryItem[]> {
@@ -152,6 +157,70 @@ export class AnalyticsService {
       wrongOpenCount,
       attempts30d,
     };
+  }
+
+  // ---------------- AI 学情诊断 ----------------
+  /**
+   * POST /analytics/students/:id/diagnose:聚合该生掌握度(curriculum 快照)+ 未清错题 +
+   * 近 30 天作答,喂 DiagnosisService(feature=diagnosis)产出诊断文字与薄弱知识点。
+   * 受 org.settings.ai.diagnosis 开关控制(关则 4xx);学生须属本机构(租户注入 → 跨租户 404)。
+   */
+  async diagnose(user: JwtUser, studentId: number): Promise<AiDiagnosisDto> {
+    if (!(await this.diagnosisEnabled()))
+      throw new ForbiddenException('AI学情诊断未开启,请联系机构管理员在平台设置中开启');
+
+    const student = await this.prisma.client.user.findFirst({
+      where: { id: BigInt(studentId), role: 'student', deletedAt: null },
+      select: { id: true },
+    });
+    if (!student) throw new NotFoundException('学生不存在');
+
+    const [snaps, wrongOpenCount, attempts30d] = await Promise.all([
+      this.prisma.client.masterySnapshot.findMany({
+        where: {
+          studentId: student.id,
+          node: { graph: { graphType: 'curriculum_knowledge' } },
+        },
+        include: { node: { select: { name: true } } },
+        orderBy: { mastery: 'asc' },
+      }),
+      this.prisma.client.wrongBookEntry.count({
+        where: { studentId: student.id, status: 'open' },
+      }),
+      this.prisma.client.attempt.count({
+        where: { studentId: student.id, startedAt: { gte: daysAgoUtc(REPORT_DAYS) } },
+      }),
+    ]);
+    const weakNodes = snaps
+      .filter((s) => s.mastery < LOW_MASTERY)
+      .slice(0, 5)
+      .map((s) => ({ name: s.node.name, mastery: s.mastery }));
+
+    const out = await this.diagnosis.diagnose({
+      orgId: user.orgId,
+      studentId: num(student.id),
+      days: REPORT_DAYS,
+      attemptCount: attempts30d,
+      wrongCount: wrongOpenCount,
+      weakNodes,
+      trace: { userId: user.uid },
+    });
+
+    return {
+      summary: out.summary,
+      weakPoints: weakNodes.map((n) => ({
+        kpName: n.name,
+        reason: `掌握度 ${n.mastery},低于 ${LOW_MASTERY}`,
+      })),
+      generatedAt: iso(new Date()),
+    };
+  }
+
+  /** org.settings.ai.diagnosis 开关(默认关:opt-in 特性,未显式开启则拒绝) */
+  private async diagnosisEnabled(): Promise<boolean> {
+    const org = await this.prisma.client.org.findFirst({ select: { settings: true } });
+    const ai = (org?.settings as { ai?: { diagnosis?: boolean } } | null)?.ai;
+    return ai?.diagnosis === true;
   }
 
   // ---------------- 内部 ----------------

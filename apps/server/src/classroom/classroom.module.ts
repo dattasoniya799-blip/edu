@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AiModule } from '../ai/ai.module';
 import { AssignmentModule } from '../assignment/assignment.module';
 import { AttemptService } from '../attempt/attempt.service';
 import { GradingModule } from '../grading/grading.module';
@@ -13,7 +14,7 @@ import { ClassroomService } from './classroom.service';
  * - ended 结算的课后作业发布调 A4 AssignmentService.create(禁止重写发布逻辑)
  */
 @Module({
-  imports: [AssignmentModule, GradingModule],
+  imports: [AssignmentModule, GradingModule, AiModule],
   providers: [ClassroomService, ClassroomGateway, AttemptService],
 })
 export class ClassroomModule {}

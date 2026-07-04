@@ -191,8 +191,16 @@ export class InsightsService {
   async settingsPut(user: JwtUser, dto: SettingsInputDto, ip?: string): Promise<null> {
     const org = await this.prisma.client.org.findFirstOrThrow({});
     const settings = (org.settings ?? {}) as Record<string, any>;
-    if (dto.qaGuideOnly !== undefined) {
-      settings.ai = { ...(settings.ai ?? {}), qaGuideOnly: dto.qaGuideOnly };
+    // AI 功能开关统一写进 settings.ai 子对象;缺省字段不动(保留既有值)。
+    // qaGuideOnly→qa.service;preGrading→attempt.service 预批入队门禁;
+    // classCompanion→classroom 旁白;diagnosis→analytics 诊断端点门禁。
+    const aiPatch: Record<string, boolean> = {};
+    if (dto.qaGuideOnly !== undefined) aiPatch.qaGuideOnly = dto.qaGuideOnly;
+    if (dto.preGrading !== undefined) aiPatch.preGrading = dto.preGrading;
+    if (dto.classCompanion !== undefined) aiPatch.classCompanion = dto.classCompanion;
+    if (dto.diagnosis !== undefined) aiPatch.diagnosis = dto.diagnosis;
+    if (Object.keys(aiPatch).length) {
+      settings.ai = { ...(settings.ai ?? {}), ...aiPatch };
     }
     if (dto.studentHours) {
       settings.studentHours = { start: dto.studentHours.start, end: dto.studentHours.end };

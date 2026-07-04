@@ -170,15 +170,14 @@ describe('C1 联调缺口后端(题面 + 批改名单)', () => {
 
   // ================= #B 批改名单 =================
 
-  it('#B 等待 AI 预批落库(q4 + q5 各写 grading_records)', async () => {
-    await waitFor(
-      () => raw.gradingRecord.findFirst({ where: { answerId: BigInt(q4AnswerId), aiScore: { not: null } } }),
-      'q4 预批',
-    );
+  it('#B 等待 AI 预批落库(仅 q5 公式填空预批;q4 solution 不预批)', async () => {
     await waitFor(
       () => raw.gradingRecord.findFirst({ where: { answerId: BigInt(q5AnswerId), aiScore: { not: null } } }),
       'q5 预批',
     );
+    // q4 是 solution:不入预批队列、不写 AI 分(仅进教师人工复核)
+    const q4rec = await raw.gradingRecord.findFirst({ where: { answerId: BigInt(q4AnswerId) } });
+    expect(q4rec?.aiScore ?? null).toBeNull();
   });
 
   it('#B 批改名单:列出 2 道待复核题(solution + 公式填空),pendingCount 与 /grading/pending 对齐', async () => {
@@ -191,9 +190,13 @@ describe('C1 联调缺口后端(题面 + 批改名单)', () => {
     list.forEach((b) => {
       expect(b.studentId).toBe(Number(fx.s1Id));
       expect(b.status).toBe('pending');
-      expect(b.aiScore).not.toBeNull(); // AI 预批已落库
       expect(b.finalScore).toBeNull();
     });
+    // solution(seq=4)不预批 → aiScore=null;公式填空(seq=5)AI 预批已落库 → aiScore 非空
+    const q4b = list.find((b) => b.seq === 4)!;
+    const q5b = list.find((b) => b.seq === 5)!;
+    expect(q4b.aiScore).toBeNull();
+    expect(q5b.aiScore).not.toBeNull();
 
     const pend = await request(http).get('/api/v1/grading/pending').set(auth(teacher)).expect(200);
     const group = (pend.body.data as any[]).find((g) => g.assignmentId === fx.assignmentId)!;

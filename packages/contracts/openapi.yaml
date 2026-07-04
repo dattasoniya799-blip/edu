@@ -56,17 +56,16 @@ components:
         orgName: { type: string }
         orgSettings:
           type: object
-          required: [ai, studentHours, deviceBinding]
+          required: [ai, studentHours]
           properties:
             ai:
               type: object
               required: [qaGuideOnly, preGrading]
-              properties: { qaGuideOnly: { type: boolean }, preGrading: { type: boolean } }
+              properties: { qaGuideOnly: { type: boolean }, preGrading: { type: boolean }, classCompanion: { type: boolean }, diagnosis: { type: boolean } }
             studentHours:
               type: object
               required: [start, end]
               properties: { start: { type: string }, end: { type: string } }
-            deviceBinding: { type: boolean }
     Teacher:
       type: object
       required: [id, name, teacherNo, phone, stage, subject, status, courseCount, questionCount, resourceCount]
@@ -92,7 +91,7 @@ components:
         subject: { type: string }
     Student:
       type: object
-      required: [id, name, studentNo, parentPhone, grade, status, courses, device, weekStudySec]
+      required: [id, name, studentNo, parentPhone, grade, status, courses, weekStudySec]
       properties:
         id: { type: integer }
         name: { type: string }
@@ -109,12 +108,6 @@ components:
               id: { type: integer }
               name: { type: string }
               classType: { $ref: '#/components/schemas/ClassType' }
-        device:
-          oneOf:
-            - type: 'null'
-            - type: object
-              required: [name, boundAt]
-              properties: { name: { type: string }, boundAt: { type: string, format: date-time } }
         weekStudySec: { type: integer }
     StudentInput:
       type: object
@@ -460,6 +453,8 @@ components:
         options: { type: array, items: { $ref: '#/components/schemas/QuestionOption' } }
         correctAnswer: { oneOf: [{ type: 'null' }, { $ref: '#/components/schemas/QuestionAnswer' }] }
         analysisLatex: { oneOf: [{ type: 'null' }, { type: string }] }
+        analysisBriefLatex: { type: string, description: 简单解析(可选,交卷/判定后下发) }
+        analysisDetailLatex: { type: string, description: 详细解析(可选,交卷/判定后下发) }
     GradingAnswerBrief:
       type: object
       required: [answerId, studentId, studentName, questionId, seq, status, aiScore, finalScore]
@@ -518,6 +513,8 @@ components:
         sourceName: { type: string }
         createdAt: { type: string, format: date-time }
         subject: { type: string }
+        analysisBriefLatex: { type: string, description: 简单解析(可选) }
+        analysisDetailLatex: { type: string, description: 详细解析(可选) }
     MasteryItem:
       type: object
       required: [nodeId, nodeName, graphType, mastery, sampleCount]
@@ -587,6 +584,20 @@ components:
         uploadUrl: { type: string, description: 预签名直传 URL(PUT) }
         ossKey: { type: string }
         expiresAt: { type: string, format: date-time }
+    AiDiagnosis:
+      type: object
+      description: AI 学情诊断结果:整体诊断文字 + 薄弱知识点列表
+      required: [summary]
+      properties:
+        summary: { type: string, description: 整体诊断文字 }
+        weakPoints:
+          type: array
+          description: 薄弱知识点列表
+          items:
+            type: object
+            required: [kpName, reason]
+            properties: { kpName: { type: string }, reason: { type: string } }
+        generatedAt: { type: string, format: date-time }
 
 paths:
   # ================= 认证 =================
@@ -683,7 +694,7 @@ paths:
   /admin/students:
     get:
       summary: 学生列表 [admin]
-      parameters: [{$ref: '#/components/parameters/page'}, {$ref: '#/components/parameters/size'}, {$ref: '#/components/parameters/keyword'}, {name: status, in: query, schema: {$ref: '#/components/schemas/UserStatus'}}, {name: courseId, in: query, schema: {type: integer}}, {name: deviceBound, in: query, schema: {type: boolean}}]
+      parameters: [{$ref: '#/components/parameters/page'}, {$ref: '#/components/parameters/size'}, {$ref: '#/components/parameters/keyword'}, {name: status, in: query, schema: {$ref: '#/components/schemas/UserStatus'}}, {name: courseId, in: query, schema: {type: integer}}]
       responses:
         '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [items, total], properties: {items: {type: array, items: {$ref: '#/components/schemas/Student'}}, total: {type: integer}}}}}}}}
         default: {$ref: '#/components/responses/Err'}
@@ -724,13 +735,6 @@ paths:
   /admin/students/{id}/enable:
     post:
       summary: 启用学生 [admin]
-      parameters: [{$ref: '#/components/parameters/idPath'}]
-      responses:
-        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
-        default: {$ref: '#/components/responses/Err'}
-  /admin/students/{id}/device:
-    delete:
-      summary: 解绑设备 [admin]
       parameters: [{$ref: '#/components/parameters/idPath'}]
       responses:
         '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
@@ -853,8 +857,8 @@ paths:
         '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/Me'}}}}}}
         default: {$ref: '#/components/responses/Err'}
     put:
-      summary: 修改设置(引导模式/使用时段) [admin]
-      requestBody: {required: true, content: {application/json: {schema: {type: object, properties: {qaGuideOnly: {type: boolean}, studentHours: {type: object, required: [start, end], properties: {start: {type: string}, end: {type: string}}}}}}}}
+      summary: 修改设置(引导模式/使用时段/AI 功能开关) [admin]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, properties: {qaGuideOnly: {type: boolean}, preGrading: {type: boolean}, classCompanion: {type: boolean}, diagnosis: {type: boolean}, studentHours: {type: object, required: [start, end], properties: {start: {type: string}, end: {type: string}}}}}}}}
       responses:
         '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
         default: {$ref: '#/components/responses/Err'}
@@ -1106,13 +1110,6 @@ paths:
       responses:
         '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
         default: {$ref: '#/components/responses/Err'}
-  /grading/assignments/{id}/adopt-ai:
-    post:
-      summary: 全部采纳 AI 分 [teacher]
-      parameters: [{$ref: '#/components/parameters/idPath'}]
-      responses:
-        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
-        default: {$ref: '#/components/responses/Err'}
   /grading/assignments/{id}/finalize:
     post:
       summary: 出分(成绩对学生可见,触发错题/掌握度任务) [teacher]
@@ -1232,6 +1229,13 @@ paths:
       parameters: [{$ref: '#/components/parameters/idPath'}]
       responses:
         '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [mastery, wrongOpenCount, attempts30d], properties: {mastery: {type: array, items: {$ref: '#/components/schemas/MasteryItem'}}, wrongOpenCount: {type: integer}, attempts30d: {type: integer}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /analytics/students/{id}/diagnose:
+    post:
+      summary: AI 学情诊断 [teacher/admin]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/AiDiagnosis'}}}}}}
         default: {$ref: '#/components/responses/Err'}
 
   # ================= AI =================

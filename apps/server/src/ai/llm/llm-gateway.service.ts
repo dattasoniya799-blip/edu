@@ -16,11 +16,16 @@ export const costKey = (orgId: number, period = periodOf()) => `a7:ai:cost:${org
 /** 额度告警只发一次的 SETNX 守卫键 */
 export const alertKey = (orgId: number, period = periodOf()) => `a7:ai:alert:${orgId}:${period}`;
 
-/** over_policy → 超额时被关闭的能力(默认 disable_qa:关答疑、保课堂伴学/预批) */
+/**
+ * over_policy → 超额时被关闭的能力(契约枚举 disable_qa / pause_all / record_only):
+ * - disable_qa:仅关答疑,保课堂伴学/预批/诊断(默认)
+ * - pause_all:封全部四能力
+ * - record_only:全放行,仅记账(不拦截)
+ */
 const OVER_POLICY_BLOCKS: Record<string, AiFeature[]> = {
   disable_qa: ['qa'],
-  disable_all: ['qa', 'class_companion', 'diagnosis', 'pre_grading'],
-  none: [],
+  pause_all: ['qa', 'class_companion', 'diagnosis', 'pre_grading'],
+  record_only: [],
 };
 
 /**
@@ -160,7 +165,8 @@ export class LlmGatewayService implements LlmGateway, OnModuleInit {
     if (!quota || quota.monthlyLimit <= 0) return;
     const used = Number((await this.redis.get(costKey(req.orgId))) ?? 0);
     if (used < quota.monthlyLimit) return;
-    const blocked = OVER_POLICY_BLOCKS[quota.overPolicy] ?? OVER_POLICY_BLOCKS.disable_qa;
+    // 三种合法策略均已直接命中(DTO 已校验枚举);未知值不再兜底 disable_qa,按 record_only 放行
+    const blocked = OVER_POLICY_BLOCKS[quota.overPolicy] ?? [];
     if (blocked.includes(req.feature)) {
       throw new BizException(
         ERR_AI_QUOTA_EXCEEDED,

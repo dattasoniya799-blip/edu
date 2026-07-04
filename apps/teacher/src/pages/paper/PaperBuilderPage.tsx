@@ -1,6 +1,6 @@
 /**
  * 课后作业组卷(原型 v0.4 id=t-paper)
- * 已选题列表(分值编辑 + 实时总分)+ 发布设置(名称/对象/截止时间)+ 题库选题弹窗(与 B3 题库同口径数据)
+ * 已选题列表(分值编辑 + 实时总分)+ 发布设置(名称/截止时间;恒发本课程全体)+ 题库选题弹窗(与 B3 题库同口径数据)
  * 发布作业 = 保存试卷(POST/PUT /papers)→ POST /assignments → 挂载到讲次 homework 环节
  * 裁剪口径(MVP 手册 1.1):AI 组卷建议、定时发布延后;截止时间保留
  */
@@ -16,6 +16,14 @@ import { defaultScore, toPaperInput, totalScore, validatePaper, type PaperItem }
 import { SelectedQuestionList } from './components/SelectedQuestionList';
 import { QuestionPicker } from './components/QuestionPicker';
 
+/** 截止时间默认值 = 明天 21:00(本地时区,datetime-local 形状 YYYY-MM-DDTHH:mm) */
+function defaultDueAt(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T21:00`;
+}
+
 export function PaperBuilderPage() {
   const { id } = useParams();
   const lessonId = Number(id);
@@ -28,7 +36,7 @@ export function PaperBuilderPage() {
   const [paperId, setPaperId] = useState<number | null>(Number(searchParams.get('paperId')) || null);
   const [name, setName] = useState('');
   const [items, setItems] = useState<PaperItem[]>([]);
-  const [dueAt, setDueAt] = useState('2026-06-17T21:00');
+  const [dueAt, setDueAt] = useState(defaultDueAt);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -187,12 +195,6 @@ export function PaperBuilderPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold text-ink-2">发布对象</span>
-              <select className="rounded-[10px] border-[1.5px] border-line bg-card px-3 py-2 text-[13px]" disabled>
-                <option>本课程全体学生</option>
-              </select>
             </label>
             <label className="flex flex-col gap-1.5">
               <span className="text-xs font-semibold text-ink-2">截止时间</span>

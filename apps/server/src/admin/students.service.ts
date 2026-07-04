@@ -9,7 +9,7 @@ import { markPasswordReset } from '../auth/pwd-reset';
 import { PrismaService } from '../prisma/prisma.service';
 import { REDIS } from '../redis/redis.module';
 import { StudentInputDto, StudentListQueryDto } from './admin.dto';
-import { daysAgoUtc, iso, num, profileField } from './helpers';
+import { daysAgoUtc, num, profileField } from './helpers';
 
 @Injectable()
 export class StudentsService {
@@ -29,8 +29,6 @@ export class StudentsService {
       ...(q.courseId
         ? { enrollments: { some: { courseId: BigInt(q.courseId), status: 'active' } } }
         : {}),
-      ...(q.deviceBound === true ? { device: { isNot: null } } : {}),
-      ...(q.deviceBound === false ? { device: { is: null } } : {}),
       ...(q.keyword
         ? {
             OR: [
@@ -189,17 +187,6 @@ export class StudentsService {
     return null;
   }
 
-  // ---------------- 解绑设备(已无设备绑定,无绑定时恒成功) ----------------
-  async unbindDevice(user: JwtUser, id: number, ip?: string): Promise<null> {
-    const s = await this.findStudentOr404(id);
-    await this.prisma.client.device.deleteMany({ where: { studentId: s.id } });
-    await this.audit.log({
-      actorId: user.uid, orgId: user.orgId, action: 'admin.student.unbind_device',
-      targetType: 'device', targetId: id, ip,
-    });
-    return null;
-  }
-
   // ---------------- 内部 ----------------
   private async findStudentOr404(id: number) {
     const s = await this.prisma.client.user.findFirst({
@@ -266,7 +253,6 @@ export class StudentsService {
       this.prisma.client.user.findMany({
         where: { id: { in: ids } },
         include: {
-          device: true,
           enrollments: {
             where: { status: 'active', course: { deletedAt: null } },
             include: { course: { select: { id: true, name: true, classType: true } } },
@@ -299,9 +285,6 @@ export class StudentsService {
           name: e.course.name,
           classType: e.course.classType,
         })),
-        device: u.device
-          ? { name: u.device.deviceName ?? '', boundAt: iso(u.device.boundAt) }
-          : null,
         weekStudySec: studyMap.get(String(u.id)) ?? 0,
       }));
   }

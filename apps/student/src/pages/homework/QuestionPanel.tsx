@@ -142,7 +142,7 @@ function BlankInputs({ q, item, draft, onDraft, locked }: QuestionPanelProps & {
   );
 }
 
-// ---------------- 解答题:拍照真上传(sts+PUT 经注入回调;MVP 裁剪:手写板标「即将上线」) ----------------
+// ---------------- 解答题:拍照真上传(sts+PUT 经注入回调;纸上作答 → 拍照上传兜底) ----------------
 function SolutionPad({ item, draft, onDraft, locked, onUploadPhoto }: Pick<QuestionPanelProps, 'item' | 'draft' | 'onDraft' | 'onUploadPhoto'> & { locked: boolean }) {
   const inputId = useId();
   const [uploading, setUploading] = useState(false);
@@ -172,14 +172,6 @@ function SolutionPad({ item, draft, onDraft, locked, onUploadPhoto }: Pick<Quest
     <div className="rounded-md border border-line bg-bg/60 p-4">
       <div className="mb-3 flex gap-2">
         <span className="min-h-touch inline-flex items-center rounded-pill bg-primary px-4 text-[13px] font-semibold text-card">📷 拍照上传</span>
-        <button
-          type="button"
-          disabled
-          className="min-h-touch inline-flex items-center rounded-pill border border-line bg-card px-4 text-[13px] text-ink-3"
-          title="手写板 v1.1 上线"
-        >
-          ✍ 手写作答 · 即将上线
-        </button>
       </div>
       {!locked && (
         <>

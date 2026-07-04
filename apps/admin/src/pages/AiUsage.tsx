@@ -4,7 +4,7 @@ import type { AiUsageBreakdownDto, AiUsageSummaryDto } from '@qiming/contracts';
 import { Button, Card, EmptyState, Modal, ProgressBar, Skeleton, StatCard, useToast } from '@qiming/ui';
 import { api } from '../api';
 import { BarChart } from '../components/BarChart';
-import { Field, FormRow, RoleNote, Select, TextInput } from '../components/controls';
+import { Field, FormRow, Select, TextInput } from '../components/controls';
 import { formatDayShort, formatMoney, formatWan } from '../lib/format';
 import { OVER_POLICY_LABEL } from '../lib/labels';
 import { validateQuota } from '../lib/validate';
@@ -122,16 +122,13 @@ export function AiUsage() {
               {daily.length === 0 ? (
                 <EmptyState text="本月暂无用量记录" />
               ) : (
-                <>
-                  <BarChart
-                    data={daily.map((d, i) => ({
-                      label: i === daily.length - 1 ? '今天' : formatDayShort(d.date),
-                      value: Math.round(d.tokens / 10000),
-                      hi: i === daily.length - 1,
-                    }))}
-                  />
-                  <div className="mt-2 text-xs text-ink-3">周末为上课高峰,「课堂 AI 伴学」消耗集中在周六、周日。</div>
-                </>
+                <BarChart
+                  data={daily.map((d, i) => ({
+                    label: i === daily.length - 1 ? '今天' : formatDayShort(d.date),
+                    value: Math.round(d.tokens / 10000),
+                    hi: i === daily.length - 1,
+                  }))}
+                />
               )}
             </Card>
             <Card title="按功能拆分(本月)">
@@ -233,7 +230,6 @@ function QuotaModal({ open, initial, onClose, onSaved }: { open: boolean; initia
             {Object.entries(OVER_POLICY_LABEL).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
           </Select>
         </Field>
-        <RoleNote>建议保留「课堂 AI 伴学」不受额度限制,避免影响正在进行的课程。</RoleNote>
       </div>
     </Modal>
   );

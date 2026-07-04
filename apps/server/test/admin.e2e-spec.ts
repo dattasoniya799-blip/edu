@@ -41,7 +41,7 @@ const exactKeys = (obj: object, keys: string[]) =>
   expect(Object.keys(obj).sort()).toEqual([...keys].sort());
 
 const TEACHER_KEYS = ['id', 'name', 'teacherNo', 'phone', 'stage', 'subject', 'status', 'courseCount', 'questionCount', 'resourceCount'];
-const STUDENT_KEYS = ['id', 'name', 'studentNo', 'parentPhone', 'grade', 'status', 'courses', 'device', 'weekStudySec'];
+const STUDENT_KEYS = ['id', 'name', 'studentNo', 'parentPhone', 'grade', 'status', 'courses', 'weekStudySec'];
 const COURSE_KEYS = ['id', 'name', 'classType', 'subject', 'stage', 'teacherId', 'teacherName', 'totalLessons', 'currentLesson', 'studentCount', 'status', 'nextLessonAt', 'attendanceRate', 'homeworkRate'];
 const MASTERY_KEYS = ['nodeId', 'nodeName', 'graphType', 'mastery', 'sampleCount'];
 const SUMMARY_KEYS = ['period', 'totalTokens', 'totalCost', 'monthlyLimit', 'usedPercent', 'avgCostPerLesson'];
@@ -100,7 +100,7 @@ describe('管理员域(A2)', () => {
     const orgB = await raw.org.create({
       data: {
         name: 'A2-e2e第二机构',
-        settings: { ai: { qaGuideOnly: true, preGrading: true }, studentHours: { start: '06:00', end: '22:30' }, deviceBinding: true },
+        settings: { ai: { qaGuideOnly: true, preGrading: true }, studentHours: { start: '06:00', end: '22:30' } },
       },
     });
     orgBId = orgB.id;
@@ -278,7 +278,6 @@ describe('管理员域(A2)', () => {
       exactKeys(body.data, STUDENT_KEYS);
       expect(body.data.studentNo).toMatch(/^S-\d{4}$/);
       expect(body.data.status).toBe('active'); // 账号密码登录:创建即激活
-      expect(body.data.device).toBeNull();
       expect(body.data.weekStudySec).toBe(0);
       expect(body.data.courses).toEqual([
         { id: Number(seedCourseId), name: '初二数学提高班', classType: 'group' },
@@ -290,19 +289,11 @@ describe('管理员域(A2)', () => {
       expect(created.passwordHash).toBeTruthy();
     });
 
-    it('列表过滤:courseId / deviceBound 与库一致', async () => {
+    it('列表过滤:courseId 与库一致', async () => {
       const byCourse = await get(`/admin/students?courseId=${seedCourseId}&size=50`, adminAt).expect(200);
       const enrolled = await raw.courseStudent.count({ where: { courseId: seedCourseId, status: 'active' } });
       expect(byCourse.body.data.total).toBe(enrolled);
-
-      const bound = await get('/admin/students?deviceBound=true&size=50', adminAt).expect(200);
-      const boundExpected = await raw.device.count({ where: { orgId: org1Id } });
-      expect(bound.body.data.total).toBe(boundExpected);
-      for (const s of bound.body.data.items as StudentDto[]) {
-        exactKeys(s, STUDENT_KEYS);
-        expect(s.device).not.toBeNull();
-        exactKeys(s.device!, ['name', 'boundAt']);
-      }
+      for (const s of byCourse.body.data.items as StudentDto[]) exactKeys(s, STUDENT_KEYS);
     });
 
     it('学生档案:mastery 与 wrongOpenCount 与 seed 手算一致(验收项)', async () => {
@@ -311,7 +302,6 @@ describe('管理员域(A2)', () => {
       exactKeys(body.data, ['student', 'mastery', 'wrongOpenCount']);
       exactKeys(body.data.student, STUDENT_KEYS);
       expect(body.data.student.id).toBe(Number(seedStudent1Id));
-      expect(body.data.student.device).not.toBeNull();
 
       // 手算:按 seed 口径(学生×标签节点的客观题正确率)从 answers 重新聚合
       const answers = await raw.answer.findMany({
@@ -367,16 +357,6 @@ describe('管理员域(A2)', () => {
         where: { orgId: org1Id, action: 'admin.student.reset_password', targetId: BigInt(myStudentId) },
       });
       expect(audit).toBeGreaterThanOrEqual(1);
-    });
-
-    it('解绑设备:无绑定时恒成功(200);有绑定则清除', async () => {
-      // 已无设备绑定流程:无绑定时也返回 200
-      await del(`/admin/students/${myStudentId}/device`, adminAt).expect(200);
-      await raw.device.create({
-        data: { orgId: org1Id, studentId: BigInt(myStudentId), deviceFingerprint: 'fp-a2-e2e', deviceName: 'A2测试平板' },
-      });
-      await del(`/admin/students/${myStudentId}/device`, adminAt).expect(200);
-      expect(await raw.device.count({ where: { studentId: BigInt(myStudentId) } })).toBe(0);
     });
 
     it('编辑学生:改年级与退班', async () => {
@@ -680,22 +660,33 @@ describe('管理员域(A2)', () => {
         .expect(400); // 契约 alertThreshold ∈ [50,95]
     });
 
-    it('设置读写:GET 返回 Me;PUT 仅改引导模式与使用时段', async () => {
+    it('设置读写:GET 返回 Me;PUT 可写 引导/预批/伴学/诊断 开关与使用时段', async () => {
       const before = await get('/admin/settings', adminAt).expect(200);
       const me = (before.body as ApiResp<MeDto>).data;
       exactKeys(me, ME_KEYS);
+      // 机构 settings JSON 保留历史 deviceBinding 键(设备绑定管理已下线,残留键无害)
       exactKeys(me.orgSettings, ['ai', 'studentHours', 'deviceBinding']);
       expect(me.role).toBe('admin');
 
+      // PUT 现可写 qaGuideOnly + preGrading + classCompanion + diagnosis + studentHours(除原有引导模式/时段)
       await put('/admin/settings', adminAt)
-        .send({ qaGuideOnly: false, studentHours: { start: '07:00', end: '21:00' } })
+        .send({
+          qaGuideOnly: false,
+          preGrading: false,
+          classCompanion: true,
+          diagnosis: true,
+          studentHours: { start: '07:00', end: '21:00' },
+        })
         .expect(200);
       const after = await get('/admin/settings', adminAt).expect(200);
       const s = (after.body as ApiResp<MeDto>).data.orgSettings;
       expect(s.ai.qaGuideOnly).toBe(false);
-      expect(s.ai.preGrading).toBe(true); // 未触碰的开关保持
+      expect(s.ai.preGrading).toBe(false); // 新可写开关落库
+      expect(s.ai.classCompanion).toBe(true);
+      expect(s.ai.diagnosis).toBe(true);
       expect(s.studentHours).toEqual({ start: '07:00', end: '21:00' });
-      expect(s.deviceBinding).toBe(true);
+      // 注:本机构为 seed 机构且 preGradingEnabled 读库中机构设置,afterAll 会整体复位 settings,
+      // 故此处将 preGrading 置 false 不会污染后续 spec 的预批门禁。
     });
 
     it('审计日志:分页倒序、字段一致、能看到本轮管理动作', async () => {

@@ -134,12 +134,9 @@ export const handlers = [
     const kw = url.searchParams.get('keyword') ?? '';
     const status = url.searchParams.get('status');
     const courseId = url.searchParams.get('courseId');
-    const deviceBound = url.searchParams.get('deviceBound');
     let list = D.students.filter((s) => !kw || s.name.includes(kw) || s.studentNo.includes(kw));
     if (status) list = list.filter((s) => s.status === status);
     if (courseId) list = list.filter((s) => s.courses.some((c) => c.id === Number(courseId)));
-    if (deviceBound !== null && deviceBound !== undefined && deviceBound !== '')
-      list = list.filter((s) => (deviceBound === 'true' ? !!s.device : !s.device));
     return ok(paginate(list, url));
   })),
   http.post(`${BASE}/admin/students`, authed(async ({ request }) => {
@@ -152,7 +149,7 @@ export const handlers = [
         .map((cid) => D.courses.find((c) => c.id === cid))
         .filter((c): c is NonNullable<typeof c> => !!c)
         .map((c) => ({ id: c.id, name: c.name, classType: c.classType })),
-      device: null, weekStudySec: 0,
+      weekStudySec: 0,
     };
     D.students.push(created); // 有状态 mock:刷新列表可见
     return ok(created);
@@ -178,11 +175,6 @@ export const handlers = [
     const s = D.students.find((x) => x.id === Number(params.id));
     if (!s) return err(404, 4040, '学生不存在');
     s.status = 'active'; // 有状态 mock:恢复启用后列表刷新可见
-    return okVoid();
-  })),
-  http.delete(`${BASE}/admin/students/:id/device`, authed(({ params }) => {
-    const s = D.students.find((x) => x.id === Number(params.id));
-    if (s) s.device = null; // 有状态 mock:档案/列表刷新可见
     return okVoid();
   })),
 
@@ -288,8 +280,14 @@ export const handlers = [
 
   http.get(`${BASE}/admin/settings`, authed((info) => ok(currentUser(info.request)))),
   http.put(`${BASE}/admin/settings`, authed(async ({ request }) => {
-    const body = (await request.json()) as { qaGuideOnly?: boolean; studentHours?: { start: string; end: string } };
+    const body = (await request.json()) as {
+      qaGuideOnly?: boolean; preGrading?: boolean; classCompanion?: boolean; diagnosis?: boolean;
+      studentHours?: { start: string; end: string };
+    };
     if (body.qaGuideOnly !== undefined) D.orgSettings.ai.qaGuideOnly = body.qaGuideOnly;
+    if (body.preGrading !== undefined) D.orgSettings.ai.preGrading = body.preGrading;
+    if (body.classCompanion !== undefined) D.orgSettings.ai.classCompanion = body.classCompanion;
+    if (body.diagnosis !== undefined) D.orgSettings.ai.diagnosis = body.diagnosis;
     if (body.studentHours) D.orgSettings.studentHours = { ...body.studentHours };
     return okVoid();
   })),
