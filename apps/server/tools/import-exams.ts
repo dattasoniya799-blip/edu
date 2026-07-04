@@ -13,8 +13,9 @@
  *   - tagNodeIds 必填且至少 1 个教材知识点(curriculum_knowledge)——该学科若无图谱/无匹配节点,
  *     题目无法通过服务端校验,只能记失败并附原因(subject/chapter 仍是检索字段,但契约不允许无 kp 标签);
  *   - POST /questions 存为草稿,需再 POST /questions/{id}/publish 入库(published)。
- * 幂等: 导入前 GET /questions?keyword=<题干前18字>(stemLatex contains 检索),
- *   命中 stemLatex 完全相同的题则跳过。
+ * 幂等: 登录后分页拉取全库题目建 stemLatex 全等索引,命中即跳过(命中 draft 则补发布)。
+ *   历史教训: 旧版用 keyword=<题干前18字> contains 检索去重,LaTeX 题干检索不可靠,
+ *   重跑会大量漏判重复造成重复入库——全等索引才是可靠幂等。配套 cleanup-exam-dups.ts 清历史重复。
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -191,15 +192,21 @@ function toQuestionInput(exam: ExamFile, q: SourceQuestion, kpNodes: KpNode[] | 
   };
 }
 
-// ---------------- 幂等查重 ----------------
+// ---------------- 幂等查重(全量拉取 + stemLatex 全等索引) ----------------
 
-/** 题干前 18 字作 keyword(stemLatex contains 检索),命中完全相同 stemLatex 即视为已存在 */
-async function findExisting(stemLatex: string): Promise<number | null> {
-  const prefix = stemLatex.slice(0, 18);
-  const data = await api<{ items: { id: number; stemLatex: string }[]; total: number }>(
-    'GET', `/questions?keyword=${encodeURIComponent(prefix)}&size=50`);
-  const hit = data.items.find((it) => it.stemLatex === stemLatex);
-  return hit ? hit.id : null;
+interface StemHit { id: number; status: string }
+
+/** 分页拉取全库题目(含 draft),建 stemLatex → {id,status} 索引;导入中新建的题随手入索引 */
+async function fetchStemIndex(): Promise<Map<string, StemHit>> {
+  const idx = new Map<string, StemHit>();
+  for (let page = 1; ; page++) {
+    const data = await api<{ items: { id: number; stemLatex: string; status?: string }[]; total: number }>(
+      'GET', `/questions?size=50&page=${page}`);
+    for (const it of data.items)
+      if (!idx.has(it.stemLatex)) idx.set(it.stemLatex, { id: it.id, status: it.status ?? 'published' });
+    if (page * 50 >= data.total || data.items.length === 0) break;
+  }
+  return idx;
 }
 
 // ---------------- 主流程 ----------------
@@ -216,7 +223,10 @@ async function main() {
   const login = await api<{ accessToken: string; me: { name: string; role: string } }>(
     'POST', '/auth/login', { phone: PHONE, password: PASSWORD });
   token = login.accessToken;
-  console.log(`登录成功: ${login.me?.name ?? PHONE}(${login.me?.role ?? '?'})\n`);
+  console.log(`登录成功: ${login.me?.name ?? PHONE}(${login.me?.role ?? '?'})`);
+
+  const stemIndex = await fetchStemIndex();
+  console.log(`查重索引: 现库 ${stemIndex.size} 道题干\n`);
 
   // curriculum 图谱节点缓存(按学科);无图谱学科 → null
   const graphs = await api<{ id: number; graphType: string; subject: string }[]>('GET', '/kp/graphs');
@@ -247,15 +257,23 @@ async function main() {
       const label = `第${i + 1}题(${exam.questions[i].type})`;
       try {
         const input = toQuestionInput(exam, exam.questions[i], kpNodes);
-        const dupId = await findExisting(input.stemLatex);
-        if (dupId != null) {
+        const hit = stemIndex.get(input.stemLatex);
+        if (hit && hit.status !== 'draft') {
           st.skipped++;
-          console.log(`   ↷ ${label} 跳过:已存在 id=${dupId}`);
+          console.log(`   ↷ ${label} 跳过:已存在 id=${hit.id}`);
           continue;
         }
         if (DRY_RUN) {
           st.imported++;
+          stemIndex.set(input.stemLatex, { id: -1, status: 'published' });
           console.log(`   ✓ ${label} [dry-run] 将导入 tags=[${input.tagNodeIds!.join(',')}] difficulty=${input.difficulty}`);
+          continue;
+        }
+        if (hit && hit.status === 'draft') {
+          await api('POST', `/questions/${hit.id}/publish`);
+          hit.status = 'published';
+          st.imported++;
+          console.log(`   ✓ ${label} 已有草稿 id=${hit.id},补发布(published)`);
           continue;
         }
         const created = await api<{ id: number }>('POST', '/questions', input);
@@ -265,6 +283,7 @@ async function main() {
           throw new Error(`已建草稿 id=${created.id} 但发布失败: ${(e as Error).message}`);
         }
         st.imported++;
+        stemIndex.set(input.stemLatex, { id: created.id, status: 'published' });
         console.log(`   ✓ ${label} 导入 id=${created.id}(published) tags=[${input.tagNodeIds!.join(',')}]`);
       } catch (e) {
         st.failed++;
