@@ -117,7 +117,7 @@ export function Settings() {
             <div className="flex flex-col gap-4">
               <SettingRow
                 title="学生端使用时段"
-                desc={`每日 ${settings.studentHours.start} – ${settings.studentHours.end} 可登录,超时自动锁定`}
+                desc={`每日 ${settings.studentHours.start} – ${settings.studentHours.end} 之外,学生将无法登录`}
                 last
               >
                 <button type="button" className="text-[13px] font-medium text-primary hover:underline" onClick={() => setHoursOpen(true)}>
@@ -203,7 +203,7 @@ function HoursModal({ open, initial, onClose, onSave }: {
             <TextInput type="time" value={end} onChange={(e) => setEnd(e.target.value)} />
           </Field>
         </FormRow>
-        <RoleNote>时段外学生平板将自动锁定、无法登录;正在进行的课堂不受影响。</RoleNote>
+        <RoleNote>时段外学生将无法登录;已登录的学生和正在进行的课堂不受影响。</RoleNote>
       </div>
     </Modal>
   );

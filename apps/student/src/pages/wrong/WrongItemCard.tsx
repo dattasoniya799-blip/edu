@@ -46,9 +46,14 @@ export function WrongItemCard({ item, onRedo, redoing, subjectLabel }: WrongItem
 
       <div className="mt-3 flex flex-wrap gap-2">
         {!cleared && (
-          <Button variant="primary" className="min-h-touch" disabled={redoing} onClick={() => onRedo(item.id)}>
-            重做本题
-          </Button>
+          // 解答题(主观题)后端不支持在线重做:置灰并说明,不发无效请求
+          item.type === 'solution' ? (
+            <Button className="min-h-touch" disabled title="主观题暂不支持在线重做">主观题暂不支持重做</Button>
+          ) : (
+            <Button variant="primary" className="min-h-touch" disabled={redoing} onClick={() => onRedo(item.id)}>
+              重做本题
+            </Button>
+          )
         )}
         {hasAnalysis && (
           <Button className="min-h-touch" aria-expanded={expanded} onClick={() => setExpanded((v) => !v)}>

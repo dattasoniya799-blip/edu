@@ -33,14 +33,33 @@ export function TodayPage() {
   const navigate = useNavigate();
   const [data, setData] = useState<TodayData | null>(null);
   const [week, setWeek] = useState<WeekStats | null>(null);
+  const [error, setError] = useState(false); // 今日安排加载失败(整页可重试)
+  const [weekError, setWeekError] = useState(false); // 本周 mini-stats 加载失败(局部降级)
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
-    api.get('/student/today').then((r) => setData(r.data as TodayData));
-    api.get('/student/report').then((r) => setWeek((r.data as { weekStats: WeekStats }).weekStats));
-  }, []);
+    setData(null); setWeek(null); setError(false); setWeekError(false);
+    api.get('/student/today')
+      .then((r) => setData(r.data as TodayData))
+      .catch(() => setError(true));
+    api.get('/student/report')
+      .then((r) => setWeek((r.data as { weekStats: WeekStats }).weekStats))
+      .catch(() => setWeekError(true));
+  }, [reload]);
 
   const hour = new Date().getHours();
   const greet = hour < 12 ? '上午好' : hour < 18 ? '下午好' : '晚上好';
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-[1080px]">
+        <Card>
+          <EmptyState icon="⚠" text="加载失败" hint="可能是网络波动,请重试"
+            action={<Button variant="primary" className="min-h-touch" onClick={() => setReload((n) => n + 1)}>重新加载</Button>} />
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1080px]">
@@ -97,7 +116,9 @@ export function TodayPage() {
         </Card>
 
         <Card title="本周学习">
-          {!week ? (
+          {weekError ? (
+            <div className="py-2 text-center text-[13px] text-ink-3">本周数据加载失败</div>
+          ) : !week ? (
             <Skeleton className="h-12" lines={2} />
           ) : (
             <div className="grid grid-cols-2 gap-3">

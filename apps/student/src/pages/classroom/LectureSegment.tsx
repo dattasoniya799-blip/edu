@@ -22,7 +22,7 @@ export function LectureSegment({ pages, onTouch, onDone }: LectureSegmentProps) 
   if (pages.length === 0) {
     return (
       <div className="mx-auto max-w-[860px] rounded-lg border border-line bg-card p-10 shadow-card">
-        <EmptyState icon="▦" text="课件暂不可用" hint="课件内容需契约 B6-1 落地后由资源域下发;可先进入随堂练" />
+        <EmptyState icon="▦" text="课件暂不可用" hint="老师还没有上传本节课件,可以先进入随堂练" />
         <div className="mt-4 flex justify-center">
           <Button variant="primary" className="min-h-touch" onClick={onDone}>进入随堂练 →</Button>
         </div>

@@ -61,6 +61,41 @@ function ClassroomInner({ sessionId }: { sessionId: number }) {
     navigate('/');
     toast(state.ended ? '本讲已结束,作业见「今日」' : '已离开课堂,课堂进度已保存');
   };
+  /** 错误态返回(未成功入课,不提示「进度已保存」) */
+  const back = () => {
+    cls.leave();
+    navigate('/');
+  };
+
+  // ---------- join 被业务拒绝(课堂已结束/不是本课学生/未开课等):已停止重连,明确错误态 ----------
+  if (state.conn === 'rejected') {
+    return (
+      <Stage>
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 text-ink-3">
+          <span aria-hidden className="text-2xl">⚠</span>
+          <b className="text-base text-ink">无法进入课堂</b>
+          <span className="text-sm">{state.error ?? '课堂拒绝了本次加入'}</span>
+          <Button className="min-h-touch mt-2" onClick={back}>返回</Button>
+        </div>
+      </Stage>
+    );
+  }
+
+  // ---------- 自动重连超限:不再转圈,手动重试 ----------
+  if (state.conn === 'failed') {
+    return (
+      <Stage>
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 text-ink-3">
+          <span aria-hidden className="text-2xl">⚠</span>
+          <span className="text-sm">连接失败,请检查网络后重试</span>
+          <div className="mt-2 flex gap-3">
+            <Button variant="primary" className="min-h-touch" onClick={() => cls.retry()}>重新连接</Button>
+            <Button className="min-h-touch" onClick={back}>返回首页</Button>
+          </div>
+        </div>
+      </Stage>
+    );
+  }
 
   // ---------- 连接中(首个快照前) ----------
   if (state.session == null) {

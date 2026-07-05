@@ -256,7 +256,6 @@ export const handlers = [
   http.get(`${BASE}/grading/pending`, authed(() => ok(D.gradingPending))),
   http.get(`${BASE}/grading/answers/:id`, authed(() => ok(D.gradingItem))),
   http.put(`${BASE}/grading/answers/:id/review`, authed(() => okVoid())),
-  http.post(`${BASE}/grading/assignments/:id/adopt-ai`, authed(() => okVoid())),
   http.post(`${BASE}/grading/assignments/:id/finalize`, authed(() => okVoid())),
 
   // ================= 学生(B5:有状态 store,attempt 进度持续保存,刷新可断点续答) =================

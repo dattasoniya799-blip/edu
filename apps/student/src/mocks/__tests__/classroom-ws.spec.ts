@@ -14,7 +14,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { AnswerResult, C2SEvents, ClassControl, S2CEvents } from '@qiming/contracts';
 import * as CM from '../../pages/classroom/machine';
 import type { ClassJoinSnapshot } from '../../pages/classroom/types';
-import { ClassroomWsClient } from '../../pages/classroom/ws/client';
+import { ClassroomWsClient, type WsExceptionPayload } from '../../pages/classroom/ws/client';
 import * as CD from '../class-data';
 import {
   attachClassroomMock, createClassroomMockState,
@@ -24,7 +24,7 @@ import * as D from '../data';
 
 const TOKEN = 'mock-token-student';
 
-type RawSocket = Socket<S2CEvents & { exception: (p: { status: number; message: string }) => void }, C2SEvents>;
+type RawSocket = Socket<S2CEvents & { exception: (p: { status: 'error'; message: string }) => void }, C2SEvents>;
 
 // ---------------- 服务器夹具(支持"断网":关监听 + 毁连接,状态驻留) ----------------
 
@@ -213,7 +213,7 @@ describe('mock WS 全链路(socket.io-client 直驱)', () => {
     await waitFor(() => srv.handle.getStudent(TOKEN)?.state === 'normal', 3000, 'stuck 复位');
   });
 
-  it('鉴权与越权:无效 token → connect_error;错误 sessionId → exception 不回 ack;学生发 class:control → 403', async () => {
+  it('鉴权与越权:无效 token → connect_error;错误 sessionId → exception 不回 ack;学生发 class:control → 拒绝', async () => {
     const srv = await startServer();
 
     const bad = rawClient(srv.port, 'not-a-token');
@@ -221,17 +221,18 @@ describe('mock WS 全链路(socket.io-client 直驱)', () => {
     expect(err.message).toContain('登录');
 
     const s = rawClient(srv.port);
-    const exceptions: { status: number; message: string }[] = [];
+    const exceptions: { status: 'error'; message: string }[] = [];
     s.on('exception', (p) => exceptions.push(p));
     let acked = false;
     s.emit('class:join', { sessionId: 999 }, () => { acked = true; });
     await waitFor(() => exceptions.length > 0, 3000, 'join 拒绝 exception');
-    expect(exceptions[0].status).toBe(404);
+    // 负载对齐真实网关:status 恒为 'error'(字符串),细节只在 message
+    expect(exceptions[0]).toEqual({ status: 'error', message: '课堂不存在或不属于你' });
     expect(acked).toBe(false); // A6:join 被拒 ack 不回包
 
     await join(s);
     s.emit('class:control', { action: 'end' });
-    await waitFor(() => exceptions.some((e) => e.status === 403), 3000, '学生 control 403');
+    await waitFor(() => exceptions.some((e) => e.message.includes('仅本课教师')), 3000, '学生 control 拒绝');
     expect(srv.state.session.status).toBe('live'); // 未被学生改动
   });
 
@@ -330,5 +331,75 @@ describe('断线恢复(ClassroomWsClient + reducer 全链路)', () => {
     await sleep(400);
     expect(client.connState.phase).toBe('closed');
     expect(client.socket.connected).toBe(false);
+  });
+});
+
+describe('join 业务拒绝与重连上限(ClassroomWsClient)', () => {
+  it('join 被拒(exception)→ 停止重连进 rejected 终态,onException(rejected=true),不再转圈', async () => {
+    const srv = await startServer();
+    const exceptions: [WsExceptionPayload, { rejected: boolean }][] = [];
+    const client = new ClassroomWsClient(
+      {
+        sessionId: 999, token: TOKEN, url: `http://127.0.0.1:${srv.port}`, // 不存在的课堂 → join 拒绝
+        joinTimeoutMs: 300, // 刻意短于观察窗口:证明拒绝路径独立于超时路径,不会再触发退避
+        backoff: { baseMs: 50, factor: 2, maxMs: 200 },
+      },
+      { onException: (p, info) => exceptions.push([p, info]) },
+    );
+    cleanups.push(() => client.close());
+    client.connect();
+
+    await waitFor(() => exceptions.length > 0, 5000, 'join 拒绝 exception');
+    expect(exceptions[0][0]).toEqual({ status: 'error', message: '课堂不存在或不属于你' });
+    expect(exceptions[0][1]).toEqual({ rejected: true });
+    expect(client.connState.phase).toBe('rejected');
+    await sleep(800); // 覆盖 joinTimeout + 数轮退避窗口:确认无幽灵重连
+    expect(client.connState.phase).toBe('rejected');
+    expect(client.socket.connected).toBe(false);
+    expect(exceptions).toHaveLength(1);
+  });
+
+  it('课堂已结束 → 拒绝文案透传到视图(reducer:conn=rejected + error)', async () => {
+    const srv = await startServer();
+    srv.state.session.status = 'ended';
+    let view = CM.initialClassState;
+    const client = new ClassroomWsClient(
+      { sessionId: CD.CLASS_SESSION_ID, token: TOKEN, url: `http://127.0.0.1:${srv.port}` },
+      {
+        onConn: (s) => { view = CM.reduceClass(view, { type: 'conn', state: s }); },
+        onException: (p, { rejected }) => {
+          if (rejected) view = CM.reduceClass(view, { type: 'rejected', message: p.message });
+        },
+      },
+    );
+    cleanups.push(() => client.close());
+    client.connect();
+    await waitFor(() => view.conn === 'rejected', 5000, 'rejected 视图');
+    expect(view.error).toBe('课堂已结束');
+  });
+
+  it('重连超限 → failed(不再自动重试);网络恢复后 retry() 手动重连成功', async () => {
+    const srv = await startServer();
+    await srv.netDown(); // 从一开始就连不上 → 连续失败
+    const client = new ClassroomWsClient(
+      {
+        sessionId: CD.CLASS_SESSION_ID, token: TOKEN, url: `http://127.0.0.1:${srv.port}`,
+        heartbeatMs: 200,
+        backoff: { baseMs: 40, factor: 2, maxMs: 80, maxAttempts: 2 }, // 上限可注入(生产默认 8)
+      },
+      {},
+    );
+    cleanups.push(() => client.close());
+    client.connect();
+
+    await waitFor(() => client.connState.phase === 'failed', 8000, '重试超限 failed');
+    expect(client.connState.attempt).toBe(3); // 首次失败 + 2 次重试
+    await sleep(300);
+    expect(client.connState.phase).toBe('failed'); // 超限后不再自动重试
+
+    await srv.netUp();
+    client.retry(); // 手动重试:退避计数清零
+    await waitFor(() => client.connState.phase === 'live', 5000, '手动重试恢复');
+    expect(client.connState.attempt).toBe(0);
   });
 });

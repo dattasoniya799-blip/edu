@@ -8,7 +8,7 @@
  * - class:answer 即时判分(复用 student-store 的 A5 判分口径)+ 模板 narration;
  *   解答题 judged=false 进预批队列,narration 携带预批要点
  * - class:ai_ask → class:ai_chunk 流式分片下发(SSE 式)
- * - class:control 广播(教师/系统下发;学生 socket 发该事件 → 403 exception);
+ * - class:control 广播(教师/系统下发;学生 socket 发该事件 → exception 拒绝);
  *   测试/演示经返回句柄的 control() 触发
  * - 学生状态按 token 驻留内存(server 进程存活期间断线重连不丢 → 快照恢复)
  *
@@ -23,7 +23,8 @@ import * as CD from './class-data';
 import * as D from './data';
 import { formatCorrectAnswer, judge } from './student-store';
 
-type S2CWithException = S2CEvents & { exception: (p: { status: number; message: string }) => void };
+/** exception 负载对齐真实网关 classroom.gateway:status 恒为字符串 'error',非 HTTP 状态码 */
+type S2CWithException = S2CEvents & { exception: (p: { status: 'error'; message: string }) => void };
 
 // ---------------- 驻留状态(server 进程内,模拟 A6 Redis 热状态) ----------------
 
@@ -154,11 +155,11 @@ export function attachClassroomMock(
     socket.on('class:join', (p, ack) => {
       // A6:join 被拒时 ack 不回包,异常经 'exception'
       if (p.sessionId !== state.session.id) {
-        socket.emit('exception', { status: 404, message: '课堂不存在或不属于你' });
+        socket.emit('exception', { status: 'error', message: '课堂不存在或不属于你' });
         return;
       }
       if (state.session.status === 'ended') {
-        socket.emit('exception', { status: 409, message: '课堂已结束' });
+        socket.emit('exception', { status: 'error', message: '课堂已结束' });
         return;
       }
       const hot = hotOf(token);
@@ -189,7 +190,7 @@ export function attachClassroomMock(
       const pq = CD.CLASS_PAPER.find((x) => x.questionId === p.questionId);
       const q = D.questions.find((x) => x.id === p.questionId);
       if (!pq || !q) {
-        socket.emit('exception', { status: 404, message: '非本卷题目' });
+        socket.emit('exception', { status: 'error', message: '非本卷题目' });
         return;
       }
       const isCorrect = judge(q, p.response); // A5 判分口径(student-store 复用)
@@ -249,9 +250,9 @@ export function attachClassroomMock(
       hotOf(token).state = 'hand_up';
     });
 
-    // 契约 C2S 有 class:control(教师下发,服务端校验仅本课教师);本假服务只接学生端 → 一律 403
+    // 契约 C2S 有 class:control(教师下发,服务端校验仅本课教师);本假服务只接学生端 → 一律拒绝
     socket.on('class:control', () => {
-      socket.emit('exception', { status: 403, message: '仅本课教师可下发课堂控制' });
+      socket.emit('exception', { status: 'error', message: '仅本课教师可下发课堂控制' });
     });
   });
 

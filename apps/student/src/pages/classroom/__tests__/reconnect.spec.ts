@@ -73,3 +73,56 @@ describe('重连状态机 reduceConn', () => {
     expect(s).toEqual(once);
   });
 });
+
+describe('重连上限(failed)与手动重试', () => {
+  it('默认上限 8:第 9 次连续失败 → failed(不再进入退避)', () => {
+    let s = step(initialConn, ['open', 'connected', 'joined']);
+    for (let i = 0; i < 8; i++) {
+      s = reduceConn(s, { type: 'lost' });
+      expect(s.phase).toBe('waiting'); // 前 8 次失败仍自动重试
+      s = reduceConn(s, { type: 'retry' });
+    }
+    s = reduceConn(s, { type: 'lost' });
+    expect(s).toEqual({ phase: 'failed', attempt: 9, delayMs: null });
+  });
+
+  it('maxAttempts 可注入:2 次重试后第 3 次失败 → failed', () => {
+    const o = { baseMs: 10, factor: 2, maxMs: 40, maxAttempts: 2 };
+    let s = step(initialConn, ['open']);
+    s = reduceConn(s, { type: 'lost' }, o);
+    s = reduceConn(s, { type: 'retry' }, o);
+    s = reduceConn(s, { type: 'lost' }, o);
+    s = reduceConn(s, { type: 'retry' }, o);
+    s = reduceConn(s, { type: 'lost' }, o);
+    expect(s).toMatchObject({ phase: 'failed', attempt: 3 });
+  });
+
+  it('failed 吸收 lost/retry/connected/joined;open(手动重试)→ connecting 且 attempt 清零', () => {
+    const failed = { phase: 'failed', attempt: 9, delayMs: null } as const;
+    for (const type of ['lost', 'retry', 'connected', 'joined', 'rejected'] as const) {
+      expect(reduceConn(failed, { type })).toEqual(failed);
+    }
+    expect(reduceConn(failed, { type: 'open' })).toEqual({ phase: 'connecting', attempt: 0, delayMs: null });
+    expect(reduceConn(failed, { type: 'close' }).phase).toBe('closed');
+  });
+});
+
+describe('join 业务拒绝(rejected)', () => {
+  it('仅 joining 阶段的 rejected 生效(join 被拒);live 期间业务异常不断开', () => {
+    const joining = step(initialConn, ['open', 'connected']);
+    expect(reduceConn(joining, { type: 'rejected' })).toEqual({ phase: 'rejected', attempt: 0, delayMs: null });
+    const live = step(initialConn, ['open', 'connected', 'joined']);
+    expect(reduceConn(live, { type: 'rejected' })).toBe(live);
+    const waiting = step(initialConn, ['open', 'lost']);
+    expect(reduceConn(waiting, { type: 'rejected' })).toBe(waiting);
+  });
+
+  it('rejected 为业务拒绝终态:不重连(与 join 超时的退避路径分离),仅 close 可离开', () => {
+    let s = reduceConn(step(initialConn, ['open', 'connected']), { type: 'rejected' });
+    for (const type of ['open', 'connected', 'joined', 'lost', 'retry', 'rejected'] as const) {
+      s = reduceConn(s, { type });
+      expect(s.phase).toBe('rejected');
+    }
+    expect(reduceConn(s, { type: 'close' }).phase).toBe('closed');
+  });
+});

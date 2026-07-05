@@ -51,7 +51,7 @@ export function PracticeSegment({ state, onAnswer, onGoto, onFlag, onAsk, onTouc
   if (questions.length === 0 || quiz.items.length === 0) {
     return (
       <div className="mx-auto max-w-[860px] rounded-lg border border-line bg-card p-10 shadow-card">
-        <EmptyState icon="✎" text="随堂练题面暂不可用" hint="题面下发依赖契约 B6-1(沿用 B5-1 学生视图);可先听讲或进入小结" />
+        <EmptyState icon="✎" text="随堂练题面暂不可用" hint="本节的随堂练题目还没准备好,可以先听讲解或进入小结" />
         <div className="mt-4 flex justify-center">
           <Button variant="primary" className="min-h-touch" onClick={onDone}>进入小结 →</Button>
         </div>
