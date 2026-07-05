@@ -4,8 +4,11 @@
  * - 命名空间 /classroom,握手 auth.token = JWT(A6 口径)
  * - connect → class:join ack 取 ClassSnapshot 渲染;重连后再次 join,用快照无感恢复
  * - 心跳 class:heartbeat 每 10s(可注入,测试用短周期),携带 currentQuestion/idleSec
- * - 断线指数退避重连:自管状态机(ws/reconnect.ts,关闭 socket.io 内建重连以便单测)
- * - 服务端业务异常经 'exception' 事件下发(A6 README 口径,非契约事件,仅日志/提示)
+ * - 断线指数退避重连:自管状态机(ws/reconnect.ts,关闭 socket.io 内建重连以便单测),
+ *   连续失败超 maxAttempts 进入 failed(不再自动重试,retry() 手动恢复)
+ * - 服务端业务异常经 'exception' 事件下发(A6 README 口径,非契约事件):
+ *   joining 阶段收到 = join 被业务拒绝(课堂已结束/不是本课学生等)→ 停止重连,交页面渲染错误态;
+ *   其余阶段仅透传给页面(不影响连接)。join ack 超时(断线,继续退避)与业务拒绝是两条独立路径。
  */
 import { io, type Socket } from 'socket.io-client';
 import type {
@@ -17,8 +20,11 @@ import {
   type BackoffOpts, type WsConnEvent, type WsConnState,
 } from './reconnect';
 
+/** A6 业务异常负载(对齐 classroom.gateway 实发:status 恒为字符串 'error',非 HTTP 状态码) */
+export interface WsExceptionPayload { status: 'error'; message: string }
+
 /** A6 业务异常通道(对齐 Nest WsException 行为,不在契约 S2CEvents 内) */
-type S2CWithException = S2CEvents & { exception: (p: { status: number; message: string }) => void };
+type S2CWithException = S2CEvents & { exception: (p: WsExceptionPayload) => void };
 
 export type ClassSocket = Socket<S2CWithException, C2SEvents>;
 
@@ -31,7 +37,11 @@ export interface ClassWsHandlers {
   onAiChunk?(p: { requestId: string; delta: string; done: boolean }): void;
   onControl?(c: ClassControl): void;
   onState?(s: ParticipantSelfState): void;
-  onException?(p: { status: number; message: string }): void;
+  /**
+   * 服务端业务异常。rejected=true 表示 join 被业务拒绝(课堂已结束/不是本课学生等):
+   * 客户端已停止重连(phase=rejected),页面应显示明确错误态并提供「返回」入口。
+   */
+  onException?(p: WsExceptionPayload, info: { rejected: boolean }): void;
 }
 
 export interface ClassWsOptions {
@@ -43,7 +53,7 @@ export interface ClassWsOptions {
   path?: string;
   /** 心跳周期,默认 10s(任务卡);测试注入短周期 */
   heartbeatMs?: number;
-  /** join ack 超时(超时按断线处理重试) */
+  /** join ack 超时(按断线处理退避重试;业务拒绝走 exception → rejected,不在此列) */
   joinTimeoutMs?: number;
   /** answer ack 超时 */
   ackTimeoutMs?: number;
@@ -90,13 +100,20 @@ export class ClassroomWsClient {
     this.socket.on('class:ai_chunk', (p) => this.handlers.onAiChunk?.(p));
     this.socket.on('class:state', (p) => this.handlers.onState?.(p));
     this.socket.on('class:control', (c) => this.handlers.onControl?.(c));
-    this.socket.on('exception', (p) => this.handlers.onException?.(p));
+    this.socket.on('exception', (p) => this.onException(p));
   }
 
   get connState(): WsConnState { return this.conn; }
 
   connect(): void {
     if (this.conn.phase !== 'idle') return;
+    this.transition({ type: 'open' });
+    this.socket.connect();
+  }
+
+  /** 手动重试(仅重连超限的 failed 态):退避计数清零后重新连接 */
+  retry(): void {
+    if (this.conn.phase !== 'failed') return;
     this.transition({ type: 'open' });
     this.socket.connect();
   }
@@ -160,7 +177,8 @@ export class ClassroomWsClient {
 
   private join(): void {
     this.clearJoinTimer();
-    // A6:join 被拒时 ack 不回包 → 超时按断线处理(继续退避重试)
+    // A6:join 被拒时 ack 不回包、另发 'exception'(onException 按业务拒绝停止重连);
+    // 这里的超时只兜网络问题(ack 丢失/服务无响应)→ 按断线处理,继续退避重试
     this.joinTimer = setTimeout(() => this.onLost(), this.joinTimeoutMs);
     this.socket.emit('class:join', { sessionId: this.opts.sessionId }, (snap) => {
       this.clearJoinTimer();
@@ -186,11 +204,26 @@ export class ClassroomWsClient {
     if (this.hbTimer != null) { clearInterval(this.hbTimer); this.hbTimer = null; }
   }
 
+  /** 服务端 'exception':joining 阶段 = join 业务拒绝 → 停止重连;其余阶段仅透传 */
+  private onException(p: WsExceptionPayload): void {
+    const rejected = this.conn.phase === 'joining';
+    if (rejected) {
+      this.clearJoinTimer(); // join 超时是断线路径,业务拒绝在此终止,两者不混
+      this.stopHeartbeat();
+      this.transition({ type: 'rejected' });
+      this.socket.disconnect();
+    }
+    this.handlers.onException?.(p, { rejected });
+  }
+
   private onLost(): void {
     this.stopHeartbeat();
     this.clearJoinTimer();
-    if (this.conn.phase === 'closed' || this.conn.phase === 'waiting') return;
+    // 快照当前 phase 做前置判定(用局部变量,避免收窄 this.conn.phase 影响 transition 后的类型)
+    const phase = this.conn.phase;
+    if (phase !== 'connecting' && phase !== 'joining' && phase !== 'live') return;
     this.transition({ type: 'lost' });
+    if (this.conn.phase !== 'waiting') return; // 重试超限 → failed:不再排程,等手动 retry()
     const delay = this.conn.delayMs ?? 0;
     this.retryTimer = setTimeout(() => {
       if (this.conn.phase !== 'waiting') return;

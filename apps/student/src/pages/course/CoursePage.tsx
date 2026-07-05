@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { AssignmentDto, CourseDto } from '@qiming/contracts';
-import { Card, EmptyState, Modal, Skeleton, Tag, useToast } from '@qiming/ui';
+import { Button, Card, EmptyState, Modal, Skeleton, Tag, useToast } from '@qiming/ui';
 import { api } from '../../api';
 import { LessonTimeline, type TimelineItem } from './LessonTimeline';
 
@@ -18,24 +18,33 @@ export function CoursePage() {
   const [timeline, setTimeline] = useState<TimelineItem[] | null>(null);
   const [pending, setPending] = useState<AssignmentDto[]>([]);
   const [replay, setReplay] = useState<{ name: string; url: string; expiresAt: string } | null>(null);
+  const [error, setError] = useState(false); // 课程列表加载失败(整页可重试)
+  const [reload, setReload] = useState(0);
+  const [timelineError, setTimelineError] = useState(false); // 讲次时间线加载失败(局部可重试)
+  const [tlReload, setTlReload] = useState(0);
 
   useEffect(() => {
-    api.get('/student/courses').then((r) => {
-      const list = r.data as CourseDto[];
-      setCourses(list);
-      setActiveId((id) => id ?? list[0]?.id ?? null);
-    });
+    setCourses(null); setError(false);
+    api.get('/student/courses')
+      .then((r) => {
+        const list = r.data as CourseDto[];
+        setCourses(list);
+        setActiveId((id) => id ?? list[0]?.id ?? null);
+      })
+      .catch(() => setError(true));
     api.get('/student/assignments', { query: { status: 'pending' } })
       .then((r) => setPending(r.data as AssignmentDto[]))
       .catch(() => setPending([]));
-  }, []);
+  }, [reload]);
 
   useEffect(() => {
     if (activeId == null) return;
     setTimeline(null);
+    setTimelineError(false);
     api.get('/student/courses/{id}/lessons', { params: { id: activeId } })
-      .then((r) => setTimeline(r.data as TimelineItem[]));
-  }, [activeId]);
+      .then((r) => setTimeline(r.data as TimelineItem[]))
+      .catch(() => setTimelineError(true));
+  }, [activeId, tlReload]);
 
   // 订正入口:pending 的 correction 作业按 lessonId 匹配到讲次
   const correctionByLesson = Object.fromEntries(
@@ -51,6 +60,21 @@ export function CoursePage() {
       toast('课件链接获取失败,请重试');
     }
   };
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-[1080px]">
+        <div className="mb-5">
+          <h2 className="text-[21px] font-extrabold">我的课程</h2>
+          <p className="mt-1 text-[13px] text-ink-2">已上的讲次可以回看课件、订正错题</p>
+        </div>
+        <Card>
+          <EmptyState icon="⚠" text="课程加载失败" hint="可能是网络波动,请重试"
+            action={<Button variant="primary" className="min-h-touch" onClick={() => setReload((n) => n + 1)}>重新加载</Button>} />
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1080px]">
@@ -92,7 +116,10 @@ export function CoursePage() {
           </div>
 
           <div>
-            {!timeline ? (
+            {timelineError ? (
+              <Card><EmptyState icon="⚠" text="讲次加载失败" hint="可能是网络波动,请重试"
+                action={<Button variant="primary" className="min-h-touch" onClick={() => setTlReload((n) => n + 1)}>重新加载</Button>} /></Card>
+            ) : !timeline ? (
               <Skeleton className="h-24" lines={3} />
             ) : timeline.length === 0 ? (
               <Card><EmptyState text="讲次安排准备中" hint="老师排课后这里会出现讲次时间线" /></Card>
@@ -114,7 +141,7 @@ export function CoursePage() {
         {replay && (
           <div className="text-sm leading-7 text-ink-2">
             <div className="flex h-44 items-center justify-center rounded-md border border-dashed border-line bg-bg/60 text-ink-3">
-              课件查看器占位(签名 URL,B6/资源域接入)
+              课件在线预览即将上线,可先通过下方链接打开查看
             </div>
             <div className="mt-3 break-all text-xs text-ink-3">
               链接:{replay.url}

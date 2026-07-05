@@ -20,6 +20,8 @@ export interface UseClassroom {
   aiAsk(message: string): void;
   /** 草稿输入等活跃信号(心跳 idleSec 复位) */
   touch(questionId?: number | null): void;
+  /** 重连超限(conn=failed)后的手动重试 */
+  retry(): void;
   /** 退出课堂(停止重连;进度在服务端) */
   leave(): void;
 }
@@ -40,6 +42,12 @@ export function useClassroom(sessionId: number, wsOpts?: Partial<ClassWsOptions>
         onAiChunk: (p) => dispatch({ type: 'ai_chunk', ...p }),
         onControl: (control) => dispatch({ type: 'control', control }),
         onState: (self) => dispatch({ type: 'state', self }),
+        // join 业务拒绝(课堂已结束/不是本课学生等):client 已停止重连,这里进错误态渲染;
+        // 非拒绝类异常(live 期间业务报错)不改连接状态,仅记录
+        onException: (p, { rejected }) => {
+          if (rejected) dispatch({ type: 'rejected', message: p.message });
+          else console.warn('[classroom] exception:', p.message);
+        },
       },
     );
     clientRef.current = client;
@@ -76,6 +84,7 @@ export function useClassroom(sessionId: number, wsOpts?: Partial<ClassWsOptions>
       clientRef.current?.aiAsk(text, qid);
     },
     touch(questionId) { clientRef.current?.markActivity(questionId); },
+    retry() { clientRef.current?.retry(); },
     leave() { clientRef.current?.close(); },
   }), []);
 

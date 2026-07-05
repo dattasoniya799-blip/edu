@@ -31,6 +31,8 @@ export function WrongBookPage() {
   }, [reload]);
 
   const open = useMemo(() => (items ?? []).filter((w) => w.status === 'open'), [items]);
+  // 后端只允许客观题重做:全部待消灭均为解答题(主观题)时,「一键重练全部」预禁用
+  const allSolution = useMemo(() => open.length > 0 && open.every((w) => w.type === 'solution'), [open]);
   const cleared = useMemo(() => (items ?? []).filter((w) => w.status === 'cleared'), [items]);
   // 学科分组:≥2 学科才显示筛选,单科优雅退化(对照原型单科口径)
   const subjects = useMemo(() => deriveSubjects(open), [open]);
@@ -79,7 +81,8 @@ export function WrongBookPage() {
           </p>
         </div>
         {open.length > 0 && (
-          <Button variant="primary" className="min-h-touch shrink-0" disabled={busy} onClick={redoAll}>
+          <Button variant="primary" className="min-h-touch shrink-0" disabled={busy || allSolution} onClick={redoAll}
+            title={allSolution ? '当前待消灭均为主观题,暂不支持重做' : undefined}>
             一键重练全部
           </Button>
         )}

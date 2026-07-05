@@ -4,7 +4,7 @@
  */
 import { useEffect, useState } from 'react';
 import type { MasteryItemDto } from '@qiming/contracts';
-import { Card, EmptyState, ProgressBar, Skeleton, StatCard } from '@qiming/ui';
+import { Button, Card, EmptyState, ProgressBar, Skeleton, StatCard } from '@qiming/ui';
 import { api } from '../../api';
 import { formatCorrectRate } from '../../lib/format';
 
@@ -15,10 +15,26 @@ interface ReportData {
 
 export function ReportPage() {
   const [data, setData] = useState<ReportData | null>(null);
+  const [error, setError] = useState(false); // 加载失败别停在骨架(可重试)
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
-    api.get('/student/report').then((r) => setData(r.data as ReportData));
-  }, []);
+    setData(null); setError(false);
+    api.get('/student/report')
+      .then((r) => setData(r.data as ReportData))
+      .catch(() => setError(true));
+  }, [reload]);
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-[1080px]">
+        <Card>
+          <EmptyState icon="⚠" text="报告加载失败" hint="可能是网络波动,请重试"
+            action={<Button variant="primary" className="min-h-touch" onClick={() => setReload((n) => n + 1)}>重新加载</Button>} />
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1080px]">

@@ -23,12 +23,14 @@ export interface ChatMsg {
   requestId?: string;
 }
 
-export type ConnView = 'connecting' | 'live' | 'reconnecting' | 'closed';
+export type ConnView = 'connecting' | 'live' | 'reconnecting' | 'rejected' | 'failed' | 'closed';
 
 export interface ClassState {
   conn: ConnView;
   /** 重连第几次(conn=reconnecting 时显示) */
   reconnectAttempt: number;
+  /** join 业务拒绝文案(conn=rejected 时显示:课堂已结束/不是本课学生等) */
+  error: string | null;
   session: ClassSnapshot['session'] | null;
   /** 随堂练题面(mock B5-1 增量;可能缺失 → 降级) */
   questions: AttemptQuestionView[];
@@ -54,7 +56,7 @@ export interface ClassState {
 }
 
 export const initialClassState: ClassState = {
-  conn: 'connecting', reconnectAttempt: 0,
+  conn: 'connecting', reconnectAttempt: 0, error: null,
   session: null, questions: [], courseware: [],
   seg: 1, paused: false, ended: false, narration: '',
   quiz: { current: 0, items: [] },
@@ -66,6 +68,7 @@ export const initialClassState: ClassState = {
 export type ClassAction =
   | { type: 'snapshot'; snap: ClassJoinSnapshot; resumed: boolean }
   | { type: 'conn'; state: WsConnState }
+  | { type: 'rejected'; message: string } // join 被服务端业务拒绝(exception)→ 错误态
   | { type: 'narration'; text: string }
   | { type: 'segment'; seq: number }
   | { type: 'goto'; index: number }
@@ -122,6 +125,7 @@ export function applySnapshot(s: ClassState, snap: ClassJoinSnapshot, resumed: b
     ...s,
     conn: 'live',
     reconnectAttempt: 0,
+    error: null,
     session: snap.session,
     questions,
     courseware,
@@ -157,9 +161,13 @@ export function reduceClass(s: ClassState, a: ClassAction): ClassState {
     case 'conn': {
       if (a.state.phase === 'live') return { ...s, conn: 'live', reconnectAttempt: 0 };
       if (a.state.phase === 'closed') return { ...s, conn: 'closed' };
+      if (a.state.phase === 'rejected') return { ...s, conn: 'rejected' }; // 文案经 rejected 动作补上
+      if (a.state.phase === 'failed') return { ...s, conn: 'failed', reconnectAttempt: a.state.attempt };
       if (s.session == null) return { ...s, conn: 'connecting' }; // 首连尚未拿到快照
       return { ...s, conn: 'reconnecting', reconnectAttempt: a.state.attempt };
     }
+    case 'rejected':
+      return { ...s, conn: 'rejected', error: a.message };
     case 'narration':
       return { ...s, narration: a.text };
     case 'segment': {
