@@ -40,7 +40,7 @@ export async function createSecOrg(): Promise<SecFixture> {
       name: 'sec-back 安全修复测试机构',
       settings: {
         ai: { qaGuideOnly: true, preGrading: true },
-        studentHours: { start: '06:00', end: '22:30' },
+        studentHours: { start: '00:00', end: '23:59' },
         deviceBinding: true,
       },
     },

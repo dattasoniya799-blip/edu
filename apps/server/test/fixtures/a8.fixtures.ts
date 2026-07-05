@@ -51,7 +51,7 @@ export async function createA8Org(): Promise<A8Fixture> {
       name: 'A8学情测试机构',
       settings: {
         ai: { qaGuideOnly: true, preGrading: true },
-        studentHours: { start: '06:00', end: '22:30' },
+        studentHours: { start: '00:00', end: '23:59' },
         deviceBinding: true,
       },
     },
@@ -168,7 +168,7 @@ export async function createA8Org(): Promise<A8Fixture> {
       name: 'A8跨租户机构B',
       settings: {
         ai: { qaGuideOnly: true, preGrading: true },
-        studentHours: { start: '06:00', end: '22:30' },
+        studentHours: { start: '00:00', end: '23:59' },
         deviceBinding: true,
       },
     },

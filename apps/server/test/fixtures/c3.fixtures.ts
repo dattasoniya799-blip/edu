@@ -45,7 +45,7 @@ export async function createC3Org(): Promise<C3Fixture> {
       name: 'C3内容域测试机构',
       settings: {
         ai: { qaGuideOnly: true, preGrading: true },
-        studentHours: { start: '06:00', end: '22:30' },
+        studentHours: { start: '00:00', end: '23:59' },
         deviceBinding: true,
       },
     },

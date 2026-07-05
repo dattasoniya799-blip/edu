@@ -12,6 +12,7 @@ import type { MeDto, OrgSettings, Role } from '@qiming/contracts';
 import { PrismaService } from '../prisma/prisma.service';
 import { REDIS } from '../redis/redis.module';
 import { AuditService } from '../audit/audit.service';
+import { isWithinStudentHours, parseStudentHours } from '../common/student-hours';
 import { runWithoutTenant } from '../common/tenant-context';
 import { hashPassword, randomToken, verifyPassword } from './password.util';
 import { markPasswordReset, ttlSeconds } from './pwd-reset';
@@ -95,6 +96,13 @@ export class AuthService {
       if (!matched) throw new UnauthorizedException('学号或密码错误');
       if (matched.status !== 'active') throw new ForbiddenException('学生账号未激活或已停用');
       if (matched.org.status !== 'active') throw new ForbiddenException('机构已停用');
+
+      // 学习时段门禁(fix-core A3):org.settings.studentHours 时段外禁止学生登录。
+      // 只拦学生登录入口(admin/teacher 不受限);配置非法/缺失视为不限制(util 内兜底)。
+      if (!isWithinStudentHours(matched.org.settings)) {
+        const win = parseStudentHours(matched.org.settings)!;
+        throw new ForbiddenException(`当前为休息时段,可登录时间 ${win.start}-${win.end}`);
+      }
 
       // seed/旧 scrypt 哈希 → 首次登录静默升级为 argon2
       if (needsUpgrade) {

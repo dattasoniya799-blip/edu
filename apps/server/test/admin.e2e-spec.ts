@@ -100,7 +100,7 @@ describe('管理员域(A2)', () => {
     const orgB = await raw.org.create({
       data: {
         name: 'A2-e2e第二机构',
-        settings: { ai: { qaGuideOnly: true, preGrading: true }, studentHours: { start: '06:00', end: '22:30' } },
+        settings: { ai: { qaGuideOnly: true, preGrading: true }, studentHours: { start: '00:00', end: '23:59' } },
       },
     });
     orgBId = orgB.id;
@@ -664,8 +664,8 @@ describe('管理员域(A2)', () => {
       const before = await get('/admin/settings', adminAt).expect(200);
       const me = (before.body as ApiResp<MeDto>).data;
       exactKeys(me, ME_KEYS);
-      // 机构 settings JSON 保留历史 deviceBinding 键(设备绑定管理已下线,残留键无害)
-      exactKeys(me.orgSettings, ['ai', 'studentHours', 'deviceBinding']);
+      // 本轮 seed.ts orgSettings 现代化:不再含 deviceBinding 键(设备绑定管理已下线)
+      exactKeys(me.orgSettings, ['ai', 'studentHours']);
       expect(me.role).toBe('admin');
 
       // PUT 现可写 qaGuideOnly + preGrading + classCompanion + diagnosis + studentHours(除原有引导模式/时段)

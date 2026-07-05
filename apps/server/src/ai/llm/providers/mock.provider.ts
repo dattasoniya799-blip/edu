@@ -9,6 +9,17 @@ export const PRE_GRADE_INPUT_CLOSE = '[[/PRE_GRADE_INPUT]]';
 /** 触发"给最终答案"式回复的标记(验收:输出审查拦截重写用) */
 export const MOCK_FINAL_ANSWER_TRIGGER = '直接告诉我答案';
 
+/** 触发"内部思考过程泄漏"式回复的标记(fix-core A5:审查兜底拦截用例用) */
+export const MOCK_META_LEAK_TRIGGER = '触发思考过程泄漏';
+
+/**
+ * 回显"构造消息中的对话尾巴"的标记(fix-core A2:跨题串扰验收用)。
+ * 命中时把本次请求里除末条(触发消息本身)外的 user/assistant 历史原样拼回,
+ * 供 e2e 断言换题后新题上下文里不含旧题对话尾巴。
+ */
+export const MOCK_ECHO_TAIL_TRIGGER = '回显对话尾巴';
+export const MOCK_ECHO_TAIL_PREFIX = 'TAILECHO';
+
 /** 模拟故障的模型名(验收 fallback 路径用):chat 即抛错 */
 export const MOCK_BROKEN_MODEL = 'mock-broken';
 
@@ -57,6 +68,17 @@ export class MockProvider implements LlmProvider {
     }
     if (lastUser.includes(MOCK_FINAL_ANSWER_TRIGGER)) {
       return '这道题不难,最终答案是 B,选 B 就对了。';
+    }
+    if (lastUser.includes(MOCK_META_LEAK_TRIGGER)) {
+      // 复刻线上实测的内部独白泄漏形态(fix-core A5),供输出审查兜底拦截用例触发
+      return '（思考过程：学生问的是判别式作用,按原则1不直接给定义,先反问引导。）我们先想想,判别式在求根公式里的哪个位置?';
+    }
+    if (lastUser.includes(MOCK_ECHO_TAIL_TRIGGER)) {
+      // fix-core A2:回显对话尾巴(末条触发消息本身除外),仅含 user/assistant 历史,
+      // 不掺入 system 提示词/题目上下文,便于断言"换题后无旧题尾巴"。
+      const convo = messages.filter((m) => m.role === 'user' || m.role === 'assistant');
+      const tail = convo.slice(0, -1).map((m) => `${m.role}=${m.content}`).join(' || ');
+      return `${MOCK_ECHO_TAIL_PREFIX}<<${tail}>>`;
     }
     return `我们一步步来:先回顾题目条件,你觉得第一步该用什么方法?(mock 引导回复,提问长度 ${lastUser.length})`;
   }

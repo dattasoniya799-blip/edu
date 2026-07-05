@@ -44,7 +44,7 @@ export async function createA5Org(): Promise<A5Fixture> {
       name: 'A5作答批改测试机构',
       settings: {
         ai: { qaGuideOnly: true, preGrading: true },
-        studentHours: { start: '06:00', end: '22:30' },
+        studentHours: { start: '00:00', end: '23:59' },
         deviceBinding: true,
       },
     },
@@ -169,7 +169,7 @@ export async function createA5Org(): Promise<A5Fixture> {
       name: 'A5跨租户机构B',
       settings: {
         ai: { qaGuideOnly: true, preGrading: true },
-        studentHours: { start: '06:00', end: '22:30' },
+        studentHours: { start: '00:00', end: '23:59' },
         deviceBinding: true,
       },
     },

@@ -13,8 +13,13 @@ import type { AiTrace, Msg } from '../llm/types';
 
 /** 学生答疑限流键(a7: 前缀):固定 60s 窗口计数 */
 export const qaRateKey = (uid: number) => `a7:ai:qa:rl:${uid}`;
-/** 对话尾部(最近 6 条,设计文档 §8.3 上下文裁剪) */
-export const qaTailKey = (orgId: number, uid: number) => `a7:ai:qa:tail:${orgId}:${uid}`;
+/**
+ * 对话尾部(最近 6 条,设计文档 §8.3 上下文裁剪)。
+ * fix-core A2:键增加 questionId 维度(无题上下文的通用提问归入 :general),
+ * 换题后不再把旧题对话尾巴拼进新题上下文(修复跨题串扰导致首答答非所问)。
+ */
+export const qaTailKey = (orgId: number, uid: number, questionId?: number | null) =>
+  `a7:ai:qa:tail:${orgId}:${uid}:${questionId ?? 'general'}`;
 
 const RATE_LIMIT_PER_MIN = 6;
 const TAIL_KEEP = 6;
@@ -58,7 +63,7 @@ export class QaService {
       this.buildTrace(user, dto.attemptId),
     ]);
     const guided = await this.guideOnly();
-    const tail = await this.loadTail(user);
+    const tail = await this.loadTail(user, dto.questionId);
 
     const messages: Msg[] = [
       { role: 'system', content: loadAiConfigText(guided ? 'qa-guided-prompt.md' : 'qa-plain-prompt.md') },
@@ -73,7 +78,7 @@ export class QaService {
       text = loadAiConfigJson<ReviewConfig>('qa-review.json').rewrite;
       rewritten = true;
     }
-    await this.saveTail(user, dto.message, text);
+    await this.saveTail(user, dto.questionId, dto.message, text);
     return { requestId: `qa-${randomUUID()}`, text, rewritten };
   }
 
@@ -134,8 +139,8 @@ export class QaService {
     return ai?.qaGuideOnly !== false; // 默认引导模式
   }
 
-  private async loadTail(user: JwtUser): Promise<Msg[]> {
-    const rows = await this.redis.lrange(qaTailKey(user.orgId, user.uid), -TAIL_KEEP, -1);
+  private async loadTail(user: JwtUser, questionId?: number | null): Promise<Msg[]> {
+    const rows = await this.redis.lrange(qaTailKey(user.orgId, user.uid, questionId), -TAIL_KEEP, -1);
     const msgs: Msg[] = [];
     for (const row of rows) {
       try {
@@ -148,8 +153,13 @@ export class QaService {
     return msgs;
   }
 
-  private async saveTail(user: JwtUser, question: string, reply: string): Promise<void> {
-    const key = qaTailKey(user.orgId, user.uid);
+  private async saveTail(
+    user: JwtUser,
+    questionId: number | null | undefined,
+    question: string,
+    reply: string,
+  ): Promise<void> {
+    const key = qaTailKey(user.orgId, user.uid, questionId);
     await this.redis
       .multi()
       .rpush(key, JSON.stringify({ role: 'user', content: question }), JSON.stringify({ role: 'assistant', content: reply }))
