@@ -38,3 +38,19 @@ describe('ResultView 读 questions 渲染', () => {
     expect(html).not.toContain('解析');
   });
 });
+
+// [2026-07-05 批准·契约] answers[].teacherComment:有点评渲染「老师点评」块,无点评不渲染
+describe('ResultView 老师点评(teacherComment)两态', () => {
+  it('有 teacherComment:渲染「老师点评」块及点评内容', () => {
+    const at = attemptOf({ choice: 'B' }, '应选 $B$');
+    at.answers[0].teacherComment = '概念混淆:平移不改变斜率,再看一遍课件第 3 页。';
+    const html = renderToStaticMarkup(<ResultView attempt={at} assignment={null} />);
+    expect(html).toContain('老师点评');
+    expect(html).toContain('平移不改变斜率');
+  });
+
+  it('无 teacherComment(字段缺省):不渲染「老师点评」块', () => {
+    const html = renderToStaticMarkup(<ResultView attempt={attemptOf({ choice: 'B' }, '应选 $B$')} assignment={null} />);
+    expect(html).not.toContain('老师点评');
+  });
+});

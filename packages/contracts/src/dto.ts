@@ -182,6 +182,8 @@ export interface CoursewarePageView {
 export interface AnswerDto {
   questionId: number; response: AnswerResponse | null;
   isCorrect: boolean | null; score: number | null; flagged: boolean;
+  /** [2026-07-05 批准] 教师复核点评(知识点点评),仅 attempt 已 finalize(graded)且教师写了非空点评时下发,否则不含此字段 */
+  teacherComment?: string;
 }
 export type AnswerResponse =
   | { choice: string } | { choices: string[] }

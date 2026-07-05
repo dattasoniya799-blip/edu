@@ -424,6 +424,7 @@ components:
         isCorrect: { oneOf: [{ type: 'null' }, { type: boolean }] }
         score: { oneOf: [{ type: 'null' }, { type: number }] }
         flagged: { type: boolean }
+        teacherComment: { type: string, description: '教师复核点评(知识点点评),finalize 后返回;仅 attempt 已出分(graded)且教师写了非空点评时下发,否则省略此字段' }
     Attempt:
       type: object
       required: [id, assignmentId, status, attemptNo, startedAt, submittedAt, score, objectiveScore, subjectiveScore, answers, questions]

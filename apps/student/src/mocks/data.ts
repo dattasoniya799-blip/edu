@@ -265,6 +265,8 @@ export const attempt: Omit<AttemptDto, 'questions'> = {
     isCorrect: j === 4 ? null : j !== 2 && j !== 3,
     score: j === 4 ? 6 : j === 2 || j === 3 ? 0 : 5,
     flagged: false,
+    // [2026-07-05 批准·契约] 教师复核点评示例:仅解答题演示 teacherComment(graded 后随解析下发)
+    ...(j === 4 ? { teacherComment: '平移方向的符号处理再巩固:沿 $x$ 轴负方向平移时截距应减小。步骤书写规范,继续保持。' } : {}),
   })),
 };
 
