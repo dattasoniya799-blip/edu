@@ -62,7 +62,7 @@ const ALERT_UI = {
 export function MonitorPage() {
   const { id } = useParams();
   const lessonId = Number(id);
-  const useMock = import.meta.env.VITE_USE_MOCK !== 'false';
+  const useMock = import.meta.env.VITE_USE_MOCK === 'true';
   const [lesson, setLesson] = useState<LessonDto | null>(null);
   /** seq → 环节名(取自讲次编排;mock 流的 segment=3 即随堂练) */
   const [segNames, setSegNames] = useState<Map<number, string>>(new Map());

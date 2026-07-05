@@ -20,7 +20,7 @@ const mockClassroomWs = (enabled: boolean): Plugin => ({
 // 真实模式下 /socket.io 一并代理到后端(A6 网关,ws 升级)
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, __dirname, '');
-  const useMock = env.VITE_USE_MOCK !== 'false';
+  const useMock = env.VITE_USE_MOCK === 'true';
   return {
     plugins: [react(), mockClassroomWs(useMock)],
     resolve: {

@@ -18,7 +18,7 @@ import { ResourcesPage } from './pages/resources/ResourcesPage';
 import { KnowledgePage } from './pages/knowledge/KnowledgePage';
 import { AssignmentsPage } from './pages/assignments/AssignmentsPage';
 import { AnalyticsPage } from './pages/analytics/AnalyticsPage';
-import { Placeholder } from './pages/Placeholder';
+import { NotFound } from './pages/NotFound';
 
 export function App() {
   return (
@@ -43,7 +43,7 @@ export function App() {
           <Route path="/knowledge" element={<KnowledgePage />} />
           <Route path="/resources" element={<ResourcesPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
-          <Route path="*" element={<Placeholder title="页面不存在" />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
       <MockBadge />

@@ -16,7 +16,7 @@
  */
 
 /**
- * mock 模式判定(与三端 main.tsx 口径一致:VITE_USE_MOCK !== 'false' 即 mock)。
+ * mock 模式判定(与三端 main.tsx 口径一致:仅 VITE_USE_MOCK === 'true' 即 mock,opt-in)。
  * 优先 vite 注入的 import.meta.env;无注入时(vitest node / SSR)兜底看 process.env —— 浏览器
  * 真实构建里 import.meta.env 必有值,不会走到 process.env 分支,故 prod 行为不变。
  */
@@ -24,7 +24,7 @@ function isMockMode(): boolean {
   const viteEnv = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
   const flag = viteEnv?.VITE_USE_MOCK
     ?? (typeof process !== 'undefined' ? process.env?.VITE_USE_MOCK : undefined);
-  return flag !== 'false';
+  return flag === 'true';
 }
 
 /** 已经是浏览器可直接加载的 URL(签名直链 / data / blob)→ 原样用 */

@@ -2,7 +2,7 @@
  * 监控数据源抽象(可替换接入层)
  * 页面只依赖 MonitorSource 接口;事件载荷类型 = ws-protocol.ts 的 S2TEvents。
  *
- * - mock 模式(VITE_USE_MOCK !== 'false'):createMockMonitorSource —— 每 5s 推一帧
+ * - mock 模式(VITE_USE_MOCK === 'true'):createMockMonitorSource —— 每 5s 推一帧
  *   monitor:roster(+状态跃迁时 monitor:alert),帧由 src/mocks/monitorStream.ts 确定性生成。
  * - 真实模式(VITE_USE_MOCK === 'false'):createRealMonitorSource —— socket.io 接入后端
  *   /classroom 网关(apps/server ClassroomGateway,只读对照):
@@ -98,7 +98,7 @@ export function createRealMonitorSource(opts: MonitorSourceOptions): MonitorSour
 
 /** 工厂:按运行模式选择数据源(页面唯一入口) */
 export function createMonitorSource(opts: MonitorSourceOptions): MonitorSource {
-  return import.meta.env.VITE_USE_MOCK !== 'false'
+  return import.meta.env.VITE_USE_MOCK === 'true'
     ? createMockMonitorSource(opts.intervalMs)
     : createRealMonitorSource(opts);
 }

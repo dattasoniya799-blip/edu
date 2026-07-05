@@ -19,7 +19,13 @@ function esc(s: string): string {
 
 function safeTex(t: string, disp: boolean): string {
   try {
-    return katex.renderToString(t, { displayMode: disp, throwOnError: true });
+    return katex.renderToString(t, {
+      displayMode: disp,
+      throwOnError: true,
+      // 真题数学模式内嵌中文(如 ρ_{水} / v_物)每次渲染都会刷 unicodeTextInMathMode 警告;
+      // 仅静默此一项,其余问题仍照常 warn。throwOnError 维持不变。
+      strict: (code: string) => (code === 'unicodeTextInMathMode' ? 'ignore' : 'warn'),
+    });
   } catch {
     // 颜色用语义类(tex-error),由组件内联到 design-tokens 的 red —— 不写裸色值
     return `<span class="qm-tex-error" style="font-size:12px">[公式语法错误] ${esc(t)}</span>`;
