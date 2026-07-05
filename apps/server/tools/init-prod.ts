@@ -99,9 +99,8 @@ async function main() {
     const org = await client.query(
       `INSERT INTO orgs(name, settings) VALUES ($1, $2) RETURNING id`,
       [orgName, JSON.stringify({
-        ai: { qaGuideOnly: true, preGrading: true },
+        ai: { qaGuideOnly: true, preGrading: true, classCompanion: true, diagnosis: true },
         studentHours: { start: '06:00', end: '22:30' },
-        deviceBinding: true,
       })]);
     const orgId = org.rows[0].id;
     const admin = await client.query(

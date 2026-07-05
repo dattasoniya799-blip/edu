@@ -228,7 +228,7 @@
       "answer": {
         "choice": "C"
       },
-      "analysisLatex": "由图,承担物重的绳子有 $n=3$ 段。材料速度 $v_物=\\frac{3\\,\\mathrm{m}}{30\\,\\mathrm{s}}=0.1\\,\\mathrm{m/s}$,绳子自由端速度 $v=nv_物=0.3\\,\\mathrm{m/s}$,A 错;拉力功率 $P=Fv=500\\,\\mathrm{N}\\times0.3\\,\\mathrm{m/s}=150\\,\\mathrm{W}$,B 错;不计绳重和摩擦,$nF=G+G_{动}$,$G=3\\times500\\,\\mathrm{N}-150\\,\\mathrm{N}=1350\\,\\mathrm{N}$,机械效率 $\\eta=\\frac{G}{nF}=\\frac{1350}{1500}=90\\%$,C 正确。",
+      "analysisLatex": "由图,承担物重的绳子有 $n=3$ 段。材料速度 $v_{\\text{物}}=\\frac{3\\,\\mathrm{m}}{30\\,\\mathrm{s}}=0.1\\,\\mathrm{m/s}$,绳子自由端速度 $v=nv_{\\text{物}}=0.3\\,\\mathrm{m/s}$,A 错;拉力功率 $P=Fv=500\\,\\mathrm{N}\\times0.3\\,\\mathrm{m/s}=150\\,\\mathrm{W}$,B 错;不计绳重和摩擦,$nF=G+G_{\\text{动}}$,$G=3\\times500\\,\\mathrm{N}-150\\,\\mathrm{N}=1350\\,\\mathrm{N}$,机械效率 $\\eta=\\frac{G}{nF}=\\frac{1350}{1500}=90\\%$,C 正确。",
       "difficulty": 3,
       "chapter": "简单机械",
       "kpKeywords": [
@@ -299,11 +299,11 @@
     },
     {
       "type": "solution",
-      "stemLatex": "小丽想测一测家中空食品盒在水中漂浮时的装载质量。她将水平桌面上一个高为 $10\\,\\mathrm{cm}$、底面积为 $200\\,\\mathrm{cm^2}$、重为 $2\\,\\mathrm{N}$ 的圆柱形平底空食品盒放入装水的桶中,桶中水足够深,食品盒下表面始终与水面平行,如图所示。$\\rho_{水}=1.0\\times10^{3}\\,\\mathrm{kg/m^3}$,$g$ 取 $10\\,\\mathrm{N/kg}$。求:\n(1)空食品盒在水平桌面上时,对桌面的压强;\n(2)空食品盒放入水中后,浸入水中的深度;\n(3)食品盒在水中漂浮时能够装载的最大质量。",
+      "stemLatex": "小丽想测一测家中空食品盒在水中漂浮时的装载质量。她将水平桌面上一个高为 $10\\,\\mathrm{cm}$、底面积为 $200\\,\\mathrm{cm^2}$、重为 $2\\,\\mathrm{N}$ 的圆柱形平底空食品盒放入装水的桶中,桶中水足够深,食品盒下表面始终与水面平行,如图所示。$\\rho_{\\text{水}}=1.0\\times10^{3}\\,\\mathrm{kg/m^3}$,$g$ 取 $10\\,\\mathrm{N/kg}$。求:\n(1)空食品盒在水平桌面上时,对桌面的压强;\n(2)空食品盒放入水中后,浸入水中的深度;\n(3)食品盒在水中漂浮时能够装载的最大质量。",
       "answer": {
-        "referenceLatex": "(1)$S=200\\,\\mathrm{cm^2}=0.02\\,\\mathrm{m^2}$,盒对桌面的压强 $p=\\frac{F}{S}=\\frac{2\\,\\mathrm{N}}{0.02\\,\\mathrm{m^2}}=100\\,\\mathrm{Pa}$。\n(2)空盒漂浮,$F_{浮}=G=2\\,\\mathrm{N}$;由 $F_{浮}=\\rho_{水}gV_{排}=\\rho_{水}gSh$ 得 $h=\\frac{F_{浮}}{\\rho_{水}gS}=\\frac{2\\,\\mathrm{N}}{1.0\\times10^{3}\\,\\mathrm{kg/m^3}\\times10\\,\\mathrm{N/kg}\\times0.02\\,\\mathrm{m^2}}=0.01\\,\\mathrm{m}$。\n(3)装载最多时盒恰好全部浸入,最大浸入深度 $h_{max}=0.1\\,\\mathrm{m}$,最大浮力 $F_{浮max}=\\rho_{水}gSh_{max}=1.0\\times10^{3}\\times10\\times0.02\\times0.1\\,\\mathrm{N}=20\\,\\mathrm{N}$;漂浮时 $F_{浮max}=G_{盒}+G_{载}$,$G_{载}=20\\,\\mathrm{N}-2\\,\\mathrm{N}=18\\,\\mathrm{N}$,最大装载质量 $m=\\frac{G_{载}}{g}=\\frac{18\\,\\mathrm{N}}{10\\,\\mathrm{N/kg}}=1.8\\,\\mathrm{kg}$。"
+        "referenceLatex": "(1)$S=200\\,\\mathrm{cm^2}=0.02\\,\\mathrm{m^2}$,盒对桌面的压强 $p=\\frac{F}{S}=\\frac{2\\,\\mathrm{N}}{0.02\\,\\mathrm{m^2}}=100\\,\\mathrm{Pa}$。\n(2)空盒漂浮,$F_{\\text{浮}}=G=2\\,\\mathrm{N}$;由 $F_{\\text{浮}}=\\rho_{\\text{水}}gV_{\\text{排}}=\\rho_{\\text{水}}gSh$ 得 $h=\\frac{F_{\\text{浮}}}{\\rho_{\\text{水}}gS}=\\frac{2\\,\\mathrm{N}}{1.0\\times10^{3}\\,\\mathrm{kg/m^3}\\times10\\,\\mathrm{N/kg}\\times0.02\\,\\mathrm{m^2}}=0.01\\,\\mathrm{m}$。\n(3)装载最多时盒恰好全部浸入,最大浸入深度 $h_{max}=0.1\\,\\mathrm{m}$,最大浮力 $F_{\\text{浮}max}=\\rho_{\\text{水}}gSh_{max}=1.0\\times10^{3}\\times10\\times0.02\\times0.1\\,\\mathrm{N}=20\\,\\mathrm{N}$;漂浮时 $F_{\\text{浮}max}=G_{\\text{盒}}+G_{\\text{载}}$,$G_{\\text{载}}=20\\,\\mathrm{N}-2\\,\\mathrm{N}=18\\,\\mathrm{N}$,最大装载质量 $m=\\frac{G_{\\text{载}}}{g}=\\frac{18\\,\\mathrm{N}}{10\\,\\mathrm{N/kg}}=1.8\\,\\mathrm{kg}$。"
       },
-      "analysisLatex": "考查压强公式 $p=F/S$、漂浮条件 $F_{浮}=G$ 与阿基米德原理 $F_{浮}=\\rho gV_{排}$ 的综合应用;第(3)问临界状态是食品盒恰好完全浸入水中。",
+      "analysisLatex": "考查压强公式 $p=F/S$、漂浮条件 $F_{\\text{浮}}=G$ 与阿基米德原理 $F_{\\text{浮}}=\\rho gV_{\\text{排}}$ 的综合应用;第(3)问临界状态是食品盒恰好完全浸入水中。",
       "difficulty": 4,
       "chapter": "压强与浮力",
       "kpKeywords": [
@@ -317,7 +317,7 @@
       "type": "solution",
       "stemLatex": "某电热水器内部简化电路如图甲所示,由控制电路和加热电路组成。控制电路中电源电压恒为 $12\\,\\mathrm{V}$,$R_0$ 为定值电阻,$R_t$ 为热敏电阻,其阻值随水温的变化关系如图乙所示,电流鉴别器相当于电流表;加热电路中电源电压为 $220\\,\\mathrm{V}$,加热电阻 $R_1$ 阻值为 $48.4\\,\\Omega$。当热水器中水温降到 $40\\,^\\circ\\mathrm{C}$ 时,鉴别器中电流减小到 $30\\,\\mathrm{mA}$,开关 $S_2$ 闭合,加热电路开始加热;当水温升至某温度时,鉴别器中电流增大到 $40\\,\\mathrm{mA}$,开关 $S_2$ 断开,加热电路停止加热。\n(1)开关 $S_2$ 闭合,求加热电路的电功率;\n(2)求定值电阻 $R_0$ 的阻值;\n(3)求加热电路停止加热时水的温度。",
       "answer": {
-        "referenceLatex": "(1)加热电路的电功率 $P=\\frac{U^2}{R_1}=\\frac{(220\\,\\mathrm{V})^2}{48.4\\,\\Omega}=1000\\,\\mathrm{W}$。\n(2)水温 $40\\,^\\circ\\mathrm{C}$ 时,由图乙读出 $R_t=150\\,\\Omega$;控制电路总电阻 $R=\\frac{U_{控}}{I}=\\frac{12\\,\\mathrm{V}}{0.03\\,\\mathrm{A}}=400\\,\\Omega$,故 $R_0=R-R_t=400\\,\\Omega-150\\,\\Omega=250\\,\\Omega$。\n(3)电流增大到 $40\\,\\mathrm{mA}$ 时,总电阻 $R'=\\frac{12\\,\\mathrm{V}}{0.04\\,\\mathrm{A}}=300\\,\\Omega$,此时 $R_t'=300\\,\\Omega-250\\,\\Omega=50\\,\\Omega$,由图乙查得对应水温为 $80\\,^\\circ\\mathrm{C}$,即停止加热时水的温度是 $80\\,^\\circ\\mathrm{C}$。"
+        "referenceLatex": "(1)加热电路的电功率 $P=\\frac{U^2}{R_1}=\\frac{(220\\,\\mathrm{V})^2}{48.4\\,\\Omega}=1000\\,\\mathrm{W}$。\n(2)水温 $40\\,^\\circ\\mathrm{C}$ 时,由图乙读出 $R_t=150\\,\\Omega$;控制电路总电阻 $R=\\frac{U_{\\text{控}}}{I}=\\frac{12\\,\\mathrm{V}}{0.03\\,\\mathrm{A}}=400\\,\\Omega$,故 $R_0=R-R_t=400\\,\\Omega-150\\,\\Omega=250\\,\\Omega$。\n(3)电流增大到 $40\\,\\mathrm{mA}$ 时,总电阻 $R'=\\frac{12\\,\\mathrm{V}}{0.04\\,\\mathrm{A}}=300\\,\\Omega$,此时 $R_t'=300\\,\\Omega-250\\,\\Omega=50\\,\\Omega$,由图乙查得对应水温为 $80\\,^\\circ\\mathrm{C}$,即停止加热时水的温度是 $80\\,^\\circ\\mathrm{C}$。"
       },
       "analysisLatex": "控制电路与加热电路相互独立:加热电路直接用 $P=U^2/R$;控制电路为 $R_0$ 与 $R_t$ 串联,用欧姆定律求总电阻后结合图乙的 $R_t$-温度曲线读数($40\\,^\\circ\\mathrm{C}$ 时 $R_t=150\\,\\Omega$,$R_t=50\\,\\Omega$ 时对应 $80\\,^\\circ\\mathrm{C}$)。",
       "difficulty": 5,

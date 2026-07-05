@@ -30,7 +30,7 @@ const STUDENT_NAMES = ['林小满','周子航','吴佳怡','郑一鸣','许诺',
 async function base(c: Client) {
   const org = await c.query(
     `INSERT INTO orgs(name, settings) VALUES ('鲸云演示机构',
-      '{"ai":{"qaGuideOnly":true,"preGrading":true},"studentHours":{"start":"06:00","end":"22:30"},"deviceBinding":true}')
+      '{"ai":{"qaGuideOnly":true,"preGrading":true,"classCompanion":true,"diagnosis":true},"studentHours":{"start":"00:00","end":"23:59"}}')
      RETURNING id`);
   const orgId = org.rows[0].id;
 
@@ -72,10 +72,13 @@ async function business(c: Client) {
   // ---- 课程 / 选课 / 讲次 ----
   const course = (await c.query(`INSERT INTO courses(org_id,name,class_type,subject,stage,teacher_id,total_lessons,status)
     VALUES ($1,'初二数学提高班','group','数学','初中',$2,15,'ongoing') RETURNING id`, [orgId, t1])).rows[0].id;
-  await c.query(`INSERT INTO courses(org_id,name,class_type,subject,stage,teacher_id,total_lessons,status)
-    VALUES ($1,'李一诺 · 数学培优','one_on_one','数学','初中',$2,16,'ongoing')`, [orgId, t1]);
+  const course2 = (await c.query(`INSERT INTO courses(org_id,name,class_type,subject,stage,teacher_id,total_lessons,status)
+    VALUES ($1,'李一诺 · 数学培优','one_on_one','数学','初中',$2,16,'ongoing') RETURNING id`, [orgId, t1])).rows[0].id;
   for (const s of students) await c.query(
     `INSERT INTO course_students(org_id,course_id,student_id) VALUES ($1,$2,$3)`, [orgId, course, s.id]);
+  const liYinuo = students.find((s: { name: string }) => s.name === '李一诺');
+  if (liYinuo) await c.query(
+    `INSERT INTO course_students(org_id,course_id,student_id) VALUES ($1,$2,$3)`, [orgId, course2, liYinuo.id]);
 
   const titles = ['一次函数的概念','函数的图象与性质','待定系数法求解析式','一次函数的图象平移','一次函数与方程、不等式','单元复习与测验'];
   const lessonIds: number[] = [];
@@ -107,7 +110,8 @@ async function business(c: Client) {
   const qIds: number[] = [];
   for (let i = 0; i < 30; i++) {
     const type = (['single', 'single', 'blank', 'solution'] as const)[i % 4];
-    const k = 2 + (i % 5); const b = i % 2 ? 1 + (i % 4) : -(1 + (i % 4)); const d = 1 + (i % 4);
+    // k 随 i/20 抬升:参数联合周期须 ≥30,否则 i=20..29 与 i=0..9 生成逐字节相同的题干(题库出现重复对)
+    const k = 2 + (i % 5) + 5 * Math.floor(i / 20); const b = i % 2 ? 1 + (i % 4) : -(1 + (i % 4)); const d = 1 + (i % 4);
     const stem = type === 'solution'
       ? `将直线 $y=kx+b$ 向下平移 $${d}$ 个单位后恰好经过点 $A(1,${k + b})$ 与点 $B(-1,${-k + b})$,求原直线的解析式。(写出完整过程)`
       : type === 'blank'
