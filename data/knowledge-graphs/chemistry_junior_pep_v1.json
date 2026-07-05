@@ -1384,6 +1384,13 @@
       "relation": "parent_child",
       "confidence": 1.0,
       "rationale": "章→节(知识点)从属关系。"
+    },
+    {
+      "from_code": "CHE-AIR-000",
+      "to_code": "CHE-AIR-006",
+      "relation": "parent_child",
+      "confidence": 1.0,
+      "rationale": "章→节(知识点)从属关系。"
     }
   ]
 }
