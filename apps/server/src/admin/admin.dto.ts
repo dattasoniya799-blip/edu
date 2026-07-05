@@ -140,10 +140,17 @@ export class AiQuotaInputDto {
 
 // ---------------- 设置 ----------------
 export class StudentHoursDto {
-  @IsString() @Matches(/^\d{2}:\d{2}$/)
+  /** fix-core A4:严格 HH:MM(00-23 时 / 00-59 分),拦下 25:99 之类脏值落库 */
+  @IsString()
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/, {
+    message: 'studentHours.start 须为合法时间 HH:MM(00:00-23:59)',
+  })
   start!: string;
 
-  @IsString() @Matches(/^\d{2}:\d{2}$/)
+  @IsString()
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/, {
+    message: 'studentHours.end 须为合法时间 HH:MM(00:00-23:59)',
+  })
   end!: string;
 }
 

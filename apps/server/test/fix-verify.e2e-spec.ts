@@ -41,7 +41,7 @@ describe('核验修复:手机号校验 + 密码重置吊销 access token(fix-ver
         name: 'fixv核验机构',
         settings: {
           ai: { qaGuideOnly: true, preGrading: true },
-          studentHours: { start: '06:00', end: '22:30' },
+          studentHours: { start: '00:00', end: '23:59' },
           deviceBinding: true,
         },
       },

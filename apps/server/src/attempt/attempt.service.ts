@@ -157,6 +157,20 @@ export class AttemptService {
     })) as QuestionRow | null;
     if (!question) throw new NotFoundException('题目不存在');
 
+    // 判定后锁题(fix-core A1):客观题判错会即时下发正确答案与解析(契约行为,保留),
+    // 若允许同题在本 attempt 内反复重答,成绩与错题本会被"看完答案再改对"刷失真。
+    // 故:该题一旦判定完成(isCorrect 非空),本 attempt 内禁止再次作答。
+    // 订正/错题重做/巩固(correction/wrong_redo/consolidation)的合法重练走"新开 attempt"
+    // (见 start() 的一次性判断只限 homework/in_class),新 attempt 内每题仍是首次作答,不受影响;
+    // solution/公式填空(needsReview,isCorrect=null 待复核)交卷前仍可重新提交(换照片/改文本)。
+    const prior = await this.prisma.client.answer.findFirst({
+      where: { attemptId: at.id, questionId: question.id },
+      select: { isCorrect: true },
+    });
+    if (prior?.isCorrect != null) {
+      throw new BizException(ERR_ATTEMPT_STATE, '该题已完成判定,不能再次作答');
+    }
+
     const response = this.validateResponse(question.type, dto.response, user.orgId);
     const fullScore = dec(pq.score) ?? 0;
     // 公式填空(参考答案含 LaTeX)与 solution 同口径:不即时判分,走 AI 预批 + 教师复核

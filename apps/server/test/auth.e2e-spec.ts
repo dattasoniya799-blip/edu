@@ -52,9 +52,12 @@ describe('认证(A1)', () => {
       .expect(200);
     const data = meRes.body.data;
     expect(data.orgName).toBe('鲸云演示机构');
-    expect(data.orgSettings.ai).toEqual({ qaGuideOnly: true, preGrading: true });
-    expect(data.orgSettings.studentHours).toEqual({ start: '06:00', end: '22:30' });
-    expect(data.orgSettings.deviceBinding).toBe(true);
+    // 断言对齐本轮 seed.ts 新 orgSettings 形状(新增 classCompanion/diagnosis=true,
+    // studentHours 放宽为全天 00:00-23:59,移除 deviceBinding)
+    expect(data.orgSettings.ai).toEqual({
+      qaGuideOnly: true, preGrading: true, classCompanion: true, diagnosis: true,
+    });
+    expect(data.orgSettings.studentHours).toEqual({ start: '00:00', end: '23:59' });
   });
 
   it('seed 的 scrypt 哈希在首次登录后静默升级为 argon2(密码不变)', async () => {

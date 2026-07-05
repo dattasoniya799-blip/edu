@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import type { AiUsageBreakdownDto, AiUsageSummaryDto, MeDto, PageResp } from '@qiming/contracts';
 import { AuditService } from '../audit/audit.service';
 import type { JwtUser } from '../auth/auth.service';
@@ -203,6 +203,13 @@ export class InsightsService {
       settings.ai = { ...(settings.ai ?? {}), ...aiPatch };
     }
     if (dto.studentHours) {
+      // fix-core A4:时间格式(HH:MM)由 StudentHoursDto 正则把关,此处补 start<end 语义校验
+      //(零填充 HH:MM 字符串可直接比较);该窗口自 A3 起真实约束学生登录,禁止倒置/空窗口落库。
+      if (dto.studentHours.start >= dto.studentHours.end) {
+        throw new BadRequestException(
+          `学习时段不合法:start(${dto.studentHours.start})必须早于 end(${dto.studentHours.end}),如 06:00-22:30`,
+        );
+      }
       settings.studentHours = { start: dto.studentHours.start, end: dto.studentHours.end };
     }
     await this.prisma.client.org.update({ where: { id: org.id }, data: { settings } });

@@ -37,7 +37,7 @@ export async function createA7Org(): Promise<A7Fixture> {
       name: 'A7AI网关测试机构',
       settings: {
         ai: { qaGuideOnly: true, preGrading: true },
-        studentHours: { start: '06:00', end: '22:30' },
+        studentHours: { start: '00:00', end: '23:59' },
         deviceBinding: true,
       },
     },
@@ -91,7 +91,7 @@ export async function createA7Org(): Promise<A7Fixture> {
   const orgB = await raw.org.create({
     data: {
       name: 'A7跨租户机构B',
-      settings: { ai: { qaGuideOnly: true, preGrading: true }, studentHours: { start: '06:00', end: '22:30' }, deviceBinding: true },
+      settings: { ai: { qaGuideOnly: true, preGrading: true }, studentHours: { start: '00:00', end: '23:59' }, deviceBinding: true },
     },
   });
   const studentB = await raw.user.create({

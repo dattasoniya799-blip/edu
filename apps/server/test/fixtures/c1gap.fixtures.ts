@@ -40,7 +40,7 @@ export async function createC1Org(): Promise<C1Fixture> {
   const hash = await hashPassword(C1_PASSWORD);
   const settings = {
     ai: { qaGuideOnly: true, preGrading: true },
-    studentHours: { start: '06:00', end: '22:30' },
+    studentHours: { start: '00:00', end: '23:59' },
     deviceBinding: true,
   };
   const org = await raw.org.create({ data: { name: 'C1GAP作答批改测试机构', settings } });

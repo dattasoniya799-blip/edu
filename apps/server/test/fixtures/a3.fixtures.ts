@@ -32,7 +32,7 @@ export async function createA3Org(): Promise<A3Fixture> {
       name: 'A3题库测试机构',
       settings: {
         ai: { qaGuideOnly: true, preGrading: true },
-        studentHours: { start: '06:00', end: '22:30' },
+        studentHours: { start: '00:00', end: '23:59' },
         deviceBinding: true,
       },
     },

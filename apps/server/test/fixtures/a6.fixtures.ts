@@ -45,7 +45,7 @@ export async function createA6Org(): Promise<A6Fixture> {
       name: A6_ORG_NAME,
       settings: {
         ai: { qaGuideOnly: true, preGrading: true },
-        studentHours: { start: '06:00', end: '22:30' },
+        studentHours: { start: '00:00', end: '23:59' },
         deviceBinding: true,
       },
     },
@@ -200,7 +200,7 @@ export async function createA6Org(): Promise<A6Fixture> {
       name: A6_ORG_B_NAME,
       settings: {
         ai: { qaGuideOnly: true, preGrading: true },
-        studentHours: { start: '06:00', end: '22:30' },
+        studentHours: { start: '00:00', end: '23:59' },
         deviceBinding: true,
       },
     },

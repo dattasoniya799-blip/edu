@@ -34,7 +34,7 @@ export async function createImplOrg(): Promise<ImplFixture> {
       name: 'IMPL-back 填空判分测试机构',
       settings: {
         ai: { qaGuideOnly: true, preGrading: true },
-        studentHours: { start: '06:00', end: '22:30' },
+        studentHours: { start: '00:00', end: '23:59' },
         deviceBinding: true,
       },
     },
