@@ -141,7 +141,7 @@ export function CoursePage() {
         {replay && (
           <div className="text-sm leading-7 text-ink-2">
             <div className="flex h-44 items-center justify-center rounded-md border border-dashed border-line bg-bg/60 text-ink-3">
-              课件查看器占位(签名 URL,B6/资源域接入)
+              课件在线预览即将上线,可先通过下方链接打开查看
             </div>
             <div className="mt-3 break-all text-xs text-ink-3">
               链接:{replay.url}
