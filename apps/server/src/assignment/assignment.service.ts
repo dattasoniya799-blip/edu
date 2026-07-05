@@ -229,6 +229,10 @@ export class AssignmentService {
    * - target.courseId → 学生在该课程的有效选课(active)
    * - target.studentIds → 包含该学生
    * - status:pending=未交,done=已交(submitted/graded),all=全部
+   * - FIXB · B3:pending(待办)口径排除 kind=in_class —— 随堂练是课中即时载体
+   *   (整班 target 懒建,见 ClassroomService.findInClassAssignment),下课后不应
+   *   永挂未参与学生的待办首位;已提交的照常出现在 done;all 不动(attempt 开始
+   *   作答的可见性校验依赖 all 口径,课中作答必须能命中 in_class assignment)。
    */
   async listForStudent(
     user: JwtUser,
@@ -266,7 +270,11 @@ export class AssignmentService {
       : [];
     const done = new Set(doneRows.map((r) => String(r.assignmentId)));
     return visible
-      .filter((a) => (status === 'done' ? done.has(String(a.id)) : !done.has(String(a.id))))
+      .filter((a) =>
+        status === 'done'
+          ? done.has(String(a.id))
+          : !done.has(String(a.id)) && a.kind !== 'in_class', // B3:随堂练不进学生待办
+      )
       .map((a) => this.toDto(a as AssignmentRow));
   }
 

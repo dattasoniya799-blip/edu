@@ -50,8 +50,9 @@ export class StudentMiscController {
 
 /**
  * local 驱动的"预签名 GET"下载端点(不属于 openapi 契约,等价于 OSS 的外部回看地址;
- * 形状与 A3 的 PUT /uploads/local/:token 对称):一次性 token 即凭证,故 @Public;
- * token 无效/过期/已使用 → 403。独立控制器,避免继承上面 @Roles('student') 的门禁。
+ * 形状与 A3 的 PUT /uploads/local/:token 对称):签名 token 即凭证,故 @Public;
+ * FIXB · B4:token 在 TTL(响应 expiresAt)内可重复使用(刷新/视频 Range 分段/PDF 二次
+ * 拉取复用同一 URL);无效/过期 → 403。独立控制器,避免继承上面 @Roles('student') 的门禁。
  */
 @Controller('student/resources')
 export class StudentResourceDownloadController {
@@ -60,8 +61,8 @@ export class StudentResourceDownloadController {
   @Public()
   @Get('local/:token')
   async getLocal(@Param('token') token: string, @Res() res: Response) {
-    const ossKey = await this.view.consumeToken(token);
-    if (!ossKey) throw new ForbiddenException('回看凭证无效、已过期或已使用');
+    const ossKey = await this.view.resolveToken(token);
+    if (!ossKey) throw new ForbiddenException('回看凭证无效或已过期');
     const body = await this.view.readObject(ossKey);
     if (!body) throw new NotFoundException('课件文件不存在');
     res.setHeader('Content-Type', 'application/octet-stream');
