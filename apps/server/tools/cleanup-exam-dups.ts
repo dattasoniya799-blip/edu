@@ -75,15 +75,19 @@ async function main() {
   const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json')).sort();
   if (files.length === 0) { console.error(`目录 ${dir} 下没有 JSON 文件`); process.exit(1); }
 
-  // 源真值: 当前题干集合 + 卷源短标集合(与 import-exams buildChapter 的 src 部分一致)
+  // 源真值: 当前题干集合(缺图停用的题不算"应存在") + 停用题干集合 + 卷源短标集合
   const currentStems = new Set<string>();
+  const disabledStems = new Set<string>();
   const sourceLabels = new Set<string>();
   for (const file of files) {
     const exam = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
     sourceLabels.add(exam.year && exam.region ? `${exam.year}${exam.region}中考` : exam.sourceName);
-    for (const q of exam.questions ?? []) if (q.stemLatex?.trim()) currentStems.add(q.stemLatex);
+    for (const q of exam.questions ?? []) {
+      if (!q.stemLatex?.trim()) continue;
+      (q.missingFigure ? disabledStems : currentStems).add(q.stemLatex);
+    }
   }
-  console.log(`目标: ${BASE}(${APPLY ? '真实删除' : 'dry-run,只报告'})  源: ${files.length} 卷 / ${currentStems.size} 题干 / 短标 ${sourceLabels.size} 个\n`);
+  console.log(`目标: ${BASE}(${APPLY ? '真实删除' : 'dry-run,只报告'})  源: ${files.length} 卷 / ${currentStems.size} 题干(另 ${disabledStems.size} 题缺图停用) / 短标 ${sourceLabels.size} 个\n`);
 
   const login = await api<{ accessToken: string; me: { name: string; role: string } }>(
     'POST', '/auth/login', { phone: PHONE, password: PASSWORD });
@@ -106,8 +110,9 @@ async function main() {
   const toDelete = candidates.filter((r) => !keepIds.has(r.id));
 
   const dupRows = toDelete.filter((r) => currentStems.has(r.stemLatex));
-  const staleRows = toDelete.filter((r) => !currentStems.has(r.stemLatex));
-  console.log(`删除清单: ${toDelete.length} 行(完全重复 ${dupRows.length} + 源文件已修订的旧版题干 ${staleRows.length})`);
+  const disabledRows = toDelete.filter((r) => disabledStems.has(r.stemLatex));
+  const staleRows = toDelete.filter((r) => !currentStems.has(r.stemLatex) && !disabledStems.has(r.stemLatex));
+  console.log(`删除清单: ${toDelete.length} 行(完全重复 ${dupRows.length} + 缺图停用 ${disabledRows.length} + 源文件已修订的旧版题干 ${staleRows.length})`);
   for (const r of toDelete)
     console.log(`   - id=${r.id} [${r.subject ?? '?'}] ${(r.chapter ?? '').slice(0, 40)} :: ${r.stemLatex.slice(0, 30).replace(/\n/g, ' ')}…`);
 

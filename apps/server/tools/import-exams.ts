@@ -47,6 +47,8 @@ function resolveDir(dir: string): string {
 
 interface SourceQuestion {
   type: 'single' | 'multi' | 'blank' | 'solution';
+  /** 缺图停用:题面依赖插图但源数据无图(如图/电路图),不导入;补图后去掉该标记即恢复 */
+  missingFigure?: boolean;
   stemLatex: string;
   options?: { key: string; textLatex: string }[];
   answer: { choice?: string; choices?: string[]; texts?: string[]; referenceLatex?: string };
@@ -256,6 +258,11 @@ async function main() {
     for (let i = 0; i < exam.questions.length; i++) {
       const label = `第${i + 1}题(${exam.questions[i].type})`;
       try {
+        if (exam.questions[i].missingFigure) {
+          st.skipped++;
+          console.log(`   ↷ ${label} 跳过:缺图停用(missingFigure,补图后恢复)`);
+          continue;
+        }
         const input = toQuestionInput(exam, exam.questions[i], kpNodes);
         const hit = stemIndex.get(input.stemLatex);
         if (hit && hit.status !== 'draft') {
