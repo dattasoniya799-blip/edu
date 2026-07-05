@@ -82,6 +82,12 @@ export function ResultView({ attempt, assignment }: { attempt: AttemptWithQuesti
                 </span>
               )}
             </div>
+            {a?.teacherComment && (
+              <div className="mt-3 rounded-md bg-primary-soft p-3.5 text-[13px] leading-7 text-ink-2">
+                <b className="text-ink">老师点评</b>
+                <div className="mt-1"><TexText src={a.teacherComment} /></div>
+              </div>
+            )}
             <AnalysisView
               className="mt-3"
               brief={q.analysisBriefLatex}

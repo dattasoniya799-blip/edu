@@ -4271,6 +4271,8 @@ export interface components {
             isCorrect: null | boolean;
             score: null | number;
             flagged: boolean;
+            /** @description 教师复核点评(知识点点评),finalize 后返回;仅 attempt 已出分(graded)且教师写了非空点评时下发,否则省略此字段 */
+            teacherComment?: string;
         };
         Attempt: {
             id: number;

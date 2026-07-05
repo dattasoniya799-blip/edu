@@ -352,7 +352,11 @@ export class AttemptService {
   private async toDto(attemptId: bigint): Promise<AttemptDto> {
     const at = await this.prisma.client.attempt.findFirst({
       where: { id: attemptId },
-      include: { answers: true, assignment: { select: { paperId: true } } },
+      include: {
+        // 已 graded 时随作答一并取 grading.comment(批量,单查询,无 N+1)→ teacherComment
+        answers: { include: { grading: { select: { comment: true } } } },
+        assignment: { select: { paperId: true } },
+      },
     });
     if (!at) throw new NotFoundException('作答不存在');
     const pqs = await this.prisma.client.paperQuestion.findMany({
@@ -363,6 +367,8 @@ export class AttemptService {
     const byQuestion = new Map(at.answers.map((a) => [String(a.questionId), a]));
     // 交卷/已出分 → 全卷可下发正确答案与解析
     const attemptRevealed = at.status === 'submitted' || at.status === 'graded';
+    // 教师点评仅在整卷已出分(graded)后随解析下发(finalize 前不出口,兑现批改页「随解析推送给学生」承诺)
+    const commentsRevealed = at.status === 'graded';
     return {
       id: num(at.id),
       assignmentId: num(at.assignmentId),
@@ -375,12 +381,15 @@ export class AttemptService {
       subjectiveScore: dec(at.subjectiveScore),
       answers: pqs.map((pq) => {
         const a = byQuestion.get(String(pq.questionId));
+        // 空点评(null/'')不下发字段(下发 undefined),避免学生端渲染空块
+        const comment = commentsRevealed ? a?.grading?.comment ?? undefined : undefined;
         return {
           questionId: num(pq.questionId),
           response: (a?.response as AnswerResponse | undefined) ?? null,
           isCorrect: a?.isCorrect ?? null,
           score: dec(a?.score),
           flagged: a?.flagged ?? false,
+          ...(comment ? { teacherComment: comment } : {}),
         };
       }),
       // 该题已判定(客观题即时判分)或整卷已交卷 → 下发正确答案 + 解析
