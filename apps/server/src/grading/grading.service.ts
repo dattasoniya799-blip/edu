@@ -95,8 +95,23 @@ export class GradingService {
       question.type === 'blank'
         ? ((question.answer as { texts?: string[] } | null)?.texts ?? []).join(' | ')
         : ((question.answer as { referenceLatex?: string } | null)?.referenceLatex ?? '');
+    // FIXB · B1:公式填空普遍无 rubric(题库 rubric=[]),而预批提示词规定
+    // ai_score=通过 rubric 步骤分值之和 → 空 rubric 必然恒 0 分,正确作答也被标「AI 0分」误导教师。
+    // rubric 为空时合成单步评分标准:对照参考答案给 满分/0;满分口径 = 该题在本卷的
+    // paper_questions.score(经 answer→attempt→assignment.paperId 定位,与 review/finalize
+    // 的 fullScore 同源)。题目自带 rubric 时行为不变。
+    let rubric = (question.rubric as unknown as RubricStep[]) ?? [];
+    if (!rubric.length) {
+      rubric = [
+        {
+          step: 1,
+          desc: '最终结果与参考答案一致(等价形式亦视为正确)',
+          score: await this.answerFullScore(ans.attemptId, ans.questionId),
+        },
+      ];
+    }
     const out = await this.ai.preGrade(
-      { ocrText, referenceAnswer, rubric: (question.rubric as unknown as RubricStep[]) ?? [] },
+      { ocrText, referenceAnswer, rubric },
       { orgId, feature: 'pre_grading' },
     );
     // 只写 AI 字段,不覆盖教师 final_score(教师先复核、AI 后到的场景)
@@ -448,7 +463,68 @@ export class GradingService {
     await this.settleAttempt(at, at.assignment.kind, meta);
   }
 
+  /**
+   * FIXB · B2:课堂 ended 结算入口(ClassroomService.settle 调用)——
+   * 把本讲全部 in_class attempts 统一提交并入账,修复「summary 宣称 wrongBookAdded、
+   * 学生端明示已收录,但 in_class attempt 永挂 in_progress、错题本实际零入账」的断裂:
+   * - in_progress → CAS(updateMany in_progress→submitted)提交:objective=已判定题得分和,
+   *   口径同 AttemptService.submit;与学生并发 REST 交卷的既有防线天然兼容(输者放弃);
+   * - 已 submitted(含刚提交的)→ finalizeAttempt:其内 settleAttempt 原子夺取
+   *   submitted→graded,客观题按已有判定结果入错题本与掌握度(恰好一次);
+   *   需复核题(solution/公式填空)无复核分 → 不计分(subjective 汇总为 0)、
+   *   不入错题本,attempt 直达 graded 终态,不留 submitted 无人批的悬挂状态。
+   */
+  async settleInClassAttempts(lessonId: bigint): Promise<void> {
+    const assignments = await this.prisma.client.assignment.findMany({
+      where: { lessonId, kind: 'in_class' },
+      select: { id: true },
+    });
+    if (!assignments.length) return;
+    const attempts = await this.prisma.client.attempt.findMany({
+      where: {
+        assignmentId: { in: assignments.map((a) => a.id) },
+        status: { in: ['in_progress', 'submitted'] },
+      },
+      include: { answers: { select: { isCorrect: true, score: true } } },
+    });
+    for (const at of attempts) {
+      if (at.status === 'in_progress') {
+        // 客观分口径同 AttemptService.submit:已判定(isCorrect 非空)题的得分求和
+        const objective = round1(
+          at.answers.reduce((s, a) => s + (a.isCorrect != null ? (dec(a.score) ?? 0) : 0), 0),
+        );
+        const now = new Date();
+        await this.prisma.client.attempt.updateMany({
+          where: { id: at.id, status: 'in_progress' },
+          data: {
+            status: 'submitted',
+            submittedAt: now,
+            objectiveScore: objective,
+            durationSec: Math.max(0, Math.round((now.getTime() - at.startedAt.getTime()) / 1000)),
+          },
+        });
+      }
+      // submitted→graded 由 finalizeAttempt 内的原子夺取保证错题入账/掌握度恰好一次
+      await this.finalizeAttempt(at.id);
+    }
+  }
+
   // ================= 内部 =================
+
+  /** 某次作答对应题目的卷面满分(answer→attempt→assignment.paperId→paper_questions.score) */
+  private async answerFullScore(attemptId: bigint, questionId: bigint): Promise<number> {
+    const at = await this.prisma.client.attempt.findFirst({
+      where: { id: attemptId },
+      select: { assignment: { select: { paperId: true } } },
+    });
+    const pq = at
+      ? await this.prisma.client.paperQuestion.findFirst({
+          where: { paperId: at.assignment.paperId, questionId },
+          select: { score: true },
+        })
+      : null;
+    return dec(pq?.score) ?? 0;
+  }
 
   /** 单次作答出分:汇总主观分 → attempt graded → 错题入账 → mastery 任务 */
   private async settleAttempt(

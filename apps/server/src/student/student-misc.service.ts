@@ -23,7 +23,8 @@ import { ResourceViewService, VIEW_TTL_SEC } from './resource-view.service';
  *   sessionId = 该讲次最新未结束(status≠ended)的 class_session,无 → null。
  * - today.tasks:全部对我可见的作业(listForStudent 'all',与 B5 mock 口径一致);
  *   progress 取最新 attempt(attemptNo 最大):无 → {0,total,'not_started'},
- *   有 → {已答题数,total,attempt.status('in_progress'|'submitted'|'graded')}。
+ *   有 → {已答题数,total,attempt.status('in_progress'|'submitted'|'graded')};
+ *   FIXB · B3:kind=in_class 仅在已交(submitted/graded)时保留,未参与的随堂练不进今日任务。
  * - lessons.myHomework:该讲次最新一条对我可见的 homework 作业;score=我最新 attempt 的总分
  *   (graded 前为 null);wrongCount 按 A5 错题口径 —— 客观题 isCorrect=false,
  *   主观题已出分且未拿满分(answers.score < paper_questions.score;B5 mock 同口径);无 attempt → 0。
@@ -142,19 +143,27 @@ export class StudentMiscService {
       include: { _count: { select: { answers: true } } },
     });
     const latest = new Map(attempts.map((at) => [String(at.assignmentId), at]));
-    return visible.map((a) => {
-      const at = latest.get(String(a.id));
-      return {
-        assignmentId: a.id,
-        kind: a.kind,
-        title: a.paperName,
-        questionCount: a.questionCount,
-        dueAt: a.dueAt,
-        progress: at
-          ? { answered: at._count.answers, total: a.questionCount, status: at.status }
-          : { answered: 0, total: a.questionCount, status: 'not_started' },
-      };
-    });
+    return visible
+      .filter((a) => {
+        // FIXB · B3(与 listForStudent pending 同口径):随堂练(in_class)不进今日任务待办 ——
+        // 未参与/未交的懒建整班随堂练不再挂在任务列表;已交/已出分的保留(作为已完成项展示)。
+        if (a.kind !== 'in_class') return true;
+        const at = latest.get(String(a.id));
+        return at != null && (at.status === 'submitted' || at.status === 'graded');
+      })
+      .map((a) => {
+        const at = latest.get(String(a.id));
+        return {
+          assignmentId: a.id,
+          kind: a.kind,
+          title: a.paperName,
+          questionCount: a.questionCount,
+          dueAt: a.dueAt,
+          progress: at
+            ? { answered: at._count.answers, total: a.questionCount, status: at.status }
+            : { answered: 0, total: a.questionCount, status: 'not_started' },
+        };
+      });
   }
 
   // ---------------- GET /student/courses ----------------

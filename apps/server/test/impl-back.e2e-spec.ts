@@ -172,9 +172,11 @@ describe('IMPL-back · 插图 anchor / 填空混合判分 / 错题本 subject', 
         () => raw.gradingRecord.findFirst({ where: { answerId: BigInt(aid), aiScore: { not: null } } }),
         `pre_grading 完成 answer=${aid}`,
       );
-      // 填空题无 rubric → stub 返回 aiScore=0、steps=[]、errorTags=[](管线打通,分由教师复核给)
-      expect(Number(rec.aiScore)).toBe(0);
-      expect(rec.aiSteps).toEqual([]);
+      // FIXB · B1:填空题无 rubric → 预批合成单步评分标准(满分=卷面分 5)进入 prompt;
+      // mock stub 规则「第 1 步恒 ok」→ aiScore=5、steps=[{step:1,ok:true}]、errorTags=[]
+      //(不再恒 0 分误导教师;最终分仍由教师复核给出)
+      expect(Number(rec.aiScore)).toBe(5);
+      expect(rec.aiSteps).toEqual([{ step: 1, ok: true }]);
       expect(rec.aiErrorTags).toEqual([]);
     }
   });

@@ -23,6 +23,7 @@ import { AttemptService } from '../attempt/attempt.service';
 import type { JwtUser } from '../auth/auth.service';
 import { runAsUser } from '../common/tenant-context';
 import { BizException } from '../course/business.exception';
+import { GradingService } from '../grading/grading.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { REDIS } from '../redis/redis.module';
 import {
@@ -108,6 +109,7 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
     @Inject(REDIS) private readonly redis: Redis,
     private readonly assignments: AssignmentService,
     private readonly attempts: AttemptService,
+    private readonly grading: GradingService,
     private readonly qa: QaService,
     private readonly companion: CompanionService,
     cfg: ConfigService,
@@ -291,7 +293,8 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
    * 复用 A7 QaService.ask(真实 AI):内部经 LlmGatewayService(真实/mock 由路由表决定,
    * 上游失败有 fallback),含限流(每生 6 次/分,命中抛 4501 BizException)、当前题上下文、
    * 引导模式(org.settings.ai.qaGuideOnly)、输出审查(qa-review.json)、计量自动落账(归因带 userId)。
-   * 取回完整回复后按原有分块方式经 class:ai_chunk 下发(末帧 done:true)。
+   * 下发节奏(FIXB · B5):请求发起前先推一帧空 delta 占位分片(学生端即时反馈),
+   * 取回完整回复后再按原有分块方式经 class:ai_chunk 续发(末帧 done:true)。
    * 限流命中的 4501 BizException 不在此捕获——交给网关 on() 统一转 'exception' 事件
    *(其 message 即「提问太频繁啦,休息一分钟再来问我吧」,与 ai_ask 其它业务异常下发口径一致,不会让 WS 处理器未捕获崩)。
    */
@@ -310,6 +313,12 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
     // 但限流命中的 4501 BizException 原样抛出 —— 交给网关 on() 统一转 'exception'
     //(message 即「提问太频繁啦,休息一分钟再来问我吧」),与其它业务异常下发口径一致。
     const requestId = `qa-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    // FIXB · B5(降级实现,原因见报告):QaService 的输出审查必须拿到全文才能判定
+    //(qa.service 注释「审查需要全文」;REST /ai/qa 的 SSE 同样是全文审查后由 controller 分块),
+    // 且 qa.service.ts 为 A 代理领域不可改造 —— 课中无法拿到真增量流。为免 2-20s 等待期学生端
+    // 零反馈,这里在发起 LLM 请求前立即下发一帧空 delta 占位首分片(事件名/负载形状均不变,
+    // done=false),前端可据此渲染「助教思考中」;取回全文后按原分块方式续发。
+    socket.emit('class:ai_chunk', { requestId, delta: '', done: false });
     let text: string;
     try {
       const r = await Promise.race([
@@ -320,7 +329,11 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
       ]);
       text = r.text;
     } catch (e) {
-      if (e instanceof BizException) throw e; // 限流 4501 → 网关转 'exception',不吞
+      if (e instanceof BizException) {
+        // 限流 4501 → 先补 done 帧收尾本次占位流,再交网关转 'exception'(口径不变,不吞)
+        socket.emit('class:ai_chunk', { requestId, delta: '', done: true });
+        throw e;
+      }
       text = AI_ASK_FALLBACK; // 超时 / 上游异常 → 兜底引导
     }
 
@@ -887,6 +900,11 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
       where: { id: lessonId },
       data: { status: 'finished' },
     });
+
+    // FIXB · B2:课堂错题入账 —— 本讲 in_class attempts 统一提交并入账(客观题按已有判定
+    // 进错题本/掌握度;需复核题不计分不悬挂),使 snapshot.me.wrongBookAdded 宣称的
+    // 「本堂新收错题」与错题本真实入账一致;终态上 in_class attempt 不再停留 in_progress。
+    await this.grading.settleInClassAttempts(lessonId);
 
     const hwSegments = await this.prisma.client.lessonSegment.findMany({
       where: { lessonId, type: 'homework', paperId: { not: null } },

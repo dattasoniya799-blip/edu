@@ -17,9 +17,12 @@
  */
 import { INestApplication } from '@nestjs/common';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
+import type Redis from 'ioredis';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import request from 'supertest';
+
+import { REDIS } from '../src/redis/redis.module';
 
 // 在 createApp 之前固定上传根目录到临时目录(同 A3 upload.e2e 模式),避免污染仓库
 const UPLOAD_ROOT = mkdtempSync(join(tmpdir(), 'qiming-fix1-view-'));
@@ -449,7 +452,7 @@ describe('学生端只读杂项(FIX1)', () => {
 
   // ================= GET /student/resources/:id/view =================
 
-  it('验收:resources/view —— 签名 URL(一次性 token)→ 字节回读一致;复用 → 403;伪 token → 403', async () => {
+  it('验收:resources/view —— 签名 URL(FIXB·B4:TTL 内可重复使用)→ 两次 GET 均 200 且字节一致;过期 → 403;伪 token → 403', async () => {
     const res = await get(`/student/resources/${fx.r1Id}/view`, s1).expect(200);
     const data = res.body.data;
     exactKeys(data, VIEW_KEYS);
@@ -458,12 +461,18 @@ describe('学生端只读杂项(FIX1)', () => {
     expect(expiresAt).toBeGreaterThan(Date.now());
     expect(expiresAt).toBeLessThanOrEqual(Date.now() + 601_000); // TTL=600s
 
-    const dl = await request(http).get(pathOf(data.url)).expect(200);
-    expect(dl.headers['content-type']).toContain('application/octet-stream');
-    expect(Buffer.from(dl.body).toString('utf8')).toBe(R1_CONTENT);
-    // token 一次性(GETDEL):复用 → 403
+    // FIXB·B4:TTL 内两次 GET 均 200、字节一致(刷新 / 视频 Range 分段 / PDF 二次拉取复用同一 URL)
+    const dl1 = await request(http).get(pathOf(data.url)).expect(200);
+    expect(dl1.headers['content-type']).toContain('application/octet-stream');
+    expect(Buffer.from(dl1.body).toString('utf8')).toBe(R1_CONTENT);
+    const dl2 = await request(http).get(pathOf(data.url)).expect(200);
+    expect(Buffer.from(dl2.body).toString('utf8')).toBe(R1_CONTENT);
+
+    // 过期(模拟 Redis TTL 失效 → resolveToken GET 得 null)→ 403
+    const token = new URL(data.url).pathname.split('/').pop()!;
+    await app.get<Redis>(REDIS).del(`view:token:${token}`);
     await request(http).get(pathOf(data.url)).expect(403);
-    // 伪 token → 403(无需登录态,但拿不到内容)
+    // 伪造 token → 403(无需登录态,但拿不到内容)
     await request(http).get(`/api/v1/student/resources/local/${'0'.repeat(48)}`).expect(403);
   });
 
@@ -471,9 +480,9 @@ describe('学生端只读杂项(FIX1)', () => {
     await get(`/student/resources/${fx.r2Id}/view`, s1).expect(404); // R2 仅被 C2 引用,s1 未选
     await get(`/student/resources/99999999/view`, s1).expect(404);
     await get(`/student/resources/${fx.r1Id}/view`, s3).expect(404); // s3 quit,不可回看
-    // s2 选了 C2 → R2 可回看(凭证消费掉,避免残留)
+    // s2 选了 C2 → R2 可回看(token 有效,但文件未落盘)
     const ok = await get(`/student/resources/${fx.r2Id}/view`, s2).expect(200);
-    await request(http).get(pathOf(ok.body.data.url)).expect(404); // 文件未落盘 → 404(token 已消费)
+    await request(http).get(pathOf(ok.body.data.url)).expect(404); // token 解析成功但文件未落盘 → 404(B4:非消费)
   });
 
   // ================= seed 对账(只读) =================
@@ -516,7 +525,7 @@ describe('学生端只读杂项(FIX1)', () => {
       where: { orgId: seedCourse.orgId, name: { contains: '微课视频' } },
     });
     const view = await get(`/student/resources/${seedRes1.id}/view`, token).expect(200);
-    await request(http).get(pathOf(view.body.data.url)).expect(404); // seed 文件未落盘;同时消费 token
+    await request(http).get(pathOf(view.body.data.url)).expect(404); // seed 文件未落盘 → 404(B4:token 有效但无字节)
     await get(`/student/resources/${seedRes2.id}/view`, token).expect(404);
   });
 

@@ -203,6 +203,10 @@ export async function dropC3Org(orgId: bigint): Promise<void> {
   await raw.sessionParticipant.deleteMany({ where: { orgId } });
   await raw.classSession.deleteMany({ where: { orgId } });
   await raw.gradingRecord.deleteMany({ where: { orgId } });
+  // FIXB · B2:课堂结算会把答错客观题入错题本 → wrong_book_entries.source_answer_id 外键引用
+  // answers,须先删错题本再删 answers(否则 FK 违约);同理清理结算产生的掌握度快照。
+  await raw.wrongBookEntry.deleteMany({ where: { orgId } });
+  await raw.masterySnapshot.deleteMany({ where: { orgId } });
   await raw.answer.deleteMany({ where: { orgId } });
   await raw.attempt.deleteMany({ where: { orgId } });
   await raw.assignment.deleteMany({ where: { orgId } });
