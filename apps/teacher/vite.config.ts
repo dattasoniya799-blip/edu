@@ -10,7 +10,7 @@ const workspaceRoot = path.resolve(__dirname, '../..');
 // 真实模式下 /socket.io 一并代理到后端(A6 网关 /classroom,ws 升级),供课堂监控真实源接入
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, __dirname, '');
-  const useMock = env.VITE_USE_MOCK !== 'false';
+  const useMock = env.VITE_USE_MOCK === 'true';
   return {
     // 生产可通过 VITE_BASE 指定子路径部署(如 /teacher/),三端同托管在 80 端口下不同路径,
     // 规避国内网络对 8081/8082 等非标准端口的拦截。默认 '/'。

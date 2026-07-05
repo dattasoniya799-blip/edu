@@ -16,6 +16,7 @@ import { PageHead } from '../Shell';
 import { bizError } from '../lesson/lib/segments';
 import { toPaperInput, toggleQuestion, totalScore, validatePaper, type PaperItem } from './lib/paper';
 import { PAPER_TYPE_LABEL } from './lib/paperLibrary';
+import { collectQuestionPages } from './lib/questionLibrary';
 import { SelectedQuestionList } from './components/SelectedQuestionList';
 import { QuestionPicker } from './components/QuestionPicker';
 
@@ -41,12 +42,16 @@ export function PaperEditorPage() {
   useEffect(() => {
     setLoading(true);
     setLoadError(false);
+    const fetchQuestionPage = (page: number, size: number) =>
+      api.get('/questions', { query: { page, size, status: 'published' } })
+        .then((r) => ({ items: r.data.items as QuestionDto[], total: r.data.total }));
     Promise.all([
-      api.get('/questions', { query: { page: 1, size: 50, status: 'published' } }),
+      collectQuestionPages(fetchQuestionPage),
       isEdit ? api.get('/papers/{id}', { params: { id: paperId } }) : Promise.resolve(null),
     ])
-      .then(([q, p]) => {
-        setQuestions(q.data.items as QuestionDto[]);
+      .then(([qc, p]) => {
+        setQuestions(qc.questions);
+        if (qc.truncated) toast('题库题目较多,已载入前 1000 道用于组卷;可在选题弹窗搜索缩小范围');
         if (p) {
           const paper = p.data as PaperDto;
           setName(paper.name);

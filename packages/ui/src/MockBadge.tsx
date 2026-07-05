@@ -1,13 +1,13 @@
 /**
  * MOCK 数据角标(FIX4-front #5,P2-9 防混淆):三端通用。
- * mock 模式(VITE_USE_MOCK !== 'false')时在右下角显示一个不挡操作的小角标,
- * 提醒当前是演示数据而非真实库;真实模式(VITE_USE_MOCK === 'false')不渲染。
+ * mock 模式(VITE_USE_MOCK === 'true')时在右下角显示一个不挡操作的小角标,
+ * 提醒当前是演示数据而非真实库;真实模式(未设 / 非 'true')不渲染。
  * 颜色仅取 design-tokens(orange / orange-soft)。
  */
 
 function isMockMode(): boolean {
   const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
-  return env?.VITE_USE_MOCK !== 'false';
+  return env?.VITE_USE_MOCK === 'true';
 }
 
 export interface MockBadgeProps {

@@ -13,6 +13,7 @@ import { PageHead } from '../Shell';
 import { bizError, newSegment, reseq } from '../lesson/lib/segments';
 import { fmtDateTime } from '../course/lib/format';
 import { defaultScore, toPaperInput, totalScore, validatePaper, type PaperItem } from './lib/paper';
+import { collectQuestionPages } from './lib/questionLibrary';
 import { SelectedQuestionList } from './components/SelectedQuestionList';
 import { QuestionPicker } from './components/QuestionPicker';
 
@@ -44,15 +45,19 @@ export function PaperBuilderPage() {
   useEffect(() => {
     setLoading(true);
     const initialPaperId = Number(searchParams.get('paperId')) || null;
+    const fetchQuestionPage = (page: number, size: number) =>
+      api.get('/questions', { query: { page, size, status: 'published' } })
+        .then((r) => ({ items: r.data.items as QuestionDto[], total: r.data.total }));
     Promise.all([
       api.get('/lessons/{id}', { params: { id: lessonId } }),
-      api.get('/questions', { query: { page: 1, size: 50, status: 'published' } }),
+      collectQuestionPages(fetchQuestionPage),
       initialPaperId ? api.get('/papers/{id}', { params: { id: initialPaperId } }) : Promise.resolve(null),
     ])
-      .then(([l, q, p]) => {
+      .then(([l, qc, p]) => {
         const lessonData = l.data as LessonDto;
         setLesson(lessonData);
-        setQuestions(q.data.items as QuestionDto[]);
+        setQuestions(qc.questions);
+        if (qc.truncated) toast('题库题目较多,已载入前 1000 道用于组卷;可在选题弹窗搜索缩小范围');
         if (p) {
           const paper = p.data as PaperDto;
           setName(paper.name);
