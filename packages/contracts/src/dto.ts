@@ -131,6 +131,11 @@ export interface AssignmentDto {
   kind: AssignmentKind; target: { courseId?: number; studentIds?: number[] };
   publishAt: string; dueAt: string | null; scoreCounted: boolean;
   questionCount: number; totalScore: number;
+  /**
+   * [2026-07-06 批准] 学生视角下发本人对该作业的最新一次 attempt(用于历史页/时间线直接打开成绩单);
+   * 教师视角不下发此字段(缺失)。学生可见但从未作答时为 null。
+   */
+  myAttempt?: { attemptId: number; status: AttemptStatus; score: number | null } | null;
 }
 /** 作业总览项:教师看自己布置过的全部作业(进度概览 + ongoing/finished 状态由 finalize 是否完成判定) */
 export interface AssignmentBriefDto {

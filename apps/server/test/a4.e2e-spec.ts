@@ -29,6 +29,8 @@ const SEGMENT_KEYS = ['id', 'seq', 'type', 'durationMin', 'config', 'resourceId'
 const PAPER_KEYS = ['id', 'name', 'type', 'totalScore', 'status', 'questions'];
 const PAPER_QUESTION_KEYS = ['seq', 'questionId', 'score', 'type', 'stemLatex'];
 const ASSIGNMENT_KEYS = ['id', 'paperId', 'paperName', 'lessonId', 'kind', 'target', 'publishAt', 'dueAt', 'scoreCounted', 'questionCount', 'totalScore'];
+// [2026-07-06 契约] 学生视角(listForStudent)额外带 myAttempt;教师创建出参不带
+const STUDENT_ASSIGNMENT_KEYS = [...ASSIGNMENT_KEYS, 'myAttempt'];
 const RESOURCE_KEYS = ['id', 'type', 'name', 'ossKey', 'size', 'meta', 'usedByLessons', 'kpNodeId', 'kpNodeName', 'createdAt'];
 const PROGRESS_KEYS = ['submitted', 'totalStudents', 'gradedSubjective', 'pendingSubjective'];
 
@@ -523,8 +525,11 @@ describe('课程/讲次/编排/试卷/作业(A4)', () => {
     expect(s2List.some((a) => a.id === correctionAssignment.id)).toBe(false);
     expect(s3List.some((a) => a.id === correctionAssignment.id)).toBe(false);
 
-    // DTO 与契约一致
-    exactKeys(s1List.find((a) => a.id === hwAssignment.id)!, ASSIGNMENT_KEYS);
+    // DTO 与契约一致(学生视角带 myAttempt);未作答 → null,教师创建出参不带
+    const s1Hw = s1List.find((a) => a.id === hwAssignment.id)!;
+    exactKeys(s1Hw, STUDENT_ASSIGNMENT_KEYS);
+    expect(s1Hw.myAttempt).toBeNull();
+    expect(hwAssignment).not.toHaveProperty('myAttempt'); // 教师 create 出参不带 myAttempt
   });
 
   it('progress:totalStudents/submitted/主观题复核进度逐项对账', async () => {

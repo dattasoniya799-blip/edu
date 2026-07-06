@@ -3127,6 +3127,7 @@ export interface paths {
                                 sessionId: null | number;
                                 myHomework: null | {
                                     assignmentId: number;
+                                    attemptId: null | number;
                                     score: null | number;
                                     wrongCount: number;
                                 };
@@ -4228,6 +4229,12 @@ export interface components {
             scoreCounted: boolean;
             questionCount: number;
             totalScore: number;
+            /** @description [2026-07-06 批准] 学生视角下发本人对该作业的最新一次 attempt(教师视角不下发此字段);学生可见但未作答时为 null。 */
+            myAttempt?: null | {
+                attemptId: number;
+                status: components["schemas"]["AttemptStatus"];
+                score: null | number;
+            };
         };
         /** @description 作业总览项(教师视角)。status 由 finalize 是否完成判定;submitted/totalStudents/graded 为进度概览。 */
         AssignmentBrief: {

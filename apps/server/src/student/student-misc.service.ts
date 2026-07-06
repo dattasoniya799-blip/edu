@@ -63,7 +63,8 @@ export interface LessonTimelineItem {
   lesson: LessonDto;
   // FIX4 · #1:该讲未结束 class_session(口径同 /student/today),无则 null;契约已含该字段
   sessionId: number | null;
-  myHomework: { assignmentId: number; score: number | null; wrongCount: number } | null;
+  // [2026-07-06 批准] attemptId:本人对该讲次作业的最新 attempt id(用于时间线成绩单直达);从未作答时为 null
+  myHomework: { assignmentId: number; attemptId: number | null; score: number | null; wrongCount: number } | null;
 }
 
 export interface StudentReportData {
@@ -366,6 +367,7 @@ export class StudentMiscService {
         myHomework: hw
           ? {
               assignmentId: hw.id,
+              attemptId: at ? num(at.id) : null,
               score: at ? dec(at.score) : null,
               wrongCount: at ? (wrongByAttempt.get(String(at.id)) ?? 0) : 0,
             }

@@ -23,6 +23,8 @@ const PENDING_KEYS = ['assignmentId', 'paperName', 'pendingCount', 'aiAvgScore']
 const GRADING_ITEM_KEYS = ['answerId', 'studentId', 'studentName', 'questionId', 'stemLatex', 'rubric', 'photoUrl', 'textResponse', 'aiScore', 'aiSteps', 'aiErrorTags', 'finalScore', 'comment'];
 const WRONG_ITEM_KEYS = ['id', 'questionId', 'type', 'stemLatex', 'analysisLatex', 'wrongCount', 'correctRedoCount', 'errorTags', 'status', 'sourceName', 'createdAt', 'subject'];
 const ASSIGNMENT_KEYS = ['id', 'paperId', 'paperName', 'lessonId', 'kind', 'target', 'publishAt', 'dueAt', 'scoreCounted', 'questionCount', 'totalScore'];
+// [2026-07-06 契约] 学生视角作业列表项额外带 myAttempt(本人最新 attempt / 未作答为 null)
+const STUDENT_ASSIGNMENT_KEYS = [...ASSIGNMENT_KEYS, 'myAttempt'];
 
 /** 轮询等待异步任务(BullMQ 真实执行) */
 async function waitFor<T>(fn: () => Promise<T | null | false | undefined>, label: string, ms = 15000): Promise<T> {
@@ -142,7 +144,8 @@ describe('作答/自动批改/复核/错题/掌握度(A5)', () => {
     const mine: AssignmentDto[] = res.body.data;
     const a = mine.find((x) => x.id === fx.assignmentId)!;
     expect(a).toBeDefined();
-    exactKeys(a, ASSIGNMENT_KEYS);
+    exactKeys(a, STUDENT_ASSIGNMENT_KEYS);
+    expect(a.myAttempt).toBeNull(); // 尚未作答 → myAttempt=null
     expect(a.questionCount).toBe(4);
     expect(a.totalScore).toBe(25);
 

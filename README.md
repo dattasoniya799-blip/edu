@@ -17,6 +17,10 @@
 >   (教师复核点评,finalize 后随解析下发;未 finalize/空点评省略字段)。可选、向后兼容、无 schema 迁移。
 > - [2026-07-06,已批准·题库学科筛选] `GET /questions` 增可选 query `subject?: string`(按学科精确匹配;
 >   空串/缺省=不过滤)。教师端题库页与组卷选题器加学科筛选。可选、向后兼容、无 schema 迁移。
+> - [2026-07-06,已批准·作业历史直达成绩单] `AssignmentDto` 增可选 `myAttempt?`(学生视角本人最新 attempt
+>   {attemptId,status,score};教师视角不下发);学生课程时间线 `myHomework` 增 `attemptId: number | null`。
+>   学生端新增「作业」历史页(路由 `/homework`,分待完成/已完成,已完成携 `?attempt=` 直达成绩单)+ 导航入口,
+>   课程时间线「作业 X 分」有 attemptId 时可点跳成绩单。可选/向后兼容、无 schema 迁移。
 >
 > **A1 已交付**:后端骨架/认证/多租户/RBAC 见 `apps/server/README.md`(e2e 18/18)。
 

@@ -379,6 +379,16 @@ components:
         scoreCounted: { type: boolean }
         questionCount: { type: integer }
         totalScore: { type: number }
+        myAttempt:
+          description: '[2026-07-06 批准] 学生视角下发本人对该作业的最新一次 attempt(教师视角不下发此字段);学生可见但未作答时为 null。'
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [attemptId, status, score]
+              properties:
+                attemptId: { type: integer }
+                status: { $ref: '#/components/schemas/AttemptStatus' }
+                score: { oneOf: [{ type: 'null' }, { type: number }] }
     AssignmentBrief:
       type: object
       description: 作业总览项(教师视角)。status 由 finalize 是否完成判定;submitted/totalStudents/graded 为进度概览。
@@ -1137,7 +1147,7 @@ paths:
       summary: 讲次时间线(回看/订正入口) [student]
       parameters: [{$ref: '#/components/parameters/idPath'}]
       responses:
-        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {type: object, required: [lesson, sessionId, myHomework], properties: {lesson: {$ref: '#/components/schemas/Lesson'}, sessionId: {oneOf: [{type: 'null'}, {type: integer}]}, myHomework: {oneOf: [{type: 'null'}, {type: object, required: [assignmentId, score, wrongCount], properties: {assignmentId: {type: integer}, score: {oneOf: [{type: 'null'}, {type: number}]}, wrongCount: {type: integer}}}]}}}}}}}}}
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {type: object, required: [lesson, sessionId, myHomework], properties: {lesson: {$ref: '#/components/schemas/Lesson'}, sessionId: {oneOf: [{type: 'null'}, {type: integer}]}, myHomework: {oneOf: [{type: 'null'}, {type: object, required: [assignmentId, attemptId, score, wrongCount], properties: {assignmentId: {type: integer}, attemptId: {oneOf: [{type: 'null'}, {type: integer}]}, score: {oneOf: [{type: 'null'}, {type: number}]}, wrongCount: {type: integer}}}]}}}}}}}}}
         default: {$ref: '#/components/responses/Err'}
   /student/assignments:
     get:
