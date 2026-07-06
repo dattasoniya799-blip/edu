@@ -911,7 +911,7 @@ paths:
   /questions:
     get:
       summary: 题目列表 [teacher]
-      parameters: [{$ref: '#/components/parameters/page'}, {$ref: '#/components/parameters/size'}, {$ref: '#/components/parameters/keyword'}, {name: type, in: query, schema: {$ref: '#/components/schemas/QuestionType'}}, {name: status, in: query, schema: {$ref: '#/components/schemas/QuestionStatus'}}, {name: difficulty, in: query, schema: {type: integer}}, {name: tagNodeId, in: query, schema: {type: integer}}]
+      parameters: [{$ref: '#/components/parameters/page'}, {$ref: '#/components/parameters/size'}, {$ref: '#/components/parameters/keyword'}, {name: subject, in: query, schema: {type: string}, description: '按学科精确匹配(如 数学/物理/化学);空串或缺省=不按学科过滤'}, {name: type, in: query, schema: {$ref: '#/components/schemas/QuestionType'}}, {name: status, in: query, schema: {$ref: '#/components/schemas/QuestionStatus'}}, {name: difficulty, in: query, schema: {type: integer}}, {name: tagNodeId, in: query, schema: {type: integer}}]
       responses:
         '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [items, total], properties: {items: {type: array, items: {$ref: '#/components/schemas/Question'}}, total: {type: integer}}}}}}}}
         default: {$ref: '#/components/responses/Err'}

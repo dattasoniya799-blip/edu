@@ -285,6 +285,40 @@ describe('题库 CRUD(A3)', () => {
     expect(page1.total).toBe(all.total);
   });
 
+  it('列表:subject 精确过滤(=物理只返回物理题;不传=全部;空串按不过滤,经用户批准 2026-07-06)', async () => {
+    const list = async (query: object) =>
+      (await request(http).get('/api/v1/questions').set(auth(teacherA)).query(query).expect(200)).body.data;
+
+    // 造一道物理题(subject 为自由字段,标签沿用数学教材节点,不影响学科过滤验证)
+    const phys = await request(http)
+      .post('/api/v1/questions')
+      .set(auth(teacherA))
+      .send({ ...singlePayload(), subject: '物理' })
+      .expect(200);
+    const physId = phys.body.data.id;
+
+    // subject=物理 → 仅物理题,且含刚造的题
+    const onlyPhysics = await list({ subject: '物理', size: 50 });
+    expect(onlyPhysics.items.every((i: any) => i.subject === '物理')).toBe(true);
+    expect(onlyPhysics.items.map((i: any) => i.id)).toContain(physId);
+
+    // subject=数学 → 仅数学题,且不含物理题
+    const onlyMath = await list({ subject: '数学', size: 50 });
+    expect(onlyMath.items.length).toBeGreaterThanOrEqual(1);
+    expect(onlyMath.items.every((i: any) => i.subject === '数学')).toBe(true);
+    expect(onlyMath.items.map((i: any) => i.id)).not.toContain(physId);
+
+    // 不传 subject → 全部学科(数学、物理并存)
+    const all = await list({ size: 50 });
+    const subjects = new Set(all.items.map((i: any) => i.subject));
+    expect(subjects.has('物理')).toBe(true);
+    expect(subjects.has('数学')).toBe(true);
+
+    // 空串按「不过滤」口径(与 keyword/type 同:falsy 不进 where)→ 总数同不传
+    const emptySubj = await list({ subject: '', size: 50 });
+    expect(emptySubj.total).toBe(all.total);
+  });
+
   // ---------------- 跨租户 / 角色 ----------------
 
   it('跨租户读他 org 题目 → 404(宪法 §7);student 访问题库 → 403', async () => {

@@ -15,6 +15,8 @@
 >   key 脱敏读、可空写。
 > - [2026-07-05,已批准·教师点评] 学生 attempt 视图 AnswerDto 增可选 `teacherComment?: string`
 >   (教师复核点评,finalize 后随解析下发;未 finalize/空点评省略字段)。可选、向后兼容、无 schema 迁移。
+> - [2026-07-06,已批准·题库学科筛选] `GET /questions` 增可选 query `subject?: string`(按学科精确匹配;
+>   空串/缺省=不过滤)。教师端题库页与组卷选题器加学科筛选。可选、向后兼容、无 schema 迁移。
 >
 > **A1 已交付**:后端骨架/认证/多租户/RBAC 见 `apps/server/README.md`(e2e 18/18)。
 
