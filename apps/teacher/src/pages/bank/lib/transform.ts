@@ -38,6 +38,11 @@ export const GRAPH_LABEL: Record<GraphType, string> = {
   problem_solving_strategy: '解题策略',
 };
 
+/** 图谱展示名:多学科图谱并存后,类型名前带学科(否则数理化三张"教材知识点"无法区分) */
+export function graphLabel(g: { subject: string; graphType: GraphType }): string {
+  return `${g.subject} · ${GRAPH_LABEL[g.graphType]}`;
+}
+
 /** "6 月 2 日" 风格日期(原型 q-meta 口径) */
 export function formatDateCn(iso: string): string {
   const d = new Date(iso);

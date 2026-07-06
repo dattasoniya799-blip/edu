@@ -10,7 +10,7 @@ import type { KpGraphDto, KpNodeDto, QuestionDto, QuestionStatus, QuestionType }
 import { Button, EmptyState, Skeleton, Tag, TexText, useToast } from '@qiming/ui';
 import { api } from '../../api';
 import { PageHead } from '../Shell';
-import { DIFF_LABEL, GRAPH_LABEL, STATUS_LABEL, SUBJECTS, TYPE_LABEL, TYPE_TONE, formatDateCn } from './lib/transform';
+import { DIFF_LABEL, STATUS_LABEL, SUBJECTS, TYPE_LABEL, TYPE_TONE, formatDateCn, graphLabel } from './lib/transform';
 
 const PAGE_SIZE = 10;
 
@@ -147,7 +147,7 @@ export function BankList() {
               onChange={(e) => { setGraphId(Number(e.target.value)); setGrade(''); setNode(null); }}
               aria-label="图谱"
             >
-              {graphs.map((g) => <option key={g.id} value={g.id}>{GRAPH_LABEL[g.graphType]}</option>)}
+              {graphs.map((g) => <option key={g.id} value={g.id}>{graphLabel(g)}</option>)}
             </select>
             <select
               className="min-w-0 flex-1 rounded-[9px] border-[1.5px] border-line bg-card px-2 py-1.5 text-[12.5px] focus:border-primary focus:outline-none"

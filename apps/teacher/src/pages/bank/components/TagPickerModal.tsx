@@ -1,34 +1,45 @@
 /**
  * 三维标签选择器:弹层内按图谱分 Tab(教材知识点/解题能力/解题策略)勾选节点
  * 数据:/kp/graphs + /kp/nodes(graphId 维度懒加载)
+ * 多学科图谱并存后:传入 subject 时只展示该学科的图谱(无匹配则回退全部);
+ * 跨学科展示时 Tab 名带学科前缀,避免多张"教材知识点"无法区分。
  */
 import { useEffect, useMemo, useState } from 'react';
 import type { KpGraphDto, KpNodeDto } from '@qiming/contracts';
 import { Button, EmptyState, Modal, Skeleton } from '@qiming/ui';
 import { api } from '../../../api';
-import { GRAPH_LABEL, type TagPick } from '../lib/transform';
+import { GRAPH_LABEL, graphLabel, type TagPick } from '../lib/transform';
 
 export interface TagPickerModalProps {
   open: boolean;
   graphs: KpGraphDto[];
+  /** 题目学科:只展示该学科的图谱(无匹配图谱时回退展示全部) */
+  subject?: string;
   value: TagPick[];
   onClose: () => void;
   onConfirm: (tags: TagPick[]) => void;
 }
 
-export function TagPickerModal({ open, graphs, value, onClose, onConfirm }: TagPickerModalProps) {
+export function TagPickerModal({ open, graphs, subject, value, onClose, onConfirm }: TagPickerModalProps) {
   const [activeGraphId, setActiveGraphId] = useState<number | null>(null);
   const [nodesByGraph, setNodesByGraph] = useState<Record<number, KpNodeDto[]>>({});
   const [loading, setLoading] = useState(false);
   const [keyword, setKeyword] = useState('');
   const [picked, setPicked] = useState<Map<number, TagPick>>(new Map());
 
-  // 打开时重置为当前已选
+  const shownGraphs = useMemo(() => {
+    const bySubject = subject ? graphs.filter((g) => g.subject === subject) : graphs;
+    return bySubject.length > 0 ? bySubject : graphs;
+  }, [graphs, subject]);
+  const multiSubject = useMemo(() => new Set(shownGraphs.map((g) => g.subject)).size > 1, [shownGraphs]);
+
+  // 打开时重置为当前已选;当前 Tab 不在展示范围(如切换了题目学科)则跳到首个可见图谱
   useEffect(() => {
     if (!open) return;
     setPicked(new Map(value.map((t) => [t.nodeId, t])));
     setKeyword('');
-    if (activeGraphId == null && graphs.length > 0) setActiveGraphId(graphs[0].id);
+    if (shownGraphs.length > 0 && !shownGraphs.some((g) => g.id === activeGraphId))
+      setActiveGraphId(shownGraphs[0].id);
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 懒加载当前 Tab 的节点
@@ -77,8 +88,8 @@ export function TagPickerModal({ open, graphs, value, onClose, onConfirm }: TagP
       }
     >
       {/* 图谱 Tab */}
-      <div className="mb-3 flex gap-1.5 border-b border-line pb-3">
-        {graphs.map((g) => (
+      <div className="mb-3 flex flex-wrap gap-1.5 border-b border-line pb-3">
+        {shownGraphs.map((g) => (
           <button
             key={g.id}
             type="button"
@@ -87,7 +98,7 @@ export function TagPickerModal({ open, graphs, value, onClose, onConfirm }: TagP
               g.id === activeGraphId ? 'bg-primary text-card' : 'bg-bg text-ink-2 hover:text-ink'
             }`}
           >
-            {GRAPH_LABEL[g.graphType]}
+            {multiSubject ? graphLabel(g) : GRAPH_LABEL[g.graphType]}
             {pickedCount(g.id) > 0 && <span className="ml-1 tabular-nums">· {pickedCount(g.id)}</span>}
           </button>
         ))}
