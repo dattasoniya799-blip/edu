@@ -7,6 +7,12 @@ import type { GraphType, QuestionDto, QuestionFigure, QuestionType, RubricStep }
 export type FigureAnchor = NonNullable<QuestionFigure['anchor']>;
 
 // ---------- 展示用映射 ----------
+/**
+ * 学科常量:题库录题/筛选、组卷选题弹窗的唯一来源(勿在各处复制字面量)。
+ * 题库列表页与组卷选题器的「学科」筛选、EditorPage 的学科下拉均复用此表。
+ */
+export const SUBJECTS = ['数学', '物理', '化学', '语文', '英语'] as const;
+
 export const TYPE_LABEL: Record<QuestionType, string> = {
   single: '单选题', multi: '多选题', blank: '填空题', solution: '解答题',
 };

@@ -13,14 +13,13 @@ import { api, resolveFigureSrc } from '../../api';
 import { TagPickerModal } from './components/TagPickerModal';
 import { TEX_SNIPPETS, insertSnippet } from './lib/snippets';
 import {
-  DIFF_LABEL, TYPE_LABEL, canPublishQuestion, emptyForm, formToInput, normalizeOptionLatex, questionToForm,
+  DIFF_LABEL, SUBJECTS, TYPE_LABEL, canPublishQuestion, emptyForm, formToInput, normalizeOptionLatex, questionToForm,
   type FigureAnchor, type FigureItem, type QuestionForm, type TagPick,
 } from './lib/transform';
 import { validateQuestion, type FieldError } from './lib/validate';
 import { ACCEPT_FIGURE, checkFigureFile, uploadFigure } from './lib/upload';
 
 const STAGES = ['初中', '高中'];
-const SUBJECTS = ['数学', '物理', '化学', '语文', '英语'];
 const VERSIONS = ['人教版', '北师大版'];
 
 const EM_SELECT = 'rounded-[9px] border-[1.5px] border-line bg-card px-3 py-2 text-[13px] focus:border-primary focus:outline-none';

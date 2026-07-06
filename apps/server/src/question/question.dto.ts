@@ -105,6 +105,8 @@ export class QuestionListQueryDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(50) size?: number;
   @IsOptional() @IsString() keyword?: string;
+  /** 按学科精确匹配(如 数学/物理/化学);空串或缺省=不过滤(经用户批准 2026-07-06) */
+  @IsOptional() @IsString() @MaxLength(16) subject?: string;
   @IsOptional() @IsIn(QUESTION_TYPES) type?: QuestionType;
   @IsOptional() @IsIn(QUESTION_STATUSES) status?: QuestionStatus;
   @IsOptional() @Type(() => Number) @IsInt() difficulty?: number;

@@ -4,16 +4,16 @@
  * 发布作业 = 保存试卷(POST/PUT /papers)→ POST /assignments → 挂载到讲次 homework 环节
  * 裁剪口径(MVP 手册 1.1):AI 组卷建议、定时发布延后;截止时间保留
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import type { LessonDto, LessonSegmentDto, PaperDto, QuestionDto } from '@qiming/contracts';
+import type { CourseDto, LessonDto, LessonSegmentDto, PaperDto, QuestionDto } from '@qiming/contracts';
 import { Button, Card, EmptyState, Skeleton, Tag, useToast } from '@qiming/ui';
 import { api } from '../../api';
 import { PageHead } from '../Shell';
 import { bizError, newSegment, reseq } from '../lesson/lib/segments';
 import { fmtDateTime } from '../course/lib/format';
 import { defaultScore, toPaperInput, totalScore, validatePaper, type PaperItem } from './lib/paper';
-import { collectQuestionPages } from './lib/questionLibrary';
+import { collectQuestionPages, resolveDefaultSubject } from './lib/questionLibrary';
 import { SelectedQuestionList } from './components/SelectedQuestionList';
 import { QuestionPicker } from './components/QuestionPicker';
 
@@ -34,6 +34,10 @@ export function PaperBuilderPage() {
 
   const [lesson, setLesson] = useState<LessonDto | null>(null);
   const [questions, setQuestions] = useState<QuestionDto[]>([]);
+  /** 已拉取过的题目详情累积表(跨学科切换保留),供已选题列表回填题干,避免切换学科后详情丢失 */
+  const [knownById, setKnownById] = useState<Map<number, QuestionDto>>(new Map());
+  /** 学科筛选:默认预选本讲次所属课程的学科('' = 全部) */
+  const [subject, setSubject] = useState('');
   const [paperId, setPaperId] = useState<number | null>(Number(searchParams.get('paperId')) || null);
   const [name, setName] = useState('');
   const [items, setItems] = useState<PaperItem[]>([]);
@@ -42,21 +46,37 @@ export function PaperBuilderPage() {
   const [busy, setBusy] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
 
+  /** GET /questions?status=published(&subject),供 collectQuestionPages 分页拉齐 */
+  const fetchQuestionPage = (page: number, size: number, subj?: string) =>
+    api.get('/questions', { query: { page, size, status: 'published', ...(subj ? { subject: subj } : {}) } })
+      .then((r) => ({ items: r.data.items as QuestionDto[], total: r.data.total }));
+
+  /** 拉取结果写入 questions(选题弹窗数据源)并累积进 knownById(已选题详情回填) */
+  const applyQuestions = (qs: QuestionDto[]) => {
+    setQuestions(qs);
+    setKnownById((prev) => {
+      const next = new Map(prev);
+      for (const q of qs) next.set(q.id, q);
+      return next;
+    });
+  };
+
   useEffect(() => {
     setLoading(true);
     const initialPaperId = Number(searchParams.get('paperId')) || null;
-    const fetchQuestionPage = (page: number, size: number) =>
-      api.get('/questions', { query: { page, size, status: 'published' } })
-        .then((r) => ({ items: r.data.items as QuestionDto[], total: r.data.total }));
     Promise.all([
       api.get('/lessons/{id}', { params: { id: lessonId } }),
-      collectQuestionPages(fetchQuestionPage),
+      api.get('/teacher/courses'),
       initialPaperId ? api.get('/papers/{id}', { params: { id: initialPaperId } }) : Promise.resolve(null),
     ])
-      .then(([l, qc, p]) => {
+      .then(async ([l, cs, p]) => {
         const lessonData = l.data as LessonDto;
         setLesson(lessonData);
-        setQuestions(qc.questions);
+        // 默认预选本讲次所属课程的学科,只拉该学科的题(减少翻页量)
+        const subj = resolveDefaultSubject(cs.data as CourseDto[], lessonData.courseId);
+        setSubject(subj);
+        const qc = await collectQuestionPages(fetchQuestionPage, subj);
+        applyQuestions(qc.questions);
         if (qc.truncated) toast('题库题目较多,已载入前 1000 道用于组卷;可在选题弹窗搜索缩小范围');
         if (p) {
           const paper = p.data as PaperDto;
@@ -71,7 +91,15 @@ export function PaperBuilderPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lessonId]);
 
-  const qById = useMemo(() => new Map(questions.map((q) => [q.id, q])), [questions]);
+  /** 选题弹窗切换学科 → 按新学科重新拉题(已选题详情由 knownById 累积保留) */
+  const onSubjectChange = async (subj: string) => {
+    setSubject(subj);
+    const qc = await collectQuestionPages(fetchQuestionPage, subj);
+    applyQuestions(qc.questions);
+    if (qc.truncated) toast('题库题目较多,已载入前 1000 道用于组卷;可在选题弹窗搜索缩小范围');
+  };
+
+  const qById = knownById;
   const total = totalScore(items);
 
   const patchScore = (questionId: number, score: number) =>
@@ -228,6 +256,8 @@ export function PaperBuilderPage() {
         questions={questions}
         items={items}
         onToggle={(q) => (items.some((it) => it.questionId === q.id) ? remove(q.id) : add(q))}
+        subject={subject}
+        onSubjectChange={onSubjectChange}
       />
     </div>
   );

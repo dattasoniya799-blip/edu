@@ -1816,6 +1816,8 @@ export interface paths {
                     page?: components["parameters"]["page"];
                     size?: components["parameters"]["size"];
                     keyword?: components["parameters"]["keyword"];
+                    /** @description 按学科精确匹配(如 数学/物理/化学);空串或缺省=不按学科过滤 */
+                    subject?: string;
                     type?: components["schemas"]["QuestionType"];
                     status?: components["schemas"]["QuestionStatus"];
                     difficulty?: number;

@@ -24,16 +24,20 @@ export interface CollectedQuestions {
 /**
  * 按 50/页拉齐 published 题(fetchPage 由调用方注入,通常是 GET /questions?status=published)。
  * 直到累计条数达到后端 total、或遇空页、或触及页数上限为止。
+ *
+ * subject 透传给 fetchPage(→ 服务端 GET /questions?subject=,精确按学科过滤),
+ * 只拉该学科的题以减少翻页量;空串/未传 = 不过滤(与后端 `q.subject ? ...` 同口径)。
  */
 export async function collectQuestionPages(
-  fetchPage: (page: number, size: number) => Promise<QuestionPage>,
+  fetchPage: (page: number, size: number, subject?: string) => Promise<QuestionPage>,
+  subject?: string,
 ): Promise<CollectedQuestions> {
   const all: QuestionDto[] = [];
   let total = Number.POSITIVE_INFINITY;
   let page = 1;
 
   while (all.length < total && page <= QUESTION_PICKER_MAX_PAGES) {
-    const r = await fetchPage(page, QUESTION_PICKER_PAGE_SIZE);
+    const r = await fetchPage(page, QUESTION_PICKER_PAGE_SIZE, subject);
     all.push(...r.items);
     total = r.total;
     if (r.items.length === 0) break;
@@ -41,4 +45,15 @@ export async function collectQuestionPages(
   }
 
   return { questions: all, truncated: all.length < total };
+}
+
+/**
+ * 讲次组卷(PaperBuilderPage)默认预选学科:取该讲次所属课程的 subject。
+ * 课程列表来自 GET /teacher/courses;找不到对应课程(异常情况)则返回空串 = 全部学科。
+ */
+export function resolveDefaultSubject(
+  courses: { id: number; subject: string }[],
+  courseId: number,
+): string {
+  return courses.find((c) => c.id === courseId)?.subject ?? '';
 }

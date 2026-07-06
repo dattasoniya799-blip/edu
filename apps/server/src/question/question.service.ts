@@ -173,6 +173,7 @@ export class QuestionService {
     const size = q.size ?? 20;
     const where = {
       deletedAt: null,
+      ...(q.subject ? { subject: q.subject } : {}),
       ...(q.type ? { type: q.type } : {}),
       ...(q.status ? { status: q.status } : {}),
       ...(q.difficulty ? { difficulty: q.difficulty } : {}),

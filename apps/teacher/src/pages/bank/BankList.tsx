@@ -10,7 +10,7 @@ import type { KpGraphDto, KpNodeDto, QuestionDto, QuestionStatus, QuestionType }
 import { Button, EmptyState, Skeleton, Tag, TexText, useToast } from '@qiming/ui';
 import { api } from '../../api';
 import { PageHead } from '../Shell';
-import { DIFF_LABEL, GRAPH_LABEL, STATUS_LABEL, TYPE_LABEL, TYPE_TONE, formatDateCn } from './lib/transform';
+import { DIFF_LABEL, GRAPH_LABEL, STATUS_LABEL, SUBJECTS, TYPE_LABEL, TYPE_TONE, formatDateCn } from './lib/transform';
 
 const PAGE_SIZE = 10;
 
@@ -42,6 +42,7 @@ export function BankList() {
   // 右侧:筛选 + 列表
   const [keyword, setKeyword] = useState('');
   const [debouncedKw, setDebouncedKw] = useState('');
+  const [subject, setSubject] = useState('');
   const [type, setType] = useState<'' | QuestionType>('');
   const [difficulty, setDifficulty] = useState('');
   const [status, setStatus] = useState<'' | QuestionStatus>('');
@@ -78,6 +79,7 @@ export function BankList() {
       query: {
         page, size: PAGE_SIZE,
         ...(debouncedKw ? { keyword: debouncedKw } : {}),
+        ...(subject ? { subject } : {}),
         ...(type ? { type } : {}),
         ...(status ? { status } : {}),
         ...(difficulty ? { difficulty: Number(difficulty) } : {}),
@@ -86,7 +88,7 @@ export function BankList() {
     })
       .then((r) => { setItems(r.data.items); setTotal(r.data.total); })
       .finally(() => setLoading(false));
-  }, [page, debouncedKw, type, status, difficulty, nodeId, refresh]);
+  }, [page, debouncedKw, subject, type, status, difficulty, nodeId, refresh]);
 
   const grades = useMemo(() => [...new Set(nodes.map((n) => n.grade).filter((g): g is string => !!g))], [nodes]);
   const visibleNodes = useMemo(() => (grade ? nodes.filter((n) => n.grade === grade) : nodes), [nodes, grade]);
@@ -202,6 +204,10 @@ export function BankList() {
               value={keyword}
               onChange={(e) => { setKeyword(e.target.value); setPage(1); }}
             />
+            <select className={SELECT_CLS} value={subject} onChange={(e) => { setSubject(e.target.value); setPage(1); }} aria-label="学科">
+              <option value="">全部学科</option>
+              {SUBJECTS.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
             <select className={SELECT_CLS} value={type} onChange={(e) => { setType(e.target.value as '' | QuestionType); setPage(1); }} aria-label="题型">
               <option value="">全部题型</option>
               {(Object.keys(TYPE_LABEL) as QuestionType[]).map((t) => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}

@@ -7,7 +7,7 @@
  * 复用讲次版组卷的选题/分值核心:QuestionPicker(题库选题弹窗)+ SelectedQuestionList(分值表)
  *   + lib/paper(分值汇总/校验/PaperInput 变换)。被作业引用的卷 PUT → 4302,友好提示。
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { PaperDto, PaperType, QuestionDto } from '@qiming/contracts';
 import { Button, Card, Skeleton, useToast } from '@qiming/ui';
@@ -31,6 +31,10 @@ export function PaperEditorPage() {
   const { toast } = useToast();
 
   const [questions, setQuestions] = useState<QuestionDto[]>([]);
+  /** 已拉取过的题目详情累积表(跨学科切换保留),供已选题列表回填题干 */
+  const [knownById, setKnownById] = useState<Map<number, QuestionDto>>(new Map());
+  /** 学科筛选:独立组卷默认全部('') */
+  const [subject, setSubject] = useState('');
   const [name, setName] = useState('');
   const [type, setType] = useState<PaperType>('homework');
   const [items, setItems] = useState<PaperItem[]>([]);
@@ -39,18 +43,31 @@ export function PaperEditorPage() {
   const [busy, setBusy] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
 
+  /** GET /questions?status=published(&subject),供 collectQuestionPages 分页拉齐 */
+  const fetchQuestionPage = (page: number, size: number, subj?: string) =>
+    api.get('/questions', { query: { page, size, status: 'published', ...(subj ? { subject: subj } : {}) } })
+      .then((r) => ({ items: r.data.items as QuestionDto[], total: r.data.total }));
+
+  /** 拉取结果写入 questions(选题弹窗数据源)并累积进 knownById(已选题详情回填) */
+  const applyQuestions = (qs: QuestionDto[]) => {
+    setQuestions(qs);
+    setKnownById((prev) => {
+      const next = new Map(prev);
+      for (const q of qs) next.set(q.id, q);
+      return next;
+    });
+  };
+
   useEffect(() => {
     setLoading(true);
     setLoadError(false);
-    const fetchQuestionPage = (page: number, size: number) =>
-      api.get('/questions', { query: { page, size, status: 'published' } })
-        .then((r) => ({ items: r.data.items as QuestionDto[], total: r.data.total }));
+    // 独立组卷默认全部学科(subject='');教师可在选题弹窗按学科收窄
     Promise.all([
-      collectQuestionPages(fetchQuestionPage),
+      collectQuestionPages(fetchQuestionPage, ''),
       isEdit ? api.get('/papers/{id}', { params: { id: paperId } }) : Promise.resolve(null),
     ])
       .then(([qc, p]) => {
-        setQuestions(qc.questions);
+        applyQuestions(qc.questions);
         if (qc.truncated) toast('题库题目较多,已载入前 1000 道用于组卷;可在选题弹窗搜索缩小范围');
         if (p) {
           const paper = p.data as PaperDto;
@@ -65,7 +82,15 @@ export function PaperEditorPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paperId]);
 
-  const qById = useMemo(() => new Map(questions.map((q) => [q.id, q])), [questions]);
+  /** 选题弹窗切换学科 → 按新学科重新拉题(已选题详情由 knownById 累积保留) */
+  const onSubjectChange = async (subj: string) => {
+    setSubject(subj);
+    const qc = await collectQuestionPages(fetchQuestionPage, subj);
+    applyQuestions(qc.questions);
+    if (qc.truncated) toast('题库题目较多,已载入前 1000 道用于组卷;可在选题弹窗搜索缩小范围');
+  };
+
+  const qById = knownById;
   const total = totalScore(items);
 
   const patchScore = (questionId: number, score: number) =>
@@ -186,6 +211,8 @@ export function PaperEditorPage() {
         questions={questions}
         items={items}
         onToggle={toggle}
+        subject={subject}
+        onSubjectChange={onSubjectChange}
       />
     </div>
   );
