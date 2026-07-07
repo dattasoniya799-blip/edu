@@ -1,5 +1,5 @@
 /**
- * 三维标签选择器:弹层内按图谱分 Tab(教材知识点/解题能力/解题策略)勾选节点
+ * 三维标签选择器:弹层内按知识体系(图谱)分 Tab(教材知识点/解题能力/解题策略)勾选节点
  * 数据:/kp/graphs + /kp/nodes(graphId 维度懒加载)
  * 多学科图谱并存后:传入 subject 时只展示该学科的图谱(无匹配则回退全部);
  * 跨学科展示时 Tab 名带学科前缀,避免多张"教材知识点"无法区分。
@@ -79,7 +79,7 @@ export function TagPickerModal({ open, graphs, subject, value, onClose, onConfir
   return (
     <Modal
       open={open}
-      title="三维标注 · 选择图谱节点"
+      title="三维标注 · 选择知识体系节点"
       onClose={onClose}
       width={640}
       footer={
@@ -91,7 +91,7 @@ export function TagPickerModal({ open, graphs, subject, value, onClose, onConfir
         </>
       }
     >
-      {/* 图谱 Tab */}
+      {/* 知识体系 Tab */}
       <div className="mb-3 flex flex-wrap gap-1.5 border-b border-line pb-3">
         {shownGraphs.map((g) => (
           <button
@@ -118,7 +118,7 @@ export function TagPickerModal({ open, graphs, subject, value, onClose, onConfir
         {loading ? (
           <Skeleton lines={5} className="h-8 w-full" />
         ) : matchCount === 0 ? (
-          <EmptyState text="该图谱下没有匹配的节点" hint="试试换个关键词,或搜章节名(如「一次函数」)" className="py-8" />
+          <EmptyState text="该知识体系下没有匹配的知识点" hint="试试换个关键词,或搜章节名(如「一次函数」)" className="py-8" />
         ) : (
           nodeGroups.map(([group, list]) => (
             <div key={group} className="mb-2">
