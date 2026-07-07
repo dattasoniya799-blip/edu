@@ -70,7 +70,7 @@ export function Dashboard() {
             ))}
           </div>
         ) : (
-          <EmptyState text="还没有在带课程" hint="请联系管理员排课" />
+          <EmptyState text="还没有在带课程" hint="请联系管理员创建课程并分配给你;分配后在「我的课程」逐讲设置上课时间" />
         )}
       </Card>
     </div>

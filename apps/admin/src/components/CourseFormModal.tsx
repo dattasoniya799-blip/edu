@@ -1,6 +1,10 @@
-/** 新建课程弹窗(原型 modalCourse;按裁剪表:排课规则/开课日期延后,创建后教师逐讲设时间) */
+/**
+ * 新建/编辑课程弹窗(原型 modalCourse;按裁剪表:排课规则/开课日期延后,创建后教师逐讲设时间)
+ * 编辑(传 course):PUT /admin/courses/{id};调大总讲次 = 末尾追加空讲次(排课的「新建讲次」路径),
+ * 调小仅当多余讲次为未编排空草稿时后端允许(否则 409 提示)。
+ */
 import { useEffect, useState } from 'react';
-import type { ClassType, TeacherDto } from '@qiming/contracts';
+import type { ClassType, CourseDto, TeacherDto } from '@qiming/contracts';
 import { Button, Modal, useToast } from '@qiming/ui';
 import { api } from '../api';
 import { CLASS_TYPE_LABEL, STAGES, SUBJECTS } from '../lib/labels';
@@ -10,13 +14,15 @@ import { Field, FormRow, RoleNote, Select, TextInput } from './controls';
 export interface CourseFormModalProps {
   open: boolean;
   teachers: TeacherDto[];
+  /** 编辑对象;不传 = 新建 */
+  course?: CourseDto | null;
   onClose: () => void;
   onSaved: () => void;
 }
 
 const CLASS_TYPES = Object.keys(CLASS_TYPE_LABEL) as ClassType[];
 
-export function CourseFormModal({ open, teachers, onClose, onSaved }: CourseFormModalProps) {
+export function CourseFormModal({ open, teachers, course, onClose, onSaved }: CourseFormModalProps) {
   const activeTeachers = teachers.filter((t) => t.status === 'active');
   const [form, setForm] = useState({ name: '', classType: 'group' as ClassType, subject: '数学', stage: '初中', teacherId: 0, totalLessons: 15 });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -26,27 +32,36 @@ export function CourseFormModal({ open, teachers, onClose, onSaved }: CourseForm
   useEffect(() => {
     if (!open) return;
     setErrors({});
-    setForm({ name: '', classType: 'group', subject: '数学', stage: '初中', teacherId: activeTeachers[0]?.id ?? 0, totalLessons: 15 });
+    setForm(course
+      ? { name: course.name, classType: course.classType, subject: course.subject, stage: course.stage, teacherId: course.teacherId, totalLessons: course.totalLessons }
+      : { name: '', classType: 'group', subject: '数学', stage: '初中', teacherId: activeTeachers[0]?.id ?? 0, totalLessons: 15 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, course]);
 
   const submit = async () => {
     const errs = validateCourse(form);
     setErrors(errs);
     if (Object.keys(errs).length) return;
     setBusy(true);
+    const body = {
+      name: form.name.trim(), classType: form.classType, subject: form.subject,
+      stage: form.stage, teacherId: form.teacherId, totalLessons: form.totalLessons,
+    };
     try {
-      await api.post('/admin/courses', {
-        body: {
-          name: form.name.trim(), classType: form.classType, subject: form.subject,
-          stage: form.stage, teacherId: form.teacherId, totalLessons: form.totalLessons,
-        },
-      });
-      toast(`课程已创建,已自动生成 ${form.totalLessons} 个讲次`);
+      if (course) {
+        await api.put('/admin/courses/{id}', { params: { id: course.id }, body });
+        const delta = form.totalLessons - course.totalLessons;
+        toast(delta > 0
+          ? `课程已更新,已在末尾追加 ${delta} 个空讲次(上课时间由教师逐讲设置)`
+          : delta < 0 ? `课程已更新,已删除末尾 ${-delta} 个空讲次` : '课程已更新');
+      } else {
+        await api.post('/admin/courses', { body });
+        toast(`课程已创建,已自动生成 ${form.totalLessons} 个讲次`);
+      }
       onSaved();
       onClose();
     } catch (e) {
-      toast(e instanceof Error ? e.message : '创建失败,请重试');
+      toast(e instanceof Error ? e.message : `${course ? '保存' : '创建'}失败,请重试`);
     } finally {
       setBusy(false);
     }
@@ -55,12 +70,12 @@ export function CourseFormModal({ open, teachers, onClose, onSaved }: CourseForm
   return (
     <Modal
       open={open}
-      title="新建课程"
+      title={course ? '编辑课程' : '新建课程'}
       onClose={onClose}
       footer={
         <>
           <Button onClick={onClose} disabled={busy}>取消</Button>
-          <Button variant="primary" onClick={submit} disabled={busy}>{busy ? '提交中…' : '创建课程'}</Button>
+          <Button variant="primary" onClick={submit} disabled={busy}>{busy ? '提交中…' : course ? '保存修改' : '创建课程'}</Button>
         </>
       }
     >
@@ -102,7 +117,11 @@ export function CourseFormModal({ open, teachers, onClose, onSaved }: CourseForm
           </Field>
           <div className="flex-1" />
         </FormRow>
-        <RoleNote>创建后系统自动生成全部讲次,上课时间由教师在「我的课程」中逐讲设置(MVP 口径),并逐讲编排课堂。</RoleNote>
+        <RoleNote>
+          {course
+            ? '调大总讲次将在末尾追加空讲次;调小仅当多余讲次未排期未编排时允许。上课时间由教师在「我的课程」逐讲设置。'
+            : '创建后系统自动生成全部讲次,上课时间由教师在「我的课程」中逐讲设置(MVP 口径),并逐讲编排课堂。'}
+        </RoleNote>
       </div>
     </Modal>
   );
