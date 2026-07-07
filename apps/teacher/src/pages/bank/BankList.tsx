@@ -1,6 +1,7 @@
 /**
  * 题库列表(原型 v0.4 id=t-bank)
  * 左侧筛选:图谱选择 → 年级 → 章节/节点(/kp/graphs /kp/nodes)
+ * 学科↔目录联动:右侧选学科时左侧只列该学科的图谱并自动切换(以学科为主),年级/章节选择随之重置
  * 右侧题目卡:TexText 题干、难度点、三维标签胶囊、状态;搜索/题型/难度/状态筛选 + 分页
  * 裁剪口径(MVP 手册 1.1):共享库/引用、Word 导入延后不做
  */
@@ -11,6 +12,7 @@ import { Button, EmptyState, Skeleton, Tag, TexText, useToast } from '@qiming/ui
 import { api } from '../../api';
 import { PageHead } from '../Shell';
 import { DIFF_LABEL, STATUS_LABEL, SUBJECTS, TYPE_LABEL, TYPE_TONE, formatDateCn, graphLabel } from './lib/transform';
+import { graphsForSubject, resolveGraphForSubject } from './lib/kpTree';
 
 const PAGE_SIZE = 10;
 
@@ -90,6 +92,8 @@ export function BankList() {
       .finally(() => setLoading(false));
   }, [page, debouncedKw, subject, type, status, difficulty, nodeId, refresh]);
 
+  /** 学科筛选下可见的图谱(选了学科只列该学科的;学科↔目录联动) */
+  const visibleGraphs = useMemo(() => graphsForSubject(graphs, subject), [graphs, subject]);
   const grades = useMemo(() => [...new Set(nodes.map((n) => n.grade).filter((g): g is string => !!g))], [nodes]);
   const visibleNodes = useMemo(() => (grade ? nodes.filter((n) => n.grade === grade) : nodes), [nodes, grade]);
   /** 章节(教材图谱)/类目(能力、策略图谱)分组 */
@@ -104,6 +108,18 @@ export function BankList() {
 
   const resetPageAnd = <T,>(setter: (v: T) => void) => (v: T) => { setter(v); setPage(1); };
   const setNode = resetPageAnd(setNodeId);
+
+  /** 右侧选学科 → 左侧目录联动:图谱与学科矛盾时以学科为主,自动切换并重置年级/章节 */
+  const onSubjectChange = (next: string) => {
+    setSubject(next);
+    setPage(1);
+    const nextGraphId = resolveGraphForSubject(graphs, next, graphId);
+    if (nextGraphId !== graphId) {
+      setGraphId(nextGraphId);
+      setGrade('');
+      setNodeId(null);
+    }
+  };
 
   const onDelete = async (q: QuestionDto) => {
     if (!window.confirm(`确认删除该题?\n${q.stemLatex.slice(0, 40)}…`)) return;
@@ -147,7 +163,7 @@ export function BankList() {
               onChange={(e) => { setGraphId(Number(e.target.value)); setGrade(''); setNode(null); }}
               aria-label="图谱"
             >
-              {graphs.map((g) => <option key={g.id} value={g.id}>{graphLabel(g)}</option>)}
+              {visibleGraphs.map((g) => <option key={g.id} value={g.id}>{graphLabel(g)}</option>)}
             </select>
             <select
               className="min-w-0 flex-1 rounded-[9px] border-[1.5px] border-line bg-card px-2 py-1.5 text-[12.5px] focus:border-primary focus:outline-none"
@@ -204,7 +220,7 @@ export function BankList() {
               value={keyword}
               onChange={(e) => { setKeyword(e.target.value); setPage(1); }}
             />
-            <select className={SELECT_CLS} value={subject} onChange={(e) => { setSubject(e.target.value); setPage(1); }} aria-label="学科">
+            <select className={SELECT_CLS} value={subject} onChange={(e) => onSubjectChange(e.target.value)} aria-label="学科">
               <option value="">全部学科</option>
               {SUBJECTS.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
