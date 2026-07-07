@@ -127,6 +127,7 @@ export function CoursePage() {
               <LessonTimeline items={timeline} correctionByLesson={correctionByLesson}
                 onReplay={openReplay}
                 onCorrect={(id) => navigate(`/homework/${id}`)}
+                onOpenResult={(id, attemptId) => navigate(`/homework/${id}?attempt=${attemptId}`)}
                 onEnterClass={(_lesson, sessionId) => {
                   // C3 #3:用该讲自己的 sessionId(发布即建会话),不再借用全局 today 的会话
                   if (sessionId != null) navigate(`/classroom/${sessionId}`);

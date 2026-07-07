@@ -6,6 +6,7 @@ import { Shell } from './pages/Shell';
 import { TodayPage } from './pages/today/TodayPage';
 import { CoursePage } from './pages/course/CoursePage';
 import { HomeworkPage } from './pages/homework/HomeworkPage';
+import { HomeworkListPage } from './pages/homework/HomeworkListPage';
 import { WrongBookPage } from './pages/wrong/WrongBookPage';
 import { ReportPage } from './pages/report/ReportPage';
 import { ClassroomPage } from './pages/classroom/ClassroomPage';
@@ -20,6 +21,7 @@ export function App() {
         <Route element={<Shell />}>
           <Route index element={<TodayPage />} />
           <Route path="/courses" element={<CoursePage />} />
+          <Route path="/homework" element={<HomeworkListPage />} />
           <Route path="/homework/:assignmentId" element={<HomeworkPage />} />
           <Route path="/wrong-book" element={<WrongBookPage />} />
           <Route path="/report" element={<ReportPage />} />

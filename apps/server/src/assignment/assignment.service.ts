@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import type { AssignmentBriefDto, AssignmentDto } from '@qiming/contracts';
-import { iso, num } from '../admin/helpers';
+import { dec, iso, num } from '../admin/helpers';
 import type { JwtUser } from '../auth/auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ownedAssignmentIds } from './assignment-ownership.util';
@@ -256,26 +256,39 @@ export class AssignmentService {
         ? myCourses.has(Number(t.courseId))
         : (t.studentIds ?? []).includes(num(sid));
     });
-    if (status === 'all') return visible.map((a) => this.toDto(a as AssignmentRow));
 
-    const doneRows = visible.length
+    // [2026-07-06 批准] 学生视角:批量拉本人对这些作业的 attempt(防 N+1),按 attemptNo 取最新一次,
+    // 附到每项 myAttempt(供历史页/时间线直达成绩单)。教师侧不经此路径,不受影响。
+    const myAttempts = visible.length
       ? await this.prisma.client.attempt.findMany({
-          where: {
-            studentId: sid,
-            assignmentId: { in: visible.map((a) => a.id) },
-            status: { in: ['submitted', 'graded'] },
-          },
-          select: { assignmentId: true },
+          where: { studentId: sid, assignmentId: { in: visible.map((a) => a.id) } },
+          orderBy: { attemptNo: 'asc' }, // 后写覆盖 → Map 留最新一条
+          select: { id: true, assignmentId: true, status: true, score: true },
         })
       : [];
-    const done = new Set(doneRows.map((r) => String(r.assignmentId)));
+    const latestAttempt = new Map(myAttempts.map((at) => [String(at.assignmentId), at]));
+    const myAttemptOf = (a: { id: bigint }): AssignmentDto['myAttempt'] => {
+      const at = latestAttempt.get(String(a.id));
+      return at
+        ? { attemptId: num(at.id), status: at.status, score: dec(at.score) }
+        : null;
+    };
+
+    if (status === 'all')
+      return visible.map((a) => this.toDto(a as AssignmentRow, myAttemptOf(a)));
+
+    const done = new Set(
+      myAttempts
+        .filter((at) => at.status === 'submitted' || at.status === 'graded')
+        .map((at) => String(at.assignmentId)),
+    );
     return visible
       .filter((a) =>
         status === 'done'
           ? done.has(String(a.id))
           : !done.has(String(a.id)) && a.kind !== 'in_class', // B3:随堂练不进学生待办
       )
-      .map((a) => this.toDto(a as AssignmentRow));
+      .map((a) => this.toDto(a as AssignmentRow, myAttemptOf(a)));
   }
 
   // ---------------- 内部 ----------------
@@ -332,7 +345,8 @@ export class AssignmentService {
       throw new BadRequestException('目标学生不在该讲次所属课程在册');
   }
 
-  private toDto(a: AssignmentRow): AssignmentDto {
+  // myAttempt 仅学生视角(listForStudent)传入;教师侧(create)不传 → 字段缺失,出参不变
+  private toDto(a: AssignmentRow, myAttempt?: AssignmentDto['myAttempt']): AssignmentDto {
     return {
       id: num(a.id),
       paperId: num(a.paperId),
@@ -345,6 +359,7 @@ export class AssignmentService {
       scoreCounted: a.scoreCounted,
       questionCount: a.paper._count.questions,
       totalScore: Number(a.paper.totalScore),
+      ...(myAttempt !== undefined ? { myAttempt } : {}),
     };
   }
 }

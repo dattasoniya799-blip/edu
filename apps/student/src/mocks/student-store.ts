@@ -103,12 +103,25 @@ export function assignmentById(id: number): AssignmentDto | undefined {
   return [...D.assignments, ...state.extraAssignments].find((a) => a.id === id);
 }
 
+/** [2026-07-06 批准] 学生视角:附本人对该作业的最新一次 attempt(与后端 listForStudent 同口径) */
+function withMyAttempt(a: AssignmentDto): AssignmentDto {
+  const mine = state.attempts.filter((at) => at.assignmentId === a.id);
+  const latest = mine[mine.length - 1]; // 后写为最新
+  return {
+    ...a,
+    myAttempt: latest
+      ? { attemptId: latest.id, status: latest.status, score: latest.score }
+      : null,
+  };
+}
+
 export function listAssignments(status: 'pending' | 'done' | 'all'): AssignmentDto[] {
   const all = [...D.assignments, ...state.extraAssignments];
-  if (status === 'all') return all;
   const done = (a: AssignmentDto) =>
     state.attempts.some((at) => at.assignmentId === a.id && at.status !== 'in_progress');
-  return all.filter((a) => (status === 'done' ? done(a) : !done(a)));
+  const filtered =
+    status === 'all' ? all : all.filter((a) => (status === 'done' ? done(a) : !done(a)));
+  return filtered.map(withMyAttempt);
 }
 
 // ---------- 判分(A5 口径) ----------
@@ -412,7 +425,7 @@ export function lessonTimeline(courseId: number) {
     : 0;
   return D.lessons.map((lesson) => ({
     lesson,
-    myHomework: lesson.id === 3 ? { assignmentId: 1, score: hw?.score ?? null, wrongCount: hwWrong } : null,
+    myHomework: lesson.id === 3 ? { assignmentId: 1, attemptId: hw?.id ?? null, score: hw?.score ?? null, wrongCount: hwWrong } : null,
     // 发布即建会话:已发布(ready/in_progress)讲次带 sessionId,前端据此进课堂;未发布(draft)/已结课为 null
     sessionId: lesson.status === 'ready' || lesson.status === 'in_progress' ? CLASS_SESSION_ID : null,
     resources: lesson.id === 3

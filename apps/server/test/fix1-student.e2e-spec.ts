@@ -44,7 +44,7 @@ const COURSE_KEYS = [
 ];
 const TIMELINE_KEYS = ['lesson', 'sessionId', 'myHomework'];
 const LESSON_KEYS = ['id', 'courseId', 'seq', 'title', 'scheduledStart', 'scheduledEnd', 'status', 'prepChecklist', 'openingConfig', 'sessionId'];
-const MYHW_KEYS = ['assignmentId', 'score', 'wrongCount'];
+const MYHW_KEYS = ['assignmentId', 'attemptId', 'score', 'wrongCount']; // [2026-07-06 契约] 增 attemptId
 const REPORT_KEYS = ['mastery', 'weekStats'];
 const WEEK_KEYS = ['answeredCount', 'correctRate', 'studySec', 'wrongOpenCount'];
 const MASTERY_ITEM_KEYS = ['nodeId', 'nodeName', 'graphType', 'mastery', 'sampleCount'];
@@ -218,7 +218,7 @@ async function expectedTimeline(orgId: bigint, sid: bigint, courseId: bigint) {
             (a.isCorrect == null && a.score != null && Number(a.score) < (full.get(String(a.questionId)) ?? 0)),
         ).length;
       }
-      myHomework = { assignmentId: Number(hw.id), score, wrongCount };
+      myHomework = { assignmentId: Number(hw.id), attemptId: at ? Number(at.id) : null, score, wrongCount };
     }
     items.push({
       lesson: {
@@ -402,6 +402,7 @@ describe('学生端只读杂项(FIX1)', () => {
     expect(data.map((x: any) => x.sessionId)).toEqual([null, Number(fx.sessionId), null]);
     expect(data[0].myHomework).toEqual({
       assignmentId: Number(fx.hwAssignmentId),
+      attemptId: expect.any(Number), // s1 在 A_hw 的 graded attempt
       score: 10,
       wrongCount: 2,
     });
@@ -419,10 +420,10 @@ describe('学生端只读杂项(FIX1)', () => {
       if (item.myHomework) exactKeys(item.myHomework, MYHW_KEYS);
     }
     expect(data).toEqual(await expectedTimeline(fx.orgId, fx.s1Id, fx.course1Id));
-    // s2 未交作业:myHomework.score=null(交了的 attempt 没出分前同理),wrongCount=0
+    // s2 在 A_hw 有 submitted attempt 但未出分:attemptId 有值、score=null、wrongCount=0
     const res2 = await get(`/student/courses/${fx.course1Id}/lessons`, s2).expect(200);
     expect(res2.body.data[0].myHomework).toEqual({
-      assignmentId: Number(fx.hwAssignmentId), score: null, wrongCount: 0,
+      assignmentId: Number(fx.hwAssignmentId), attemptId: expect.any(Number), score: null, wrongCount: 0,
     });
   });
 

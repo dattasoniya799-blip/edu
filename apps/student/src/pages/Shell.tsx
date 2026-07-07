@@ -9,6 +9,7 @@ import { Stage } from '../Stage';
 const TABS = [
   { to: '/', label: '今日' },
   { to: '/courses', label: '我的课程' },
+  { to: '/homework', label: '作业' },
   { to: '/wrong-book', label: '错题本' },
   { to: '/report', label: '报告' },
 ];

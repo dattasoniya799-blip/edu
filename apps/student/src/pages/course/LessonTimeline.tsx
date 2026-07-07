@@ -7,7 +7,8 @@ import { canEnterClassroom, enterClassLabel } from './lib/entry';
 
 export interface TimelineItem {
   lesson: LessonDto;
-  myHomework: { assignmentId: number; score: number | null; wrongCount: number } | null;
+  // attemptId(可空):本人对该讲作业的最新 attempt;有值时「作业 X 分」可点直达成绩单,缺失/为空则不可点
+  myHomework: { assignmentId: number; attemptId?: number | null; score: number | null; wrongCount: number } | null;
   /** 契约变更申请 B5-1:回看入口需要资源 id(mock 已按该形状下发) */
   resources?: { id: number; name: string; type: string }[];
   /** 发布即建会话:已发布讲次带自己的课堂会话 id(契约前瞻,mock 已按该形状下发);未发布为 null */
@@ -22,6 +23,8 @@ export interface LessonTimelineProps {
   onCorrect: (assignmentId: number) => void;
   /** 进课堂:用该讲自己的 sessionId(不再借用全局 today 的会话) */
   onEnterClass: (lesson: LessonDto, sessionId: number | null) => void;
+  /** [2026-07-06 批准] 打开已完成作业成绩单(?attempt= 恢复):仅 myHomework.attemptId 有值时触发 */
+  onOpenResult: (assignmentId: number, attemptId: number) => void;
 }
 
 const fmtDate = (iso: string | null) =>
@@ -29,7 +32,7 @@ const fmtDate = (iso: string | null) =>
 
 const isToday = (iso: string | null) => iso != null && new Date(iso).toDateString() === new Date().toDateString();
 
-export function LessonTimeline({ items, correctionByLesson, onReplay, onCorrect, onEnterClass }: LessonTimelineProps) {
+export function LessonTimeline({ items, correctionByLesson, onReplay, onCorrect, onEnterClass, onOpenResult }: LessonTimelineProps) {
   return (
     <div>
       {items.map(({ lesson, myHomework, resources, sessionId }, i) => {
@@ -59,7 +62,20 @@ export function LessonTimeline({ items, correctionByLesson, onReplay, onCorrect,
             <div className={`mb-3.5 flex-1 rounded-lg border bg-card p-4 shadow-card ${today ? 'border-primary' : 'border-line'}`}>
               <div className="flex flex-wrap items-center gap-1.5">
                 <b className="text-sm">{lesson.title}</b>
-                {finished && myHomework?.score != null && <Tag tone="green">作业 {myHomework.score} 分</Tag>}
+                {finished && myHomework?.score != null && (
+                  myHomework.attemptId != null ? (
+                    <button
+                      type="button"
+                      className="min-h-touch inline-flex items-center gap-1 rounded-pill bg-green-soft px-2.5 text-xs font-semibold text-green transition-all hover:shadow-btn-sm"
+                      onClick={() => onOpenResult(myHomework.assignmentId, myHomework.attemptId!)}
+                      title="查看这次作业的成绩单(题目·我的答案·解析)"
+                    >
+                      作业 {myHomework.score} 分 <span aria-hidden>›</span>
+                    </button>
+                  ) : (
+                    <Tag tone="green">作业 {myHomework.score} 分</Tag>
+                  )
+                )}
                 {today && <Tag tone="primary">今天 {lesson.scheduledStart && new Date(lesson.scheduledStart).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</Tag>}
                 {!finished && !today && <Tag tone="gray">{fmtDate(lesson.scheduledStart)}</Tag>}
                 {finished && <span className="ml-auto text-xs text-ink-3">{fmtDate(lesson.scheduledStart)}</span>}

@@ -54,7 +54,7 @@ const wrongItem: WrongBookItemDto = {
 const timelineItems = [
   {
     lesson: { id: 3, courseId: 1, seq: 3, title: '第3讲 · 待定系数法', scheduledStart: '2026-06-06T06:00:00.000Z', scheduledEnd: null, status: 'finished' as const, prepChecklist: {}, openingConfig: null, sessionId: null },
-    myHomework: { assignmentId: 1, score: 16, wrongCount: 3 },
+    myHomework: { assignmentId: 1, attemptId: 55, score: 16, wrongCount: 3 },
     resources: [{ id: 2, name: '微课视频', type: 'video' }],
   },
   {
@@ -105,7 +105,7 @@ describe('可点目标 ≥44px(min-h-touch)', () => {
   });
   it('讲次时间线:回看/订正/进入课堂', () => {
     assertTouch44(
-      mount(<LessonTimeline items={timelineItems} correctionByLesson={{ 3: 2 }} onReplay={noop} onCorrect={noop} onEnterClass={noop} />),
+      mount(<LessonTimeline items={timelineItems} correctionByLesson={{ 3: 2 }} onReplay={noop} onCorrect={noop} onEnterClass={noop} onOpenResult={noop} />),
       '讲次时间线',
     );
   });
