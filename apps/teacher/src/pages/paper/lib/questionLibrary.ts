@@ -25,19 +25,21 @@ export interface CollectedQuestions {
  * 按 50/页拉齐 published 题(fetchPage 由调用方注入,通常是 GET /questions?status=published)。
  * 直到累计条数达到后端 total、或遇空页、或触及页数上限为止。
  *
- * subject 透传给 fetchPage(→ 服务端 GET /questions?subject=,精确按学科过滤),
- * 只拉该学科的题以减少翻页量;空串/未传 = 不过滤(与后端 `q.subject ? ...` 同口径)。
+ * subject / tagNodeId 透传给 fetchPage(→ 服务端 GET /questions?subject=&tagNodeId=,
+ * 按学科 + 知识点精确过滤),只拉命中的题以减少翻页量;
+ * 空串/未传 = 不过滤(与后端 `q.subject ? ...` 同口径)。
  */
 export async function collectQuestionPages(
-  fetchPage: (page: number, size: number, subject?: string) => Promise<QuestionPage>,
+  fetchPage: (page: number, size: number, subject?: string, tagNodeId?: number) => Promise<QuestionPage>,
   subject?: string,
+  tagNodeId?: number,
 ): Promise<CollectedQuestions> {
   const all: QuestionDto[] = [];
   let total = Number.POSITIVE_INFINITY;
   let page = 1;
 
   while (all.length < total && page <= QUESTION_PICKER_MAX_PAGES) {
-    const r = await fetchPage(page, QUESTION_PICKER_PAGE_SIZE, subject);
+    const r = await fetchPage(page, QUESTION_PICKER_PAGE_SIZE, subject, tagNodeId);
     all.push(...r.items);
     total = r.total;
     if (r.items.length === 0) break;

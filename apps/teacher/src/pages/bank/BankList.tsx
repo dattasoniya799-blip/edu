@@ -1,6 +1,7 @@
 /**
  * 题库列表(原型 v0.4 id=t-bank)
- * 左侧筛选:图谱选择 → 年级 → 章节/节点(/kp/graphs /kp/nodes)
+ * 左侧筛选:知识体系(图谱)选择 → 年级 → 章节/节点(/kp/graphs /kp/nodes),支持节点搜索(name/chapter/section)
+ * 学科↔目录联动:右侧选学科时左侧只列该学科的知识体系并自动切换(以学科为主),年级/章节选择随之重置
  * 右侧题目卡:TexText 题干、难度点、三维标签胶囊、状态;搜索/题型/难度/状态筛选 + 分页
  * 裁剪口径(MVP 手册 1.1):共享库/引用、Word 导入延后不做
  */
@@ -11,6 +12,7 @@ import { Button, EmptyState, Skeleton, Tag, TexText, useToast } from '@qiming/ui
 import { api } from '../../api';
 import { PageHead } from '../Shell';
 import { DIFF_LABEL, STATUS_LABEL, SUBJECTS, TYPE_LABEL, TYPE_TONE, formatDateCn, graphLabel } from './lib/transform';
+import { filterAndGroupNodes, graphsForSubject, resolveGraphForSubject } from './lib/kpTree';
 
 const PAGE_SIZE = 10;
 
@@ -31,13 +33,14 @@ export function BankList() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // 左侧:图谱/节点
+  // 左侧:知识体系(图谱)/节点
   const [graphs, setGraphs] = useState<KpGraphDto[]>([]);
   const [graphId, setGraphId] = useState<number | null>(null);
   const [nodes, setNodes] = useState<KpNodeDto[]>([]);
   const [nodesLoading, setNodesLoading] = useState(true);
   const [grade, setGrade] = useState('');
   const [nodeId, setNodeId] = useState<number | null>(null);
+  const [nodeKw, setNodeKw] = useState('');
 
   // 右侧:筛选 + 列表
   const [keyword, setKeyword] = useState('');
@@ -90,20 +93,27 @@ export function BankList() {
       .finally(() => setLoading(false));
   }, [page, debouncedKw, subject, type, status, difficulty, nodeId, refresh]);
 
+  /** 学科筛选下可见的知识体系(选了学科只列该学科的;A 联动) */
+  const visibleGraphs = useMemo(() => graphsForSubject(graphs, subject), [graphs, subject]);
   const grades = useMemo(() => [...new Set(nodes.map((n) => n.grade).filter((g): g is string => !!g))], [nodes]);
   const visibleNodes = useMemo(() => (grade ? nodes.filter((n) => n.grade === grade) : nodes), [nodes, grade]);
-  /** 章节(教材图谱)/类目(能力、策略图谱)分组 */
-  const nodeGroups = useMemo(() => {
-    const map = new Map<string, KpNodeDto[]>();
-    for (const n of visibleNodes) {
-      const key = n.chapter ?? n.category ?? '其他';
-      map.set(key, [...(map.get(key) ?? []), n]);
-    }
-    return [...map.entries()];
-  }, [visibleNodes]);
+  /** 节点搜索(name/chapter/section)+ 章节(教材)/类目(能力、策略)分组 */
+  const nodeGroups = useMemo(() => filterAndGroupNodes(visibleNodes, nodeKw), [visibleNodes, nodeKw]);
 
   const resetPageAnd = <T,>(setter: (v: T) => void) => (v: T) => { setter(v); setPage(1); };
   const setNode = resetPageAnd(setNodeId);
+
+  /** 右侧选学科 → 左侧目录联动:知识体系与学科矛盾时以学科为主,自动切换并重置年级/章节 */
+  const onSubjectChange = (next: string) => {
+    setSubject(next);
+    setPage(1);
+    const nextGraphId = resolveGraphForSubject(graphs, next, graphId);
+    if (nextGraphId !== graphId) {
+      setGraphId(nextGraphId);
+      setGrade('');
+      setNodeId(null);
+    }
+  };
 
   const onDelete = async (q: QuestionDto) => {
     if (!window.confirm(`确认删除该题?\n${q.stemLatex.slice(0, 40)}…`)) return;
@@ -138,16 +148,19 @@ export function BankList() {
         actions={<Button variant="primary" onClick={() => navigate('/bank/new')}>✎ 录入新题</Button>}
       />
       <div className="grid items-start gap-4" style={{ gridTemplateColumns: '230px 1fr' }}>
-        {/* 左:图谱筛选树(原型 .ktree) */}
+        {/* 左:知识体系筛选树(原型 .ktree) */}
         <div className="sticky top-[76px] rounded-lg border border-line bg-card p-3.5 shadow-card">
-          <div className="mb-3 flex gap-2">
+          <div className="mb-2.5 rounded-md bg-bg px-2.5 py-2 text-[11.5px] leading-relaxed text-ink-3">
+            按教材目录浏览:选学科 → 选知识体系 → 点章节下的知识点,右侧即筛出对应题目
+          </div>
+          <div className="mb-2 flex gap-2">
             <select
               className="min-w-0 flex-1 rounded-[9px] border-[1.5px] border-line bg-card px-2 py-1.5 text-[12.5px] focus:border-primary focus:outline-none"
               value={graphId ?? ''}
               onChange={(e) => { setGraphId(Number(e.target.value)); setGrade(''); setNode(null); }}
-              aria-label="图谱"
+              aria-label="知识体系(教材知识点/解题能力/解题策略)"
             >
-              {graphs.map((g) => <option key={g.id} value={g.id}>{graphLabel(g)}</option>)}
+              {visibleGraphs.map((g) => <option key={g.id} value={g.id}>{graphLabel(g)}</option>)}
             </select>
             <select
               className="min-w-0 flex-1 rounded-[9px] border-[1.5px] border-line bg-card px-2 py-1.5 text-[12.5px] focus:border-primary focus:outline-none"
@@ -159,6 +172,13 @@ export function BankList() {
               {grades.map((g) => <option key={g} value={g}>{g}</option>)}
             </select>
           </div>
+          <input
+            className="mb-2 w-full rounded-[9px] border-[1.5px] border-line px-2.5 py-1.5 text-[12.5px] focus:border-primary focus:outline-none"
+            placeholder="搜索知识点 / 章节 / 小节…"
+            aria-label="搜索知识点(匹配名称、章节、小节)"
+            value={nodeKw}
+            onChange={(e) => setNodeKw(e.target.value)}
+          />
           {nodesLoading ? (
             <Skeleton lines={6} className="h-7 w-full" />
           ) : (
@@ -172,7 +192,11 @@ export function BankList() {
               >
                 全部题目
               </button>
-              {nodeGroups.length === 0 && <div className="px-2.5 py-2 text-xs text-ink-3">该图谱暂无节点</div>}
+              {nodeGroups.length === 0 && (
+                <div className="px-2.5 py-2 text-xs text-ink-3">
+                  {nodeKw.trim() ? '没有匹配的知识点,换个关键词试试' : '该知识体系暂无知识点'}
+                </div>
+              )}
               {nodeGroups.map(([group, list]) => (
                 <div key={group}>
                   <div className="truncate px-2.5 pb-1 pt-2.5 text-[11px] font-semibold tracking-wide text-ink-3">{group}</div>
@@ -204,7 +228,7 @@ export function BankList() {
               value={keyword}
               onChange={(e) => { setKeyword(e.target.value); setPage(1); }}
             />
-            <select className={SELECT_CLS} value={subject} onChange={(e) => { setSubject(e.target.value); setPage(1); }} aria-label="学科">
+            <select className={SELECT_CLS} value={subject} onChange={(e) => onSubjectChange(e.target.value)} aria-label="学科(左侧目录随学科联动)">
               <option value="">全部学科</option>
               {SUBJECTS.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
@@ -228,7 +252,7 @@ export function BankList() {
           ) : items.length === 0 ? (
             <EmptyState
               text="没有符合条件的题目"
-              hint="调整左侧图谱筛选或右上角条件,或点击「录入新题」开始建设题库"
+              hint="调整左侧教材目录或右上角条件,或点击「录入新题」开始建设题库"
               action={<Button variant="primary" onClick={() => navigate('/bank/new')}>✎ 录入新题</Button>}
             />
           ) : (

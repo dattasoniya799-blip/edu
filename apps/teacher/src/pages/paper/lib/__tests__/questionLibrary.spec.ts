@@ -23,11 +23,11 @@ const mkQuestion = (id: number): QuestionDto => ({
 /** 造 n 道题,供分页切片 */
 const bank = (n: number): QuestionDto[] => Array.from({ length: n }, (_, i) => mkQuestion(i + 1));
 
-/** 用一个内存题库造 fetchPage:1-based page,按 size 切片,total 恒为题库总数;记录 subject 透传 */
+/** 用一个内存题库造 fetchPage:1-based page,按 size 切片,total 恒为题库总数;记录 subject/tagNodeId 透传 */
 const pagedFetcher = (all: QuestionDto[]) => {
-  const calls: { page: number; size: number; subject?: string }[] = [];
-  const fetchPage = async (page: number, size: number, subject?: string) => {
-    calls.push({ page, size, subject });
+  const calls: { page: number; size: number; subject?: string; tagNodeId?: number }[] = [];
+  const fetchPage = async (page: number, size: number, subject?: string, tagNodeId?: number) => {
+    calls.push({ page, size, subject, tagNodeId });
     const start = (page - 1) * size;
     return { items: all.slice(start, start + size), total: all.length };
   };
@@ -87,6 +87,19 @@ describe('collectQuestionPages', () => {
     const { fetchPage, calls } = pagedFetcher(bank(10));
     await collectQuestionPages(fetchPage);
     expect(calls[0].subject).toBeUndefined();
+  });
+
+  it('tagNodeId 透传给每一页 fetchPage(服务端按知识点过滤,组卷「按知识点筛题」口径)', async () => {
+    const { fetchPage, calls } = pagedFetcher(bank(120));
+    await collectQuestionPages(fetchPage, '物理', 42);
+    expect(calls).toHaveLength(3);
+    expect(calls.every((c) => c.subject === '物理' && c.tagNodeId === 42)).toBe(true);
+  });
+
+  it('未传 tagNodeId → 每页 tagNodeId 为 undefined(不按知识点过滤,兼容旧调用)', async () => {
+    const { fetchPage, calls } = pagedFetcher(bank(10));
+    await collectQuestionPages(fetchPage, '数学');
+    expect(calls[0].tagNodeId).toBeUndefined();
   });
 });
 
