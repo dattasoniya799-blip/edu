@@ -35,6 +35,8 @@ export function PaperEditorPage() {
   const [knownById, setKnownById] = useState<Map<number, QuestionDto>>(new Map());
   /** 学科筛选:独立组卷默认全部('') */
   const [subject, setSubject] = useState('');
+  /** 知识点筛选(选题弹窗级联选中;null = 不限,变更走服务端 tagNodeId 过滤) */
+  const [tagNodeId, setTagNodeId] = useState<number | null>(null);
   const [name, setName] = useState('');
   const [type, setType] = useState<PaperType>('homework');
   const [items, setItems] = useState<PaperItem[]>([]);
@@ -43,10 +45,15 @@ export function PaperEditorPage() {
   const [busy, setBusy] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  /** GET /questions?status=published(&subject),供 collectQuestionPages 分页拉齐 */
-  const fetchQuestionPage = (page: number, size: number, subj?: string) =>
-    api.get('/questions', { query: { page, size, status: 'published', ...(subj ? { subject: subj } : {}) } })
-      .then((r) => ({ items: r.data.items as QuestionDto[], total: r.data.total }));
+  /** GET /questions?status=published(&subject&tagNodeId),供 collectQuestionPages 分页拉齐 */
+  const fetchQuestionPage = (page: number, size: number, subj?: string, nodeId?: number) =>
+    api.get('/questions', {
+      query: {
+        page, size, status: 'published',
+        ...(subj ? { subject: subj } : {}),
+        ...(nodeId != null ? { tagNodeId: nodeId } : {}),
+      },
+    }).then((r) => ({ items: r.data.items as QuestionDto[], total: r.data.total }));
 
   /** 拉取结果写入 questions(选题弹窗数据源)并累积进 knownById(已选题详情回填) */
   const applyQuestions = (qs: QuestionDto[]) => {
@@ -82,10 +89,19 @@ export function PaperEditorPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paperId]);
 
-  /** 选题弹窗切换学科 → 按新学科重新拉题(已选题详情由 knownById 累积保留) */
+  /** 选题弹窗切换学科 → 知识点筛选复位,按新学科重新拉题(已选题详情由 knownById 累积保留) */
   const onSubjectChange = async (subj: string) => {
     setSubject(subj);
+    setTagNodeId(null);
     const qc = await collectQuestionPages(fetchQuestionPage, subj);
+    applyQuestions(qc.questions);
+    if (qc.truncated) toast('题库题目较多,已载入前 1000 道用于组卷;可在选题弹窗搜索缩小范围');
+  };
+
+  /** 选题弹窗选中/清除知识点 → 服务端按 tagNodeId 重新拉题 */
+  const onTagNodeChange = async (nodeId: number | null) => {
+    setTagNodeId(nodeId);
+    const qc = await collectQuestionPages(fetchQuestionPage, subject, nodeId ?? undefined);
     applyQuestions(qc.questions);
     if (qc.truncated) toast('题库题目较多,已载入前 1000 道用于组卷;可在选题弹窗搜索缩小范围');
   };
@@ -213,6 +229,8 @@ export function PaperEditorPage() {
         onToggle={toggle}
         subject={subject}
         onSubjectChange={onSubjectChange}
+        tagNodeId={tagNodeId}
+        onTagNodeChange={onTagNodeChange}
       />
     </div>
   );

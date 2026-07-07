@@ -1,6 +1,6 @@
 /**
  * 题库列表(原型 v0.4 id=t-bank)
- * 左侧筛选:图谱选择 → 年级 → 章节/节点(/kp/graphs /kp/nodes)
+ * 左侧筛选:图谱选择 → 年级 → 章节/节点(/kp/graphs /kp/nodes),支持节点搜索(name/chapter/section)
  * 学科↔目录联动:右侧选学科时左侧只列该学科的图谱并自动切换(以学科为主),年级/章节选择随之重置
  * 右侧题目卡:TexText 题干、难度点、三维标签胶囊、状态;搜索/题型/难度/状态筛选 + 分页
  * 裁剪口径(MVP 手册 1.1):共享库/引用、Word 导入延后不做
@@ -12,7 +12,7 @@ import { Button, EmptyState, Skeleton, Tag, TexText, useToast } from '@qiming/ui
 import { api } from '../../api';
 import { PageHead } from '../Shell';
 import { DIFF_LABEL, STATUS_LABEL, SUBJECTS, TYPE_LABEL, TYPE_TONE, formatDateCn, graphLabel } from './lib/transform';
-import { graphsForSubject, resolveGraphForSubject } from './lib/kpTree';
+import { filterAndGroupNodes, graphsForSubject, resolveGraphForSubject } from './lib/kpTree';
 
 const PAGE_SIZE = 10;
 
@@ -40,6 +40,7 @@ export function BankList() {
   const [nodesLoading, setNodesLoading] = useState(true);
   const [grade, setGrade] = useState('');
   const [nodeId, setNodeId] = useState<number | null>(null);
+  const [nodeKw, setNodeKw] = useState('');
 
   // 右侧:筛选 + 列表
   const [keyword, setKeyword] = useState('');
@@ -96,15 +97,8 @@ export function BankList() {
   const visibleGraphs = useMemo(() => graphsForSubject(graphs, subject), [graphs, subject]);
   const grades = useMemo(() => [...new Set(nodes.map((n) => n.grade).filter((g): g is string => !!g))], [nodes]);
   const visibleNodes = useMemo(() => (grade ? nodes.filter((n) => n.grade === grade) : nodes), [nodes, grade]);
-  /** 章节(教材图谱)/类目(能力、策略图谱)分组 */
-  const nodeGroups = useMemo(() => {
-    const map = new Map<string, KpNodeDto[]>();
-    for (const n of visibleNodes) {
-      const key = n.chapter ?? n.category ?? '其他';
-      map.set(key, [...(map.get(key) ?? []), n]);
-    }
-    return [...map.entries()];
-  }, [visibleNodes]);
+  /** 节点搜索(name/chapter/section)+ 章节(教材图谱)/类目(能力、策略图谱)分组 */
+  const nodeGroups = useMemo(() => filterAndGroupNodes(visibleNodes, nodeKw), [visibleNodes, nodeKw]);
 
   const resetPageAnd = <T,>(setter: (v: T) => void) => (v: T) => { setter(v); setPage(1); };
   const setNode = resetPageAnd(setNodeId);
@@ -175,6 +169,13 @@ export function BankList() {
               {grades.map((g) => <option key={g} value={g}>{g}</option>)}
             </select>
           </div>
+          <input
+            className="mb-2 w-full rounded-[9px] border-[1.5px] border-line px-2.5 py-1.5 text-[12.5px] focus:border-primary focus:outline-none"
+            placeholder="搜索知识点 / 章节 / 小节…"
+            aria-label="搜索知识点(匹配名称、章节、小节)"
+            value={nodeKw}
+            onChange={(e) => setNodeKw(e.target.value)}
+          />
           {nodesLoading ? (
             <Skeleton lines={6} className="h-7 w-full" />
           ) : (
@@ -188,7 +189,11 @@ export function BankList() {
               >
                 全部题目
               </button>
-              {nodeGroups.length === 0 && <div className="px-2.5 py-2 text-xs text-ink-3">该图谱暂无节点</div>}
+              {nodeGroups.length === 0 && (
+                <div className="px-2.5 py-2 text-xs text-ink-3">
+                  {nodeKw.trim() ? '没有匹配的节点,换个关键词试试' : '该图谱暂无节点'}
+                </div>
+              )}
               {nodeGroups.map(([group, list]) => (
                 <div key={group}>
                   <div className="truncate px-2.5 pb-1 pt-2.5 text-[11px] font-semibold tracking-wide text-ink-3">{group}</div>
