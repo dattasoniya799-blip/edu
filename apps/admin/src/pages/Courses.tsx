@@ -15,6 +15,7 @@ export function Courses() {
   const [teachers, setTeachers] = useState<TeacherDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editCourse, setEditCourse] = useState<CourseDto | null>(null); // 编辑课程(含调总讲次数 = 追加/缩减讲次)
   const [rosterCourse, setRosterCourse] = useState<CourseDto | null>(null);
   const [profileId, setProfileId] = useState<number | null>(null);
   const { toast } = useToast();
@@ -78,14 +79,23 @@ export function Courses() {
                 <span>作业完成率 {c.homeworkRate != null ? `${c.homeworkRate}%` : '—'}</span>
               </div>
               <div className="mt-auto flex flex-col gap-2 pt-1">
-                <button
-                  type="button"
-                  className="w-full rounded-[10px] border-[1.5px] border-line py-[9px] text-[12.5px] font-bold text-ink-2 transition-colors hover:border-ink-3"
-                  onClick={() => setRosterCourse(c)}
-                >
-                  学生名单
-                </button>
-                <div className="text-[11.5px] text-ink-3">管理员为只读视图,完整讲次与学情见教师端「我的课程」</div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="flex-1 rounded-[10px] border-[1.5px] border-line py-[9px] text-[12.5px] font-bold text-ink-2 transition-colors hover:border-ink-3"
+                    onClick={() => setRosterCourse(c)}
+                  >
+                    学生名单
+                  </button>
+                  <button
+                    type="button"
+                    className="flex-1 rounded-[10px] border-[1.5px] border-line py-[9px] text-[12.5px] font-bold text-ink-2 transition-colors hover:border-ink-3"
+                    onClick={() => setEditCourse(c)}
+                  >
+                    编辑课程
+                  </button>
+                </div>
+                <div className="text-[11.5px] text-ink-3">编辑可调总讲次数(追加/缩减讲次);上课时间与学情见教师端「我的课程」</div>
               </div>
             </div>
           ))}
@@ -93,6 +103,13 @@ export function Courses() {
       )}
 
       <CourseFormModal open={createOpen} teachers={teachers} onClose={() => setCreateOpen(false)} onSaved={() => void load()} />
+      <CourseFormModal
+        open={editCourse != null}
+        course={editCourse}
+        teachers={teachers}
+        onClose={() => setEditCourse(null)}
+        onSaved={() => void load()}
+      />
       <RosterModal
         course={rosterCourse}
         onClose={() => setRosterCourse(null)}

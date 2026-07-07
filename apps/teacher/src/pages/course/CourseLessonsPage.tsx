@@ -1,17 +1,22 @@
 /**
  * 我的课程 · 讲次时间线(原型 v0.4 id=t-course)
  * 课程切换 → 讲次纵向时间线(rail 圆点 + 状态胶囊 + 备课清单进度 + 入口操作)
- * 裁剪口径:「追加讲次」延后(契约无创建讲次端点);「从往期复制编排」「预览学生端」延后
+ * 排课(MVP 口径,裁剪手册):管理员建课自动生成空讲次,上课时间由教师在本页
+ * 逐讲「设置时间」(PUT /lessons/{id});RRULE 自动排课延后。
+ * 裁剪口径:「追加讲次」由管理员在课程管理调总讲次数(契约无教师创建讲次端点);
+ * 「从往期复制编排」「预览学生端」延后
  */
 import { useEffect, useMemo, useState } from 'react';
+import type { ChangeEvent, ReactNode } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import type { CourseDto, LessonDto } from '@qiming/contracts';
-import { Button, EmptyState, Skeleton, Tag } from '@qiming/ui';
+import { Button, EmptyState, Modal, Skeleton, Tag, useToast } from '@qiming/ui';
 import { api } from '../../api';
 import { PageHead } from '../Shell';
 import { CHECKLIST_KEYS, CHECKLIST_LABEL } from '../lesson/lib/segments';
 import { nextArrangeLessonId } from './lib/nav';
-import { fmtDate, fmtDateTime } from './lib/format';
+import { fmtDate, fmtDateTime, fmtTime } from './lib/format';
+import { schedulePayload, scheduleFormFrom, validateSchedule, type ScheduleForm } from './lib/schedule';
 
 const CLASS_TYPE_LABEL = { group: '班课', one_on_one: '一对一', one_on_three: '一对三' } as const;
 
@@ -49,6 +54,91 @@ function ChecklistMeta({ checklist }: { checklist: Record<string, boolean> }) {
 }
 
 const LINK_CLS = 'text-[13px] font-semibold text-primary hover:underline';
+const INPUT_CLS = 'w-full rounded-[10px] border-[1.5px] border-line px-3 py-2 text-[13.5px] outline-none focus:border-primary';
+
+/** 表单字段(标签 + 错误文案;文件内局部,口径同 admin controls.Field) */
+function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
+  return (
+    <label className="flex flex-1 flex-col gap-1.5">
+      <span className="text-[12.5px] font-bold text-ink-2">{label}</span>
+      {children}
+      {error && <span className="text-xs font-semibold text-red">{error}</span>}
+    </label>
+  );
+}
+
+/** 设置/调整上课时间(排课 MVP:手动逐讲设时间,PUT /lessons/{id}) */
+function ScheduleModal({ lesson, onClose, onSaved }: {
+  lesson: LessonDto | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const { toast } = useToast();
+  const [form, setForm] = useState<ScheduleForm>({ title: '', date: '', start: '', end: '' });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!lesson) return;
+    setForm(scheduleFormFrom(lesson));
+    setErrors({});
+  }, [lesson]);
+
+  const set = (k: keyof ScheduleForm) => (e: ChangeEvent<HTMLInputElement>) =>
+    setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const submit = async () => {
+    if (!lesson) return;
+    const errs = validateSchedule(form);
+    setErrors(errs);
+    if (Object.keys(errs).length) return;
+    setBusy(true);
+    try {
+      await api.put('/lessons/{id}', { params: { id: lesson.id }, body: schedulePayload(form) });
+      toast('上课时间已保存');
+      onSaved();
+      onClose();
+    } catch (e) {
+      toast(e instanceof Error ? e.message : '保存失败,请重试');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={lesson != null}
+      title={lesson ? `第 ${lesson.seq} 讲 · ${lesson.scheduledStart ? '调整时间' : '设置上课时间'}` : ''}
+      onClose={onClose}
+      footer={(
+        <>
+          <Button onClick={onClose} disabled={busy}>取消</Button>
+          <Button variant="primary" onClick={submit} disabled={busy}>{busy ? '保存中…' : '保存时间'}</Button>
+        </>
+      )}
+    >
+      <div className="flex flex-col gap-4">
+        <Field label="讲次标题" error={errors.title}>
+          <input className={INPUT_CLS} value={form.title} onChange={set('title')} placeholder="如:一次函数的图像" />
+        </Field>
+        <Field label="上课日期" error={errors.date}>
+          <input className={INPUT_CLS} type="date" value={form.date} onChange={set('date')} />
+        </Field>
+        <div className="flex gap-4">
+          <Field label="开始时间" error={errors.start}>
+            <input className={INPUT_CLS} type="time" value={form.start} onChange={set('start')} />
+          </Field>
+          <Field label="结束时间" error={errors.end}>
+            <input className={INPUT_CLS} type="time" value={form.end} onChange={set('end')} />
+          </Field>
+        </div>
+        <div className="rounded-[10px] bg-bg px-3.5 py-2.5 text-[12.5px] text-ink-3">
+          按 MVP 口径逐讲手动设时间;需增减讲次请联系管理员在「课程与班级」中调整总讲次数。
+        </div>
+      </div>
+    </Modal>
+  );
+}
 
 export function CourseLessonsPage() {
   const navigate = useNavigate();
@@ -58,6 +148,7 @@ export function CourseLessonsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false); // REV-front #2:讲次加载失败(可重试)区别于空态
   const [reload, setReload] = useState(0);
+  const [scheduling, setScheduling] = useState<LessonDto | null>(null); // 排期弹窗当前讲次
 
   const courseId = Number(searchParams.get('courseId')) || courses[0]?.id || 0;
   const course = courses.find((c) => c.id === courseId);
@@ -122,7 +213,7 @@ export function CourseLessonsPage() {
         </div>
       ) : lessons.length === 0 ? (
         <div className="rounded-lg border border-line bg-card shadow-card">
-          <EmptyState icon="▦" text="该课程还没有讲次" hint="请联系管理员排课后再来备课" />
+          <EmptyState icon="▦" text="该课程还没有讲次" hint="请联系管理员在「课程与班级」设置总讲次数;生成讲次后可在本页逐讲设置上课时间" />
         </div>
       ) : (
         lessons.map((lesson, i) => {
@@ -141,7 +232,12 @@ export function CourseLessonsPage() {
                 <div className="flex flex-wrap items-center gap-2.5">
                   <b className="text-sm">{lesson.title}</b>
                   <StatusTag lesson={lesson} isNext={isNext} />
-                  <span className="ml-auto text-xs text-ink-3">{fmtDate(lesson.scheduledStart)}</span>
+                  <span className="ml-auto text-xs text-ink-3">
+                    {fmtDate(lesson.scheduledStart)}
+                    {lesson.scheduledStart && lesson.scheduledEnd && (
+                      <> {fmtTime(lesson.scheduledStart)}–{fmtTime(lesson.scheduledEnd)}</>
+                    )}
+                  </span>
                 </div>
                 {Object.keys(lesson.prepChecklist).length > 0 && lesson.status !== 'finished' && (
                   <div className="mt-2 text-[12.5px] text-ink-2"><ChecklistMeta checklist={lesson.prepChecklist} /></div>
@@ -161,12 +257,24 @@ export function CourseLessonsPage() {
                       {lesson.status === 'ready' ? '查看编排' : '开始备课'}
                     </button>
                   )}
+                  {/* 排课(MVP 手动逐讲):上课中/已结课不可改时间 */}
+                  {lesson.status !== 'finished' && lesson.status !== 'in_progress' && (
+                    <button type="button" className={LINK_CLS} onClick={() => setScheduling(lesson)}>
+                      {lesson.scheduledStart ? '调整时间' : '设置上课时间'}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
           );
         })
       )}
+
+      <ScheduleModal
+        lesson={scheduling}
+        onClose={() => setScheduling(null)}
+        onSaved={() => setReload((n) => n + 1)}
+      />
     </div>
   );
 }

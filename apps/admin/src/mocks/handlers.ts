@@ -203,7 +203,22 @@ export const handlers = [
     D.courses.push(created); // 有状态 mock:刷新列表可见
     return ok(created);
   })),
-  http.put(`${BASE}/admin/courses/:id`, authed(() => okVoid())),
+  // 编辑课程(有状态:改基本信息与总讲次数,刷新列表可见;A2 服务端会同步追加/缩减空讲次)
+  http.put(`${BASE}/admin/courses/:id`, authed(async ({ params, request }) => {
+    const course = D.courses.find((c) => c.id === Number(params.id));
+    if (!course) return err(404, 4040, '课程不存在');
+    const body = (await request.json()) as {
+      name: string; classType: 'group' | 'one_on_one' | 'one_on_three'; subject: string; stage: string;
+      teacherId: number; totalLessons: number;
+    };
+    const teacher = D.teachers.find((t) => t.id === body.teacherId);
+    if (!teacher) return err(404, 4040, '教师不存在');
+    Object.assign(course, {
+      name: body.name, classType: body.classType, subject: body.subject, stage: body.stage,
+      teacherId: teacher.id, teacherName: teacher.name, totalLessons: body.totalLessons,
+    });
+    return okVoid();
+  })),
   http.get(`${BASE}/admin/courses/:id/roster`, authed(({ params }) =>
     ok(rosterRows(Number(params.id))))),
   // 入班:批量添加学生(有状态;同步学生 courses 与 course.studentCount)

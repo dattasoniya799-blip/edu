@@ -367,13 +367,24 @@ export const handlers = [
     const l = D.lessons.find((x) => x.id === Number(params.id));
     return l ? ok(l) : err(404, 4040, '讲次不存在');
   })),
-  // C2 #5:讲次 patch(开场白 openingConfig 等)落库,供编排页读回往返
+  // C2 #5:讲次 patch(开场白 openingConfig / 标题 / 排期时间)落库,供编排页与讲次时间线读回往返
   http.put(`${BASE}/lessons/:id`, authed(async ({ request, params }) => {
     const lesson = D.lessons.find((x) => x.id === Number(params.id));
     if (!lesson) return err(404, 4040, '讲次不存在');
-    const body = (await request.json()) as Partial<{ openingConfig: Record<string, unknown> | null; title: string }>;
+    const body = (await request.json()) as Partial<{
+      openingConfig: Record<string, unknown> | null; title: string;
+      scheduledStart: string; scheduledEnd: string;
+    }>;
+    // 排期(A4 服务端口径):合并入参与现值后 start 必须早于 end
+    const start = body.scheduledStart ?? lesson.scheduledStart;
+    const end = body.scheduledEnd ?? lesson.scheduledEnd;
+    if (start && end && new Date(start).getTime() >= new Date(end).getTime()) {
+      return err(400, 4000, 'scheduledStart 必须早于 scheduledEnd');
+    }
     if ('openingConfig' in body) lesson.openingConfig = body.openingConfig ?? null;
     if (typeof body.title === 'string') lesson.title = body.title;
+    if (typeof body.scheduledStart === 'string') lesson.scheduledStart = body.scheduledStart;
+    if (typeof body.scheduledEnd === 'string') lesson.scheduledEnd = body.scheduledEnd;
     return okVoid();
   })),
   http.get(`${BASE}/lessons/:id/segments`, authed(({ params }) => ok(D.segments[Number(params.id)] ?? []))),
