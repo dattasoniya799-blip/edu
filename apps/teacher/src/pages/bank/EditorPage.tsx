@@ -652,6 +652,7 @@ export function EditorPage() {
       <TagPickerModal
         open={tagModal}
         graphs={graphs}
+        subject={form.subject}
         value={form.tags}
         onClose={() => setTagModal(false)}
         onConfirm={(tags: TagPick[]) => { patch({ tags }); setTagModal(false); }}
