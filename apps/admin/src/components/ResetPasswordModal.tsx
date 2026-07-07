@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Modal, useToast } from '@qiming/ui';
 import { api } from '../api';
+import { copyText } from '../lib/copyText';
 
 export type ResetPasswordRole = 'student' | 'teacher';
 
@@ -63,15 +64,12 @@ export function ResetPasswordModal({ target, onClose }: ResetPasswordModalProps)
 
   const copy = async () => {
     if (!password) return;
-    try {
-      await navigator.clipboard.writeText(password);
-      toast('临时密码已复制');
-    } catch {
-      toast('复制失败,请手动选择密码文本');
-    }
+    // copyText 内部先走 navigator.clipboard,不可用/被拒时回退 execCommand,均失败才返回 false
+    const ok = await copyText(password);
+    toast(ok ? '临时密码已复制' : '复制失败,请长按/框选下方密码手动复制');
   };
 
-  const copyText = ROLE_COPY[target?.role ?? 'student'];
+  const roleText = ROLE_COPY[target?.role ?? 'student'];
   const auto = target?.auto ?? false;
   const pwLabel = auto ? '初始密码' : '临时密码';
 
@@ -95,16 +93,16 @@ export function ResetPasswordModal({ target, onClose }: ResetPasswordModalProps)
       {password ? (
         <div className="flex flex-col items-center gap-3.5 py-1">
           <div className="text-[13.5px] text-ink-2">
-            {auto && <>账号已创建。</>}{pwLabel}已生成,请<b className="text-ink">当面告知{copyText.who}</b>,{copyText.loginHint}:
+            {auto && <>账号已创建。</>}{pwLabel}已生成,请<b className="text-ink">当面告知{roleText.who}</b>,{roleText.loginHint}:
           </div>
-          <button
-            type="button"
+          {/* 用 code 而非 button 展示:Safari 中 button 内文本不可框选,复制失败时用户还能手动选中兜底 */}
+          <code
             onClick={copy}
-            className="select-all rounded-md border border-line bg-bg px-4 py-2.5 font-mono text-[16px] tracking-[0.12em] text-ink hover:border-primary"
+            className="cursor-pointer select-all rounded-md border border-line bg-bg px-4 py-2.5 font-mono text-[16px] tracking-[0.12em] text-ink hover:border-primary"
             title="点击复制"
           >
             {password}
-          </button>
+          </code>
           <button type="button" className="text-[13px] font-medium text-primary hover:underline" onClick={copy}>复制密码</button>
           <div className="text-xs text-ink-3">出于安全,密码仅此处显示一次;关闭后无法再次查看,可重新重置。</div>
         </div>
@@ -119,7 +117,7 @@ export function ResetPasswordModal({ target, onClose }: ResetPasswordModalProps)
       ) : (
         <div className="text-sm leading-relaxed text-ink-2">
           重置后 <b className="text-ink">{target?.name}</b> 的原密码立即失效,系统会生成一条新的临时密码。
-          确定要为该{copyText.who}重置登录密码吗?
+          确定要为该{roleText.who}重置登录密码吗?
         </div>
       )}
     </Modal>
