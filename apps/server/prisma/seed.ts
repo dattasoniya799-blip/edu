@@ -100,11 +100,18 @@ async function business(c: Client) {
   }
 
   // ---- 资源 ----
+  // S6(m1):ossKey 必须遵循 `${purpose}/${orgId}/…` 约定(见 upload/oss-key.util 归属校验:
+  // 首段 purpose∈UPLOAD_PURPOSES、第二段=orgId)。此前 demo 数据用 `demo/courseware/*`,
+  // 第二段是 'courseware' 而非 orgId,被 /uploads/view-url 与 assertOssKeyOwned 判为越权 → 403,
+  // 连学生看被授权课件/含图题都 403。改为合法归属前缀 `resource/${orgId}/…`,授权路径不再 403;
+  // 物理文件仍不在本地(演示无实体课件),下载端 readFile 缺失 → 404,前端可优雅降级。
   const res1 = (await c.query(`INSERT INTO resources(org_id,owner_id,type,name,oss_key,meta)
-    VALUES ($1,$2,'interactive','函数图象平移 · 动画演示','demo/courseware/translation.html',
-            '{"pages":24,"checkpoints":[3,8,12,18,22]}') RETURNING id`, [orgId, t1])).rows[0].id;
+    VALUES ($1,$2,'interactive','函数图象平移 · 动画演示',$3,
+            '{"pages":24,"checkpoints":[3,8,12,18,22]}') RETURNING id`,
+    [orgId, t1, `resource/${orgId}/demo/translation.html`])).rows[0].id;
   await c.query(`INSERT INTO resources(org_id,owner_id,type,name,oss_key,meta)
-    VALUES ($1,$2,'video','待定系数法 · 微课视频','demo/video/undetermined.mp4','{"durationSec":756}')`, [orgId, t1]);
+    VALUES ($1,$2,'video','待定系数法 · 微课视频',$3,'{"durationSec":756}')`,
+    [orgId, t1, `resource/${orgId}/demo/undetermined.mp4`]);
 
   // ---- 30 道题(挂 知识点+能力+策略 三维标签) ----
   const qIds: number[] = [];
@@ -200,7 +207,8 @@ async function business(c: Client) {
       let response: any, isCorrect: boolean | null = correct, score = 0;
       if (meta.type === 'single') { response = { choice: correct ? 'B' : 'ACD'[Math.floor(rnd() * 3)] }; score = correct ? 5 : 0; obj += score; }
       else if (meta.type === 'blank') { response = { texts: correct ? meta.answer.texts : ['y=x+1'] }; score = correct ? 5 : 0; obj += score; }
-      else { response = { photoOssKey: `demo/answers/${at}-${j}.jpg` }; isCorrect = null; score = 0; }
+      // S6:答题原稿 photoOssKey 同样遵循 `answer_photo/${orgId}/…` 归属约定(否则教师批改签名端软失败不出图)
+      else { response = { photoOssKey: `answer_photo/${orgId}/demo/${at}-${j}.jpg` }; isCorrect = null; score = 0; }
       const ans = (await c.query(`INSERT INTO answers(org_id,attempt_id,question_id,response,is_correct,score,time_spent_sec)
         VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
         [orgId, at, hwQs[j], JSON.stringify(response), isCorrect, score, 60 + Math.floor(rnd() * 240)])).rows[0].id;

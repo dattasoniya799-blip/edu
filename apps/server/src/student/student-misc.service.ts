@@ -178,6 +178,7 @@ export class StudentMiscService {
     if (!rows.length) return [];
     const ids = rows.map((r) => r.id);
     const now = new Date();
+    const todayStart = utcDayStart(); // S5:同 CourseService 口径,整天已过的讲次计为"已结束"
 
     const [teachers, enrollCnt, lessons, assignments, sessions] = await Promise.all([
       this.prisma.client.user.findMany({
@@ -191,7 +192,7 @@ export class StudentMiscService {
       }),
       this.prisma.client.lesson.findMany({
         where: { courseId: { in: ids } },
-        select: { courseId: true, status: true, scheduledStart: true },
+        select: { courseId: true, status: true, scheduledStart: true, scheduledEnd: true },
       }),
       this.prisma.client.assignment.findMany({
         where: { kind: 'homework', lessonId: { not: null }, lesson: { courseId: { in: ids } } },
@@ -258,7 +259,11 @@ export class StudentMiscService {
         teacherId: num(c.teacherId),
         teacherName: teacherName.get(String(c.teacherId)) ?? '',
         totalLessons: c.totalLessons,
-        currentLesson: myLessons.filter((l) => l.status === 'finished').length,
+        // S5(m6):与 CourseService.myCourses 同口径 —— currentLesson=已结束讲次数
+        // (已 finished 或 scheduledEnd 早于今日 0 点),修复"排了课但没开直播就永不推进"的第0讲卡住。
+        currentLesson: myLessons.filter(
+          (l) => l.status === 'finished' || (l.scheduledEnd != null && l.scheduledEnd < todayStart),
+        ).length,
         studentCount,
         status: c.status,
         nextLessonAt: upcoming.length ? iso(upcoming[0]) : null,

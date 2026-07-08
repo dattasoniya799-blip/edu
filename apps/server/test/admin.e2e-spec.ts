@@ -442,7 +442,7 @@ describe('管理员域(A2)', () => {
       expect(c.teacherId).toBe(Number(seedT1Id));
       expect(c.teacherName).toBe('张明');
       expect(c.totalLessons).toBe(15);
-      expect(c.currentLesson).toBe(3); // seed:前 3 讲 finished
+      expect(c.currentLesson).toBe(4); // S5:前 3 讲 finished + 第 4 讲排定日期(昨天)已过 → 已结束共 4
       const enrolled = await raw.courseStudent.count({ where: { courseId: seedCourseId, status: 'active' } });
       expect(c.studentCount).toBe(enrolled);
       const nextLesson = await raw.lesson.findFirst({

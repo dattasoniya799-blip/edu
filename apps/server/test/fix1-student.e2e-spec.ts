@@ -97,7 +97,10 @@ async function expectedCourses(sid: bigint) {
     out.push({
       id: Number(c.id), name: c.name, classType: c.classType, subject: c.subject, stage: c.stage,
       teacherId: Number(c.teacherId), teacherName: teacher?.name ?? '', totalLessons: c.totalLessons,
-      currentLesson: lessons.filter((l) => l.status === 'finished').length, studentCount,
+      // S5(m6):已结束讲次数 = 已 finished 或 scheduledEnd 早于今日 0 点(与服务端口径一致)
+      currentLesson: lessons.filter(
+        (l) => l.status === 'finished' || (l.scheduledEnd != null && l.scheduledEnd < utcDayStart()),
+      ).length, studentCount,
       status: c.status, nextLessonAt: upcoming.length ? upcoming[0].toISOString() : null,
       attendanceRate, homeworkRate,
     });
