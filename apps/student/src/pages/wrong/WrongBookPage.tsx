@@ -20,6 +20,8 @@ export function WrongBookPage() {
   const [filter, setFilter] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [showCleared, setShowCleared] = useState(false);
+  // M4 配套:存在已提交未出分(myAttempt.status='submitted')的作业 → 提示出分后错题自动收进来
+  const [pendingGrading, setPendingGrading] = useState(false);
 
   useEffect(() => {
     // 契约 WrongBookItem 暂无 subject(见 README 契约变更申请 FIX3-1);view 容忍缺失,mock 先行附带
@@ -28,6 +30,13 @@ export function WrongBookPage() {
     api.get('/student/wrong-book', { query: { page: 1, size: 50 } })
       .then((r) => setItems(r.data.items as WrongBookItemView[]))
       .catch(() => setError(true));
+  }, [reload]);
+
+  useEffect(() => {
+    // 复用既有契约接口判定「待出分」,不发明新接口;失败静默(提示属锦上添花)
+    api.get('/student/assignments', { query: { status: 'all' } })
+      .then((r) => setPendingGrading((r.data as AssignmentDto[]).some((a) => a.myAttempt?.status === 'submitted')))
+      .catch(() => setPendingGrading(false));
   }, [reload]);
 
   const open = useMemo(() => (items ?? []).filter((w) => w.status === 'open'), [items]);
@@ -98,10 +107,17 @@ export function WrongBookPage() {
       ) : open.length === 0 ? (
         <Card>
           <EmptyState icon="✓" text="太棒了,没有待消灭的错题"
-            hint={cleared.length > 0 ? `已累计消灭 ${cleared.length} 道错题` : '答错的题会自动收进来,重做对 2 次自动移出'} />
+            hint={pendingGrading
+              ? '有作业待老师出分,出分后错题会自动收进来'
+              : cleared.length > 0 ? `已累计消灭 ${cleared.length} 道错题` : '答错的题会自动收进来,重做对 2 次自动移出'} />
         </Card>
       ) : (
         <>
+          {pendingGrading && (
+            <div role="status" className="mb-4 rounded-lg border border-line bg-primary-soft px-4 py-3 text-[13px] text-ink-2">
+              有作业待老师出分,出分后错题会自动收进来
+            </div>
+          )}
           {/* 学科筛选(FIX3 问题5):≥2 学科才显示,单科退化隐藏 */}
           {subjects.length > 1 && (
             <div className="mb-3 flex flex-wrap items-center gap-2">

@@ -59,3 +59,35 @@ export function errorMessage(e: unknown, fallback: string): string {
   if (e instanceof Error && e.message && e.message !== 'error') return e.message;
   return fallback;
 }
+
+/** 按形状取错误三元组(contracts ApiError 未导出类,只能鸭子类型) */
+function errShape(e: unknown): { code: number; httpStatus: number; message: string } | null {
+  if (!(e instanceof Error)) return null;
+  const { code, httpStatus } = e as Error & { code?: unknown; httpStatus?: unknown };
+  return {
+    code: typeof code === 'number' ? code : -1,
+    httpStatus: typeof httpStatus === 'number' ? httpStatus : -1,
+    message: e.message ?? '',
+  };
+}
+
+/**
+ * 409·唯一约束冲突(server P2002 →「资源已存在或唯一约束冲突」):
+ * dev StrictMode 双发 POST /student/attempts 撞唯一索引的典型症状。
+ * 服务端正在做创建幂等化 —— 此类错误重试一次创建即可拿到已有 attempt。
+ */
+export function isConflictAlreadyExists(e: unknown): boolean {
+  const s = errShape(e);
+  return s != null && s.httpStatus === 409 && (s.message.includes('已存在') || s.message.includes('唯一约束'));
+}
+
+/**
+ * 409·作业已完成(server BizException 4502「该作业已完成,不可重复作答」):
+ * 无 ?attempt= 直开已完成作业时触发 —— 应改从作业列表取 myAttempt.attemptId 看成绩单。
+ */
+export function isConflictAttemptCompleted(e: unknown): boolean {
+  const s = errShape(e);
+  return s != null
+    && (s.httpStatus === 409 || s.code === 4502)
+    && (s.message.includes('已完成') || s.message.includes('不可重复作答'));
+}

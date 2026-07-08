@@ -22,8 +22,9 @@ import { HomeworkListPage } from '../homework/HomeworkListPage';
 
 const noop = () => undefined;
 
+// 注:id 由 ...over 提供(必选),不再显式重复展开(tsc TS2783,main 上即已报错,顺手修复)
 const asg = (over: Partial<AssignmentDto> & Pick<AssignmentDto, 'id'>): AssignmentDto => ({
-  id: over.id, paperId: 2, paperName: `作业${over.id}`, lessonId: null, kind: 'homework',
+  paperId: 2, paperName: `作业${over.id}`, lessonId: null, kind: 'homework',
   target: { courseId: 1 }, publishAt: '2026-06-06T00:00:00.000Z', dueAt: null,
   scoreCounted: true, questionCount: 5, totalScore: 20, myAttempt: null, ...over,
 });
