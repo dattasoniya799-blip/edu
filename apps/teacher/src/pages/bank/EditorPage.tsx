@@ -11,6 +11,7 @@ import type { KpGraphDto, QuestionDto, QuestionType } from '@qiming/contracts';
 import { Button, EmptyState, OssImage, Skeleton, TexText, useToast } from '@qiming/ui';
 import { api, resolveFigureSrc } from '../../api';
 import { TagPickerModal } from './components/TagPickerModal';
+import { chaptersOf, curriculumGraphForSubject } from './lib/kpTree';
 import { TEX_SNIPPETS, insertSnippet } from './lib/snippets';
 import {
   DIFF_LABEL, SUBJECTS, TYPE_LABEL, canPublishQuestion, emptyForm, formToInput, normalizeOptionLatex, questionToForm,
@@ -165,15 +166,20 @@ export function EditorPage() {
   const allowPublish = canPublishQuestion(editId == null ? null : status);
 
   useEffect(() => {
-    api.get('/kp/graphs').then(async (r) => {
-      setGraphs(r.data);
-      const curriculum = r.data.find((g) => g.graphType === 'curriculum_knowledge');
-      if (curriculum) {
-        const nodes = await api.get('/kp/nodes', { query: { graphId: curriculum.id } });
-        setChapters([...new Set(nodes.data.map((n) => n.chapter).filter((c): c is string => !!c))]);
-      }
-    }).catch(() => undefined);
+    api.get('/kp/graphs').then((r) => setGraphs(r.data)).catch(() => undefined);
   }, []);
+
+  // 章节候选 = 当前学科的「教材知识点」图谱的章节(此前恒取第一张 curriculum 图谱 → 永远数学,
+  // 物理/化学题的「章节」被串成数学章节)。学科切换 → 重新拉该学科图谱的章节。
+  useEffect(() => {
+    const curriculum = curriculumGraphForSubject(graphs, form.subject);
+    if (!curriculum) { setChapters([]); return; }
+    let alive = true;
+    api.get('/kp/nodes', { query: { graphId: curriculum.id } })
+      .then((r) => { if (alive) setChapters(chaptersOf(r.data)); })
+      .catch(() => undefined);
+    return () => { alive = false; };
+  }, [graphs, form.subject]);
 
   useEffect(() => {
     if (editId == null) return;
@@ -315,7 +321,8 @@ export function EditorPage() {
       <div className="mb-3.5 flex flex-wrap items-end gap-3 rounded-lg border border-line bg-card px-5 py-4 shadow-card">
         {([
           ['学段', form.stage, STAGES, (v: string) => patch({ stage: v })],
-          ['学科', form.subject, SUBJECTS, (v: string) => patch({ subject: v })],
+          // 切学科 → 已选章节联动重置(章节候选随学科变化,避免物理题挂着数学章节);三维标注弹窗亦按 subject 过滤图谱
+          ['学科', form.subject, SUBJECTS, (v: string) => patch(v === form.subject ? { subject: v } : { subject: v, chapter: '' })],
           ['教材版本', form.textbookVersion, VERSIONS, (v: string) => patch({ textbookVersion: v })],
         ] as const).map(([label, value, opts, onChange]) => (
           <label key={label} className="flex flex-col gap-1.5">
@@ -328,6 +335,7 @@ export function EditorPage() {
         <label className="flex flex-col gap-1.5">
           <span className="text-[11.5px] font-semibold text-ink-2">章节</span>
           <select className={EM_SELECT} value={form.chapter} onChange={(e) => patch({ chapter: e.target.value })}>
+            <option value="">未选章节</option>
             {[...new Set([form.chapter, ...chapters])].filter(Boolean).map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </label>

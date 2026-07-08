@@ -14,6 +14,7 @@ import { Button, Card, EmptyState, Modal, Skeleton, Tag, useToast } from '@qimin
 import { api } from '../../api';
 import { PageHead } from '../Shell';
 import { CHECKLIST_LABEL, bizError, missingMessages, newSegment, pendingPaperKeys } from './lib/segments';
+import { arrangeKpGraphId } from './lib/pickers';
 import {
   UNIT_SLOT_LABEL, mergeSegments, newUnit, openingFromLesson, openingToConfig, outsideSegments,
   segmentsToUnits, unitWarnings, unitsDuration, unitsToSegments,
@@ -76,15 +77,19 @@ export function LessonArrangePage() {
       .finally(() => setLoading(false));
   }, [lessonId]);
 
+  // 「选择知识点」弹窗的图谱按课程学科取(此前恒取第一张 curriculum 图谱 → 非数学课也列数学知识点);
+  // 课程学科经 lesson.courseId ↔ GET /teacher/courses 解析(讲次本身不带 subject)。
+  const courseId = lesson?.courseId ?? null;
   useEffect(() => {
-    api.get('/kp/graphs')
-      .then((g) => {
-        const graph = g.data.find((x) => x.graphType === 'curriculum_knowledge') ?? g.data[0];
-        if (!graph) return;
-        return api.get('/kp/nodes', { query: { graphId: graph.id } }).then((n) => setKpNodes(n.data));
+    if (courseId == null) return;
+    Promise.all([api.get('/kp/graphs'), api.get('/teacher/courses')])
+      .then(([g, c]) => {
+        const graphId = arrangeKpGraphId(g.data, c.data, courseId);
+        if (graphId == null) return;
+        return api.get('/kp/nodes', { query: { graphId } }).then((n) => setKpNodes(n.data));
       })
       .catch(() => undefined);
-  }, []);
+  }, [courseId]);
 
   const paperById = useMemo(() => new Map(papers.map((p) => [p.id, p])), [papers]);
   const resourceById = useMemo(() => new Map(resources.map((r) => [r.id, r])), [resources]);
