@@ -4,7 +4,7 @@ import { AuditService } from '../audit/audit.service';
 import type { JwtUser } from '../auth/auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CourseInputDto, CourseListQueryDto } from './admin.dto';
-import { dec, iso, num, round2 } from './helpers';
+import { dec, iso, num, round2, utcDayStart } from './helpers';
 
 export interface RosterItem {
   studentId: number;
@@ -308,6 +308,7 @@ export class CoursesService {
     if (!rows.length) return [];
     const ids = rows.map((r) => r.id);
     const now = new Date();
+    const todayStart = utcDayStart(); // S5:与 Course/StudentMisc 同口径,整天已过的讲次计为"已结束"
 
     const [teachers, enrollCnt, lessons, assignments, sessions] = await Promise.all([
       this.prisma.client.user.findMany({
@@ -319,7 +320,7 @@ export class CoursesService {
       }),
       this.prisma.client.lesson.findMany({
         where: { courseId: { in: ids } },
-        select: { courseId: true, status: true, scheduledStart: true },
+        select: { courseId: true, status: true, scheduledStart: true, scheduledEnd: true },
       }),
       this.prisma.client.assignment.findMany({
         where: { kind: 'homework', lessonId: { not: null }, lesson: { courseId: { in: ids } } },
@@ -383,7 +384,10 @@ export class CoursesService {
         teacherId: num(c.teacherId),
         teacherName: teacherName.get(String(c.teacherId)) ?? '',
         totalLessons: c.totalLessons,
-        currentLesson: myLessons.filter((l) => l.status === 'finished').length,
+        // S5(m6):已结束讲次数 = 已 finished 或 scheduledEnd 早于今日 0 点(见 CourseService 说明)
+        currentLesson: myLessons.filter(
+          (l) => l.status === 'finished' || (l.scheduledEnd != null && l.scheduledEnd < todayStart),
+        ).length,
         studentCount,
         status: c.status,
         nextLessonAt: upcoming.length ? iso(upcoming[0]) : null,

@@ -129,32 +129,44 @@ export class GradingService {
 
   // ================= 教师复核 =================
 
-  /** GET /grading/pending:submitted attempt 中未复核的主观题,按作业聚合(仅归属当前教师的作业) */
+  /**
+   * GET /grading/pending:待教师处理的作业,按作业聚合(仅归属当前教师的作业)。
+   * S3(M3):列表不再依赖"有待批主观题"—— 凡有 submitted(未 finalize)attempt 的作业都进列表,
+   * 即使 pendingCount=0(学生跳过没答主观题,无待复核作答行)。否则这类作业永不出现在批改入口、
+   * 教师无从 finalize,学生永挂 submitted。纯客观卷交卷即自动出分(graded),不会停在 submitted,
+   * 故不会污染列表;wrong_redo 等 teacherId=null 无锚点的自发作业经归属过滤天然不可见。
+   * pendingCount = 该作业下未复核的 solution/公式填空作答数(可为 0);aiAvgScore 同口径。
+   */
   async pending(user: JwtUser): Promise<PendingGroupDto[]> {
+    // 1) 有 submitted(未 finalize)attempt 的作业全集 —— 每份都需教师 finalize,哪怕 0 待批
+    const submittedAssignments = await this.prisma.client.attempt.findMany({
+      where: { status: 'submitted' },
+      distinct: ['assignmentId'],
+      select: {
+        assignment: {
+          select: {
+            id: true,
+            teacherId: true,
+            lessonId: true,
+            target: true,
+            paper: { select: { name: true } },
+          },
+        },
+      },
+    });
+    // 2) submitted attempt 中未判定的作答(isCorrect=null)→ 计 pendingCount / aiAvgScore
     const rows = await this.prisma.client.answer.findMany({
       where: { isCorrect: null, attempt: { status: 'submitted' } },
       select: {
         questionId: true,
         grading: { select: { aiScore: true, finalScore: true } },
-        attempt: {
-          select: {
-            assignment: {
-              select: {
-                id: true,
-                teacherId: true,
-                lessonId: true,
-                target: true,
-                paper: { select: { name: true } },
-              },
-            },
-          },
-        },
+        attempt: { select: { assignmentId: true } },
       },
     });
     // 归属过滤(统一规则,见 assignment-ownership.util):teacherId=本人,
     // 或 teacherId 为空且 course 锚点属本人;学生自发(无 teacher 无锚点,如 wrong_redo)任何教师不可见。
     const assignments = [
-      ...new Map(rows.map((r) => [String(r.attempt.assignment.id), r.attempt.assignment])).values(),
+      ...new Map(submittedAssignments.map((a) => [String(a.assignment.id), a.assignment])).values(),
     ];
     const owned = await ownedAssignmentIds(this.prisma.client, user, assignments);
     const ownable = (assignmentId: bigint): boolean => owned.has(String(assignmentId));
@@ -173,21 +185,24 @@ export class GradingService {
       string,
       { assignmentId: number; paperName: string; pendingCount: number; aiScores: number[] }
     >();
-    for (const r of rows) {
-      if (!reviewIds.has(String(r.questionId))) continue;
-      if (!ownable(r.attempt.assignment.id)) continue; // 非本人课程的作业不计入
-      if (r.grading?.finalScore != null) continue; // 已复核
-      const key = String(r.attempt.assignment.id);
-      const g = groups.get(key) ?? {
-        assignmentId: num(r.attempt.assignment.id),
-        paperName: r.attempt.assignment.paper.name,
+    // 先为每份归属本人、有 submitted attempt 的作业建组(pendingCount 起点 0)
+    for (const a of assignments) {
+      if (!ownable(a.id)) continue;
+      groups.set(String(a.id), {
+        assignmentId: num(a.id),
+        paperName: a.paper.name,
         pendingCount: 0,
         aiScores: [],
-      };
+      });
+    }
+    for (const r of rows) {
+      if (!reviewIds.has(String(r.questionId))) continue;
+      const g = groups.get(String(r.attempt.assignmentId)); // 仅归属本人的作业有组
+      if (!g) continue;
+      if (r.grading?.finalScore != null) continue; // 已复核
       g.pendingCount += 1;
       const aiScore = dec(r.grading?.aiScore);
       if (aiScore != null) g.aiScores.push(aiScore);
-      groups.set(key, g);
     }
     return [...groups.values()]
       .sort((a, b) => a.assignmentId - b.assignmentId)

@@ -102,31 +102,46 @@ export class AttemptService {
 
     const sid = BigInt(user.uid);
     const aid = BigInt(assignmentId);
-    const inProgress = await this.prisma.client.attempt.findFirst({
-      where: { assignmentId: aid, studentId: sid, status: 'in_progress' },
-      orderBy: { attemptNo: 'desc' },
-    });
-    if (inProgress) return this.toDto(inProgress.id); // 断点续答
 
-    // 作业 / 课堂练习(homework / in_class)一次性:已存在交卷或已出分的作答则不得再开新作答;
-    // 订正 / 错题重做 / 巩固(correction / wrong_redo / consolidation)仍允许多次重做。
-    if (assignment.kind === 'homework' || assignment.kind === 'in_class') {
-      const done = await this.prisma.client.attempt.findFirst({
-        where: { assignmentId: aid, studentId: sid, status: { in: ['submitted', 'graded'] } },
+    // S1 幂等化(配合 B1):同一(作业,学生)的"开始作答"用事务级 advisory lock 串行化,
+    // 杜绝 TOCTOU 双开 —— 无论并发两路(a)都读到无 in_progress 而双 INSERT 撞唯一约束
+    // (assignmentId,studentId,attempt_no),还是(b)后到一路读到先到已提交行、attempt_no+1
+    // 静默再开一份,都收敛为返回同一 in_progress attempt。既保住"已有 in_progress 直接返回"
+    // 的断点续答语义,也让 React StrictMode dev 双发 / 重复点击不再冒 409。业务性 409
+    //(homework/in_class 已完成禁重作)在锁内如实抛出,回滚事务后经 BizExceptionFilter → 409,行为不变。
+    const lockKey = `attempt:start:${aid}:${sid}`;
+    const attemptId = await this.prisma.client.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey})::bigint)`;
+
+      const inProgress = await tx.attempt.findFirst({
+        where: { assignmentId: aid, studentId: sid, status: 'in_progress' },
+        orderBy: { attemptNo: 'desc' },
         select: { id: true },
       });
-      if (done) throw new BizException(ERR_ATTEMPT_STATE, '该作业已完成,不可重复作答');
-    }
+      if (inProgress) return inProgress.id; // 断点续答 / 并发去重
 
-    const last = await this.prisma.client.attempt.findFirst({
-      where: { assignmentId: aid, studentId: sid },
-      orderBy: { attemptNo: 'desc' },
-      select: { attemptNo: true },
+      // 作业 / 课堂练习(homework / in_class)一次性:已存在交卷或已出分的作答则不得再开新作答;
+      // 订正 / 错题重做 / 巩固(correction / wrong_redo / consolidation)仍允许多次重做。
+      if (assignment.kind === 'homework' || assignment.kind === 'in_class') {
+        const done = await tx.attempt.findFirst({
+          where: { assignmentId: aid, studentId: sid, status: { in: ['submitted', 'graded'] } },
+          select: { id: true },
+        });
+        if (done) throw new BizException(ERR_ATTEMPT_STATE, '该作业已完成,不可重复作答');
+      }
+
+      const last = await tx.attempt.findFirst({
+        where: { assignmentId: aid, studentId: sid },
+        orderBy: { attemptNo: 'desc' },
+        select: { attemptNo: true },
+      });
+      const created = await tx.attempt.create({
+        data: { assignmentId: aid, studentId: sid, attemptNo: (last?.attemptNo ?? 0) + 1 } as never,
+        select: { id: true },
+      });
+      return created.id;
     });
-    const created = await this.prisma.client.attempt.create({
-      data: { assignmentId: aid, studentId: sid, attemptNo: (last?.attemptNo ?? 0) + 1 } as never,
-    });
-    return this.toDto(created.id);
+    return this.toDto(attemptId);
   }
 
   /** GET /student/attempts/:id(断点续答快照:已答 + 剩余) */

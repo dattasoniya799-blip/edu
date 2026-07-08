@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { CourseDto } from '@qiming/contracts';
-import { dec, iso, num, round2 } from '../admin/helpers';
+import { dec, iso, num, round2, utcDayStart } from '../admin/helpers';
 import type { JwtUser } from '../auth/auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -22,6 +22,7 @@ export class CourseService {
     if (!rows.length) return [];
     const ids = rows.map((r) => r.id);
     const now = new Date();
+    const todayStart = utcDayStart(); // S5:整天已过的讲次视为"已结束"(今日进行中/待上不计,避免歧义与时钟抖动)
 
     const [teachers, enrollCnt, lessons, assignments, sessions] = await Promise.all([
       this.prisma.client.user.findMany({
@@ -35,7 +36,7 @@ export class CourseService {
       }),
       this.prisma.client.lesson.findMany({
         where: { courseId: { in: ids } },
-        select: { courseId: true, status: true, scheduledStart: true },
+        select: { courseId: true, status: true, scheduledStart: true, scheduledEnd: true },
       }),
       this.prisma.client.assignment.findMany({
         where: { kind: 'homework', lessonId: { not: null }, lesson: { courseId: { in: ids } } },
@@ -102,7 +103,13 @@ export class CourseService {
         teacherId: num(c.teacherId),
         teacherName: teacherName.get(String(c.teacherId)) ?? '',
         totalLessons: c.totalLessons,
-        currentLesson: myLessons.filter((l) => l.status === 'finished').length,
+        // S5(m6):currentLesson = 已结束讲次数。此前只数 status='finished'(仅课堂会话 ended
+        // 结算时才置位),导致排了课、日期已过但未真正开过直播课的讲次永不计入 → 课程卡「第0/N讲」
+        // 卡住不动。改为最直觉且不抖动的口径:已结束 = 已 finished 或 排定结束时间早于今日 0 点
+        //(完整过去的整天讲次);今日进行中/待上的讲次不计,避免"当天下午把还没上的课算成已结束"的歧义。
+        currentLesson: myLessons.filter(
+          (l) => l.status === 'finished' || (l.scheduledEnd != null && l.scheduledEnd < todayStart),
+        ).length,
         studentCount,
         status: c.status,
         nextLessonAt: upcoming.length ? iso(upcoming[0]) : null,
