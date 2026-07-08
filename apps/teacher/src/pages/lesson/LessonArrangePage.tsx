@@ -13,8 +13,9 @@ import type { KpContentPackDto, KpNodeDto, LessonDto, LessonSegmentDto, PaperDto
 import { Button, Card, EmptyState, Modal, Skeleton, Tag, useToast } from '@qiming/ui';
 import { api } from '../../api';
 import { PageHead } from '../Shell';
+import { PAPER_TYPE_LABEL } from '../paper/lib/paperLibrary';
 import { CHECKLIST_LABEL, bizError, missingMessages, newSegment, pendingPaperKeys } from './lib/segments';
-import { arrangeKpGraphId } from './lib/pickers';
+import { arrangeKpGraphId, homeworkPaperChoices } from './lib/pickers';
 import {
   UNIT_SLOT_LABEL, mergeSegments, newUnit, openingFromLesson, openingToConfig, outsideSegments,
   segmentsToUnits, unitWarnings, unitsDuration, unitsToSegments,
@@ -220,7 +221,12 @@ export function LessonArrangePage() {
       : mountSlot === 'practice'
         ? papers.filter((p) => p.type === 'practice').map((p) => ({ id: p.id, name: p.name, meta: `${p.questions.length} 题 · ${p.totalScore} 分` }))
         : mountSlot === 'homework'
-          ? papers.filter((p) => p.type === 'homework').map((p) => ({ id: p.id, name: p.name, meta: `${p.questions.length} 题 · ${p.totalScore} 分${p.status !== 'published' ? ' · 未发布' : ''}` }))
+          // 任意已发布卷都能布置为课后作业(此前只列 type=homework,练习卷被静默排除;2026-07 用户批准);
+          // 选项带类型标注(随堂练/课后作业/考试),homework 优先。若服务端仍限制 homework 段挂卷类型,需另行放开。
+          ? homeworkPaperChoices(papers).map((p) => ({
+            id: p.id, name: p.name,
+            meta: `${PAPER_TYPE_LABEL[p.type]} · ${p.questions.length} 题 · ${p.totalScore} 分${p.status !== 'published' ? ' · 未发布' : ''}`,
+          }))
           : [];
   const mountSelectedId = mountIsOpening
     ? opening.resourceId
