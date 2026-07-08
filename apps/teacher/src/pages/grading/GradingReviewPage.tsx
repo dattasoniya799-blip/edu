@@ -153,11 +153,31 @@ export function GradingReviewPage() {
     );
   }
   if (briefs.length === 0) {
+    // 空态不做死路:没有主观题的作业(纯客观题/学生跳过主观题)也要能从这里出分(finalize)
     return (
       <div>
-        <PageHead title="解答题复核" />
+        <PageHead
+          title={(
+            <span>
+              <Link className="text-[15px] font-semibold text-primary hover:underline" to="/grading">← 批改</Link>
+              <span className="text-ink-3"> / </span>{paperName || '课后作业'} · 主观题复核
+            </span>
+          )}
+          sub="客观题已自动批改完成 · 本次作业没有需要人工复核的主观题作答"
+          actions={<Button variant="primary" onClick={finalize} disabled={busy}>完成复核,出分</Button>}
+        />
         <div className="rounded-lg border border-line bg-card shadow-card">
-          <EmptyState icon="✓" text="该作业没有待复核的主观题" action={<Button onClick={() => navigate('/grading')}>返回批改列表</Button>} />
+          <EmptyState
+            icon="✓"
+            text="没有需要人工复核的题目,可直接出分"
+            hint="出分后成绩单生成,成绩与解析对学生可见"
+            action={(
+              <div className="flex gap-2.5">
+                <Button onClick={() => navigate('/grading')}>返回批改列表</Button>
+                <Button variant="primary" onClick={finalize} disabled={busy}>{busy ? '出分中…' : '完成复核,出分'}</Button>
+              </div>
+            )}
+          />
         </div>
       </div>
     );

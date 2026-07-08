@@ -19,6 +19,16 @@ describe('canPublishQuestion(round3 #3:仅草稿/新题可"提交入库")', () =
   });
 });
 
+describe('emptyForm(新题默认值不串科)', () => {
+  it('不预填章节(此前硬编码数学「第十九章 一次函数」,物理/化学新题被预填数学章节)', () => {
+    const f = emptyForm();
+    expect(f.chapter).toBe('');
+    // 空章节提交时省略字段,不写入串科数据
+    f.stemLatex = '题干';
+    expect(formToInput(f).chapter).toBeUndefined();
+  });
+});
+
 describe('normalizeOptionLatex', () => {
   it('裸 LaTeX 自动包 $..$(原型 renderOpt 行为)', () => {
     expect(normalizeOptionLatex('y=2x+4')).toBe('$y=2x+4$');

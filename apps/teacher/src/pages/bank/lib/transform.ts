@@ -81,8 +81,10 @@ export const DEFAULT_OPTIONS: OptionRow[] = ['A', 'B', 'C', 'D'].map((label) => 
 
 export function emptyForm(): QuestionForm {
   return {
+    // chapter 不预填(此前硬编码数学「第十九章 一次函数」,物理/化学新题被串成数学章节);
+    // 章节候选由 EditorPage 按当前学科的教材知识点图谱加载,空值提交时省略(formToInput chapter:'' → undefined)。
     type: 'single', stage: '初中', subject: '数学',
-    textbookVersion: '人教版', chapter: '第十九章 一次函数',
+    textbookVersion: '人教版', chapter: '',
     stemLatex: '', figures: [],
     options: DEFAULT_OPTIONS.map((o) => ({ ...o })),
     blankAnswers: [''], referenceLatex: '', rubric: [],

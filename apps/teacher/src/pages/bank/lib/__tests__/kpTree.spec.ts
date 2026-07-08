@@ -132,6 +132,25 @@ describe('filterAndGroupNodes(过滤 + 按章节分组展示)', () => {
   });
 });
 
+describe('录题页「章节」候选按当前学科取图谱(EditorPage 口径)', () => {
+  const phyNodes = [
+    node(11, '牛顿第一定律', { graphId: 4, chapter: '第八章 运动和力' }),
+    node(12, '二力平衡', { graphId: 4, chapter: '第八章 运动和力' }),
+    node(13, '摩擦力', { graphId: 4, chapter: '第八章 运动和力' }),
+  ];
+
+  it('物理题:章节图谱=物理教材知识点(而非恒取第一张=数学),章节列表来自物理节点', () => {
+    const graph = curriculumGraphForSubject(GRAPHS, '物理');
+    expect(graph?.id).toBe(4);
+    expect(graph?.subject).toBe('物理');
+    expect(chaptersOf(phyNodes)).toEqual(['第八章 运动和力']);
+  });
+
+  it('该学科无教材图谱(如语文)→ 无章节候选,不回退数学章节', () => {
+    expect(curriculumGraphForSubject(GRAPHS, '语文')).toBeUndefined();
+  });
+});
+
 describe('组卷按知识点筛题的级联目录', () => {
   it('curriculumGraphForSubject:取该学科教材体系;没有 → undefined', () => {
     expect(curriculumGraphForSubject(GRAPHS, '物理')?.id).toBe(4);
