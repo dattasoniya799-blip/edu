@@ -122,7 +122,7 @@ function HomeworkRow({ a, done, onClick }: { a: AssignmentDto; done: boolean; on
           graded ? (
             <div className="text-lg font-extrabold tabular-nums text-green">{a.myAttempt!.score}<span className="ml-0.5 text-xs font-semibold text-ink-3">分</span></div>
           ) : (
-            <div className="text-[13px] font-semibold text-orange">待批改</div>
+            <div className="text-[13px] font-semibold text-orange">已提交,待老师出分</div>
           )
         ) : (
           <div className="text-[13px] font-semibold text-primary">去完成 ›</div>

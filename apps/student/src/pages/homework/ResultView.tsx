@@ -38,10 +38,10 @@ export function ResultView({ attempt, assignment }: { attempt: AttemptWithQuesti
           {graded ? '✓' : '✦'}
         </div>
         <div className="min-w-0 flex-1">
-          <b className="block text-[15px]">{graded ? '已完成并出分' : '已交卷,解答题等待批改'}</b>
+          <b className="block text-[15px]">{graded ? '已完成并出分' : '已提交,待老师出分'}</b>
           <span className="text-[12.5px] text-ink-2">
             客观题 {rightCount}/{objectiveCount} 对
-            {!graded && ' · 解答题 AI 预批后由老师复核,出分后可在「我的课程」查看'}
+            {!graded && ' · 含主观题的卷由老师出分,出分后可回来看得分,错题会自动收进错题本'}
             {assignment && !assignment.scoreCounted && ' · 本卷为订正/重练,成绩不计分,但已更新掌握度与错题状态'}
           </span>
         </div>

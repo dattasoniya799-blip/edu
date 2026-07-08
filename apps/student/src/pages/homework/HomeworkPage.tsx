@@ -77,14 +77,21 @@ export function HomeworkPage() {
     );
   }
 
-  // 加载失败 / 作业不存在
+  // 加载失败 / 作业不存在:可重试;「已完成但定位不到成绩单」引导回作业列表
   if (at.phase === 'error' || !at.attempt) {
     return (
       <div className="mx-auto max-w-[1080px]">
         {head}
         <div className="rounded-lg border border-line bg-card p-10 text-center shadow-card">
           <div className="text-[13.5px] text-ink-3">{at.error ?? '作业不存在或已失效'}</div>
-          <Button variant="primary" className="min-h-touch mt-4" onClick={() => navigate('/')}>回到今日</Button>
+          <div className="mt-4 flex justify-center gap-2.5">
+            {at.errorKind === 'completed' ? (
+              <Button variant="primary" className="min-h-touch" onClick={() => navigate('/homework')}>回作业列表</Button>
+            ) : (
+              <Button variant="primary" className="min-h-touch" onClick={at.retry}>重试</Button>
+            )}
+            <Button className="min-h-touch" onClick={() => navigate('/')}>回到今日</Button>
+          </div>
         </div>
       </div>
     );
