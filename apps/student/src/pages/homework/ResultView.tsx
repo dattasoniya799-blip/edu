@@ -58,7 +58,11 @@ export function ResultView({ attempt, assignment }: { attempt: AttemptWithQuesti
         const a = byQid.get(q.questionId);
         const my = renderMyAnswer(a?.response ?? null);
         const tone = a?.isCorrect === true ? 'green' : a?.isCorrect === false ? 'red' : 'violet';
-        const verdict = a?.isCorrect === true ? '✓ 正确' : a?.isCorrect === false ? '✕ 错误' : '待批改';
+        // 已出分(graded)后不再显示「待批改」:没作答的题=未作答,人工批过的主观题=已批改
+        const verdict = a?.isCorrect === true ? '✓ 正确'
+          : a?.isCorrect === false ? '✕ 错误'
+          : !graded ? '待批改'
+          : a == null ? '未作答' : '已批改';
         return (
           <div key={q.questionId} className="rounded-lg border border-line bg-card p-5 shadow-card">
             <div className="mb-2.5 flex items-center gap-1.5">
@@ -66,7 +70,7 @@ export function ResultView({ attempt, assignment }: { attempt: AttemptWithQuesti
               <Tag tone={q.type === 'solution' ? 'green' : 'primary'}>{TYPE_LABEL[q.type] ?? q.type}</Tag>
               <Tag tone={tone}>{verdict}</Tag>
               <span className="ml-auto text-xs tabular-nums text-ink-3">
-                {a?.score != null ? `${a.score} / ${q.score} 分` : `${q.score} 分`}
+                {a?.score != null ? `${a.score} / ${q.score} 分` : graded ? `0 / ${q.score} 分` : `${q.score} 分`}
               </span>
             </div>
             <div className="text-sm leading-7 text-ink"><TexText src={q.stemLatex} /></div>
