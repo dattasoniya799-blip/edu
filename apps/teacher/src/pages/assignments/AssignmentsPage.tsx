@@ -41,7 +41,12 @@ export function AssignmentsPage() {
 
   return (
     <div>
-      <PageHead title="作业总览" sub="你布置过的全部作业 · 提交进度与批改状态一览;进行中可直接去批改" />
+      {/* 「去布置作业」引导入口:布置路径 = 我的课程 → 讲次编排「课后作业」区(挂已有卷或去组卷) */}
+      <PageHead
+        title="作业总览"
+        sub="你布置过的全部作业 · 提交进度与批改状态一览;进行中可直接去批改"
+        actions={<Button variant="primary" onClick={() => navigate('/courses')}>＋ 去布置作业</Button>}
+      />
 
       <div className="mb-4 flex gap-2">
         {FILTERS.map((f) => (
@@ -67,7 +72,12 @@ export function AssignmentsPage() {
         </div>
       ) : list.length === 0 ? (
         <div className="rounded-lg border border-line bg-card shadow-card">
-          <EmptyState icon="✦" text="还没有布置作业" hint="进入讲次编排「课后作业」区,从题库组卷并发布作业" />
+          <EmptyState
+            icon="✦"
+            text="还没有布置作业"
+            hint="进入讲次编排「课后作业」区,挂一份已有卷或从题库组卷发布作业"
+            action={<Button variant="primary" onClick={() => navigate('/courses')}>去布置作业</Button>}
+          />
         </div>
       ) : (
         <div className="flex flex-col gap-3">
