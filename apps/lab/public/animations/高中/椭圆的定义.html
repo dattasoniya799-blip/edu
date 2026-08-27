@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<!--
+════════════════ PRD · 椭圆的定义 ════════════════
+EVAL:动态收益 5(定义里的「和为定值」是一个贯穿整条曲线的不变量,
+      静态图上只能标一处,看不出「处处都成立」)
+      交互必要性 5(不亲手把点拖一圈,不会相信两段长度一直在此消彼长而和不动)
+      合计 10 → 通过
+
+一句话定位:
+  到两个定点距离之和保持不变的点,走出来的就是椭圆;那个定值等于长轴长 2a。
+
+核心误区:
+  学生把椭圆当成「压扁的圆」来记形状,不知道它是由一个距离条件定义的;
+  也常把 a、b、c 的关系记成 a² + b² = c²(那是勾股定理,椭圆里是 b² = a² − c²)。
+
+单一认知动作:
+  守恒 —— 两段线段各自在变,和一直不变。本页不讲标准方程的推导、不讲离心率的几何意义。
+
+交互流程:
+  1) 在画面上拖动点 P → P 沿着「到 F₁、F₂ 距离之和 = 8.00」的位置走 → 两段线段一长一短;
+  2) P 走过的地方留下痕迹 → 痕迹自己连成一条闭合曲线;
+  3) 阶段 3 打开焦距滑杆:c 变大椭圆变扁,而距离之和一动不动。
+
+分步揭示设计:
+  阶段 1:只有两个焦点、可拖的点 P、两条线段和三个数值(|PF₁|、|PF₂|、和)。不画椭圆。
+  阶段 2:补上完整的椭圆曲线,标出长轴 2a 与短轴 2b。
+  阶段 3:出定义式与 b² = a² − c²,同时放开焦距 c 滑杆。
+
+概念反馈文案:
+  - 「|PF₁| = 5.62、|PF₂| = 2.38,和 = 8.00。你已经拖过 9 个位置,这个和一次都没变。」
+  - 「一段变长,另一段就正好变短同样多 —— 曲线就是由『和不变』这一个条件定出来的。」
+  - 「c 从 2.40 调到 3.00,椭圆更扁了(b 由 3.20 变成 2.65),但和仍是 8.00 = 2a:
+     注意这里是 b² = a² − c²,不是 a² + b² = c²。」
+════════════════════════════════════════════════════
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="grade" content="高中">
+<meta name="topic" content="椭圆的定义">
+<meta name="difficulty" content="中">
+<meta name="cognitive" content="守恒">
+<meta name="desc" content="拖动点 P,看到两焦点的距离之和始终不变。">
+<meta name="kpNodeId" content="">
+<title>椭圆的定义 · 高中</title>
+<style>
+:root{
+  --paper:#fdf8f0; --sheet:#ffffff; --sheet-sub:#f5eee3; --rule:#e8dcc9;
+  --ink-1:#2a2118; --ink-2:#6b5d4c; --ink-3:#a49684;
+  --hi-a:#b3541e; --hi-a-soft:#fbe6d3;
+  --hi-b:#256b60; --hi-b-soft:#d9ece6;
+  --hi-c:#6d4b9c; --hi-c-soft:#e9e0f5;
+  --grid:#efe5d5; --axis:#8c7f6e;
+  --tap:44px; --r-lg:12px; --r-sm:7px;
+  --shade:0 1px 6px rgba(60,40,20,.09);
+  --font:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink-1);font-family:var(--font);
+     font-size:14px;line-height:1.6;overflow-x:hidden;-webkit-text-size-adjust:100%}
+.wrap{max-width:720px;margin:0 auto;padding:14px 12px 26px}
+h1{font-size:17px;margin:0 0 3px}
+.lead{color:var(--ink-2);font-size:12.5px;margin:0 0 10px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.tag{font-size:11.5px;padding:2px 9px;border-radius:999px;background:var(--sheet-sub);
+     color:var(--ink-2);border:1px solid var(--rule)}
+.card{background:var(--sheet);border:1px solid var(--rule);border-radius:var(--r-lg);
+      box-shadow:var(--shade);padding:11px;margin:0 0 11px}
+canvas{display:block;width:100%;height:auto;touch-action:none;border-radius:var(--r-sm)}
+.row{display:flex;align-items:center;gap:9px;min-height:var(--tap)}
+.name{font-family:var(--mono);font-size:13px;font-weight:700;width:44px;flex:none;color:var(--hi-c)}
+.val{font-family:var(--mono);font-size:13px;font-weight:700;width:52px;flex:none;text-align:right;color:var(--hi-c)}
+input[type=range]{flex:1;min-width:0;height:var(--tap);background:transparent;accent-color:var(--hi-c)}
+.hint{font-size:12px;color:var(--ink-3);margin:8px 0 0}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}
+button{font-family:var(--font);font-size:13.5px;min-height:var(--tap);padding:0 15px;
+       border-radius:var(--r-sm);border:1px solid var(--rule);background:var(--sheet-sub);
+       color:var(--ink-1);cursor:pointer}
+button.go{background:var(--hi-a-soft);border-color:var(--hi-a);color:var(--hi-a);font-weight:600}
+button:disabled{opacity:.45;cursor:default}
+.step{font-size:12px;color:var(--ink-2);margin-left:auto}
+.panel{font-family:var(--mono);font-size:13px;margin-top:9px;border-top:1px solid var(--rule);padding-top:8px}
+.panel div{display:flex;justify-content:space-between;min-height:24px;align-items:center}
+.panel .r1{color:var(--hi-a)}
+.panel .r2{color:var(--hi-b)}
+.panel .rs{color:var(--hi-c);border-top:1px dashed var(--rule);margin-top:4px;padding-top:4px;font-weight:700}
+.fb{background:var(--hi-b-soft);border-left:3px solid var(--hi-b);border-radius:var(--r-sm);
+    padding:9px 11px;font-size:13px}
+.fb b{color:var(--hi-b);font-family:var(--mono)}
+.eq{font-family:var(--mono);font-size:14.5px;font-weight:700;color:var(--hi-c);
+    background:var(--hi-c-soft);border-radius:var(--r-sm);padding:8px 11px;margin-top:9px}
+.eq small{display:block;font-family:var(--font);font-size:12px;font-weight:400;
+          color:var(--ink-2);margin-top:3px}
+.mono{font-family:var(--mono)}
+.hide{display:none}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>椭圆的定义</h1>
+  <p class="lead">图上两个黑点是定点 F₁、F₂。拖动点 P,盯住右下三个数字里最后那一个。</p>
+  <div class="tags">
+    <span class="tag">高中 · 圆锥曲线</span>
+    <span class="tag">认知动作:守恒</span>
+    <span class="tag">难度:中</span>
+  </div>
+
+  <section class="card">
+    <canvas id="cv" width="340" height="260" aria-label="两定点与到它们距离之和不变的点"></canvas>
+    <div class="row hide" id="crow">
+      <span class="name">c</span>
+      <input id="sc" type="range" min="1" max="3.6" step="0.1" value="2.4" aria-label="半焦距 c">
+      <span class="val" id="vc">2.40</span>
+    </div>
+    <p class="hint" id="hint">按住点 P 拖着它绕一圈,看看它能走到哪儿。</p>
+    <div class="bar">
+      <button id="next" class="go" type="button">下一步</button>
+      <button id="reset" type="button">重新开始</button>
+      <span class="step" id="stage">阶段 1 / 3</span>
+    </div>
+    <div class="panel" id="panel"></div>
+  </section>
+
+  <section class="card">
+    <div class="fb" id="fb">拖着点 P 走几步,读一下三个数字。</div>
+    <div class="eq hide" id="eq"></div>
+  </section>
+</main>
+
+<script>
+(function(){
+  'use strict';
+  var CS = getComputedStyle(document.documentElement);
+  function c(n){ return CS.getPropertyValue(n).trim(); }
+  var COL = {
+    grid:c('--grid'), axis:c('--axis'), sheet:c('--sheet'),
+    ink1:c('--ink-1'), ink2:c('--ink-2'), ink3:c('--ink-3'),
+    a:c('--hi-a'), aSoft:c('--hi-a-soft'),
+    b:c('--hi-b'), bSoft:c('--hi-b-soft'),
+    cc:c('--hi-c'), ccSoft:c('--hi-c-soft')
+  };
+  var MONO = c('--mono');
+  var TAU = Math.PI * 2;
+
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  var sc = document.getElementById('sc'), vc = document.getElementById('vc');
+  var crow = document.getElementById('crow');
+  var panel = document.getElementById('panel'), fb = document.getElementById('fb');
+  var eq = document.getElementById('eq'), hint = document.getElementById('hint');
+  var stageEl = document.getElementById('stage');
+  var btnNext = document.getElementById('next'), btnReset = document.getElementById('reset');
+
+  // a 固定:距离之和 2a 就是这个动画要守住的那个不变量,不给它滑杆。
+  var A = 4, C0 = 2.4, T0 = 0.9;
+  var st = { c:C0, t:T0, stage:1, drag:false, trail:[], stops:0 };
+
+  var VX = 6.4, W = 340, H = 260, unit = 26, ox = 170, oy = 130;
+  function layout(){
+    var w = Math.max(cv.clientWidth || 320, 250);
+    var h = Math.round(Math.min(Math.max(w * 0.76, 230), 340));
+    var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    W = w; H = h; unit = Math.min(w / (2 * VX), (h - 24) / (2 * 4.2));
+    ox = w / 2; oy = h / 2;
+  }
+  function px(x){ return ox + x * unit; }
+  function py(y){ return oy - y * unit; }
+  function n2(v){ return v.toFixed(2); }
+  function bAxis(){ return Math.sqrt(A * A - st.c * st.c); }
+  function pointAt(t){ return [A * Math.cos(t), bAxis() * Math.sin(t)]; }
+  function dist(x1, y1, x2, y2){ return Math.hypot(x1 - x2, y1 - y2); }
+
+  function drawFrame(){
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = COL.sheet; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = COL.grid; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (var i = -6; i <= 6; i++){ ctx.moveTo(px(i), 0); ctx.lineTo(px(i), H); }
+    for (var j = -4; j <= 4; j++){ ctx.moveTo(0, py(j)); ctx.lineTo(W, py(j)); }
+    ctx.stroke();
+    ctx.strokeStyle = COL.axis; ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(0, py(0)); ctx.lineTo(W, py(0));
+    ctx.moveTo(px(0), 0); ctx.lineTo(px(0), H);
+    ctx.stroke();
+  }
+
+  function drawEllipse(color, lw, dash){
+    ctx.save();
+    ctx.setLineDash(dash || []);
+    ctx.strokeStyle = color; ctx.lineWidth = lw;
+    ctx.beginPath();
+    for (var k = 0; k <= 180; k++){
+      var p = pointAt(k / 180 * TAU);
+      if (k === 0) ctx.moveTo(px(p[0]), py(p[1])); else ctx.lineTo(px(p[0]), py(p[1]));
+    }
+    ctx.closePath(); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawFocus(x, name){
+    ctx.beginPath(); ctx.arc(px(x), py(0), 5, 0, TAU);
+    ctx.fillStyle = COL.ink1; ctx.fill();
+    ctx.fillStyle = COL.ink2; ctx.font = '700 11.5px ' + MONO;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(name, px(x), py(0) + 7);
+  }
+
+  function draw(){
+    var p = pointAt(st.t), c1 = -st.c, c2 = st.c;
+    drawFrame();
+
+    // 阶段 1 不画曲线:P 走过的痕迹自己把椭圆画出来。
+    ctx.fillStyle = COL.cc;
+    for (var i = 0; i < st.trail.length; i++){
+      var q = pointAt(st.trail[i]);
+      ctx.beginPath(); ctx.arc(px(q[0]), py(q[1]), 1.8, 0, TAU); ctx.fill();
+    }
+    if (st.stage >= 2) drawEllipse(COL.cc, 2);
+
+    if (st.stage >= 2){
+      ctx.save();
+      ctx.setLineDash([5, 4]); ctx.strokeStyle = COL.ink3; ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(px(-A), py(0)); ctx.lineTo(px(A), py(0));
+      ctx.moveTo(px(0), py(-bAxis())); ctx.lineTo(px(0), py(bAxis()));
+      ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = COL.ink2; ctx.font = '700 11px ' + MONO;
+      ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+      ctx.fillText('2a=' + n2(2 * A), px(A) - 3, py(0) - 4);
+      ctx.textAlign = 'left';
+      ctx.fillText('2b=' + n2(2 * bAxis()), px(0) + 5, py(bAxis()) + 14);
+    }
+
+    ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+    ctx.strokeStyle = COL.a;
+    ctx.beginPath(); ctx.moveTo(px(c1), py(0)); ctx.lineTo(px(p[0]), py(p[1])); ctx.stroke();
+    ctx.strokeStyle = COL.b;
+    ctx.beginPath(); ctx.moveTo(px(c2), py(0)); ctx.lineTo(px(p[0]), py(p[1])); ctx.stroke();
+
+    drawFocus(c1, 'F₁'); drawFocus(c2, 'F₂');
+
+    ctx.beginPath(); ctx.arc(px(p[0]), py(p[1]), 10, 0, TAU);
+    ctx.fillStyle = COL.sheet; ctx.fill();
+    ctx.beginPath(); ctx.arc(px(p[0]), py(p[1]), 7, 0, TAU);
+    ctx.fillStyle = COL.cc; ctx.fill();
+    ctx.fillStyle = COL.cc; ctx.font = '700 12px ' + MONO;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('P', px(p[0]), py(p[1]) - 13);
+  }
+
+  function measures(){
+    var p = pointAt(st.t);
+    var r1 = dist(p[0], p[1], -st.c, 0), r2 = dist(p[0], p[1], st.c, 0);
+    return { r1:r1, r2:r2, sum:r1 + r2 };
+  }
+
+  function renderPanel(){
+    var m = measures();
+    panel.innerHTML =
+      '<div class="r1"><span>|PF₁|</span><span>' + n2(m.r1) + '</span></div>' +
+      '<div class="r2"><span>|PF₂|</span><span>' + n2(m.r2) + '</span></div>' +
+      '<div class="rs"><span>两段之和</span><span>' + n2(m.sum) + '</span></div>';
+  }
+
+  function feedback(){
+    var m = measures(), msg;
+    if (st.stops < 4){
+      msg = '|PF₁| = <b>' + n2(m.r1) + '</b>、|PF₂| = <b>' + n2(m.r2) + '</b>,和 = <b>' +
+            n2(m.sum) + '</b>。再换几个位置试试。';
+    } else {
+      msg = '你已经停在 ' + st.stops + ' 个不同位置了:一段变长,另一段就正好短同样多,和一直是 <b>' +
+            n2(m.sum) + '</b>。这条曲线就是由「到两定点距离之和不变」这一个条件定出来的。';
+    }
+    if (st.stage >= 3){
+      msg += ' 现在拖 c 滑杆:椭圆会变扁或变圆,而这个和不会动。';
+    }
+    fb.innerHTML = msg;
+  }
+
+  var HINTS = [
+    '按住点 P 拖着它绕一圈,看看它能走到哪儿。',
+    '痕迹连成的就是这条椭圆。长轴 2a 与短轴 2b 已经标出来了。',
+    '拖 c 滑杆改焦距:形状在变,和不变。'
+  ];
+
+  function render(){
+    vc.textContent = n2(st.c);
+    stageEl.textContent = '阶段 ' + st.stage + ' / 3';
+    hint.textContent = HINTS[st.stage - 1];
+    btnNext.disabled = st.stage >= 3;
+    if (st.stage >= 3){
+      crow.classList.remove('hide');
+      eq.classList.remove('hide');
+      eq.innerHTML = '|PF₁| + |PF₂| = 2a = ' + n2(2 * A) +
+        '<small>a = ' + n2(A) + '、c = ' + n2(st.c) + ',于是 b = √(a² − c²) = ' + n2(bAxis()) +
+        '。椭圆里是 b² = a² − c²,别和勾股定理的 a² + b² = c² 记混。</small>';
+    } else {
+      crow.classList.add('hide');
+      eq.classList.add('hide');
+    }
+    renderPanel();
+    draw();
+    feedback();
+  }
+
+  function local(ev){
+    var r = cv.getBoundingClientRect();
+    return [ev.clientX - r.left, ev.clientY - r.top];
+  }
+  // 拖动 = 用指针方向决定 P 的参数角:手往哪转,P 就往哪转。
+  function setFromPointer(sx, sy){
+    var x = (sx - ox) / unit, y = (oy - sy) / unit;
+    st.t = Math.atan2(y / bAxis(), x / A);
+    if (st.t < 0) st.t += TAU;
+    var last = st.trail.length ? st.trail[st.trail.length - 1] : null;
+    if (last === null || Math.abs(st.t - last) > 0.03) st.trail.push(st.t);
+    if (st.trail.length > 400) st.trail.shift();
+  }
+
+  cv.addEventListener('pointerdown', function(ev){
+    var p = local(ev), q = pointAt(st.t);
+    if (Math.hypot(p[0] - px(q[0]), p[1] - py(q[1])) <= 28){
+      st.drag = true; cv.setPointerCapture(ev.pointerId); ev.preventDefault();
+    }
+  });
+  cv.addEventListener('pointermove', function(ev){
+    if (!st.drag) return;
+    var p = local(ev);
+    setFromPointer(p[0], p[1]);
+    render(); ev.preventDefault();
+  });
+  function endDrag(){
+    if (st.drag){ st.drag = false; st.stops++; feedback(); }
+  }
+  cv.addEventListener('pointerup', endDrag);
+  cv.addEventListener('pointercancel', endDrag);
+
+  sc.addEventListener('input', function(){
+    st.c = parseFloat(sc.value);
+    st.trail.length = 0;
+    render();
+    var m = measures();
+    fb.innerHTML = 'c = <b>' + n2(st.c) + '</b>:椭圆' +
+      (st.c > C0 ? '比一开始扁' : (st.c < C0 ? '比一开始圆' : '回到初始形状') ) +
+      '了(b = ' + n2(bAxis()) + '),但 |PF₁| + |PF₂| 还是 <b>' + n2(m.sum) +
+      '</b> = 2a。焦点挪位改变的是形状,不是那个和。';
+  });
+  btnNext.addEventListener('click', function(){ if (st.stage < 3){ st.stage++; render(); } });
+  btnReset.addEventListener('click', function(){
+    st.c = C0; st.t = T0; st.stage = 1; st.trail = []; st.stops = 0; st.drag = false;
+    sc.value = String(C0); vc.textContent = n2(C0);
+    stageEl.textContent = '阶段 1 / 3';
+    hint.textContent = HINTS[0];
+    btnNext.disabled = false;
+    crow.classList.add('hide'); eq.classList.add('hide');
+    fb.textContent = '拖着点 P 走几步,读一下三个数字。';
+    layout(); renderPanel(); draw();
+  });
+  window.addEventListener('resize', function(){ layout(); draw(); });
+
+  layout(); renderPanel(); draw();
+})();
+</script>
+</body>
+</html>

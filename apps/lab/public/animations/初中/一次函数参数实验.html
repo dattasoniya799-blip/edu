@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<!--
+════════════════ PRD · 一次函数参数实验 ════════════════
+EVAL:动态收益 4(k、b 各管一种性质,静态要画一族直线才说得清)
+      交互必要性 5(「k 变陡但过 y 轴那点不动」必须自己拖才有体感)
+      合计 9 → 通过
+
+一句话定位:
+  k 决定直线倾斜的方向和陡缓,b 决定直线穿过 y 轴的位置,改一个不影响另一个。
+
+核心误区:
+  学生常把 b 当成「直线与 x 轴的交点」,或者以为 k 一变、直线和 y 轴的交点也跟着跑。
+
+单一认知动作:
+  变换 —— 参数连续改变,直线连续变形。本页不讲解方程、不讲不等式、不讲待定系数法。
+
+交互流程:
+  1) 向右拖 k 滑杆 → 直线绕 (0,b) 逆时针抬起、变陡 → 同一段水平位移换来更大的上升;
+     向左拖过 0 → 直线翻向右下 → 上升变成下降。
+  2) 向右拖 b 滑杆 → 整条直线平行上移 → 倾斜程度一点没变。
+  3) 每次拖动,反馈区立刻写出当前数值说明的规律。
+
+分步揭示设计:
+  阶段 1:只有坐标系 + 一条可调直线 + 两根滑杆。没有标注、没有公式。
+  阶段 2:加 (0,b) 截距点 与 Δx=1 / Δy=k 的台阶标注(把 k 读成「右 1 格抬几格」)。
+  阶段 3:出解析式与增减性结论。
+
+概念反馈文案:
+  - 「k = 1.8 是正数,x 每往右 1 格,y 就抬 1.8 格 —— 这就是 k 为正时 y 随 x 增大而增大。」
+  - 「k 从头到尾在变,直线却一直穿过 (0, 2.0) 这一个点:b 没动,交点就不会动。」
+  - 「b = -1.5,直线与 y 轴交在 (0, -1.5)。它是纵轴上的交点,不是与 x 轴的交点。」
+════════════════════════════════════════════════════
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="grade" content="初中">
+<meta name="topic" content="一次函数的图象与性质">
+<meta name="difficulty" content="中">
+<meta name="cognitive" content="变换">
+<meta name="desc" content="拖 k 与 b 两根滑杆,看直线怎么转、怎么上下平移。">
+<meta name="kpNodeId" content="MATH-JH-8B-19-CP13">
+<title>一次函数参数实验 · 初中</title>
+<style>
+:root{
+  --paper:#fdf8f0; --sheet:#ffffff; --sheet-sub:#f5eee3; --rule:#e8dcc9;
+  --ink-1:#2a2118; --ink-2:#6b5d4c; --ink-3:#a49684;
+  --hi-a:#b3541e; --hi-a-soft:#fbe6d3;
+  --hi-b:#256b60; --hi-b-soft:#d9ece6;
+  --hi-c:#6d4b9c; --hi-c-soft:#e9e0f5;
+  --grid:#efe5d5; --axis:#8c7f6e;
+  --tap:44px; --r-lg:12px; --r-sm:7px;
+  --shade:0 1px 6px rgba(60,40,20,.09);
+  --font:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink-1);font-family:var(--font);
+     font-size:14px;line-height:1.6;overflow-x:hidden;-webkit-text-size-adjust:100%}
+.wrap{max-width:720px;margin:0 auto;padding:14px 12px 26px}
+h1{font-size:17px;margin:0 0 3px}
+.lead{color:var(--ink-2);font-size:12.5px;margin:0 0 10px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.tag{font-size:11.5px;padding:2px 9px;border-radius:999px;background:var(--sheet-sub);
+     color:var(--ink-2);border:1px solid var(--rule)}
+.card{background:var(--sheet);border:1px solid var(--rule);border-radius:var(--r-lg);
+      box-shadow:var(--shade);padding:11px;margin:0 0 11px}
+canvas{display:block;width:100%;height:auto;touch-action:none;border-radius:var(--r-sm)}
+.row{display:flex;align-items:center;gap:9px;min-height:var(--tap)}
+.name{font-family:var(--mono);font-size:13.5px;font-weight:700;width:34px;flex:none}
+.val{font-family:var(--mono);font-size:13.5px;font-weight:700;width:52px;flex:none;text-align:right}
+.row.pk .name,.row.pk .val{color:var(--hi-a)}
+.row.pb .name,.row.pb .val{color:var(--hi-b)}
+input[type=range]{flex:1;min-width:0;height:var(--tap);background:transparent}
+.row.pk input[type=range]{accent-color:var(--hi-a)}
+.row.pb input[type=range]{accent-color:var(--hi-b)}
+.hint{font-size:12px;color:var(--ink-3);margin:2px 0 0}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}
+button{font-family:var(--font);font-size:13.5px;min-height:var(--tap);padding:0 15px;
+       border-radius:var(--r-sm);border:1px solid var(--rule);background:var(--sheet-sub);
+       color:var(--ink-1);cursor:pointer}
+button.go{background:var(--hi-a-soft);border-color:var(--hi-a);color:var(--hi-a);font-weight:600}
+button:disabled{opacity:.45;cursor:default}
+.step{font-size:12px;color:var(--ink-2);margin-left:auto}
+.fb{background:var(--hi-b-soft);border-left:3px solid var(--hi-b);border-radius:var(--r-sm);
+    padding:9px 11px;font-size:13px;color:var(--ink-1)}
+.fb b{color:var(--hi-b)}
+.eq{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--hi-c);
+    background:var(--hi-c-soft);border-radius:var(--r-sm);padding:8px 11px;margin-top:9px}
+.eq small{display:block;font-family:var(--font);font-size:12px;font-weight:400;
+          color:var(--ink-2);margin-top:3px}
+.mono{font-family:var(--mono)}
+.hide{display:none}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>一次函数参数实验</h1>
+  <p class="lead">拖两根滑杆,看 <span class="mono">y = kx + b</span> 里的 k 和 b 各自管着直线的什么。</p>
+  <div class="tags">
+    <span class="tag">初中 · 一次函数</span>
+    <span class="tag">认知动作:变换</span>
+    <span class="tag">难度:中</span>
+  </div>
+
+  <section class="card">
+    <canvas id="cv" width="360" height="290" aria-label="一次函数图象"></canvas>
+    <div class="ctl">
+      <div class="row pk">
+        <span class="name">k</span>
+        <input id="sk" type="range" min="-3" max="3" step="0.1" value="1" aria-label="斜率 k">
+        <span class="val" id="vk">1.0</span>
+      </div>
+      <div class="row pb">
+        <span class="name">b</span>
+        <input id="sb" type="range" min="-4" max="4" step="0.5" value="0" aria-label="截距 b">
+        <span class="val" id="vb">0.0</span>
+      </div>
+      <p class="hint" id="hint">先只管 k:向右拖,看直线怎么动。</p>
+      <div class="bar">
+        <button id="next" class="go" type="button">下一步</button>
+        <button id="reset" type="button">重置</button>
+        <span class="step" id="stage">阶段 1 / 3</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="fb" id="fb">向右拖 k 滑杆试试。</div>
+    <div class="eq hide" id="eq"></div>
+  </section>
+</main>
+
+<script>
+(function(){
+  'use strict';
+  var CS = getComputedStyle(document.documentElement);
+  function c(n){ return CS.getPropertyValue(n).trim(); }
+  var COL = {
+    grid:c('--grid'), axis:c('--axis'), sheet:c('--sheet'),
+    ink1:c('--ink-1'), ink2:c('--ink-2'), ink3:c('--ink-3'),
+    a:c('--hi-a'), aSoft:c('--hi-a-soft'),
+    b:c('--hi-b'), bSoft:c('--hi-b-soft'),
+    cc:c('--hi-c'), ccSoft:c('--hi-c-soft')
+  };
+  var MONO = c('--mono');
+
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  var sk = document.getElementById('sk'), sb = document.getElementById('sb');
+  var vk = document.getElementById('vk'), vb = document.getElementById('vb');
+  var fb = document.getElementById('fb'), eq = document.getElementById('eq');
+  var hint = document.getElementById('hint'), stageEl = document.getElementById('stage');
+  var btnNext = document.getElementById('next'), btnReset = document.getElementById('reset');
+
+  var K0 = 1, B0 = 0;
+  var state = { k:K0, b:B0, stage:1, last:'k' };
+  var W = 360, H = 290, unit = 30, ox = 180, oy = 145;
+
+  // 世界坐标固定 x∈[-6,6];y 半幅由画布高度决定,保证横纵同比例(不歪曲斜率)。
+  function layout(){
+    var w = Math.max(cv.clientWidth || 340, 260);
+    var h = Math.round(Math.min(Math.max(w * 0.80, 250), 400));
+    var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    W = w; H = h; unit = w / 12; ox = w / 2; oy = h / 2;
+  }
+  function px(x){ return ox + x * unit; }
+  function py(y){ return oy - y * unit; }
+  function yTop(){ return (H / 2) / unit; }
+
+  function num(v, d){ return v.toFixed(d === undefined ? 1 : d); }
+
+  function drawGrid(){
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = COL.sheet; ctx.fillRect(0, 0, W, H);
+    ctx.lineWidth = 1; ctx.strokeStyle = COL.grid;
+    ctx.beginPath();
+    for (var i = -6; i <= 6; i++){ ctx.moveTo(px(i), 0); ctx.lineTo(px(i), H); }
+    var t = Math.ceil(yTop());
+    for (var j = -t; j <= t; j++){ ctx.moveTo(0, py(j)); ctx.lineTo(W, py(j)); }
+    ctx.stroke();
+
+    ctx.strokeStyle = COL.axis; ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(0, py(0)); ctx.lineTo(W, py(0));
+    ctx.moveTo(px(0), 0); ctx.lineTo(px(0), H);
+    ctx.stroke();
+    ctx.fillStyle = COL.ink3; ctx.font = '600 11px ' + MONO;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (var m = -5; m <= 5; m++){
+      if (m === 0) continue;
+      ctx.fillText(String(m), px(m), py(0) + 4);
+    }
+    ctx.textAlign = 'left';
+    ctx.fillText('x', W - 12, py(0) + 4);
+    ctx.textBaseline = 'top'; ctx.fillText('y', px(0) + 5, 3);
+  }
+
+  function drawLine(){
+    var k = state.k, b = state.b;
+    ctx.strokeStyle = COL.a; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(px(-6), py(k * -6 + b));
+    ctx.lineTo(px(6), py(k * 6 + b));
+    ctx.stroke();
+  }
+
+  // 阶段 2:截距点 + 「右 1 格、抬 k 格」的台阶,把 k 读成一个可数的动作。
+  function drawStep(){
+    var k = state.k, b = state.b;
+    ctx.setLineDash([5, 4]); ctx.lineWidth = 1.6; ctx.strokeStyle = COL.cc;
+    ctx.beginPath();
+    ctx.moveTo(px(0), py(b)); ctx.lineTo(px(1), py(b));
+    ctx.lineTo(px(1), py(k + b));
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = COL.cc; ctx.font = '700 12px ' + MONO;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('Δx=1', px(0.5), py(b) + 3);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('Δy=' + num(k), px(1) + 6, py(b + k / 2));
+
+    ctx.fillStyle = COL.b;
+    ctx.beginPath(); ctx.arc(px(0), py(b), 5.5, 0, Math.PI * 2); ctx.fill();
+    ctx.font = '700 12px ' + MONO; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText('(0, ' + num(b) + ')', px(0) + 9, py(b) - 7);
+  }
+
+  function draw(){
+    drawGrid();
+    drawLine();
+    if (state.stage >= 2) drawStep();
+  }
+
+  function feedback(){
+    var k = state.k, b = state.b, msg;
+    if (state.last === 'k'){
+      if (Math.abs(k) < 0.05){
+        msg = '<b>k = 0</b> 时图象成了一条水平线,y 不再随 x 变 —— 一次函数要求 k ≠ 0,' +
+              '往左或往右挪一点再看。';
+      } else if (k > 0){
+        msg = '<b>k = ' + num(k) + '</b> 是正数:x 每往右 1 格,y 就抬 ' + num(k) +
+              ' 格,所以 y 随 x 增大而增大。刚才这一路,直线始终穿过 (0, ' + num(b) + ')。';
+      } else {
+        msg = '<b>k = ' + num(k) + '</b> 是负数:x 每往右 1 格,y 反而降 ' + num(-k) +
+              ' 格,所以 y 随 x 增大而减小。直线还是穿过 (0, ' + num(b) + ') 那一点。';
+      }
+    } else {
+      msg = '<b>b = ' + num(b) + '</b>:直线与 y 轴交在 (0, ' + num(b) +
+            ')。它是纵轴上的交点,不是与 x 轴的交点。整条线只是平行搬了个家,倾斜程度没变。';
+    }
+    fb.innerHTML = msg;
+  }
+
+  function equation(){
+    var k = state.k, b = state.b;
+    var sign = b < 0 ? ' − ' : ' + ';
+    var trend = Math.abs(k) < 0.05 ? '（k = 0,此时不是一次函数）'
+      : (k > 0 ? 'k > 0:y 随 x 增大而增大' : 'k < 0:y 随 x 增大而减小');
+    eq.innerHTML = 'y = ' + num(k) + 'x' + sign + num(Math.abs(b)) +
+      '<small>' + trend + '　·　直线与 y 轴交点 (0, ' + num(b) + ')</small>';
+  }
+
+  var HINTS = [
+    '先只管 k:向右拖,看直线怎么动。',
+    '看虚线台阶:往右 1 格,直线抬起 Δy 格,那就是 k。现在也试试拖 b。',
+    '两个参数一起看:k 管倾斜,b 管上下,互不干扰。'
+  ];
+
+  function render(){
+    vk.textContent = num(state.k);
+    vb.textContent = num(state.b);
+    stageEl.textContent = '阶段 ' + state.stage + ' / 3';
+    hint.textContent = HINTS[state.stage - 1];
+    btnNext.disabled = state.stage >= 3;
+    if (state.stage >= 3){ eq.classList.remove('hide'); equation(); }
+    else eq.classList.add('hide');
+    draw();
+    feedback();
+  }
+
+  sk.addEventListener('input', function(){ state.k = parseFloat(sk.value); state.last = 'k'; render(); });
+  sb.addEventListener('input', function(){ state.b = parseFloat(sb.value); state.last = 'b'; render(); });
+  btnNext.addEventListener('click', function(){ if (state.stage < 3){ state.stage++; render(); } });
+  btnReset.addEventListener('click', function(){
+    state.k = K0; state.b = B0; state.stage = 1; state.last = 'k';
+    sk.value = String(K0); sb.value = String(B0);
+    fb.textContent = '向右拖 k 滑杆试试。';
+    vk.textContent = num(K0); vb.textContent = num(B0);
+    stageEl.textContent = '阶段 1 / 3';
+    hint.textContent = HINTS[0];
+    btnNext.disabled = false;
+    eq.classList.add('hide');
+    layout(); draw();
+  });
+  window.addEventListener('resize', function(){ layout(); draw(); });
+
+  layout(); draw();
+  vk.textContent = num(K0); vb.textContent = num(B0);
+})();
+</script>
+</body>
+</html>

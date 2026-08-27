@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import { createElement } from 'react';
+import { KpAnimations } from './kp-animations/KpAnimations';
 
 /**
  * 实验登记表:首页按这份表列清单。
@@ -14,4 +16,14 @@ export interface Experiment {
   render: () => ReactNode;
 }
 
-export const EXPERIMENTS: Experiment[] = [];
+export const EXPERIMENTS: Experiment[] = [
+  {
+    id: 'kp-animations',
+    title: '知识点动画',
+    summary:
+      '验证「单文件零依赖交互 HTML」能不能当知识点动画的标准产物:5 个试点全部过确定性校验,且在沙箱 iframe 里能正常试玩。',
+    owner: '实验区',
+    status: 'running',
+    render: () => createElement(KpAnimations),
+  },
+];

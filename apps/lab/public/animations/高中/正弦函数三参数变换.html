@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<!--
+════════════════ PRD · 正弦函数三参数变换 ════════════════
+EVAL:动态收益 5(A、ω、φ 三个参数各自对应一种几何操作,静态图只能给几张快照,
+      「压缩」与「平移」的区别看不出来)
+      交互必要性 5(尤其 φ 增大而图像左移这件事,不自己拖一遍不会真信)
+      合计 10 → 通过
+
+一句话定位:
+  A 只管纵向拉伸,ω 只管横向压缩(周期 T = 2π/ω),φ 只管左右平移(平移量 φ/ω)。
+
+核心误区:
+  学生把 φ 直接当成「向右平移 φ 个单位」,忘了要除以 ω,也常把方向记反;
+  另一半人以为 ω 变大周期也变大。
+
+单一认知动作:
+  变换 —— 一条基准正弦曲线在三个参数下连续变形。本页不讲值域求解、不讲单调区间、不讲图像与方程。
+
+交互流程:
+  1) 拖 A 滑杆向右 → 波峰变高、波谷变低 → 与 x 轴的交点一个都不动;
+  2) 拖 ω 滑杆向右 → 同一段 x 里塞进更多个波形 → 周期变短;
+  3) 拖 φ 滑杆向右 → 整条曲线沿 x 轴平移 → 画面上的箭头显示真实方向(φ > 0 时向左)。
+
+分步揭示设计:
+  阶段 1:淡色基准曲线 y = sin x + 当前曲线 + 三根滑杆。没有标注、没有公式。
+  阶段 2:加三组标注 —— 振幅水平线(±A)、一个周期的区间条(T)、从 0 指向 -φ/ω 的平移箭头。
+  阶段 3:出解析式,并写出 T = 2π/ω 与平移量 -φ/ω 的具体数值。
+
+概念反馈文案:
+  - 「A = 2.0:纵向拉到 2 倍,最高 2.0、最低 -2.0,而与 x 轴的交点一个都没动。」
+  - 「ω = 2.0:周期 T = 2π/ω = 3.14,同一段 x 上的波形个数翻了一倍 —— ω 变大,周期变短。」
+  - 「φ = 0.50π:曲线向左移了 φ/ω = 0.79。滑杆往右是 φ 增大,图像却往左走,
+     因为 sin(ωx+φ) = sin(ω(x + φ/ω)),给 x 加正数等于让波形提前到达。」
+════════════════════════════════════════════════════
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="grade" content="高中">
+<meta name="topic" content="正弦型函数 y=Asin(ωx+φ) 的图象变换">
+<meta name="difficulty" content="高">
+<meta name="cognitive" content="变换">
+<meta name="desc" content="三根滑杆独立调 A、ω、φ,看拉伸、压缩、平移。">
+<meta name="kpNodeId" content="">
+<title>正弦函数三参数变换 · 高中</title>
+<style>
+:root{
+  --paper:#fdf8f0; --sheet:#ffffff; --sheet-sub:#f5eee3; --rule:#e8dcc9;
+  --ink-1:#2a2118; --ink-2:#6b5d4c; --ink-3:#a49684;
+  --hi-a:#b3541e; --hi-a-soft:#fbe6d3;
+  --hi-b:#256b60; --hi-b-soft:#d9ece6;
+  --hi-c:#6d4b9c; --hi-c-soft:#e9e0f5;
+  --grid:#efe5d5; --axis:#8c7f6e;
+  --tap:44px; --r-lg:12px; --r-sm:7px;
+  --shade:0 1px 6px rgba(60,40,20,.09);
+  --font:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink-1);font-family:var(--font);
+     font-size:14px;line-height:1.6;overflow-x:hidden;-webkit-text-size-adjust:100%}
+.wrap{max-width:720px;margin:0 auto;padding:14px 12px 26px}
+h1{font-size:17px;margin:0 0 3px}
+.lead{color:var(--ink-2);font-size:12.5px;margin:0 0 10px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.tag{font-size:11.5px;padding:2px 9px;border-radius:999px;background:var(--sheet-sub);
+     color:var(--ink-2);border:1px solid var(--rule)}
+.card{background:var(--sheet);border:1px solid var(--rule);border-radius:var(--r-lg);
+      box-shadow:var(--shade);padding:11px;margin:0 0 11px}
+canvas{display:block;width:100%;height:auto;touch-action:none;border-radius:var(--r-sm)}
+.row{display:flex;align-items:center;gap:9px;min-height:var(--tap)}
+.name{font-family:var(--mono);font-size:13.5px;font-weight:700;width:26px;flex:none}
+.val{font-family:var(--mono);font-size:13px;font-weight:700;width:60px;flex:none;text-align:right}
+.row.pa .name,.row.pa .val{color:var(--hi-a)}
+.row.pw .name,.row.pw .val{color:var(--hi-b)}
+.row.pp .name,.row.pp .val{color:var(--hi-c)}
+input[type=range]{flex:1;min-width:0;height:var(--tap);background:transparent}
+.row.pa input[type=range]{accent-color:var(--hi-a)}
+.row.pw input[type=range]{accent-color:var(--hi-b)}
+.row.pp input[type=range]{accent-color:var(--hi-c)}
+.hint{font-size:12px;color:var(--ink-3);margin:2px 0 0}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}
+button{font-family:var(--font);font-size:13.5px;min-height:var(--tap);padding:0 15px;
+       border-radius:var(--r-sm);border:1px solid var(--rule);background:var(--sheet-sub);
+       color:var(--ink-1);cursor:pointer}
+button.go{background:var(--hi-a-soft);border-color:var(--hi-a);color:var(--hi-a);font-weight:600}
+button:disabled{opacity:.45;cursor:default}
+.step{font-size:12px;color:var(--ink-2);margin-left:auto}
+.fb{background:var(--hi-b-soft);border-left:3px solid var(--hi-b);border-radius:var(--r-sm);
+    padding:9px 11px;font-size:13px}
+.fb b{color:var(--hi-b);font-family:var(--mono)}
+.eq{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--hi-c);
+    background:var(--hi-c-soft);border-radius:var(--r-sm);padding:8px 11px;margin-top:9px}
+.eq small{display:block;font-family:var(--font);font-size:12px;font-weight:400;
+          color:var(--ink-2);margin-top:3px}
+.hide{display:none}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>正弦函数三参数变换</h1>
+  <p class="lead">三根滑杆各管一件事。每次只动一根,盯住曲线的哪一部分变了、哪一部分没变。</p>
+  <div class="tags">
+    <span class="tag">高中 · 三角函数</span>
+    <span class="tag">认知动作:变换</span>
+    <span class="tag">难度:高</span>
+  </div>
+
+  <section class="card">
+    <canvas id="cv" width="360" height="260" aria-label="正弦型函数图象"></canvas>
+    <div class="row pa">
+      <span class="name">A</span>
+      <input id="sa" type="range" min="0.5" max="3" step="0.1" value="1" aria-label="振幅 A">
+      <span class="val" id="va">1.0</span>
+    </div>
+    <div class="row pw">
+      <span class="name">ω</span>
+      <input id="sw" type="range" min="0.5" max="3" step="0.1" value="1" aria-label="角频率 omega">
+      <span class="val" id="vw">1.0</span>
+    </div>
+    <div class="row pp">
+      <span class="name">φ</span>
+      <input id="sp" type="range" min="-1" max="1" step="0.05" value="0" aria-label="初相 phi(以 π 为单位)">
+      <span class="val" id="vp">0.00π</span>
+    </div>
+    <p class="hint" id="hint">先只动 A,看曲线的高度和交点。</p>
+    <div class="bar">
+      <button id="next" class="go" type="button">下一步</button>
+      <button id="reset" type="button">重置</button>
+      <span class="step" id="stage">阶段 1 / 3</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="fb" id="fb">拖动任意一根滑杆开始。</div>
+    <div class="eq hide" id="eq"></div>
+  </section>
+</main>
+
+<script>
+(function(){
+  'use strict';
+  var CS = getComputedStyle(document.documentElement);
+  function c(n){ return CS.getPropertyValue(n).trim(); }
+  var COL = {
+    grid:c('--grid'), axis:c('--axis'), sheet:c('--sheet'),
+    ink1:c('--ink-1'), ink2:c('--ink-2'), ink3:c('--ink-3'),
+    a:c('--hi-a'), aSoft:c('--hi-a-soft'),
+    b:c('--hi-b'), bSoft:c('--hi-b-soft'),
+    cc:c('--hi-c'), ccSoft:c('--hi-c-soft')
+  };
+  var MONO = c('--mono');
+  var PI = Math.PI, TAU = 2 * PI;
+
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  var sa = document.getElementById('sa'), sw = document.getElementById('sw'), sp = document.getElementById('sp');
+  var va = document.getElementById('va'), vw = document.getElementById('vw'), vp = document.getElementById('vp');
+  var fb = document.getElementById('fb'), eq = document.getElementById('eq');
+  var hint = document.getElementById('hint'), stageEl = document.getElementById('stage');
+  var btnNext = document.getElementById('next'), btnReset = document.getElementById('reset');
+
+  var A0 = 1, W0 = 1, P0 = 0;
+  var st = { A:A0, w:W0, p:P0, stage:1, last:'A' };
+
+  var X0 = -PI, X1 = 3 * PI, YMAX = 3.45;
+  var W = 360, H = 260, sx = 1, sy = 1, oy = 130;
+  function layout(){
+    var w = Math.max(cv.clientWidth || 340, 260);
+    var h = Math.round(Math.min(Math.max(w * 0.72, 230), 340));
+    var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    W = w; H = h; sx = w / (X1 - X0); sy = (h / 2 - 8) / YMAX; oy = h / 2;
+  }
+  function px(x){ return (x - X0) * sx; }
+  function py(y){ return oy - y * sy; }
+  function n1(v){ return v.toFixed(1); }
+  function n2(v){ return v.toFixed(2); }
+  function piLabel(v){ return n2(v) + 'π'; }
+  function f(x){ return st.A * Math.sin(st.w * x + st.p); }
+
+  function drawFrame(){
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = COL.sheet; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = COL.grid; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (var k = -2; k <= 6; k++){
+      var gx = k * PI / 2;
+      if (gx < X0 || gx > X1) continue;
+      ctx.moveTo(px(gx), 0); ctx.lineTo(px(gx), H);
+    }
+    for (var y = -3; y <= 3; y++){ ctx.moveTo(0, py(y)); ctx.lineTo(W, py(y)); }
+    ctx.stroke();
+
+    ctx.strokeStyle = COL.axis; ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(0, py(0)); ctx.lineTo(W, py(0));
+    ctx.moveTo(px(0), 0); ctx.lineTo(px(0), H);
+    ctx.stroke();
+
+    ctx.fillStyle = COL.ink3; ctx.font = '600 10.5px ' + MONO;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    var marks = [[-PI, '-π'], [PI, 'π'], [TAU, '2π'], [3 * PI, '3π']];
+    for (var i = 0; i < marks.length; i++){
+      ctx.fillText(marks[i][1], Math.min(px(marks[i][0]), W - 10), py(0) + 4);
+    }
+  }
+
+  function drawCurve(fn, color, lw, dash){
+    ctx.save();
+    ctx.setLineDash(dash || []);
+    ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for (var s = 0; s <= W; s += 1){
+      var x = X0 + s / sx, y = fn(x);
+      if (s === 0) ctx.moveTo(s, py(y)); else ctx.lineTo(s, py(y));
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function arrow(x1, x2, y, color, text){
+    var a = px(x1), b = px(x2), yy = py(y);
+    ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(a, yy); ctx.lineTo(b, yy); ctx.stroke();
+    var dir = b >= a ? 1 : -1;
+    ctx.beginPath();
+    ctx.moveTo(b, yy); ctx.lineTo(b - dir * 7, yy - 4.5); ctx.lineTo(b - dir * 7, yy + 4.5);
+    ctx.closePath(); ctx.fill();
+    ctx.font = '700 11.5px ' + MONO; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText(text, (a + b) / 2, yy - 6);
+  }
+
+  // 阶段 2:三组标注,一组一个强调色,分别对应 A、ω、φ。
+  function drawMarks(){
+    var A = st.A, w = st.w, p = st.p;
+    ctx.save();
+    ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5; ctx.strokeStyle = COL.a;
+    ctx.beginPath();
+    ctx.moveTo(0, py(A)); ctx.lineTo(W, py(A));
+    ctx.moveTo(0, py(-A)); ctx.lineTo(W, py(-A));
+    ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = COL.a; ctx.font = '700 11.5px ' + MONO;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText('A=' + n1(A), 4, py(A) - 3);
+
+    // 一个周期:从曲线的上升零点开始,长度 T = 2π/ω。
+    var T = TAU / w, z = -p / w;
+    z -= Math.floor((z - X0) / T) * T;
+    var zEnd = z + T;
+    if (zEnd <= X1){
+      ctx.strokeStyle = COL.b; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(px(z), py(-YMAX + 0.55)); ctx.lineTo(px(zEnd), py(-YMAX + 0.55));
+      ctx.moveTo(px(z), py(-YMAX + 0.3)); ctx.lineTo(px(z), py(-YMAX + 0.8));
+      ctx.moveTo(px(zEnd), py(-YMAX + 0.3)); ctx.lineTo(px(zEnd), py(-YMAX + 0.8));
+      ctx.stroke();
+      ctx.fillStyle = COL.b; ctx.font = '700 11.5px ' + MONO;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText('T=' + n2(T), px((z + zEnd) / 2), py(-YMAX + 0.55) - 4);
+    }
+
+    // 平移:基准曲线的上升零点 0 → 当前曲线的上升零点 -φ/ω。真实方向由箭头给出。
+    var shift = -p / w;
+    if (Math.abs(shift) > 0.02){
+      arrow(0, shift, YMAX - 0.45, COL.cc, (shift < 0 ? '左移 ' : '右移 ') + n2(Math.abs(shift)));
+    }
+  }
+
+  function feedback(){
+    var A = st.A, w = st.w, p = st.p, msg;
+    if (st.last === 'A'){
+      msg = '<b>A = ' + n1(A) + '</b>:曲线纵向拉成 ' + n1(A) + ' 倍,最高 ' + n1(A) +
+            '、最低 -' + n1(A) + ';而它与 x 轴的交点一个都没动 —— A 只改高度,不改零点。';
+    } else if (st.last === 'ω'){
+      msg = '<b>ω = ' + n1(w) + '</b>:周期 T = 2π/ω = <b>' + n2(TAU / w) +
+            '</b>。ω 越大,同一段 x 上塞进的波形越多、周期越短(不是越长)。';
+    } else {
+      var shift = -p / w;
+      if (Math.abs(shift) < 0.02){
+        msg = '<b>φ = ' + piLabel(p / PI) + '</b>:没有平移。往两边拖 φ,看曲线整体挪动。';
+      } else {
+        msg = '<b>φ = ' + piLabel(p / PI) + '</b>:曲线整体' + (shift < 0 ? '向左' : '向右') +
+              '移了 |φ/ω| = <b>' + n2(Math.abs(shift)) + '</b>,不是 |φ| = ' + n2(Math.abs(p)) +
+              '。' + (p > 0 ? 'φ 增大(滑杆往右)图像反而往左走' : 'φ 减小(滑杆往左)图像反而往右走') +
+              ',因为 sin(ωx+φ) = sin(ω(x + φ/ω)):给 x 加正数,等于让波形提前到达。';
+      }
+    }
+    fb.innerHTML = msg;
+  }
+
+  function equation(){
+    var A = st.A, w = st.w, p = st.p, shift = -p / w;
+    var sign = p < 0 ? ' − ' : ' + ';
+    // 变换顺序不能乱:先横向压 ω 倍,平移量才是 φ/ω;若先平移则应平移 φ。
+    eq.innerHTML = 'y = ' + n1(A) + '·sin(' + n1(w) + 'x' + sign + n2(Math.abs(p)) + ')' +
+      '<small>振幅 ' + n1(A) + '　·　周期 T = 2π/ω = ' + n2(TAU / w) + '<br>' +
+      '由 y = sin x 先横向压 ' + n1(w) + ' 倍,再' +
+      (Math.abs(shift) < 0.02 ? '不平移' : ((shift < 0 ? '向左' : '向右') + '平移 ' + n2(Math.abs(shift)))) +
+      ',最后纵向拉 ' + n1(A) + ' 倍</small>';
+  }
+
+  var HINTS = [
+    '先只动 A,看曲线的高度和交点。',
+    '标注出来了:橙线是 ±A,绿条是一个周期 T,紫箭头是真实平移方向。',
+    '三件事凑成一个式子,对着下面读一遍。'
+  ];
+
+  function draw(){
+    drawFrame();
+    drawCurve(function(x){ return Math.sin(x); }, COL.ink3, 1.6, [5, 5]);
+    drawCurve(f, COL.ink1, 2.6);
+    if (st.stage >= 2) drawMarks();
+  }
+
+  function render(){
+    va.textContent = n1(st.A);
+    vw.textContent = n1(st.w);
+    vp.textContent = piLabel(st.p / PI);
+    stageEl.textContent = '阶段 ' + st.stage + ' / 3';
+    hint.textContent = HINTS[st.stage - 1];
+    btnNext.disabled = st.stage >= 3;
+    if (st.stage >= 3){ eq.classList.remove('hide'); equation(); } else eq.classList.add('hide');
+    draw();
+    feedback();
+  }
+
+  sa.addEventListener('input', function(){ st.A = parseFloat(sa.value); st.last = 'A'; render(); });
+  sw.addEventListener('input', function(){ st.w = parseFloat(sw.value); st.last = 'ω'; render(); });
+  sp.addEventListener('input', function(){ st.p = parseFloat(sp.value) * PI; st.last = 'φ'; render(); });
+  btnNext.addEventListener('click', function(){ if (st.stage < 3){ st.stage++; render(); } });
+  btnReset.addEventListener('click', function(){
+    st.A = A0; st.w = W0; st.p = P0; st.stage = 1; st.last = 'A';
+    sa.value = String(A0); sw.value = String(W0); sp.value = '0';
+    va.textContent = n1(A0); vw.textContent = n1(W0); vp.textContent = piLabel(0);
+    stageEl.textContent = '阶段 1 / 3';
+    hint.textContent = HINTS[0];
+    btnNext.disabled = false;
+    eq.classList.add('hide');
+    fb.textContent = '拖动任意一根滑杆开始。';
+    layout(); draw();
+  });
+  window.addEventListener('resize', function(){ layout(); draw(); });
+
+  layout(); draw();
+})();
+</script>
+</body>
+</html>
