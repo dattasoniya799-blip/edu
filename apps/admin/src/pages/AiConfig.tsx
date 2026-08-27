@@ -13,12 +13,13 @@ import { PageHead } from './Shell';
 /** 供应商配置表单态(apiKey 始终从空开始:留空=不改) */
 interface ConfigForm { baseUrl: string; model: string; apiKey: string; concurrency: number }
 
-/** 4 个功能的开关元信息(real=走真实供应商,mock=确定性假数据) */
+/** 5 个功能的开关元信息(real=走真实供应商,mock=确定性假数据) */
 const FEATURES: { key: keyof AiFeatureRoutesDto; label: string; desc: string }[] = [
   { key: 'qa', label: '答疑', desc: '学生做题时的 AI 引导式答疑' },
   { key: 'pre_grading', label: '预批改', desc: '主观题先由 AI 预批,教师复核后出分' },
   { key: 'class_companion', label: '课堂伴学', desc: '上课场景按编排带学生的 AI 伴学' },
   { key: 'diagnosis', label: '学情诊断', desc: '错题自动归因到知识点的诊断' },
+  { key: 'courseware', label: '课件生成', desc: '教师端文字稿出大纲 + 逐页生图的 AI 课件' },
 ];
 
 function validateConfig(form: ConfigForm): Record<string, string> {

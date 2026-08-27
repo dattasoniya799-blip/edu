@@ -39,7 +39,8 @@ export interface QaResult {
 
 /**
  * 学生答疑能力(POST /ai/qa,SSE):
- * - 限流:每生 6 次/分钟(Redis INCR 固定窗口),第 7 次 → 业务码 4501(任务卡验收);
+ * - 限流:每生 6 次/分钟(Redis INCR 固定窗口),第 7 次 → 业务码 4505
+ *   ([2026-08-22 audit-fix-server · C1] 原 4501,与 grading 的 ERR_GRADING_PENDING 双占,已迁);
  * - 上下文裁剪(§8.3):当前题(题干/答案/解析/rubric)+ 最近 6 条对话;
  * - 引导模式(org.settings.ai.qaGuideOnly,默认开):系统提示词来自配置文件
  *   qa-guided-prompt.md;输出审查规则来自 qa-review.json —— 检出"最终答案"模式

@@ -41,7 +41,7 @@ export function Dashboard() {
     <div>
       <PageHead
         title={`${greeting(now.getHours())},${me?.name ?? ''}`}
-        sub={`${now.getMonth() + 1} 月 ${now.getDate()} 日${data ? ` · 今天共安排 ${data.todayLessonCount} 个课次` : ''}`}
+        sub={`${now.getMonth() + 1} 月 ${now.getDate()} 日${data ? ` · 今天共安排 ${data.todayLessonCount} 个讲次` : ''}`}
         actions={<Button variant="primary" onClick={() => navigate('/teachers', { state: { openAdd: true } })}>+ 添加教师</Button>}
       />
       {failed ? (
@@ -62,7 +62,7 @@ export function Dashboard() {
               ribbon="green"
               label="本周到课率"
               value={data.weekAttendanceRate != null ? `${data.weekAttendanceRate}%` : '—'}
-              delta="按已结束课次统计"
+              delta="按已结束讲次统计"
             />
             <StatCard
               ribbon="orange"

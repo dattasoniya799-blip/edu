@@ -39,7 +39,7 @@ export function Dashboard() {
         <Link to="/grading" aria-label="去批改复核">
           <StatCard ribbon="orange" label="待复核答卷" value={loaded ? pending : '—'} delta="点击进入批改复核 →" />
         </Link>
-        <StatCard ribbon="green" label="本周课次" value={loaded ? courses.filter((c) => c.nextLessonAt).length : '—'} />
+        <StatCard ribbon="green" label="本周讲次" value={loaded ? courses.filter((c) => c.nextLessonAt).length : '—'} />
         <StatCard ribbon="violet" label="AI 预批" value="已开启" />
       </div>
       <Card title="我的课程">

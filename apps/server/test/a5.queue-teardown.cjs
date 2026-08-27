@@ -13,6 +13,8 @@ module.exports = async () => {
     const keys = [
       ...(await redis.keys(`${prefix}:pre_grading:*`)),
       ...(await redis.keys(`${prefix}:mastery:*`)),
+      // [2026-08-22 courseware] AI 生成课件逐页出图队列
+      ...(await redis.keys(`${prefix}:courseware:*`)),
     ];
     if (keys.length) await redis.del(...keys);
   } finally {

@@ -12,7 +12,7 @@ import {
   UseFilters,
 } from '@nestjs/common';
 import { CurrentUser, Roles } from '../common/decorators';
-import { BusinessExceptionFilter } from './business.exception';
+import { BizExceptionFilter } from './business.exception';
 import { QuestionInputDto, QuestionListQueryDto } from './question.dto';
 import { JwtUser, QuestionService } from './question.service';
 
@@ -21,7 +21,7 @@ import { JwtUser, QuestionService } from './question.service';
  * 角色:录题/列表/详情 [teacher];编辑/删除/入库 owner 或 admin(admin 进门禁,owner 校验在 service)。
  */
 @Controller('questions')
-@UseFilters(BusinessExceptionFilter)
+@UseFilters(BizExceptionFilter)
 export class QuestionController {
   constructor(private readonly questions: QuestionService) {}
 

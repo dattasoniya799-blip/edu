@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { PageResp, QuestionAnswer, QuestionDto, QuestionFigure } from '@qiming/contracts';
 import { PrismaService } from '../prisma/prisma.service';
-import { BusinessException, ERR_QUESTION_IN_PAPER } from './business.exception';
+import { BizException, ERR_QUESTION_IN_PAPER } from './business.exception';
 import { QuestionInputDto, QuestionListQueryDto } from './question.dto';
 
 /** JWT 用户(与 JwtAuthGuard 写入 request.user 的结构一致) */
@@ -249,7 +249,7 @@ export class QuestionService {
     this.assertOwnerOrAdmin(user, q.ownerId);
     const used = await this.prisma.client.paperQuestion.count({ where: { questionId: q.id } });
     if (used > 0)
-      throw new BusinessException(ERR_QUESTION_IN_PAPER, '题目已被试卷引用,不可删除');
+      throw new BizException(ERR_QUESTION_IN_PAPER, '题目已被试卷引用,不可删除');
     await this.prisma.client.question.update({
       where: { id: q.id },
       data: { deletedAt: new Date() },

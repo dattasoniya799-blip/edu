@@ -442,7 +442,8 @@ export const handlers = [
     ok({ ...D.assignments[0], id: 701, kind: 'wrong_redo', scoreCounted: false, questionCount: D.wrongBook.length }))),
   http.get(`${BASE}/student/report`, authed(() => ok(D.studentReport))),
   http.get(`${BASE}/student/resources/:id/view`, authed(({ params }) =>
-    ok({ url: `https://oss.example.com/view/${params.id}?sig=mock`, expiresAt: '2026-06-11T23:59:59.000Z' }))),
+    // 相对时间(同 server VIEW_TTL_SEC 口径):固定过去时刻会让「有效期至」永远显示已过期
+    ok({ url: `https://oss.example.com/view/${params.id}?sig=mock`, expiresAt: new Date(Date.now() + 10 * 60e3).toISOString() }))),
 
   // ================= 学情(教师) =================
   http.get(`${BASE}/analytics/courses/:id/mastery`, authed(() => ok(D.courseMasteryHeat))),

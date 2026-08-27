@@ -14,7 +14,9 @@ import {
   Post,
   Put,
   Query,
+  UseFilters,
 } from '@nestjs/common';
+import { BizExceptionFilter } from '../ai/ai.codes';
 import { CurrentUser, Roles } from '../common/decorators';
 import type { JwtUser } from '../auth/auth.service';
 import {
@@ -39,6 +41,9 @@ import { TeachersService } from './teachers.service';
 
 @Controller('admin')
 @Roles('admin')
+// [2026-08-22 audit-fix-server · P1-11] PUT ai/routes 会抛 BizException(生图 key 未配),
+// 需要就近过滤器把业务码原样下发(全局 AllExceptionsFilter 会把 code 写成 HTTP 状态码)
+@UseFilters(BizExceptionFilter)
 export class AdminController {
   constructor(
     private readonly teachers: TeachersService,

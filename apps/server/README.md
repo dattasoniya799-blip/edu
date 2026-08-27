@@ -494,9 +494,10 @@ e2e 用 `app.listen(0)` 临时端口,socket.io-client 仅 websocket 传输。
 
 ## /ai/qa:SSE 与引导模式
 
-- 限流:每生 **6 次/分**(Redis 固定窗口),第 7 次 → 业务码 **4501**(HTTP 429,任务卡验收)。
-  说明:A5 在 /grading/* 用过 4501(finalize 未复核);两者不同接口域、运行时不冲突,
-  契约未定义错误码注册表,按任务卡原文执行并在此备注。
+- 限流:每生 **6 次/分**(Redis 固定窗口),第 7 次 → 业务码 **4505**(HTTP 429)。
+  [2026-08-22 audit-fix-server · C1] 原为 4501,与 A5 `/grading/*` 的 `ERR_GRADING_PENDING`
+  双占。契约里 `code` 是**全局**业务码,前端可以按 code 而非按接口分支,双占迟早误判,
+  故迁到本号段内未占用的 4505,并建立单一注册表 `src/common/biz-codes.ts`(见「错误码注册表」)。
 - 引导模式 = org.settings.ai.qaGuideOnly(默认开):系统提示词 `src/ai/config/qa-guided-prompt.md`
   + 输出审查 `qa-review.json`(正则模式集 + 重写话术)——检出最终答案模式整段拦截重写,
   **策略全在配置文件,不写死代码**。审查需全文 → 服务端攒齐上游输出统一审查后再按 SSE 分块下发
@@ -528,7 +529,7 @@ mock 预批规则与原 stub 完全一致(第 1 步恒 ok、其余看 `√{step}
 | 任务卡验收项 | 测试 |
 |---|---|
 | mock 下计量字段完整且费用=单价×token 可手算 | `验收:mock 下 ai_calls 计量字段完整,费用 = 单价 × token 可手算,Redis 当月成本同步累加` |
-| 限流第 7 次返回 4501 | `验收:限流 6 次/分/学生 —— 第 7 次返回业务码 4501(HTTP 429)` |
+| 限流第 7 次返回 4505(原 4501,见 C1 整改) | `验收:限流 6 次/分/学生 —— 第 7 次返回业务码 4505(HTTP 429)` |
 | 预批输出 JSON schema 校验通过 | `验收:预批走 A5 BullMQ 链路 → LlmPreGradeGateway(mock)→ grading_records 结构严格符合 Schema`(含校验器负例自证)+ `预批 photo 占位 → OCR 接口(local stub …)` |
 | 切路由表不重启生效 | `验收:切路由表不重启生效 —— Redis 覆盖键写入后 /ai/health 与计量即时反映,删除即回滚` |
 | 业务模块 grep 不到供应商 SDK import | 静态检查:`grep -rE "openai|anthropic|langchain|…" src/{admin,question,attempt,grading,classroom,…}` 为空;package.json 无 LLM SDK 依赖(适配器原生 fetch) |
@@ -932,3 +933,135 @@ mock 预批规则与原 stub 完全一致(第 1 步恒 ok、其余看 `√{step}
 夹具:`test/fixtures/rev.fixtures.ts`(**13912** 号段自建自清)+ 一节 draft 讲次 + 单选/解答题 + 客观卷(homework/consolidation)/主观卷;`afterAll` 逆依赖全量清理;seed 数据只读;`npm test` 17 套件 213 用例连跑两次全绿。
 
 > 遗留风险:#4 采"org 前缀绑定"口径(契约允许的两种之一),同机构内仍可凭随机 12 字节 ossKey 互访(不可枚举,跨租户越权已封堵);#7 为最小修,仅同步分数,不重算错题本/掌握度快照(如需完全一致可在 review 后重跑 `settleAttempt` 的入账段,改动面更大故未纳入)。
+
+## task/courseware-back(AI 生成课件 · 后端真实实现)
+
+契约基线:`packages/contracts` 的 4 个 `/courseware` 端点 + `Courseware*` DTO + `AiFeature` 加 `courseware`
+(见项目宪法 2026-08-22 记录)。负责目录 `apps/server`,不动 contracts / 三个前端。
+专属库 `qiming_cw`,`.env` 设 `BULLMQ_PREFIX=cw`(队列键 `cw:courseware:*`,随 globalTeardown 自清,禁 FLUSHALL)。
+
+### 链路
+
+```
+POST /courseware/outline   文字稿 → 逐页大纲(文本 LLM 或确定性模板)
+POST /courseware/jobs      建 Redis 运行态任务 + 逐页入 BullMQ 队列 → {jobId}
+GET  /courseware/jobs/{id} 轮询进度(done 页签 10 分钟回看 URL);全页成功后 resourceId 有值
+POST /courseware/jobs/{id}/retry  只重新入队 status=failed 的页
+```
+
+| 层 | 文件 | 要点 |
+|---|---|---|
+| 生图供应商 | `src/ai/llm/providers/openai-compatible-image.provider.ts` | POST `{IMAGE_BASE_URL}/images/generations`,body `{model,prompt,size,quality,n:1}`,原生 fetch + AbortController 120s;取 `data[0].b64_json` 与**顶层实际** `usage/size/quality`(中转会归一参数,实测请求 1536x1024/medium 可能回 1264x848/low → 记账与元数据一律以响应实际值为准)。key 只在本类内读,上游错误体最多截 120 字符 |
+| mock 生图 | `src/ai/llm/providers/mock-image.provider.ts` | 恒回内置 1x1 合法 PNG(解码即可落盘),usage 固定小值;`mockImageFailOnce` 静态钩子(或 env `MOCK_IMAGE_FAIL_SEQ`)按页码注入「首次失败」供重试验收 |
+| 网关 | `src/ai/llm/llm-gateway.service.ts` | 新增 `image()`:额度预检(`disable_qa`/`pause_all` 封禁面均含 `courseware`,见 audit-fix S1)→ 路由 resolve → **与 chat 共享**并发闸 → provider → `ai_calls` 落账。`registerImage()` 独立注册表;`LlmChatRequest.route?` 显式路由(大纲那步要文本供应商,与逐页出图不同 provider) |
+| 路由表 | `src/ai/llm/route-table.service.ts`、`config/ai-routes.default.json` | `courseware` 默认 `mock_image/mock-image-v1`;**`IMAGE_API_KEY` 配了则默认走 real**(与 `LLM_API_KEY` 互不牵连),条目 model 写 `IMAGE_MODEL` 真实名以对上 pricing 表的 `gpt-image-2` 单价。**real 条目 `fallback: null`**(audit-fix P0-1:失败降级 mock 会产出「看起来成功的空白课件」) |
+| 管理端 | `src/ai/ai-admin.service.ts`、`ai-admin.dto.ts` | `GET/PUT /admin/ai/routes` 读写第 5 个开关 `courseware`;`real` 对应 `openai_compatible_image`(无 fallback),切 real 时校验 `IMAGE_API_KEY` 非空;`POST /admin/ai/test` 按 feature 分流(`courseware` → 生图 provider 探活) |
+| 大纲 | `src/ai/features/courseware-outline.service.ts` | real:提示词 `config/courseware-outline-prompt.md` + `{文字稿/页数/风格名/知识点上下文}` → `parseStrictJson` + `validateJsonSchema` 严格校验(仿预批),不合法 → **4601**;mock:`config/courseware-outline-templates.json` 的确定性教学页序(引入→概念/推导/例题/变式/易错/应用/结构→分层练习→小结),与 teacher 走查用 msw mock 同口径 |
+| 风格 | `src/ai/features/courseware-style.ts`、`config/courseware-styles.json` | 5 套内置 promptTemplate + 自定义护栏由 `apps/teacher/src/pages/courseware/lib/styles.ts` **脚本原样搬运**(非手抄);`composeStylePrefix`/`composePagePrompt` 与前端逐字同构(风格前缀 + 标题 + 要点 + 配图说明 + 页码 n/N) |
+| 业务 | `src/courseware/` | controller(4 端点 `@Roles('teacher')`)+ service(编排/归属校验)+ `courseware.store.ts`(运行态)+ `courseware.queue.ts`(BullMQ)+ `courseware-page.service.ts`(worker)+ `courseware-storage.service.ts`(落盘/签名) |
+
+### 关键实现决定
+
+- **运行态用 Redis HASH**:`a7:courseware:job:{jobId}`,`meta` + `p:{seq}` 逐页一字段 + `resourceId`,TTL 24h。
+  用 HASH 而非整份 JSON 是为了**字段级原子写** —— worker 并发 2,两页同时结算若各自读-改-写整份 JSON 会互相覆盖
+  (共享 ioredis 连接下 WATCH/MULTI 同样不可靠)。成品落库前用 `SET a7:courseware:publish:{jobId} NX` 抢一次权,防重复建 Resource。
+- **逐页入队 + attempts=1**:一页一 job,retry 只重投 failed 页;不让 BullMQ 自动重试,否则同一页重复计费且与运行态 failed 语义打架。
+  单页失败只把该页置 `failed` 并记原因,**不抛给队列、不中断其他页**。
+- **落盘沿用 resource 口径**:`resource/{orgId}/{yyyyMM}/{hex}.png`,UPLOAD_ROOT 解析 + 路径穿越防护(落点必须严格在 root 内),
+  与 A3 `LocalStorageAdapter.saveObject` 同口径 —— UploadModule 未 export `STORAGE_ADAPTER`,故在本模块内自建写入
+  (同 `student/resource-view.service.ts` 先例)。回看 URL 复用 `signStorageUrl`(HMAC,10 分钟,由 `@Public GET /storage/*` 服务)。
+- **成品 Resource**:`type=ppt`、`ownerId=teacherId`、`ossKey=第 1 页图`(封面)、`size=各页字节和`、
+  `meta={kind:'ai_courseware',styleId,styleName,pages:[{seq,title,body,imageOssKey}]}`,有 `kpNodeId` 时一并归档。
+- **业务码 46xx**:4601 大纲输出非法(409)、4602 任务不存在/已过期/非本人(404)。归属校验为「同 org **且** 同教师」,
+  否则一律 404 不给存在性线索(宪法 §7);前端 `progress.ts` 已按 `code===4040 || httpStatus===404` 兼容。
+
+### 验收 ↔ 测试(`test/courseware.e2e-spec.ts`,10 用例全绿)
+
+| 验收项 | 断言要点 |
+|---|---|
+| 大纲形状/页数 | `pageCount=6` → 6 页,每页键集恰为 `{title,body,imagePrompt}`,body 3~5 条;缺省 → 8 页;知识点名进主题词、末页恒为小结 |
+| 自定义风格护栏 | `style={id:'custom'}` 无描述 / 纯空白 / 空串 → 400(outline 与 jobs 两端);给了描述 → 200 |
+| 建任务入参 | name 纯空白 / pages 空 / pages 21 页 → 400 |
+| 全流程 | 建 3 页任务 → 轮询 `done`,出参带 `jobId`;Resource `type=ppt`/`ownerId`/`kpNodeId`/`size>0`/`ossKey` 前缀 `resource/{orgId}/`;`meta.pages` 3 条且逐页 `imageOssKey` 归属正确、封面=第 1 页;签名 URL 经 `/storage/*` 回读到的字节确为合法 PNG |
+| 单页失败 + 重试 | 注入第 2 页首次失败 → `status=failed`、`done=2`、其余页照常 done、`resourceId=null`;retry → OkVoid 且再轮询到 done、成品落库 |
+| 租户/归属隔离 | 同机构他教师 与 跨机构教师 GET/retry 一律 404;本人仍 200;不存在/非法 jobId → 404 |
+| 角色门禁 | student 调 4 个端点一律 403 |
+| 计量 | `ai_calls` 有 `feature=courseware` 记录 ≥ 页数,`provider=mock_image`/`model=mock-image-v1`/`status=ok`/`user_id=发起教师` |
+
+夹具 `test/fixtures/courseware.fixtures.ts`:**139599** 号段自建自清(教师 t1/t2 + 学生 + 课程 + 讲次 + 迷你图谱 1 节点),
+`studentHours` 取 00:00–23:59 使套件与运行时刻无关;`afterAll` 逆依赖全量清理(含本 org 生成的 Resource / ai_calls)。
+套件开头 `DEL a7:ai:routes` 并把 `IMAGE_API_KEY` 置为定义态空串 → 生图恒走 `mock_image`,零网络、确定性。
+
+全量 `npm test`(`E2E_LLM_ISOLATION=1`,库 `qiming_cw`,`BULLMQ_PREFIX=cw`):**29 套件 / 308 用例,28 套件 306 用例通过**。
+唯一失败 `fixc-comment`(2 用例)与本波无关:该夹具 `studentHours=06:00–22:30`,本次执行时刻为本地 05:12 → 学生登录 403,
+属**时刻依赖**的既有用例(在 06:00–22:30 之间跑即通过)。
+
+### 遗留风险
+
+- **真实生图链路未经真机验证**:本波全部用例走 `mock_image`(无 IMAGE_API_KEY)。`openai_compatible_image` 的 URL/body/解析
+  按 OpenAI images API 形状实现,首次接真 key 需冒烟一次(尤其中转网关的参数归一与 `usage` 字段名差异,代码已同时兼容
+  `input_tokens/output_tokens` 与 `prompt_tokens/completion_tokens`)。
+- **大纲那步的路由粒度**:`courseware` 只有一个真假开关,`real` 时大纲固定走 `openai_compatible`(model=env,无 fallback)。
+  若机构只配了 `IMAGE_API_KEY` 没配 `LLM_API_KEY`,大纲会失败(4601 或供应商不可用),需两把 key 都配。
+- **jobId 归属绑到教师本人**:同机构他教师看不到任务(含代课/教研组协作场景)。当前口径按任务卡「job.teacherId===当前教师」执行。
+- **成品 ossKey 用第 1 页作封面**:`Resource.ossKey` 是 PNG 而非 pptx,资源库预览按 image 处理即可;若后续要真 pptx 需另做合成。
+- **`meta.pages` 存 ossKey 不存 URL**:课堂下发 `CoursewarePageView.imageUrl` 时需在组装处签名(本波不接线,契约已预留字段)。
+- **MockImageProvider 的失败注入是进程内静态钩子**:仅供 e2e;生产环境不设该 env 即完全无副作用。
+
+> 上述遗留中的「大纲只配 IMAGE 不配 LLM 会失败」「`meta.pages` 存 ossKey 不存 URL、课堂未接线」
+> 两条已在下一节 `task/audit-fix-server` 处理(前者改为明确的 4601 业务错误,后者已接线)。
+
+## task/audit-fix-server(2026-08-22 全面审核后的后端修复波次)
+
+依据 `_archive/审核报告-2026-08-22/` 的 1 号(后端架构)与 3 号(courseware 变更缺陷)两份报告。
+负责目录 `apps/server`(含 `test/`);不动 `packages/contracts`、`prisma/schema.prisma`、三个前端。
+专属库 `qiming_cw`,`BULLMQ_PREFIX=cw`,`E2E_LLM_ISOLATION=1`。
+
+### P0
+
+| 编号 | 问题 | 修法 |
+|---|---|---|
+| 3·P0-1 | 真实生图失败静默降级 mock → 一整套 1×1 白点课件被当作成功成品落库,计量按 mock 单价记账 | `imageRealEntry` 的 `fallback` 置 `null`;`ImageResult` 增 `mock?: boolean`(仅 `MockImageProvider` 置真),worker 对**非 mock** 结果做最小字节体检(整页 PNG < 10KB 判异常置 failed 并记原因) |
+| 3·P0-2 | 全页 done 但 `createResource` 抛错 → 任务永久卡在 `done/resourceId=null`,retry 结构上救不回来 | catch 分支先 `DEL` publish 锁再 rethrow;`publishIfComplete` 改 public,`retry()` 无失败页时主动调一次落库判定,`getJob` 轮询也带一次(节流 30s);`deriveStatus` 在 `resourceId` 为空时**不报 done**(报 running,前端继续轮询即自愈) |
+| 3·P0-3 | worker 被 OOM/发布重启打断 → 该页永远 pending、任务永远 running、重试按钮都不出现 | 页状态加 `startedAt`(worker 取件时条件写入);`getJob` 把「pending 且取件超 10 分钟」或「pending 且无 startedAt 且建任务超 15 分钟」**派生**成 failed(运行态不改,retry 用条件写安全重置);`worker.on('stalled')` 落告警日志 |
+| 1·S1 | `over_policy` 默认值 `disable_qa` 只封答疑,超额后最贵的生成课件仍可无限刷 | `OVER_POLICY_BLOCKS.disable_qa` 加入 `'courseware'` |
+
+### P1 / P2
+
+| 编号 | 修法 |
+|---|---|
+| 3·P1-4 | `CoursewareStore.setPageIf`(Lua 单次往返「读-判-写」):retry 只入队条件写成功的页;worker 认领/结算同样带 `startedAt` 令牌 → 连点两次不会生两张图、不会留孤儿 PNG |
+| 3·P1-5 | `Pricing` 增 `perImage` 维度,`cost = max(perImage × 张数, token 估算)`;`gpt-image-2` 填真实单价(0.036 / 0.288 元每千 token,0.45 元/张);上游不回 usage 时按**每张固定 token 数**(1568)记,不再按提示词字符数瞎估 |
+| 3·P1-8 | `classroom.service.buildCourseware` 对 `meta.kind==='ai_courseware'` 的资源逐页把 `imageOssKey` 签成 `imageUrl`(HMAC 10 分钟,签名前过 `isOssKeyOwned` 软失败);非 ai_courseware 行为逐字不变 |
+| 3·P1-10 | 按教师限流:outline 10 次/分、jobs 3 次/10 分钟,外加**在飞任务数 ≤ 3**(固定窗口挡不住「等窗口过去再来三个」);超限 → 4603 / HTTP 429 |
+| 3·P1-11 | `test(feature)` 按 feature 分流(`courseware` → 生图 provider `GET /models` 最小探活,不出图不烧钱);`putRoutes` 在 `courseware==='real'` 且 `IMAGE_API_KEY` 为空时抛 4506 |
+| 3·P2-16 | 大纲那步捕获供应商裸 Error → 4601「文本模型未配置或不可用」(原先是裸 500) |
+| 1·D2 | `BULLMQ_PREFIX` / `CLS_REDIS_PREFIX` 改惰性读取(`queuePrefix(cfg)` / `clsPrefix()`)—— 原先在模块顶层求值,早于 `ConfigModule.forRoot()`,写进 `.env` 静默失效;两者补进 `.env.example` |
+| 1·D3 | 三个队列 `on('error')` 改 `logger.error`,并补 `on('failed')`(预批/掌握度重试耗尽后不再静默丢失) |
+| 1·C1+C2 | 新建单一注册表 `src/common/biz-codes.ts`,各域 `business.exception.ts` / `ai.codes.ts` 只 re-export;QA 限流 4501 → **4505**(4501 让给 grading);删除 question 域的 `BusinessException`(它丢弃 detail),全域统一 `BizException` |
+| 3·P2-13/14/15/19/22/23/26 | worker 起跑前查剩余 TTL(< 10 分钟直接跳过并置 failed)· `getJob` 签名前套 `isOssKeyOwned`、`createResource` **逐页**校验 ossKey · `style.id` 白名单 `@IsIn(styleIds())` · 生图计量带 `lessonId` 归因 · `total` 一律取 `meta.total`(缺页视为未完成,不再缩水判 done) · 建任务写一条 `audit_logs`,`imagePrompt` 上限 4000→1000、`body` 4000→2000 · e2e 计量断言改按本用例 job 的 id 水位过滤 |
+
+### 错误码注册表
+
+`src/common/biz-codes.ts` 是全部业务码的**唯一登记处**,新增错误码必须先在此登记:
+`42xx` course · `43xx` question/paper/resource · `45xx` grading/attempt/wrongbook + ai 限流额度 · `46xx` courseware。
+现占用:4201 / 4301 / 4302 / 4303 / 4501 / 4502 / 4503 / 4504 / **4505**(QA 限流,原 4501)/ **4506**(生图 key 未配)/ 4601 / 4602 / **4603**(courseware 限流)。
+
+### e2e 增量(`test/courseware.e2e-spec.ts` 10 → 14 用例)
+
+| 新增用例 | 覆盖 |
+|---|---|
+| 机构月额度用尽 + `disable_qa` → 逐页生图被封 | S1:页 failed 且原因含「额度」,不产生成品 |
+| 落库失败(全页 done / `resourceId` 空)→ 不报 done,retry 恢复 | P0-2:先断言卡住态为 `running`,retry 后 Resource 重新入库 |
+| pending 页超时 → 派生 failed,retry 恢复 | P0-3:运行态仍 pending 但出参 failed(重试口出现),重试后 done |
+| 建任务限流 + 未知 style.id | P1-10 第 4 次 4603;P2-15 `chalk` → 400 |
+
+`aiadmin.e2e-spec.ts` 增两例(切 real 缺 `IMAGE_API_KEY` → 4506;`test(feature=courseware)` 报的是生图 key),
+并把 courseware real 条目的 `fallback` 断言改成 `null`。
+
+### 与清单的偏离 / 待办
+
+- **openapi 的 `maxLength` 未同步收紧**(`imagePrompt` 4000、`body` 4000)。DTO 已收到 1000 / 2000 ——
+  DTO 比契约严是安全方向,不会拒绝契约允许之外的东西;契约微调记为待办,需与前端同波次改。
+- `BizException` 仍住在 `src/course/business.exception.ts`(1 号报告 A2 建议移到 `common/`)。
+  本波只做错误码注册表与异常类统一,不搬文件 —— 搬迁会触及十余个域的 import,留下一波。

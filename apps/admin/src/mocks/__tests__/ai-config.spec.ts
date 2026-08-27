@@ -61,20 +61,21 @@ describe('供应商配置 GET/PUT', () => {
 });
 
 describe('功能真假路由 GET/PUT', () => {
-  it('GET 四功能均为 real|mock', async () => {
+  it('GET 五功能(含课件生成)均为 real|mock,契约 required 无缺项', async () => {
     const r = await api.get('/admin/ai/routes');
-    for (const key of ['qa', 'pre_grading', 'class_companion', 'diagnosis'] as const) {
-      expect(['real', 'mock']).toContain(r.data[key]);
-    }
+    const keys = ['qa', 'pre_grading', 'class_companion', 'diagnosis', 'courseware'] as const;
+    for (const key of keys) expect(['real', 'mock']).toContain(r.data[key]);
+    expect(Object.keys(r.data).sort()).toEqual([...keys].sort());
   });
 
   it('PUT 开关映射 real↔mock 后重新 GET 一致', async () => {
     const cur = (await api.get('/admin/ai/routes')).data;
-    // 模拟页面把 diagnosis 打开为 real、qa 关为 mock
-    const next = { ...cur, diagnosis: 'real' as const, qa: 'mock' as const };
+    // 模拟页面把 diagnosis / courseware 打开为 real、qa 关为 mock
+    const next = { ...cur, diagnosis: 'real' as const, courseware: 'real' as const, qa: 'mock' as const };
     await api.put('/admin/ai/routes', { body: next });
     const after = (await api.get('/admin/ai/routes')).data;
     expect(after.diagnosis).toBe('real');
+    expect(after.courseware).toBe('real');
     expect(after.qa).toBe('mock');
     expect(after.pre_grading).toBe(cur.pre_grading);
   });

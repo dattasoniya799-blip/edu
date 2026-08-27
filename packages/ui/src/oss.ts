@@ -14,6 +14,7 @@
  *   - 真实模式 → resolveOssUrlAsync(ossKey, fetchViewUrl):异步取签名直链,按 ossKey 缓存
  *   ────────────────────────────────────────────────────────────────────
  */
+import { colors } from '@qiming/contracts';
 
 /**
  * mock 模式判定(与三端 main.tsx 口径一致:仅 VITE_USE_MOCK === 'true' 即 mock,opt-in)。
@@ -37,10 +38,10 @@ function mockPlaceholder(ossKey: string): string {
   const name = (ossKey.split('/').pop() ?? ossKey).slice(0, 28);
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" width="220" height="140">` +
-    `<rect width="220" height="140" rx="8" fill="#EEF1FE"/>` +
-    `<text x="110" y="60" font-family="sans-serif" font-size="30" fill="#4F6BF5" text-anchor="middle">⛶</text>` +
-    `<text x="110" y="92" font-family="sans-serif" font-size="12" fill="#4F6BF5" text-anchor="middle">MOCK 插图</text>` +
-    `<text x="110" y="112" font-family="sans-serif" font-size="10" fill="#8A90A6" text-anchor="middle">${name}</text>` +
+    `<rect width="220" height="140" rx="8" fill="${colors.primarySoft}"/>` +
+    `<text x="110" y="60" font-family="sans-serif" font-size="30" fill="${colors.primary}" text-anchor="middle">⛶</text>` +
+    `<text x="110" y="92" font-family="sans-serif" font-size="12" fill="${colors.primary}" text-anchor="middle">MOCK 插图</text>` +
+    `<text x="110" y="112" font-family="sans-serif" font-size="10" fill="${colors.text3}" text-anchor="middle">${name}</text>` +
     `</svg>`;
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }

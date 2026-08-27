@@ -2,13 +2,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { CourseDto, StudentDto } from '@qiming/contracts';
 import { Button, EmptyState, Modal, Skeleton, Table, Tag, useToast } from '@qiming/ui';
-import { api } from '../api';
+import { api, type GetData } from '../api';
 import { candidateStudents } from '../lib/roster';
 import { ConfirmModal } from './ConfirmModal';
 import { LinkButton, TextInput } from './controls';
 import { Pager } from './Pager';
 
-interface RosterRow { studentId: number; name: string; attendance: string; homeworkAvg: number | null; status: string }
+type RosterRow = GetData<'/admin/courses/{id}/roster'>[number];
 
 export interface RosterModalProps {
   /** 为 null 时关闭 */
@@ -30,7 +30,7 @@ export function RosterModal({ course, onClose, onOpenProfile, onChanged }: Roste
     setLoading(true);
     try {
       const r = await api.get('/admin/courses/{id}/roster', { params: { id: courseId } });
-      setRows(r.data as RosterRow[]);
+      setRows(r.data);
     } catch {
       toast('名单加载失败');
     } finally {
@@ -161,9 +161,8 @@ function AddStudentsModal({
       const r = await api.get('/admin/students', {
         query: { page: p, size: PAGE_SIZE, ...(kw.trim() ? { keyword: kw.trim() } : {}) },
       });
-      const data = r.data as { items: StudentDto[]; total: number };
-      setItems(data.items);
-      setTotal(data.total);
+      setItems(r.data.items);
+      setTotal(r.data.total);
     } catch {
       // 真实后端错误(含 size 超限/网络故障):暴露错误态而非空候选
       setError(true);

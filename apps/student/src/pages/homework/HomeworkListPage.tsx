@@ -29,7 +29,7 @@ export function HomeworkListPage() {
     setItems(null);
     setError(false);
     api.get('/student/assignments', { query: { status: 'all' } })
-      .then((r) => setItems(r.data as AssignmentDto[]))
+      .then((r) => setItems(r.data))
       .catch(() => setError(true));
   }, [reload]);
 

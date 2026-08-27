@@ -1,29 +1,11 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
-
 /**
- * 业务错误(契约 ErrResp 的 code 为业务码,如 4301):
- * HTTP 状态用合适的 4xx,响应体 { code: 业务码, message }。
- * 全局 AllExceptionsFilter 会把 code 写成 HTTP 状态码,故配套
- * 控制器级 BusinessExceptionFilter(就近优先)保证业务码原样下发。
+ * question 域业务错误([2026-08-22 audit-fix-server · C2]):
+ * 原先本文件自带一套 `BusinessException` / `BusinessExceptionFilter`,与 course 域的
+ * `BizException` 并行存在且**丢弃 detail** —— 同一个契约 `ErrResp` 有两种下发行为。
+ * 现已删除该副本,全域统一 `BizException`(响应体含可选 detail),本文件只保留
+ * 域内错误码的 re-export 与异常类/过滤器的转出,调用点无需感知实现在哪个目录。
  */
-export class BusinessException extends HttpException {
-  constructor(
-    readonly bizCode: number,
-    message: string,
-    status: HttpStatus = HttpStatus.CONFLICT,
-  ) {
-    super({ code: bizCode, message }, status);
-  }
-}
+export { BizException, BizExceptionFilter } from '../course/business.exception';
 
 /** 题目被试卷引用,禁止删除 */
-export const ERR_QUESTION_IN_PAPER = 4301;
-
-@Catch(BusinessException)
-export class BusinessExceptionFilter implements ExceptionFilter {
-  catch(exception: BusinessException, host: ArgumentsHost) {
-    const res = host.switchToHttp().getResponse();
-    const body = exception.getResponse() as { code: number; message: string };
-    res.status(exception.getStatus()).json({ code: body.code, message: body.message });
-  }
-}
+export { ERR_QUESTION_IN_PAPER } from '../common/biz-codes';

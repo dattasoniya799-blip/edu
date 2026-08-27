@@ -6,9 +6,10 @@
  */
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import type { CourseDto, LessonDto, LessonSegmentDto, PaperDto, QuestionDto } from '@qiming/contracts';
+import { ERROR_CODES } from '@qiming/contracts';
+import type { QuestionDto } from '@qiming/contracts';
 import { Button, Card, EmptyState, Skeleton, Tag, useToast } from '@qiming/ui';
-import { api } from '../../api';
+import { api, type GetData } from '../../api';
 import { PageHead } from '../Shell';
 import { bizError, newSegment, reseq } from '../lesson/lib/segments';
 import { fmtDateTime } from '../course/lib/format';
@@ -32,7 +33,7 @@ export function PaperBuilderPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [lesson, setLesson] = useState<LessonDto | null>(null);
+  const [lesson, setLesson] = useState<GetData<'/lessons/{id}'> | null>(null);
   const [questions, setQuestions] = useState<QuestionDto[]>([]);
   /** 已拉取过的题目详情累积表(跨学科切换保留),供已选题列表回填题干,避免切换学科后详情丢失 */
   const [knownById, setKnownById] = useState<Map<number, QuestionDto>>(new Map());
@@ -56,7 +57,7 @@ export function PaperBuilderPage() {
         ...(subj ? { subject: subj } : {}),
         ...(nodeId != null ? { tagNodeId: nodeId } : {}),
       },
-    }).then((r) => ({ items: r.data.items as QuestionDto[], total: r.data.total }));
+    }).then((r) => ({ items: r.data.items, total: r.data.total }));
 
   /** 拉取结果写入 questions(选题弹窗数据源)并累积进 knownById(已选题详情回填) */
   const applyQuestions = (qs: QuestionDto[]) => {
@@ -77,16 +78,16 @@ export function PaperBuilderPage() {
       initialPaperId ? api.get('/papers/{id}', { params: { id: initialPaperId } }) : Promise.resolve(null),
     ])
       .then(async ([l, cs, p]) => {
-        const lessonData = l.data as LessonDto;
+        const lessonData = l.data;
         setLesson(lessonData);
         // 默认预选本讲次所属课程的学科,只拉该学科的题(减少翻页量)
-        const subj = resolveDefaultSubject(cs.data as CourseDto[], lessonData.courseId);
+        const subj = resolveDefaultSubject(cs.data, lessonData.courseId);
         setSubject(subj);
         const qc = await collectQuestionPages(fetchQuestionPage, subj);
         applyQuestions(qc.questions);
         if (qc.truncated) toast('题库题目较多,已载入前 1000 道用于组卷;可在选题弹窗搜索缩小范围');
         if (p) {
-          const paper = p.data as PaperDto;
+          const paper = p.data;
           setName(paper.name);
           setItems(paper.questions.map((pq) => ({ questionId: pq.questionId, score: pq.score })));
         } else {
@@ -135,12 +136,12 @@ export function PaperBuilderPage() {
         await api.put('/papers/{id}', { params: { id: pid }, body: input });
       } else {
         const created = await api.post('/papers', { body: input });
-        pid = (created.data as PaperDto).id;
+        pid = created.data.id;
         setPaperId(pid);
       }
       // 挂载:homework 环节 paperId 指向本卷(无 homework 环节则追加一个)
       const segResp = await api.get('/lessons/{id}/segments', { params: { id: lessonId } });
-      const segs = segResp.data as LessonSegmentDto[];
+      const segs = segResp.data;
       const next = segs.some((s) => s.type === 'homework')
         ? segs.map((s) => (s.type === 'homework' ? { ...s, paperId: pid } : s))
         : [...segs, { ...newSegment('homework', segs.length + 1), paperId: pid }];
@@ -148,7 +149,11 @@ export function PaperBuilderPage() {
       return pid;
     } catch (e) {
       const biz = bizError(e);
-      toast(biz?.code === 4302 ? '该试卷已被作业引用,禁止修改(可新建一份)' : e instanceof Error ? e.message : '保存失败');
+      toast(
+        biz?.code === ERROR_CODES.PAPER_ASSIGNED ? '该试卷已被作业引用,禁止修改(可新建一份)'
+          : e instanceof Error ? e.message : '保存失败',
+        { variant: 'error' },
+      );
       return null;
     }
   };
@@ -172,7 +177,9 @@ export function PaperBuilderPage() {
           lessonId,
           kind: 'homework',
           target: { courseId: lesson.courseId },
-          dueAt: new Date(dueAt).toISOString(),
+          // 截止时间可被清空(datetime-local 允许空串);契约里 dueAt 本就是可选项,
+          // 空串不能进 new Date(…).toISOString()(抛 RangeError),直接不带该字段
+          ...(dueAt ? { dueAt: new Date(dueAt).toISOString() } : {}),
         },
       });
       toast(`作业已发布并挂载到讲次,下课后自动推送学生平板`);
@@ -259,7 +266,7 @@ export function PaperBuilderPage() {
               <Tag tone="violet">AI 预批 + 教师复核</Tag>
             </div>
             <div className="rounded-md bg-bg px-3 py-2.5 text-xs leading-relaxed text-ink-3">
-              发布即生效:下课后推送学生平板,截止 {fmtDateTime(new Date(dueAt).toISOString())};客观题提交后立即自动批改。
+              发布即生效:下课后推送学生平板,截止 {dueAt ? fmtDateTime(new Date(dueAt).toISOString()) : '未设置'};客观题提交后立即自动批改。
             </div>
           </div>
         </Card>

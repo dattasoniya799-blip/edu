@@ -6,6 +6,7 @@
  * 数据:GET /resources(分页 + type 过滤)· POST /resources(两步直传后落库)· DELETE /resources/{id}
  */
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { ResourceDto, ResourceType } from '@qiming/contracts';
 import { Button, EmptyState, Skeleton, Tag, useToast } from '@qiming/ui';
 import { api, resolveFigureSrc } from '../../api';
@@ -43,6 +44,7 @@ const TYPE_TABS: { value: '' | ResourceType; label: string }[] = [
 
 export function ResourcesPage() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [type, setType] = useState<'' | ResourceType>('');
@@ -53,6 +55,8 @@ export function ResourcesPage() {
   const [error, setError] = useState(false); // REV-front #2:加载失败(可重试)区别于空态
   const [uploading, setUploading] = useState(false);
   const [refresh, setRefresh] = useState(0);
+  /** 正在换签名直链的资源 id + 动作:真实模式下 view-url 是一跳网络,按钮要有 loading */
+  const [opening, setOpening] = useState<{ id: number; download: boolean } | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -82,9 +86,10 @@ export function ResourcesPage() {
 
   /** 预览/下载:走 ossKey → 签名直链(与题库插图同口径:mock 占位、真实换 view-url 签名直链) */
   const openResource = async (r: ResourceDto, download: boolean) => {
+    setOpening({ id: r.id, download });
     try {
       const url = await resolveFigureSrc(r.ossKey);
-      if (!url) { toast('暂时无法获取该资源直链,请稍后重试'); return; }
+      if (!url) { toast('暂时无法获取该资源直链,请稍后重试', { variant: 'error' }); return; }
       if (download) {
         const a = document.createElement('a');
         a.href = url;
@@ -97,7 +102,9 @@ export function ResourcesPage() {
         window.open(url, '_blank', 'noopener');
       }
     } catch {
-      toast(download ? '下载失败,请重试' : '预览失败,请重试');
+      toast(download ? '下载失败,请重试' : '预览失败,请重试', { variant: 'error' });
+    } finally {
+      setOpening(null);
     }
   };
 
@@ -121,9 +128,13 @@ export function ResourcesPage() {
         title="资源库"
         sub="课件、讲义、视频统一存放,在「编排课堂」时挂载到讲次 · 每个资源显示被哪些讲次引用"
         actions={
-          <Button variant="primary" disabled={uploading} onClick={() => fileRef.current?.click()}>
-            {uploading ? '上传中…' : '↑ 上传资源'}
-          </Button>
+          <>
+            {/* AI 生成课件向导(/courseware/new):文字稿 → 逐页大纲 → 逐页生图 → 成品落本资源库 */}
+            <Button onClick={() => navigate('/courseware/new')}>✦ AI 生成课件</Button>
+            <Button variant="primary" disabled={uploading} onClick={() => fileRef.current?.click()}>
+              {uploading ? '上传中…' : '↑ 上传资源'}
+            </Button>
+          </>
         }
       />
       <input
@@ -188,8 +199,18 @@ export function ResourcesPage() {
                     <div className="text-[12px] tabular-nums text-ink-3">{formatResourceMeta(r)}</div>
                     <div className={`text-[12px] ${used.referenced ? 'text-ink-2' : 'text-orange'}`}>{used.text}</div>
                     <div className="mt-auto flex items-center gap-3.5 pt-1.5 text-[13px] font-semibold">
-                      <button type="button" className="text-primary hover:underline" onClick={() => openResource(r, false)}>预览</button>
-                      <button type="button" className="text-primary hover:underline" onClick={() => openResource(r, true)}>下载</button>
+                      <Button
+                        className="!border-0 !bg-transparent !px-0 !py-0 !text-primary hover:underline"
+                        loading={opening?.id === r.id && !opening.download}
+                        disabled={opening != null}
+                        onClick={() => openResource(r, false)}
+                      >预览</Button>
+                      <Button
+                        className="!border-0 !bg-transparent !px-0 !py-0 !text-primary hover:underline"
+                        loading={opening?.id === r.id && opening.download}
+                        disabled={opening != null}
+                        onClick={() => openResource(r, true)}
+                      >下载</Button>
                       {!used.referenced && (
                         <button type="button" className="ml-auto text-red" onClick={() => onDelete(r)}>删除</button>
                       )}

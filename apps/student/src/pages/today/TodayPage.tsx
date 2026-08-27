@@ -5,19 +5,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, EmptyState, Skeleton, useToast } from '@qiming/ui';
-import { api } from '../../api';
+import { api, type GetData } from '../../api';
 import { useAuth } from '../../auth/AuthProvider';
 import { formatCorrectRate } from '../../lib/format';
-import { TaskRow, type TodayTask } from './TaskRow';
+import { TaskRow } from './TaskRow';
 
-interface TodayData {
-  todayLesson: {
-    lessonId: number; courseName: string; title: string;
-    startAt: string; endAt: string; canEnterAt: string; sessionId: number | null;
-  } | null;
-  tasks: TodayTask[];
-}
-interface WeekStats { answeredCount: number; correctRate: number | null; studySec: number; wrongOpenCount: number }
+type TodayData = GetData<'/student/today'>;
+type WeekStats = GetData<'/student/report'>['weekStats'];
 
 const fmtDay = (iso: string) => {
   const d = new Date(iso);
@@ -40,10 +34,10 @@ export function TodayPage() {
   useEffect(() => {
     setData(null); setWeek(null); setError(false); setWeekError(false);
     api.get('/student/today')
-      .then((r) => setData(r.data as TodayData))
+      .then((r) => setData(r.data))
       .catch(() => setError(true));
     api.get('/student/report')
-      .then((r) => setWeek((r.data as { weekStats: WeekStats }).weekStats))
+      .then((r) => setWeek(r.data.weekStats))
       .catch(() => setWeekError(true));
   }, [reload]);
 

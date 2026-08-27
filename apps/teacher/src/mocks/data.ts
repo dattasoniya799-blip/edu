@@ -9,8 +9,15 @@ import type {
   MeDto, TeacherDto, StudentDto, CourseDto, LessonDto, LessonSegmentDto, ResourceDto,
   KpGraphDto, KpNodeDto, QuestionDto, PaperDto, AssignmentDto, AttemptDto,
   WrongBookItemDto, MasteryItemDto, AiUsageSummaryDto, AiUsageBreakdownDto, GradingItemDto,
-  AiDiagnosisDto,
+  AiDiagnosisDto, CoursewareStyleInput,
 } from '@qiming/contracts';
+// 界面/资源 mock 的配色取设计令牌(禁止裸写十六进制)。这里直指 design-tokens 模块而非包入口:
+// 包入口是 export * 汇总,tsx(test:mock 冒烟脚本)无法链接其运行时命名导出,只有类型导入可用。
+import { colors } from '../../../../packages/contracts/src/design-tokens';
+// 幻灯片 mock 出图的配色/提示词取自风格模板库(前端唯一事实,后端实现时整体迁到 ai/config)
+import {
+  CUSTOM_STYLE_ID, DEFAULT_STYLE_ID, composePagePrompt, getStyle, styleLabel,
+} from '../pages/courseware/lib/styles';
 import { abilityNodes, strategyNodes } from './kpAbilityStrategyNodes';
 
 const ORG = '鲸云演示机构';
@@ -461,3 +468,579 @@ export const aiHealth = {
     { feature: 'pre_grading', provider: 'demo-llm', model: 'demo-model-s', healthy: true },
   ],
 };
+
+// ============ AI 生成课件(/courseware/outline · /courseware/jobs,2026-08-22 已进契约) ============
+// 走查用有状态 mock:文本 LLM 出大纲 → 教师改 → 逐页 GPT Image 出图(真实约 23 秒/页,
+// 此处 3 秒/页便于走查)→ 全部完成落资源库。真实后端为 BullMQ 队列 + Redis 进度 + 前端轮询。
+
+/** mock 出图节奏:每页结算耗时(ms) */
+export const COURSEWARE_MS_PER_PAGE = 3000;
+/** 固定失败一次的页序(供走查失败态 → 重试转成功) */
+export const COURSEWARE_FAIL_SEQ = 3;
+
+const xmlText = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+/** 长文本按固定字数折行(中文按字计,够用);行末溢出的收尾标点吸回本行,避免「。」单独成行 */
+function wrap(text: string, perLine: number, maxLines: number): string[] {
+  const out: string[] = [];
+  let rest = text;
+  while (rest.length > 0 && out.length < maxLines) {
+    let take = Math.min(perLine, rest.length);
+    if (take < rest.length && /[。,、;;::??!!)」』]/.test(rest[take])) take += 1;
+    out.push(rest.slice(0, take));
+    rest = rest.slice(take);
+  }
+  if (rest.length > 0) out[maxLines - 1] = `${out[maxLines - 1].slice(0, perLine - 1)}…`;
+  return out;
+}
+
+/**
+ * 要点折行:两行均分 + 优先在标点后断开。
+ * 直接按满行硬断会出现「第二行只剩两个字」的尴尬版式(整句要点长度普遍是行宽 +2~3 字)。
+ */
+function wrapBullet(text: string, perLine: number, maxLines: number): string[] {
+  if (text.length <= perLine) return [text];
+  const out: string[] = [];
+  let rest = text;
+  while (rest.length > perLine && out.length < maxLines - 1) {
+    const linesLeft = Math.min(maxLines - out.length, Math.ceil(rest.length / perLine));
+    const target = Math.min(perLine, Math.ceil(rest.length / linesLeft));
+    let cut = target;
+    for (let d = 1; d <= 5; d += 1) {
+      if (target + d <= perLine && /[,、。;;::]/.test(rest[target + d - 1])) { cut = target + d; break; }
+      if (target - d > 4 && /[,、。;;::]/.test(rest[target - d - 1])) { cut = target - d; break; }
+    }
+    out.push(rest.slice(0, cut));
+    rest = rest.slice(cut);
+  }
+  out.push(rest.length > perLine ? `${rest.slice(0, perLine - 1)}…` : rest);
+  return out;
+}
+
+/** 标题折行:优先在「 · 」处断开,否则按字数断 */
+function wrapTitle(title: string, perLine: number, maxLines: number): string[] {
+  if (title.length <= perLine) return [title];
+  const sep = title.lastIndexOf(' · ', perLine);
+  if (sep > 0) return [title.slice(0, sep), ...wrap(title.slice(sep + 3), perLine, maxLines - 1)];
+  return wrap(title, perLine, maxLines);
+}
+
+/**
+ * 幻灯片画布尺寸 = 1264×848(横版,约 3:2)。
+ * 依据:2026-08 实测真实链路 —— 向 GPT Image 请求 1536x1024/medium,中转会归一参数,
+ * 实际返回 1264x848/low。故 mock 直接对齐「实际返回尺寸」而非请求尺寸,
+ * 走查看到的比例与真实成品一致(记账/落库同样应按响应实际 size/quality,见 README)。
+ */
+export const SLIDE_WIDTH = 1264;
+export const SLIDE_HEIGHT = 848;
+
+/**
+ * 幻灯片风格主题(mock 渲染参数,取自 pages/courseware/lib/styles.ts 的 palette)。
+ * 只有 palette 四色是「事实」,其余灰阶一律用 opacity 派生,避免在 mock 里再写裸色值。
+ */
+interface SlideTheme {
+  bg: string; ink: string; primary: string; accent: string;
+  /** 页眉/页脚等次级文字的透明度 */
+  mutedOpacity: number;
+  /** 圆角(swiss 为 0) */
+  radius: number;
+  /** 左侧竖向色条 */
+  leftBar: boolean;
+  bullet: 'circle' | 'square' | 'sketch' | 'dash';
+  /** 右栏示意图区:填充色 / 透明度 / 描边宽度(0 表示无描边) */
+  panel: { fill: string; opacity: number; stroke: number };
+  /** 示意图线条色 */
+  figureInk: string;
+  /** 背景装饰(纸纹 / 极光 / 网格 / 顶部色带) */
+  decor: string;
+  /** 页脚署名后缀(自定义风格带上教师描述) */
+  footerNote: string;
+  /** 标题下的短杠画成手绘抖动线 */
+  sketchyBar?: boolean;
+  /** 标题用马克笔色块高亮打底 */
+  markerTitle?: boolean;
+}
+
+function slideTheme(styleId: string, customText?: string): SlideTheme {
+  const { bg, primary, accent, text } = getStyle(styleId).palette;
+  const base: SlideTheme = {
+    bg, ink: text, primary, accent,
+    mutedOpacity: 0.5, radius: 26, leftBar: true, bullet: 'circle',
+    panel: { fill: accent, opacity: 0.12, stroke: 0 },
+    figureInk: accent, decor: '', footerNote: '',
+  };
+  if (styleId === 'hand_sketch') {
+    return {
+      ...base, bullet: 'sketch', mutedOpacity: 0.45, leftBar: false, radius: 18,
+      panel: { fill: accent, opacity: 0.14, stroke: 3 }, figureInk: primary,
+      sketchyBar: true, markerTitle: true,
+      // 稿纸横线 + 手绘虚线边框
+      decor: [
+        ...[0, 1, 2, 3, 4, 5].map((i) => `<rect x="0" y="${120 + i * 130}" width="${SLIDE_WIDTH}" height="2" fill="${primary}" opacity="0.05"/>`),
+        `<rect x="34" y="34" width="${SLIDE_WIDTH - 68}" height="${SLIDE_HEIGHT - 68}" rx="20" fill="none" stroke="${primary}" stroke-width="3" stroke-dasharray="18 12" opacity="0.5"/>`,
+      ].join(''),
+    };
+  }
+  if (styleId === 'vector_illust') {
+    return {
+      ...base, bullet: 'square', mutedOpacity: 0.55, leftBar: false, radius: 20,
+      panel: { fill: accent, opacity: 0.9, stroke: 5 }, figureInk: text,
+      // 顶部插画色带 + 描边几何
+      decor: [
+        `<rect x="0" y="0" width="${SLIDE_WIDTH}" height="34" fill="${primary}"/>`,
+        `<circle cx="1148" cy="96" r="32" fill="${primary}" stroke="${text}" stroke-width="5"/>`,
+        `<rect x="1042" y="66" width="58" height="58" fill="${bg}" stroke="${text}" stroke-width="5"/>`,
+      ].join(''),
+    };
+  }
+  if (styleId === 'dark_tech') {
+    return {
+      ...base, mutedOpacity: 0.42, radius: 22,
+      panel: { fill: text, opacity: 0.06, stroke: 0 },
+      // 极光光带(氛围,不喧宾夺主)
+      decor: [
+        `<ellipse cx="1010" cy="90" rx="380" ry="170" fill="${primary}" opacity="0.28"/>`,
+        `<ellipse cx="180" cy="800" rx="300" ry="130" fill="${accent}" opacity="0.14"/>`,
+      ].join(''),
+    };
+  }
+  if (styleId === 'swiss_grid') {
+    return {
+      ...base, bullet: 'dash', mutedOpacity: 0.55, leftBar: false, radius: 0,
+      panel: { fill: text, opacity: 0, stroke: 3 }, figureInk: text,
+      // 12 列网格辅助线 + 一块纯色方块
+      decor: [
+        ...Array.from({ length: 11 }, (_, i) => `<rect x="${88 + (i + 1) * 92}" y="0" width="1" height="${SLIDE_HEIGHT}" fill="${text}" opacity="0.06"/>`),
+        `<rect x="1044" y="52" width="136" height="96" fill="${primary}"/>`,
+      ].join(''),
+    };
+  }
+  if (styleId === CUSTOM_STYLE_ID) {
+    const t = (customText ?? '').trim();
+    return {
+      ...base, mutedOpacity: 0.5, radius: 22,
+      panel: { fill: accent, opacity: 0.3, stroke: 0 }, figureInk: primary,
+      decor: `<rect x="30" y="30" width="${SLIDE_WIDTH - 60}" height="${SLIDE_HEIGHT - 60}" rx="18" fill="none" stroke="${primary}" stroke-width="3" stroke-dasharray="14 10" opacity="0.5"/>`,
+      footerNote: t ? ` · 自定义:${t.length > 12 ? `${t.slice(0, 12)}…` : t}` : '',
+    };
+  }
+  return base;
+}
+
+/** 右侧示意图占位区:按页序轮换四种简单几何示意(直角三角形 / 坐标系 / 三步流程 / 知识网络) */
+function figureDecoration(variant: number, ink: string, nodeFill: string): string {
+  /** 描边样式(注意:同一元素上不可重复声明 stroke-width,重复属性会让 SVG 变成非法 XML) */
+  const line = (w: number) => `stroke="${ink}" stroke-width="${w}" fill="none"`;
+  const label = (x: number, y: number, t: string) =>
+    `<text x="${x}" y="${y}" font-size="26" fill="${ink}" text-anchor="middle">${t}</text>`;
+  if (variant === 0) {
+    return [
+      `<polygon points="880,540 1080,540 880,360" ${line(5)} stroke-linejoin="round"/>`,
+      `<rect x="880" y="512" width="28" height="28" ${line(3)}/>`,
+      label(980, 578, 'a'), label(854, 456, 'b'), label(1000, 440, 'c'),
+    ].join('');
+  }
+  if (variant === 1) {
+    return [
+      `<line x1="866" y1="540" x2="1096" y2="540" ${line(4)}/>`,
+      `<line x1="900" y1="576" x2="900" y2="346" ${line(4)}/>`,
+      `<line x1="914" y1="528" x2="1070" y2="368" ${line(5)}/>`,
+      `<circle cx="958" cy="483" r="9" fill="${ink}"/>`,
+      `<circle cx="1036" cy="403" r="9" fill="${ink}"/>`,
+      label(1088, 578, 'x'), label(864, 352, 'y'),
+    ].join('');
+  }
+  if (variant === 2) {
+    return [0, 1, 2].map((i) => {
+      const y = 348 + i * 76;
+      return `<rect x="880" y="${y}" width="200" height="52" rx="14" ${line(4)}/>`
+        + label(980, y + 34, `第 ${i + 1} 步`)
+        + (i < 2 ? `<polyline points="970,${y + 56} 980,${y + 70} 990,${y + 56}" ${line(4)}/>` : '');
+    }).join('');
+  }
+  // 知识网络:先画连线,再用底色实心圆盖住线头,避免线条穿过节点
+  const branches = [[884, 360], [1076, 360], [884, 540], [1076, 540]];
+  return [
+    ...branches.map(([x, y]) => `<line x1="980" y1="450" x2="${x}" y2="${y}" stroke="${ink}" stroke-width="3"/>`),
+    `<circle cx="980" cy="450" r="48" fill="${nodeFill}" stroke="${ink}" stroke-width="5"/>`,
+    ...branches.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="26" fill="${nodeFill}" stroke="${ink}" stroke-width="3"/>`),
+  ].join('');
+}
+
+export interface SlideRenderInput {
+  seq: number;
+  title: string;
+  body: string;
+  total: number;
+  /** 风格 id(见 pages/courseware/lib/styles.ts);缺省为默认风格 */
+  styleId?: string;
+  /** 自定义风格时教师填的风格描述(mock 只用于页脚示意) */
+  customText?: string;
+}
+
+/**
+ * 模拟 GPT Image 出的「一整张幻灯片图片」:内联 SVG data-URI,横版 1264×848。
+ * 版式对齐真实链路验证过的专业教学 PPT:装饰色条 + 大标题 + 3~5 条完整句要点(序号点)
+ * + 右侧示意图区 + 右下角页码 n/N;底色/主色/文字色/装饰随所选风格变化(走查时能一眼看出换了风格)。
+ * 中文必须走 encodeURIComponent 构造 data URI(base64 会破坏多字节字符)。
+ */
+export function slideImage(input: SlideRenderInput): string {
+  const { seq, title, body, total } = input;
+  const t = slideTheme(input.styleId ?? DEFAULT_STYLE_ID, input.customText);
+  const titleLines = wrapTitle(title.trim() || `第 ${seq} 页`, 19, 2);
+  const bullets = body
+    .split('\n')
+    .map((l) => l.replace(/^[·•\-\s\d.、]+/, '').trim())
+    .filter(Boolean)
+    .slice(0, 5);
+  const titleBottom = 162 + (titleLines.length - 1) * 62;
+  const barY = titleBottom + 24;
+  const contentTop = barY + 48;
+  const slotH = bullets.length === 0 ? 0 : Math.min(122, Math.floor((760 - contentTop) / bullets.length));
+
+  const muted = (x: number, y: number, size: number, text: string, anchor = 'start') =>
+    `<text x="${x}" y="${y}" font-size="${size}" fill="${t.ink}" opacity="${t.mutedOpacity}" text-anchor="${anchor}">${xmlText(text)}</text>`;
+
+  const titleSvg = titleLines
+    .map((l, i) => {
+      const y = 162 + i * 62;
+      // 马克笔高亮:中文按字宽≈字号估宽,涂一条半透明色块打底
+      const highlight = t.markerTitle
+        ? `<rect x="82" y="${y - 44}" width="${Math.min(700, l.length * 53 + 16)}" height="56" rx="6" fill="${t.accent}" opacity="0.55"/>`
+        : '';
+      return `${highlight}<text x="88" y="${y}" font-size="52" font-weight="700" fill="${t.ink}">${xmlText(l)}</text>`;
+    })
+    .join('');
+  const titleBar = t.sketchyBar
+    ? `<path d="M88 ${barY + 4} q28 -6 56 1 t56 -2" fill="none" stroke="${t.primary}" stroke-width="7" stroke-linecap="round"/>`
+    : `<rect x="88" y="${barY}" width="112" height="8" rx="${t.radius === 0 ? 0 : 4}" fill="${t.primary}"/>`;
+
+  /** 序号点:圆点 / 描边方块 / 手绘对勾 / 瑞士短横 */
+  const marker = (i: number, top: number): string => {
+    const cy = top + 22;
+    if (t.bullet === 'square') {
+      return `<rect x="88" y="${cy - 19}" width="38" height="38" rx="4" fill="${t.primary}" stroke="${t.ink}" stroke-width="4"/>`
+        + `<text x="107" y="${cy + 9}" font-size="22" font-weight="700" fill="${t.bg}" text-anchor="middle">${i + 1}</text>`;
+    }
+    if (t.bullet === 'sketch') {
+      return `<circle cx="106" cy="${cy}" r="19" fill="none" stroke="${t.primary}" stroke-width="3"/>`
+        + `<text x="106" y="${cy + 9}" font-size="22" font-weight="700" fill="${t.primary}" text-anchor="middle">${i + 1}</text>`;
+    }
+    if (t.bullet === 'dash') {
+      return `<rect x="88" y="${cy - 2}" width="34" height="5" fill="${t.ink}"/>`;
+    }
+    return `<circle cx="106" cy="${cy}" r="19" fill="${t.primary}"/>`
+      + `<text x="106" y="${cy + 9}" font-size="22" font-weight="700" fill="${t.bg}" text-anchor="middle">${i + 1}</text>`;
+  };
+
+  const bulletSvg = bullets.map((b, i) => {
+    const top = contentTop + i * slotH;
+    // 左栏文字区 142~780,字号 29 → 一行约 21 字
+    const lines = wrapBullet(b, 21, 2);
+    return marker(i, top)
+      + lines.map((l, j) => `<text x="142" y="${top + 32 + j * 40}" font-size="29" fill="${t.ink}">${xmlText(l)}</text>`).join('');
+  }).join('');
+
+  const panel = [
+    t.panel.opacity > 0
+      ? `<rect x="792" y="180" width="388" height="440" rx="${t.radius}" fill="${t.panel.fill}" opacity="${t.panel.opacity}"/>` : '',
+    t.panel.stroke > 0
+      ? `<rect x="792" y="180" width="388" height="440" rx="${t.radius}" fill="none" stroke="${t.figureInk}" stroke-width="${t.panel.stroke}"/>` : '',
+  ].join('');
+
+  const svg = [
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${SLIDE_WIDTH}" height="${SLIDE_HEIGHT}" viewBox="0 0 ${SLIDE_WIDTH} ${SLIDE_HEIGHT}" font-family="sans-serif">`,
+    `<rect width="${SLIDE_WIDTH}" height="${SLIDE_HEIGHT}" fill="${t.bg}"/>`,
+    t.decor,
+    // 左侧竖向装饰条(部分风格不用色条,靠底色与装饰区分)
+    t.leftBar ? `<rect x="0" y="0" width="26" height="${SLIDE_HEIGHT}" fill="${t.primary}"/>` : '',
+    t.leftBar ? `<rect x="26" y="0" width="10" height="${SLIDE_HEIGHT}" fill="${t.accent}" opacity="0.35"/>` : '',
+    // 页眉标签 + 标题 + 标题下的主题色短杠
+    muted(88, 96, 26, 'AI 生成课件 · 教学幻灯片'),
+    titleSvg,
+    titleBar,
+    // 左栏要点
+    bulletSvg,
+    // 右栏示意图区
+    panel,
+    figureDecoration((seq - 1) % 4, t.figureInk, t.bg),
+    muted(986, 668, 24, '示意图', 'middle'),
+    // 页脚:左侧署名 + 右下角页码 n/N
+    `<line x1="88" y1="770" x2="1180" y2="770" stroke="${t.ink}" stroke-width="2" opacity="0.18"/>`,
+    muted(88, 806, 24, `鲸云 AI 教育平台 · 演示用生成图${t.footerNote}`),
+    `<text x="1180" y="806" font-size="28" font-weight="700" fill="${t.primary}" text-anchor="end">${seq}/${total}</text>`,
+    '</svg>',
+  ].filter(Boolean).join('');
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+/** 文字稿 → 课题主题词(取前若干字,串进各页标题) */
+export function outlineTopic(sourceText: string): string {
+  const first = sourceText
+    .split(/[。;;,,!!??::\n\r]/)
+    .map((s) => s.trim())
+    .find((s) => s.length > 0);
+  if (!first) return '本节课内容';
+  return first.length > 14 ? first.slice(0, 14) : first;
+}
+
+interface OutlineStage {
+  label: (topic: string) => string;
+  /** 3~5 条完整句要点(整句才够密,短语会让成品「一页几个字」) */
+  bullets: (topic: string) => string[];
+  /** 该页配图与版式重点(真实链路会与统一风格前缀 + 整页内容拼成密实提示词,见 README) */
+  figure: (topic: string) => string;
+}
+
+const STAGE_HEAD: OutlineStage = {
+  label: (t) => `${t} · 课题引入`,
+  bullets: (t) => [
+    '从校园里的真实问题出发,让学生先感到「这个知识用得上」。',
+    `复习与「${t}」相关的旧知识,为新课搭好台阶。`,
+    '提出本节的核心问题:已知条件之间到底有什么关系?',
+    '明确本节目标:理解概念、掌握方法、能独立解题。',
+  ],
+  figure: (t) => `右栏画一幅校园生活情境示意图(如旗杆与影子、楼梯与斜坡),用箭头标出待求的量,呼应标题「${t}」`,
+};
+
+const STAGE_MIDDLE: OutlineStage[] = [
+  {
+    label: (t) => `${t}的概念澄清`,
+    bullets: (t) => [
+      `给出「${t}」的规范表述,并逐字拆解其中的关键词。`,
+      '标出结论成立的前提条件,条件不满足就不能直接用。',
+      '对比两种容易混淆的说法,指出差别究竟在哪一处。',
+      '一句话记住:先看条件,再用结论,顺序不能颠倒。',
+    ],
+    figure: () => '右栏画一张定义卡片,下方两个小方框分别列出「成立条件」与「常见误读」,用对勾与叉号区分',
+  },
+  {
+    label: (t) => `${t}的推导过程`,
+    bullets: () => [
+      '从图形与等式出发,一步一步把结论推导出来。',
+      '每一步都标注依据:用的是定义、定理还是运算律。',
+      '推完回看整条链条,确认没有跳步、没有循环论证。',
+      '强调结论可以反向使用,便于逆向求出未知量。',
+    ],
+    figure: () => '右栏画自上而下三步推导流程图,方框之间用箭头相连,旁边配一幅几何示意图标出对应关系',
+  },
+  {
+    label: (t) => `例题精讲 · ${t}`,
+    bullets: () => [
+      '例题给出典型题面,先圈出已知条件与所求目标。',
+      '按四步走:审题、找关系、列式计算、回代检验。',
+      '板书完整过程,提醒书写格式与单位不能省略。',
+      '算完追问一句:这一步的依据是什么?',
+    ],
+    figure: () => '右栏上半是题面文字框,下半是「审题→找关系→列式→检验」四步竖排清单,配草稿纸与铅笔元素',
+  },
+  {
+    label: () => '变式训练',
+    bullets: (t) => [
+      '在例题基础上改动条件,观察解法如何随之迁移。',
+      '变式一只换数值,重点检验计算是否稳定。',
+      `变式二换一种问法,检验是否真的理解「${t}」。`,
+      '归纳:方法始终没变,关键是找到同一个关系式。',
+    ],
+    figure: () => '右栏并排两张题卡(变式一、变式二),中间一个双向箭头表示对比,卡片下方一行「方法不变」标注',
+  },
+  {
+    label: (t) => `${t}易错辨析`,
+    bullets: () => [
+      '列出三处高频错误,并现场追问错在哪一步。',
+      '错因归类:概念不清、条件漏看、计算失误。',
+      '给出自查清单:做完先查条件、再查单位、最后查数值。',
+      '把典型错例抄进错题本,下次做题前先看一眼。',
+    ],
+    figure: () => '右栏三张横排错误卡片,每张左上角一个红色叉号,右下角一个放大镜元素表示「自查」',
+  },
+  {
+    label: (t) => `${t}的生活应用`,
+    bullets: (t) => [
+      `把「${t}」放回真实场景,先估算结果再动笔验证。`,
+      '课堂活动:同桌互相出一道生活情境题并交换解答。',
+      '体会流程:实际问题、抽象模型、求解、回答。',
+      '讨论一句:估算与精确计算,什么时候该用哪个?',
+    ],
+    figure: () => '右栏画一幅校园场景示意图(操场、旗杆、楼梯),周围三个标注气泡分别写「测什么」「算什么」「答什么」',
+  },
+  {
+    label: () => '知识结构梳理',
+    bullets: (t) => [
+      `以「${t}」为中心,把本章相关知识连成一张网络。`,
+      '连线上标注关系:由什么推出、又能解决什么问题。',
+      '提醒学生把新知识挂到旧知识的树上,而不是死记。',
+      '课后自己默画一遍结构图,画不出的地方就是薄弱点。',
+    ],
+    figure: () => '右栏画思维导图:中心节点向四周发散四条分支,分支端点为小圆节点,线条简洁不加阴影',
+  },
+];
+
+const STAGE_TAIL: OutlineStage[] = [
+  {
+    label: () => '分层练习',
+    bullets: () => [
+      '基础 2 题:直接套用本节结论,人人必须过关。',
+      '提升 2 题:需要两步转化,先说思路再动笔。',
+      '挑战 1 题:综合运用,鼓励尝试、允许不完整。',
+      '订正要求:错题写清错因,不只是抄一遍正确答案。',
+    ],
+    figure: () => '右栏画三层阶梯图形由低到高,每层标注「基础 2 题」「提升 2 题」「挑战 1 题」,阶梯旁一个向上的小箭头',
+  },
+  {
+    label: () => '课堂小结与作业',
+    bullets: (t) => [
+      '回顾本节三个关键结论,请学生各用一句话复述。',
+      `随机点名:用自己的话说清「${t}」是怎么用的。`,
+      '布置课后作业,说明必做与选做的分界。',
+      '预告下节内容,让学生带着问题离开教室。',
+    ],
+    figure: () => '右栏画三行带勾选框的要点清单,下方一个作业便签图形写「必做 / 选做」,配色温暖收束',
+  },
+];
+
+/**
+ * 文字稿 + 期望页数 → 一份像样的示例大纲(教学页序:引入 → 概念/推导/例题/变式/易错 → 练习 → 小结)
+ * body 为 3~5 条完整句要点(每行一条,前缀「· 」);imagePrompt = 统一版式要求 + 该页配图说明 + 页码,
+ * 与真实链路的提示词组装口径一致(见 pages/courseware/README.md)。
+ */
+export function coursewareOutline(
+  sourceText: string, pageCount: number, style: CoursewareStyleInput = { id: DEFAULT_STYLE_ID },
+): { title: string; body: string; imagePrompt: string }[] {
+  const topic = outlineTopic(sourceText);
+  const styleName = styleLabel(style);
+  const count = Math.min(20, Math.max(3, Math.round(pageCount) || 8));
+  const tail = count >= 5 ? STAGE_TAIL : STAGE_TAIL.slice(1);
+  const middleCount = Math.max(0, count - 1 - tail.length);
+  const middle = Array.from({ length: middleCount }, (_, i) => ({ stage: STAGE_MIDDLE[i % STAGE_MIDDLE.length], round: Math.floor(i / STAGE_MIDDLE.length) }));
+  const stages = [
+    { stage: STAGE_HEAD, round: 0 },
+    ...middle,
+    ...tail.map((stage) => ({ stage, round: 0 })),
+  ];
+  return stages.map(({ stage, round }) => {
+    const title = `${stage.label(topic)}${round > 0 ? `(${round + 1})` : ''}`;
+    return {
+      title,
+      body: stage.bullets(topic).map((b) => `· ${b}`).join('\n'),
+      imagePrompt: `【风格:${styleName}】${stage.figure(topic)}`,
+    };
+  });
+}
+
+export interface CoursewareJobPageState {
+  seq: number; title: string; body: string; imagePrompt: string;
+  /** 入队时组装的最终提示词(风格前缀 + 整页内容 + 页码);真实后端同口径,见 README */
+  finalPrompt: string;
+  status: 'pending' | 'done' | 'failed';
+  imageUrl?: string;
+  /** 该页出图的预计结算时刻(时间驱动模拟:到点即按 mock 规则结算) */
+  dueAt: number;
+  /** 已重试过 → 不再触发固定失败 */
+  retried: boolean;
+}
+
+export interface CoursewareJobState {
+  id: string; name: string;
+  lessonId: number | null; kpNodeId: number | null;
+  /** 整套课件的 PPT 风格(逐页出图共用) */
+  style: CoursewareStyleInput;
+  pages: CoursewareJobPageState[];
+  /** 全部页完成后落资源库产生的 Resource id */
+  resourceId: number | null;
+  createdAt: number;
+}
+
+/** 内存 job 表(module 级,页面刷新即重置;测试可直接改 dueAt 模拟时间流逝) */
+export const coursewareJobs = new Map<string, CoursewareJobState>();
+let coursewareJobSeq = 0;
+
+export function createCoursewareJob(input: {
+  name: string; lessonId?: number | null; kpNodeId?: number | null;
+  style?: CoursewareStyleInput;
+  pages: { title: string; body: string; imagePrompt: string }[];
+}): CoursewareJobState {
+  const now = Date.now();
+  const style: CoursewareStyleInput = { id: input.style?.id ?? DEFAULT_STYLE_ID, customText: input.style?.customText };
+  const total = input.pages.length;
+  const job: CoursewareJobState = {
+    id: `cw-job-${++coursewareJobSeq}`,
+    name: input.name,
+    lessonId: input.lessonId ?? null,
+    kpNodeId: input.kpNodeId ?? null,
+    style,
+    resourceId: null,
+    createdAt: now,
+    pages: input.pages.map((p, i) => ({
+      seq: i + 1, title: p.title, body: p.body, imagePrompt: p.imagePrompt,
+      // 真实后端在入队时做同样的组装:风格前缀 + 整页内容 + 页码
+      finalPrompt: composePagePrompt({ style, page: p, seq: i + 1, total }),
+      status: 'pending', dueAt: now + (i + 1) * COURSEWARE_MS_PER_PAGE, retried: false,
+    })),
+  };
+  coursewareJobs.set(job.id, job);
+  return job;
+}
+
+/**
+ * 成品落资源库(type=ppt),形状对齐真实后端 courseware-page.service.createResource:
+ * - `ossKey` = **首页整页图**(真实是 resource/…/page-1.png;mock 无对象存储,直接放
+ *   首页图的 data URI —— resolveOssUrl 对 data: 原样放行,预览仍看得到真图)
+ * - `meta.pages` = **逐页对象数组**(seq/title/body/imageOssKey),不是页数数字
+ * 此前 mock 用 `pages: 数字` + 自造的 pageTitles/imageUrls,与后端对不上,课堂逐页渲染
+ * (classroom buildCourseware 只认对象数组)在 mock 下永远走不到。
+ */
+function publishCourseware(job: CoursewareJobState): number {
+  const id = Math.max(0, ...resources.map((r) => r.id)) + 1;
+  const cover = job.pages[0]?.imageUrl ?? `ai/courseware/${job.id}/page-1.png`;
+  resources.unshift({
+    id, type: 'ppt', name: job.name,
+    ossKey: cover,
+    size: job.pages.length * 1_250_000,
+    meta: {
+      kind: 'ai_courseware',
+      styleId: job.style.id,
+      styleName: styleLabel(job.style),
+      pages: job.pages.map((p) => ({
+        seq: p.seq,
+        title: p.title,
+        body: p.body,
+        imageOssKey: p.imageUrl ?? null,
+      })),
+    },
+    usedByLessons: [],
+    kpNodeId: job.kpNodeId,
+    kpNodeName: job.kpNodeId == null ? null : (kpNodes.find((n) => n.id === job.kpNodeId)?.name ?? null),
+    createdAt: new Date().toISOString(),
+  });
+  return id;
+}
+
+/** 时间驱动推进:每次查询按经过时间结算到点的页;第 COURSEWARE_FAIL_SEQ 页首轮固定失败 */
+export function advanceCoursewareJob(job: CoursewareJobState): CoursewareJobState {
+  const now = Date.now();
+  for (const p of job.pages) {
+    if (p.status !== 'pending' || now < p.dueAt) continue;
+    if (p.seq === COURSEWARE_FAIL_SEQ && !p.retried) { p.status = 'failed'; continue; }
+    p.status = 'done';
+    p.imageUrl = slideImage({
+      seq: p.seq, title: p.title, body: p.body, total: job.pages.length,
+      styleId: job.style.id, customText: job.style.customText,
+    });
+  }
+  const allDone = job.pages.every((p) => p.status === 'done');
+  if (allDone && job.resourceId == null) job.resourceId = publishCourseware(job);
+  return job;
+}
+
+/** 重试失败页:转 pending 并重新排期(下一轮必成功) */
+export function retryCoursewareJob(job: CoursewareJobState): CoursewareJobState {
+  const now = Date.now();
+  for (const p of job.pages) {
+    if (p.status !== 'failed') continue;
+    p.status = 'pending';
+    p.retried = true;
+    p.dueAt = now + COURSEWARE_MS_PER_PAGE;
+  }
+  return job;
+}

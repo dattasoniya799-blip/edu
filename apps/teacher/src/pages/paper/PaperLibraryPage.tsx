@@ -49,14 +49,14 @@ export function PaperLibraryPage() {
     Promise.all([
       collectPaperPages(async (page, size) => {
         const r = await api.get('/papers', { query: { page, size } });
-        return r.data as { items: PaperDto[]; total: number };
+        return r.data;
       }),
       // 引用态尽力而为;作业拉取失败不阻塞主列表
       api.get('/assignments').catch(() => ({ data: [] as AssignmentBriefDto[] })),
     ])
       .then(([paperItems, ar]) => {
         setPapers(paperItems);
-        setReferencedNames(new Set((ar.data as AssignmentBriefDto[]).map((a) => a.paperName)));
+        setReferencedNames(new Set(ar.data.map((a) => a.paperName)));
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
@@ -69,7 +69,7 @@ export function PaperLibraryPage() {
     setDetailLoadingId(id);
     setDetailErrorId(null);
     api.get('/papers/{id}', { params: { id } })
-      .then((r) => setDetailCache((m) => ({ ...m, [id]: r.data as PaperDto })))
+      .then((r) => setDetailCache((m) => ({ ...m, [id]: r.data })))
       .catch(() => setDetailErrorId(id))
       .finally(() => setDetailLoadingId((cur) => (cur === id ? null : cur)));
   };

@@ -1,9 +1,9 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue, Worker } from 'bullmq';
 import { runAsUser } from '../common/tenant-context';
 import { GradingService } from './grading.service';
-import { bullConnection, PRE_GRADING_QUEUE, QUEUE_PREFIX } from './queue.util';
+import { bullConnection, PRE_GRADING_QUEUE, queuePrefix } from './queue.util';
 
 export interface PreGradingJob {
   orgId: number;
@@ -17,14 +17,16 @@ export interface PreGradingJob {
  */
 @Injectable()
 export class PreGradingQueueService implements OnModuleDestroy {
+  private readonly logger = new Logger('PreGradingQueue');
   private readonly queue: Queue<PreGradingJob>;
   private readonly worker: Worker<PreGradingJob>;
 
   constructor(cfg: ConfigService, grading: GradingService) {
     const connection = bullConnection(cfg);
+    const prefix = queuePrefix(cfg);
     this.queue = new Queue<PreGradingJob>(PRE_GRADING_QUEUE, {
       connection,
-      prefix: QUEUE_PREFIX,
+      prefix,
       defaultJobOptions: { removeOnComplete: true, removeOnFail: 100, attempts: 2 },
     });
     this.worker = new Worker<PreGradingJob>(
@@ -35,9 +37,14 @@ export class PreGradingQueueService implements OnModuleDestroy {
           grading.processPreGrade(answerId, orgId),
         );
       },
-      { connection, prefix: QUEUE_PREFIX, concurrency: 5 },
+      { connection, prefix, concurrency: 5 },
     );
-    this.worker.on('error', () => undefined);
+    // [2026-08-22 audit-fix-server · D3] 原先两个事件都无人订阅:Redis 抖动导致 worker
+    // 停止消费、或 attempts 耗尽后学生的 AI 预批结果静默丢失,日志里一个字都没有。
+    this.worker.on('error', (e) => this.logger.error(`worker 故障:${e?.message ?? e}`));
+    this.worker.on('failed', (job, e) =>
+      this.logger.error(`预批任务失败 job=${job?.id} answerId=${job?.data?.answerId} attempts=${job?.attemptsMade}:${e?.message ?? e}`),
+    );
   }
 
   async enqueue(orgId: number, answerId: number): Promise<void> {

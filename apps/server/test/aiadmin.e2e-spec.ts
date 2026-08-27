@@ -41,6 +41,11 @@ describe('AI 接口管理:运行态 LLM 配置 + 真假路由 + 测试连接(adm
     env.LLM_API_KEY = '';
     env.LLM_BASE_URL = 'https://api.openai.com/v1';
     env.LLM_MODEL = '';
+    // [2026-08-22 audit-fix-server · P1-11] 生图 key 独立:putRoutes 把 courseware 切 real
+    // 时要求 IMAGE_API_KEY 非空,故本套件显式给一把假 key(探活用例会单独置空验拒绝)。
+    env.IMAGE_API_KEY = 'sk-image-fake-for-e2e';
+    env.IMAGE_BASE_URL = 'http://127.0.0.1:9/v1';
+    env.IMAGE_MODEL = 'gpt-image-2';
     redis = new Redis(process.env.REDIS_URL ?? 'redis://127.0.0.1:6379');
     await cleanupKeys(); // 防御:上轮残留
     app = await createApp();
@@ -59,6 +64,8 @@ describe('AI 接口管理:运行态 LLM 配置 + 真假路由 + 测试连接(adm
     await app.close();
     await dropOrg2(fx.orgId);
     await cleanupKeys();
+    // 不把假生图 key 留给后续套件(否则路由表默认会把 courseware 判成真实供应商)
+    process.env.IMAGE_API_KEY = '';
     await redis.quit();
     await raw.$disconnect();
   });
@@ -159,11 +166,11 @@ describe('AI 接口管理:运行态 LLM 配置 + 真假路由 + 测试连接(adm
     await request(http)
       .put('/api/v1/admin/ai/routes')
       .set(auth(admin))
-      .send({ qa: 'real', pre_grading: 'mock', class_companion: 'real', diagnosis: 'mock' })
+      .send({ qa: 'real', pre_grading: 'mock', class_companion: 'real', diagnosis: 'mock', courseware: 'real' })
       .expect(200);
 
     const res = await request(http).get('/api/v1/admin/ai/routes').set(auth(admin)).expect(200);
-    expect(res.body.data).toEqual({ qa: 'real', pre_grading: 'mock', class_companion: 'real', diagnosis: 'mock' });
+    expect(res.body.data).toEqual({ qa: 'real', pre_grading: 'mock', class_companion: 'real', diagnosis: 'mock', courseware: 'real' });
 
     const override = JSON.parse((await redis.get(ROUTES_OVERRIDE_KEY))!);
     // real → openai_compatible + model:env + fallback 回该 feature 的 mock 模型
@@ -179,20 +186,64 @@ describe('AI 接口管理:运行态 LLM 配置 + 真假路由 + 测试连接(adm
     });
     // mock → 默认 mock 条目(pre_grading 无 fallback)
     expect(override.routes.pre_grading).toEqual({ provider: 'mock', model: 'mock-grader-v1', fallback: null });
+    // [2026-08-22 courseware] 生图能力走独立供应商;model 取 IMAGE_MODEL 真实名(缺省 gpt-image-2)以对上 pricing 表
+    // [audit-fix-server · P0-1] fallback 恒为 null:真实生图失败不得静默降级成 1×1 占位图
+    expect(override.routes.courseware).toEqual({
+      provider: 'openai_compatible_image',
+      model: process.env.IMAGE_MODEL || 'gpt-image-2',
+      fallback: null,
+    });
 
     // 审计落库
     const log = await raw.auditLog.findFirst({ where: { orgId: fx.orgId, action: 'admin.ai_routes.update' }, orderBy: { id: 'desc' } });
     expect(log).not.toBeNull();
   });
 
+  // ================= [audit-fix-server · P1-11] 生图 key 校验 + test 按 feature 分流 =================
+  it('PUT routes:courseware 切 real 但 IMAGE_API_KEY 为空 → 4506(不静默写入)', async () => {
+    const saved = process.env.IMAGE_API_KEY;
+    process.env.IMAGE_API_KEY = '';
+    try {
+      const res = await request(http)
+        .put('/api/v1/admin/ai/routes')
+        .set(auth(admin))
+        .send({ qa: 'mock', pre_grading: 'mock', class_companion: 'mock', diagnosis: 'mock', courseware: 'real' })
+        .expect(409);
+      expect(res.body.code).toBe(4506);
+      expect(res.body.message).toContain('IMAGE_API_KEY');
+      // 未写入:GET 仍是上一次的结果(courseware=real 来自前一个用例),不是本次请求的产物
+      const override = JSON.parse((await redis.get(ROUTES_OVERRIDE_KEY))!);
+      expect(override.routes.qa.provider).toBe('openai_compatible'); // 前一用例的 qa=real 仍在
+    } finally {
+      process.env.IMAGE_API_KEY = saved;
+    }
+  });
+
+  it('POST test:feature=courseware → 测的是生图供应商(不是文本 key)', async () => {
+    // 文本 provider 此刻运行态指向 127.0.0.1:9 且有 key;生图 key 置空 → 只有分流正确才会报「生图」
+    const saved = process.env.IMAGE_API_KEY;
+    process.env.IMAGE_API_KEY = '';
+    try {
+      const res = await request(http)
+        .post('/api/v1/admin/ai/test')
+        .set(auth(admin))
+        .send({ feature: 'courseware' })
+        .expect(200);
+      expect(res.body.data.ok).toBe(false);
+      expect(res.body.data.error).toContain('IMAGE_API_KEY');
+    } finally {
+      process.env.IMAGE_API_KEY = saved;
+    }
+  });
+
   it('PUT routes:全切回 mock → GET 全 mock', async () => {
     await request(http)
       .put('/api/v1/admin/ai/routes')
       .set(auth(admin))
-      .send({ qa: 'mock', pre_grading: 'mock', class_companion: 'mock', diagnosis: 'mock' })
+      .send({ qa: 'mock', pre_grading: 'mock', class_companion: 'mock', diagnosis: 'mock', courseware: 'mock' })
       .expect(200);
     const res = await request(http).get('/api/v1/admin/ai/routes').set(auth(admin)).expect(200);
-    expect(res.body.data).toEqual({ qa: 'mock', pre_grading: 'mock', class_companion: 'mock', diagnosis: 'mock' });
+    expect(res.body.data).toEqual({ qa: 'mock', pre_grading: 'mock', class_companion: 'mock', diagnosis: 'mock', courseware: 'mock' });
   });
 
   // ================= 并发闸 Semaphore(纯单元) =================

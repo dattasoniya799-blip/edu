@@ -574,12 +574,13 @@ components:
         concurrency: { type: integer }
     AiFeatureRoutes:
       type: object
-      required: [qa, pre_grading, class_companion, diagnosis]
+      required: [qa, pre_grading, class_companion, diagnosis, courseware]
       properties:
         qa: { type: string, enum: [real, mock] }
         pre_grading: { type: string, enum: [real, mock] }
         class_companion: { type: string, enum: [real, mock] }
         diagnosis: { type: string, enum: [real, mock] }
+        courseware: { type: string, enum: [real, mock], description: AI 生成课件(大纲文本 LLM + 逐页生图) }
     AiTestResult:
       type: object
       required: [ok, latencyMs, sample, error]
@@ -595,6 +596,41 @@ components:
         uploadUrl: { type: string, description: 预签名直传 URL(PUT) }
         ossKey: { type: string }
         expiresAt: { type: string, format: date-time }
+    # ---- AI 生成课件(teacher)· 与 src/dto.ts 一一对应 ----
+    CoursewareStyleInput:
+      type: object
+      description: 整套课件的 PPT 风格;内置风格只传 id,id=custom 时 customText 为教师描述的视觉主题。
+      required: [id]
+      properties:
+        id: { type: string }
+        customText: { type: string, description: 自定义风格描述(id=custom 时必填) }
+    CoursewareOutlinePage:
+      type: object
+      description: 逐页大纲的一页(文本 LLM 产出,教师可编辑后再提交生图)
+      required: [title, body, imagePrompt]
+      properties:
+        title: { type: string, description: 页标题 }
+        body: { type: string, description: 该页要点文字 }
+        imagePrompt: { type: string, description: 画面描述(传给 GPT Image 的提示词) }
+    CoursewareJobPage:
+      type: object
+      required: [seq, title, status]
+      properties:
+        seq: { type: integer }
+        title: { type: string }
+        status: { type: string, enum: [pending, done, failed] }
+        imageUrl: { oneOf: [{ type: 'null' }, { type: string }], description: 整页幻灯片图片直链;未完成时缺省或 null }
+    CoursewareJob:
+      type: object
+      description: 生图任务运行态(jobId 为 Redis 运行态字符串,任务状态不落库);全部页成功后成品落 Resource(type=ppt),resourceId 才有值。
+      required: [jobId, status, total, done, pages]
+      properties:
+        jobId: { type: string }
+        status: { type: string, enum: [queued, running, done, failed] }
+        total: { type: integer }
+        done: { type: integer }
+        pages: { type: array, items: { $ref: '#/components/schemas/CoursewareJobPage' } }
+        resourceId: { oneOf: [{ type: 'null' }, { type: integer }], description: 成品资源 id(未落库时缺省或 null) }
     AiDiagnosis:
       type: object
       description: AI 学情诊断结果:整体诊断文字 + 薄弱知识点列表
@@ -1262,4 +1298,34 @@ paths:
       summary: AI 网关健康与当前路由 [admin]
       responses:
         '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [providers], properties: {providers: {type: array, items: {type: object, required: [feature, provider, model, healthy], properties: {feature: {type: string}, provider: {type: string}, model: {type: string}, healthy: {type: boolean}}}}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+
+  # ================= AI 生成课件(教师) =================
+  /courseware/outline:
+    post:
+      summary: 文字稿 → 逐页大纲(文本 LLM;教师编辑确认后再提交生图) [teacher]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [sourceText, style], properties: {sourceText: {type: string, maxLength: 8000}, pageCount: {type: integer, minimum: 3, maximum: 20}, lessonId: {type: integer}, kpNodeId: {type: integer}, style: {$ref: '#/components/schemas/CoursewareStyleInput'}}}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [pages], properties: {pages: {type: array, items: {$ref: '#/components/schemas/CoursewareOutlinePage'}}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /courseware/jobs:
+    post:
+      summary: 建生图任务(逐页调 GPT Image;pages 为教师确认后的大纲) [teacher]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [name, style, pages], properties: {name: {type: string}, lessonId: {type: integer}, kpNodeId: {type: integer}, style: {$ref: '#/components/schemas/CoursewareStyleInput'}, pages: {type: array, minItems: 1, maxItems: 20, items: {$ref: '#/components/schemas/CoursewareOutlinePage'}}}}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [jobId], properties: {jobId: {type: string}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /courseware/jobs/{jobId}:
+    get:
+      summary: 轮询生成进度(全部页成功后 resourceId 为落库的 Resource.type=ppt) [teacher]
+      parameters: [{name: jobId, in: path, required: true, schema: {type: string}}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/CoursewareJob'}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /courseware/jobs/{jobId}/retry:
+    post:
+      summary: 重试失败页(重新入队该任务内 status=failed 的页) [teacher]
+      parameters: [{name: jobId, in: path, required: true, schema: {type: string}}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
         default: {$ref: '#/components/responses/Err'}

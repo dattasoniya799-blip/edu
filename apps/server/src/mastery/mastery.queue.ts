@@ -1,8 +1,8 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue, Worker } from 'bullmq';
 import { runAsUser } from '../common/tenant-context';
-import { bullConnection, MASTERY_QUEUE, QUEUE_PREFIX } from '../grading/queue.util';
+import { bullConnection, MASTERY_QUEUE, queuePrefix } from '../grading/queue.util';
 import { MasteryService } from './mastery.service';
 
 export interface MasteryJob {
@@ -17,14 +17,16 @@ export interface MasteryJob {
  */
 @Injectable()
 export class MasteryQueueService implements OnModuleDestroy {
+  private readonly logger = new Logger('MasteryQueue');
   private readonly queue: Queue<MasteryJob>;
   private readonly worker: Worker<MasteryJob>;
 
   constructor(cfg: ConfigService, mastery: MasteryService) {
     const connection = bullConnection(cfg);
+    const prefix = queuePrefix(cfg);
     this.queue = new Queue<MasteryJob>(MASTERY_QUEUE, {
       connection,
-      prefix: QUEUE_PREFIX,
+      prefix,
       defaultJobOptions: { removeOnComplete: true, removeOnFail: 100, attempts: 2 },
     });
     this.worker = new Worker<MasteryJob>(
@@ -33,10 +35,14 @@ export class MasteryQueueService implements OnModuleDestroy {
         const { orgId, studentId } = job.data;
         await runAsUser({ uid: 0, orgId, role: 'admin' }, () => mastery.recalcStudent(studentId));
       },
-      { connection, prefix: QUEUE_PREFIX, concurrency: 5 },
+      { connection, prefix, concurrency: 5 },
     );
     // 任务失败仅记录(BullMQ attempts=2 自动重试),不打断进程
-    this.worker.on('error', () => undefined);
+    // [2026-08-22 audit-fix-server · D3] 两个事件都要落日志:重试耗尽后掌握度重算会静默丢失
+    this.worker.on('error', (e) => this.logger.error(`worker 故障:${e?.message ?? e}`));
+    this.worker.on('failed', (job, e) =>
+      this.logger.error(`掌握度重算失败 job=${job?.id} studentId=${job?.data?.studentId} attempts=${job?.attemptsMade}:${e?.message ?? e}`),
+    );
   }
 
   async enqueue(orgId: number, studentId: number): Promise<void> {

@@ -20,7 +20,7 @@ export type AttemptStatus = 'in_progress' | 'submitted' | 'graded';
 export type WrongStatus = 'open' | 'cleared';
 export type SessionStatus = 'scheduled' | 'live' | 'paused' | 'ended';
 export type ParticipantState = 'normal' | 'stuck' | 'hand_up' | 'offline';
-export type AiFeature = 'class_companion' | 'qa' | 'pre_grading' | 'diagnosis';
+export type AiFeature = 'class_companion' | 'qa' | 'pre_grading' | 'diagnosis' | 'courseware';
 export type GraphType = 'curriculum_knowledge' | 'problem_solving_ability' | 'problem_solving_strategy';
 export type EdgeRelation = 'parent_child' | 'prerequisite' | 'related';
 
@@ -183,6 +183,11 @@ export interface CoursewarePageView {
   body: string;
   narration: string;
   quiz?: MiniQuizView;
+  /**
+   * [2026-08-22 批准·AI生成课件] 整页幻灯片图片直链(AI 生成课件的成品页);
+   * 有此字段时课堂整页渲染图片,缺省时按 title/body 文字渲染(向后兼容)。
+   */
+  imageUrl?: string;
 }
 export interface AnswerDto {
   questionId: number; response: AnswerResponse | null;
@@ -249,6 +254,7 @@ export interface AiFeatureRoutesDto {
   pre_grading: AiFeatureMode;
   class_companion: AiFeatureMode;
   diagnosis: AiFeatureMode;
+  courseware: AiFeatureMode;
 }
 /** 测试连接结果 */
 export interface AiTestResultDto {
@@ -256,4 +262,39 @@ export interface AiTestResultDto {
   latencyMs: number;
   sample: string | null;           // 成功时模型回的一小段文本
   error: string | null;            // 失败原因
+}
+
+// ---------- AI 生成课件(teacher)· 大纲→确认→逐页生图→落 Resource ----------
+/**
+ * 整套课件的 PPT 风格:内置风格只传 id;id='custom' 时 customText 为教师描述的视觉主题。
+ * 风格清单与提示词模板由服务端 ai 配置持有(前端只传 id)。
+ */
+export interface CoursewareStyleInput {
+  id: string;
+  customText?: string;
+}
+/** 逐页大纲的一页(文本 LLM 产出,教师可编辑后再提交生图) */
+export interface CoursewareOutlinePageDto {
+  title: string;       // 页标题
+  body: string;        // 该页要点文字
+  imagePrompt: string; // 画面描述(传给 GPT Image 的提示词)
+}
+/** 生图任务的逐页进度 */
+export interface CoursewareJobPageDto {
+  seq: number;
+  title: string;
+  status: 'pending' | 'done' | 'failed';
+  imageUrl?: string | null;  // 生成完成的整页幻灯片图片直链(未完成时缺省/为 null)
+}
+/**
+ * 生图任务运行态:jobId 为 Redis 运行态字符串(任务状态不落库),供教师端轮询进度。
+ * 全部页成功后成品落 Resource(type=ppt),resourceId 才有值。
+ */
+export interface CoursewareJobDto {
+  jobId: string;
+  status: 'queued' | 'running' | 'done' | 'failed';
+  total: number;
+  done: number;
+  pages: CoursewareJobPageDto[];
+  resourceId?: number | null;
 }

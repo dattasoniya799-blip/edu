@@ -11,7 +11,7 @@
  *   拿不到 attemptId 才进错误态(errorKind='completed',页面给「回作业列表」)。
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { AnswerResponse, AssignmentDto } from '@qiming/contracts';
+import type { AnswerResponse } from '@qiming/contracts';
 import { api, errorMessage, isConflictAlreadyExists, isConflictAttemptCompleted } from '../../api';
 import * as M from './machine';
 import type { AttemptWithQuestions } from './types';
@@ -64,10 +64,10 @@ export function useAttempt(assignmentId: number, attemptIdInUrl: number | null, 
     const load = async (): Promise<AttemptWithQuestions> => {
       if (attemptIdInUrl != null) {
         const r = await api.get('/student/attempts/{id}', { params: { id: attemptIdInUrl } });
-        return r.data as AttemptWithQuestions;
+        return r.data;
       }
       const create = async () =>
-        (await api.post('/student/attempts', { body: { assignmentId } })).data as AttemptWithQuestions;
+        (await api.post('/student/attempts', { body: { assignmentId } })).data;
       try {
         return await create();
       } catch (e) {
@@ -77,11 +77,11 @@ export function useAttempt(assignmentId: number, attemptIdInUrl: number | null, 
         }
         if (isConflictAttemptCompleted(e)) {
           // m2:已完成作业无 ?attempt= 直开 → 从作业列表定位 myAttempt.attemptId 看成绩单
-          const list = (await api.get('/student/assignments', { query: { status: 'all' } })).data as AssignmentDto[];
+          const list = (await api.get('/student/assignments', { query: { status: 'all' } })).data;
           const attemptId = list.find((a) => a.id === assignmentId)?.myAttempt?.attemptId;
           if (attemptId != null) {
             const r = await api.get('/student/attempts/{id}', { params: { id: attemptId } });
-            return r.data as AttemptWithQuestions;
+            return r.data;
           }
           throw new CompletedNoAttemptError('该作业已完成,但未能定位到你的作答记录,请从作业列表进入');
         }
@@ -127,8 +127,7 @@ export function useAttempt(assignmentId: number, attemptIdInUrl: number | null, 
       params: { id, qid: questionId },
       body: { response: response as never, flagged },
     });
-    const fb = r.data as { judged: boolean; isCorrect: boolean | null; correctAnswer: string | null; analysisLatex: string | null };
-    setQuiz((s) => M.applyAnswer(s, questionId, response, fb));
+    setQuiz((s) => M.applyAnswer(s, questionId, response, r.data));
   }, []);
 
   const flag = useCallback((questionId: number) => setQuiz((s) => M.toggleFlag(s, questionId)), []);
@@ -143,7 +142,7 @@ export function useAttempt(assignmentId: number, attemptIdInUrl: number | null, 
       await api.post('/student/attempts/{id}/submit', { params: { id } });
       // 交卷后重新拉快照:此时 questions 才下发 correctAnswer/analysisLatex(看解析)
       const r = await api.get('/student/attempts/{id}', { params: { id } });
-      const at = r.data as AttemptWithQuestions;
+      const at = r.data;
       setAttempt(at);
       setQuiz(M.initQuiz(at));
       setPhase('result');

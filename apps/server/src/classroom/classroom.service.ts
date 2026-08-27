@@ -21,15 +21,18 @@ import { QaService } from '../ai/features/qa.service';
 import { AssignmentService } from '../assignment/assignment.service';
 import { AttemptService } from '../attempt/attempt.service';
 import type { JwtUser } from '../auth/auth.service';
+import { getJwtSecret } from '../common/env-assert';
 import { runAsUser } from '../common/tenant-context';
 import { BizException } from '../course/business.exception';
 import { GradingService } from '../grading/grading.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { REDIS } from '../redis/redis.module';
+import { isOssKeyOwned } from '../upload/oss-key.util';
+import { signStorageUrl } from '../upload/storage/storage-sign.util';
 import {
-  CLS_PREFIX,
   kEvents,
   kEventsCursor,
+  kInClassLock,
   kMeta,
   kSessionPattern,
   kStu,
@@ -103,6 +106,9 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
   private readonly throttleMs: number;
   private readonly consumerMs: number;
   private readonly writebackMs: number;
+  /** AI 课件整页图回看直链的签名参数(与 upload / courseware 两侧同一把 HMAC) */
+  private readonly uploadPublicBase: string;
+  private readonly storageSecret: string;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -118,6 +124,11 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
     this.throttleMs = Number(cfg.get('CLS_ROSTER_THROTTLE_MS', '5000'));
     this.consumerMs = Number(cfg.get('CLS_CONSUMER_INTERVAL_MS', '1000'));
     this.writebackMs = Number(cfg.get('CLS_WRITEBACK_INTERVAL_MS', '30000'));
+    this.uploadPublicBase = cfg.get<string>(
+      'UPLOAD_PUBLIC_BASE',
+      `http://127.0.0.1:${cfg.get('PORT', '3000')}`,
+    );
+    this.storageSecret = getJwtSecret(cfg);
   }
 
   setServer(nsp: Namespace) {
@@ -291,11 +302,11 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
   /**
    * class:ai_ask:答疑,回复以 class:ai_chunk 流式下发。
    * 复用 A7 QaService.ask(真实 AI):内部经 LlmGatewayService(真实/mock 由路由表决定,
-   * 上游失败有 fallback),含限流(每生 6 次/分,命中抛 4501 BizException)、当前题上下文、
+   * 上游失败有 fallback),含限流(每生 6 次/分,命中抛 4505 BizException)、当前题上下文、
    * 引导模式(org.settings.ai.qaGuideOnly)、输出审查(qa-review.json)、计量自动落账(归因带 userId)。
    * 下发节奏(FIXB · B5):请求发起前先推一帧空 delta 占位分片(学生端即时反馈),
    * 取回完整回复后再按原有分块方式经 class:ai_chunk 续发(末帧 done:true)。
-   * 限流命中的 4501 BizException 不在此捕获——交给网关 on() 统一转 'exception' 事件
+   * 限流命中的 4505 BizException 不在此捕获——交给网关 on() 统一转 'exception' 事件
    *(其 message 即「提问太频繁啦,休息一分钟再来问我吧」,与 ai_ask 其它业务异常下发口径一致,不会让 WS 处理器未捕获崩)。
    */
   async aiAsk(
@@ -310,7 +321,7 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
 
     // 复用 A7 QaService(真实/mock 由路由表;含限流/题面上下文/引导/审查/计量)。
     // 兜底策略:超时(AI_ASK_TIMEOUT_MS)或上游异常 → 给兜底引导,学生端实时助教绝不挂死;
-    // 但限流命中的 4501 BizException 原样抛出 —— 交给网关 on() 统一转 'exception'
+    // 但限流命中的 4505 BizException 原样抛出 —— 交给网关 on() 统一转 'exception'
     //(message 即「提问太频繁啦,休息一分钟再来问我吧」),与其它业务异常下发口径一致。
     const requestId = `qa-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     // FIXB · B5(降级实现,原因见报告):QaService 的输出审查必须拿到全文才能判定
@@ -330,7 +341,7 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
       text = r.text;
     } catch (e) {
       if (e instanceof BizException) {
-        // 限流 4501 → 先补 done 帧收尾本次占位流,再交网关转 'exception'(口径不变,不吞)
+        // 限流 4505 → 先补 done 帧收尾本次占位流,再交网关转 'exception'(口径不变,不吞)
         socket.emit('class:ai_chunk', { requestId, delta: '', done: true });
         throw e;
       }
@@ -624,7 +635,7 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
       mode: JSON.parse(meta.mode),
     };
     // 题面/课件为本讲静态内容(随堂练题面 + 课件分页),与角色无关,真实模式下随快照下发
-    const content = await this.buildLessonContent(BigInt(meta.lesson_id));
+    const content = await this.buildLessonContent(BigInt(meta.lesson_id), Number(meta.org_id));
     if (user.role !== 'student') {
       return {
         session,
@@ -655,6 +666,7 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
    */
   private async buildLessonContent(
     lessonId: bigint,
+    orgId: number,
   ): Promise<Pick<ClassSnapshot, 'questions' | 'courseware'>> {
     const segments = await this.prisma.client.lessonSegment.findMany({
       where: { lessonId },
@@ -671,7 +683,7 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
     }
     if (questions.length) out.questions = questions;
 
-    const courseware = this.buildCourseware(segments);
+    const courseware = this.buildCourseware(segments, orgId);
     if (courseware.length) out.courseware = courseware;
     return out;
   }
@@ -684,19 +696,25 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
    */
   private buildCourseware(
     segments: { type: string; config: unknown; resource: { meta: unknown } | null }[],
+    orgId: number,
   ): CoursewarePageView[] {
     const out: CoursewarePageView[] = [];
     for (const seg of segments) {
       if (seg.type !== 'lecture') continue;
       const cfg = (seg.config ?? {}) as Record<string, unknown>;
       const meta = (seg.resource?.meta ?? {}) as Record<string, unknown>;
-      out.push(...this.coursewarePages(cfg.pages ?? meta.pages));
+      // [2026-08-22 audit-fix-server · P1-8] AI 生成课件(meta.kind='ai_courseware')的逐页
+      // 对象带 imageOssKey —— 整页图正是这个功能的全部价值。不签名就只剩 title/body 文字,
+      // 课堂上等于把成品降级成纯文本页。这里逐页签成 10 分钟回看直链填进 imageUrl;
+      // 非 ai_courseware 的 lecture 段行为逐字不变(数字 pages / 整数 checkpoints 照旧跳过)。
+      const signImages = meta.kind === 'ai_courseware';
+      out.push(...this.coursewarePages(cfg.pages ?? meta.pages, signImages ? orgId : null));
     }
     return out;
   }
 
   /** 逐页内容数组(对象含 title/body 才视为可渲染逐页;数字总页数 / 整数 checkpoints 等非结构化值 → 跳过) */
-  private coursewarePages(raw: unknown): CoursewarePageView[] {
+  private coursewarePages(raw: unknown, signImagesForOrg: number | null = null): CoursewarePageView[] {
     if (!Array.isArray(raw)) return [];
     const out: CoursewarePageView[] = [];
     for (const p of raw) {
@@ -710,9 +728,24 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
       };
       const quiz = this.miniQuiz(o.quiz);
       if (quiz) page.quiz = quiz;
+      if (signImagesForOrg != null) {
+        const url = this.signCoursewareImage(o.imageOssKey, signImagesForOrg);
+        if (url) page.imageUrl = url;
+      }
       out.push(page);
     }
     return out;
+  }
+
+  /**
+   * AI 课件整页图的回看直链(HMAC 签名 + 10 分钟有效期,同 courseware/upload 两侧口径)。
+   * 签名前套 ossKey 归属校验(sec-back #6 的软失败口径):脏数据/跨租户键不下发,
+   * 但也不因此 403 掉整份课堂快照。
+   */
+  private signCoursewareImage(raw: unknown, orgId: number): string | null {
+    if (typeof raw !== 'string' || !raw) return null;
+    if (!Number.isFinite(orgId) || !isOssKeyOwned(raw, orgId, ['resource'])) return null;
+    return signStorageUrl(this.uploadPublicBase, this.storageSecret, raw);
   }
 
   /** 打点小测(lecture 翻页即时小测):stem + options 齐备才视为有效,否则缺省 */
@@ -1030,7 +1063,7 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
         where: { lessonId, kind: 'in_class', paperId },
         select: { id: true },
       });
-    const lockKey = `${CLS_PREFIX}inclass_lock:${lessonId}:${paperId}`;
+    const lockKey = kInClassLock(String(lessonId), String(paperId));
     const got = await this.redis.set(lockKey, '1', 'EX', 10, 'NX').catch(() => null);
     if (got !== 'OK') {
       // 别的请求正在建 → 稍候复查,命中即复用

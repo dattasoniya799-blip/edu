@@ -23,6 +23,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { maskSensitive } from './common/logging/mask';
 import { ContextMiddleware } from './common/middleware/context.middleware';
 import { CourseModule } from './course/course.module';
+import { CoursewareModule } from './courseware/courseware.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
 import { KpModule } from './kp/kp.module';
 import { LessonModule } from './lesson/lesson.module';
@@ -79,6 +80,7 @@ import { UploadModule } from './upload/upload.module';
     PaperModule,
     AssignmentModule,
     ResourceModule,
+    CoursewareModule,
     MasteryModule,
     WrongBookModule,
     GradingModule,

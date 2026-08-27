@@ -16,6 +16,16 @@ export const api = createClient({
 });
 
 /**
+ * 端点响应 data 的推导类型(与 courseware/lib/coursewareApi.ts 的 PostBody 同一手法:
+ * 从客户端签名反推,页面不再本地重声明报文形状 —— 契约一改立刻编译报错,
+ * 而 `.data as X` 只要新旧形状部分重叠就照过)。
+ */
+export type GetData<P extends Parameters<typeof api.get>[0]> =
+  Awaited<ReturnType<typeof api.get<P>>> extends { data: infer D } ? D : never;
+export type PostData<P extends Parameters<typeof api.post>[0]> =
+  Awaited<ReturnType<typeof api.post<P>>> extends { data: infer D } ? D : never;
+
+/**
  * REV-front #1:由 ossKey 换后端签名直链。`GET /uploads/view-url?ossKey=` 不属于 openapi
  * 契约(server upload.controller 标注,见 README · REV-front),故 createClient 的类型化
  * 路径里没有它;此处经 api(仍带 token + 401 处理)调用,只在路径处做类型放宽 —— 不是手写

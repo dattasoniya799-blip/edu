@@ -17,12 +17,15 @@ export class BizException extends HttpException {
   }
 }
 
-/** 讲次发布:备课检查未通过(detail = 缺失项列表) */
-export const ERR_LESSON_CHECKLIST = 4201;
-/** 试卷已被作业(assignment)引用,禁止修改 */
-export const ERR_PAPER_ASSIGNED = 4302;
-/** 资源已被讲次引用,禁止删除(detail = usedByLessons) */
-export const ERR_RESOURCE_IN_USE = 4303;
+/**
+ * 错误码一律来自单一注册表 `common/biz-codes.ts`([2026-08-22 audit-fix-server · C1]),
+ * 本文件只 re-export 本域用到的那几个,不再各自定义数字。
+ */
+export {
+  ERR_LESSON_CHECKLIST,
+  ERR_PAPER_ASSIGNED,
+  ERR_RESOURCE_IN_USE,
+} from '../common/biz-codes';
 
 @Catch(BizException)
 export class BizExceptionFilter implements ExceptionFilter {

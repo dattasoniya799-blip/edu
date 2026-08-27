@@ -9,7 +9,16 @@ import { BizException, ERR_AI_QUOTA_EXCEEDED } from '../ai.codes';
 import { DEFAULT_CONCURRENCY, PROVIDER_CONFIG_KEY } from './providers/openai-compatible.provider';
 import { RouteTableService } from './route-table.service';
 import { Semaphore } from './semaphore';
-import type { Chunk, LlmChatRequest, LlmGateway, LlmProvider, Usage } from './types';
+import type {
+  Chunk,
+  ImageProvider,
+  ImageResult,
+  LlmChatRequest,
+  LlmGateway,
+  LlmImageRequest,
+  LlmProvider,
+  Usage,
+} from './types';
 
 /** org 当月成本 Redis 键(a7: 前缀纪律;额度执行的唯一实时数据源,设计文档 §8.1) */
 export const costKey = (orgId: number, period = periodOf()) => `a7:ai:cost:${orgId}:${period}`;
@@ -18,15 +27,31 @@ export const alertKey = (orgId: number, period = periodOf()) => `a7:ai:alert:${o
 
 /**
  * over_policy → 超额时被关闭的能力(契约枚举 disable_qa / pause_all / record_only):
- * - disable_qa:仅关答疑,保课堂伴学/预批/诊断(默认)
- * - pause_all:封全部四能力
+ * - disable_qa:关答疑**与生成课件**,保课堂伴学/预批/诊断(默认)
+ * - pause_all:封全部五能力
  * - record_only:全放行,仅记账(不拦截)
+ *
+ * [2026-08-22 audit-fix-server · S1] `disable_qa` 是 schema 默认值(ai_quotas.over_policy),
+ * 原先只封 qa —— 机构月额度用尽后,默认策略下教师仍能提交 20 页任务逐页按张计费,
+ * 且 retry 端点可反复触发。生成课件是全仓单价最高的能力,必须随答疑一起默认关闭。
  */
 const OVER_POLICY_BLOCKS: Record<string, AiFeature[]> = {
-  disable_qa: ['qa'],
-  pause_all: ['qa', 'class_companion', 'diagnosis', 'pre_grading'],
+  disable_qa: ['qa', 'courseware'],
+  pause_all: ['qa', 'class_companion', 'diagnosis', 'pre_grading', 'courseware'],
   record_only: [],
 };
+
+/**
+ * [2026-08-22 audit-fix-server · P1-5] 上游不回 usage 时的**每张固定** token 记账口径。
+ * 原先兜底成 `tokensIn = 提示词字符数`:风格模板 1.5KB + body + imagePrompt 轻松到 8000,
+ * 于是「回 usage」与「不回 usage」两条路径的成本能差好几倍,额度熔断因此不可信。
+ * 生图的成本与提示词长度基本无关,取一张 1536×1024 中等质量图的典型 image-output token
+ * 数作为固定值;与 pricing.perImage 的按张下限叠加,两条路径记出的账基本一致。
+ */
+const IMAGE_FALLBACK_USAGE: Usage = { tokensIn: 0, tokensOut: 1568 };
+
+/** 额度/计量共用的最小请求形状(chat 与 image 请求都满足) */
+type MeteredRequest = Pick<LlmChatRequest, 'feature' | 'orgId' | 'trace'>;
 
 /**
  * LlmGateway 实现(设计文档 §8.1):
@@ -39,6 +64,8 @@ const OVER_POLICY_BLOCKS: Record<string, AiFeature[]> = {
 export class LlmGatewayService implements LlmGateway, OnModuleInit {
   private readonly logger = new Logger('LlmGateway');
   private readonly providers = new Map<string, LlmProvider>();
+  /** 生图供应商注册表(与 chat 供应商分表:接口不同,路由表 provider 名也不同) */
+  private readonly imageProviders = new Map<string, ImageProvider>();
   /** 全局并发闸:同时在飞的 LLM 调用数(跨四能力的兜底,默认 8,运行态可调) */
   private readonly sem = new Semaphore(DEFAULT_CONCURRENCY);
 
@@ -77,8 +104,13 @@ export class LlmGatewayService implements LlmGateway, OnModuleInit {
     this.providers.set(provider.name, provider);
   }
 
-  providerOf(name: string): LlmProvider | undefined {
-    return this.providers.get(name);
+  /** AiModule 装配时注册生图供应商适配器 */
+  registerImage(provider: ImageProvider): void {
+    this.imageProviders.set(provider.name, provider);
+  }
+
+  providerOf(name: string): LlmProvider | ImageProvider | undefined {
+    return this.providers.get(name) ?? this.imageProviders.get(name);
   }
 
   chat(req: LlmChatRequest): AsyncIterable<Chunk> {
@@ -90,7 +122,7 @@ export class LlmGatewayService implements LlmGateway, OnModuleInit {
       try {
         const quota = await self.quotaOf();
         await self.enforceQuota(req, quota);
-        const route = await self.routes.resolve(req.feature);
+        const route = req.route ?? (await self.routes.resolve(req.feature));
         const startedAt = Date.now();
 
         // 主路由 → fallback(各供应商首块输出前的失败可切换)
@@ -145,6 +177,55 @@ export class LlmGatewayService implements LlmGateway, OnModuleInit {
     return text;
   }
 
+  /**
+   * 生图(AI 生成课件逐页出图):与 chat 完全同构的护栏链 ——
+   * 额度预检(courseware 已进 pause_all 封禁面)→ 路由 resolve → 全局并发闸(与 chat 共享一把)
+   * → 供应商调用(主路由失败走 fallback)→ 计量落账 ai_calls(feature=courseware)。
+   * tokens 取上游响应 usage,缺失则按**每张固定 token 数**兜底(IMAGE_FALLBACK_USAGE,
+   * 不再按提示词字符数瞎估);费用 = max(pricing.perImage, token 估算),见 meter()。
+   *
+   * [2026-08-22 audit-fix-server · P0-1] 真实生图条目的 fallback 已置 null,
+   * 上游失败不再静默降级成 mock 占位图 —— 错误原样抛给 courseware 业务层置该页 failed。
+   */
+  async image(req: LlmImageRequest): Promise<ImageResult> {
+    const metered: MeteredRequest = {
+      feature: req.feature,
+      orgId: req.orgId,
+      trace: req.trace ?? (req.userId != null ? { userId: req.userId } : undefined),
+    };
+    await this.sem.acquire();
+    try {
+      const quota = await this.quotaOf();
+      await this.enforceQuota(metered, quota);
+      const route = await this.routes.resolve(req.feature);
+      const startedAt = Date.now();
+
+      let active = { provider: route.provider, model: route.model };
+      let result: ImageResult;
+      try {
+        result = await this.mustImageProvider(active.provider).generate({ prompt: req.prompt, feature: req.feature });
+      } catch (e) {
+        if (!route.fallback) {
+          await this.meter(metered, active, { tokensIn: 0, tokensOut: 0 }, startedAt, 'error', null, 0);
+          throw e;
+        }
+        this.logger.warn(`feature=${req.feature} 主路由 ${active.provider}/${active.model} 生图失败,切换 fallback:${(e as Error).message}`);
+        active = { provider: route.fallback.provider, model: route.fallback.model };
+        try {
+          result = await this.mustImageProvider(active.provider).generate({ prompt: req.prompt, feature: req.feature });
+        } catch (e2) {
+          await this.meter(metered, active, { tokensIn: 0, tokensOut: 0 }, startedAt, 'error', null, 0);
+          throw e2;
+        }
+      }
+      const usage = result.usage ?? IMAGE_FALLBACK_USAGE;
+      await this.meter(metered, active, usage, startedAt, 'ok', quota, 1);
+      return result;
+    } finally {
+      this.sem.release();
+    }
+  }
+
   // ---------------- 额度护栏 ----------------
 
   private async quotaOf(): Promise<{ monthlyLimit: number; alertThreshold: number; overPolicy: string } | null> {
@@ -159,7 +240,7 @@ export class LlmGatewayService implements LlmGateway, OnModuleInit {
   }
 
   private async enforceQuota(
-    req: LlmChatRequest,
+    req: MeteredRequest,
     quota: { monthlyLimit: number; overPolicy: string } | null,
   ): Promise<void> {
     if (!quota || quota.monthlyLimit <= 0) return;
@@ -179,16 +260,24 @@ export class LlmGatewayService implements LlmGateway, OnModuleInit {
 
   // ---------------- 计量落账 ----------------
 
+  /**
+   * @param images [2026-08-22 audit-fix-server · P1-5] 本次调用产出的图片张数(chat 恒为 0)。
+   *               有 pricing.perImage 时费用取 `max(按张单价 × 张数, token 估算)` ——
+   *               上游少报或不报 usage 也不会把最贵的能力记成几分钱。
+   */
   private async meter(
-    req: LlmChatRequest,
+    req: MeteredRequest,
     active: { provider: string; model: string },
     usage: Usage,
     startedAt: number,
     status: 'ok' | 'error',
     quota?: { monthlyLimit: number; alertThreshold: number } | null,
+    images = 0,
   ): Promise<void> {
     const pricing = await this.routes.pricingOf(active.model);
-    const cost = round4((usage.tokensIn / 1000) * pricing.inPer1k + (usage.tokensOut / 1000) * pricing.outPer1k);
+    const byToken = (usage.tokensIn / 1000) * pricing.inPer1k + (usage.tokensOut / 1000) * pricing.outPer1k;
+    const byImage = images > 0 && pricing.perImage != null ? pricing.perImage * images : 0;
+    const cost = round4(Math.max(byToken, byImage));
     const trace = req.trace ?? {};
     try {
       // org_id 由 PrismaService 租户注入自动填充(QA=请求上下文;预批 worker=runAsUser;
@@ -223,7 +312,7 @@ export class LlmGatewayService implements LlmGateway, OnModuleInit {
 
   /** 达 alert_threshold:audit_logs 顶替系统通知(任务卡),每 org 每月只发一次 */
   private async alertOnce(
-    req: LlmChatRequest,
+    req: MeteredRequest,
     total: number,
     quota: { monthlyLimit: number; alertThreshold: number },
   ): Promise<void> {
@@ -246,6 +335,12 @@ export class LlmGatewayService implements LlmGateway, OnModuleInit {
   private mustProvider(name: string): LlmProvider {
     const p = this.providers.get(name);
     if (!p) throw new Error(`未注册的 LLM 供应商:${name}`);
+    return p;
+  }
+
+  private mustImageProvider(name: string): ImageProvider {
+    const p = this.imageProviders.get(name);
+    if (!p) throw new Error(`未注册的生图供应商:${name}`);
     return p;
   }
 

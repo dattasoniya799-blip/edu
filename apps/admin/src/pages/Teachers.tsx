@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import type { TeacherDto, UserStatus } from '@qiming/contracts';
-import { Button, Card, Table, Tag, useToast } from '@qiming/ui';
+import { Button, Card, EmptyState, Table, Tag, useToast } from '@qiming/ui';
 import { api } from '../api';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { LinkButton, Select, TextInput, Toolbar } from '../components/controls';
@@ -18,9 +18,12 @@ export function Teachers() {
   const [rows, setRows] = useState<TeacherDto[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  /** 加载失败:此前只弹 2.4 秒 toast,表格落到「还没有教师」—— 空表格和加载失败是两回事 */
+  const [loadError, setLoadError] = useState(false);
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState('');
   const [status, setStatus] = useState('');
+  const filtered = keyword.trim() !== '' || status !== '';
   // 弹窗状态
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<TeacherDto | null>(null);
@@ -31,6 +34,7 @@ export function Teachers() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const r = await api.get('/admin/teachers', {
         query: {
@@ -42,7 +46,10 @@ export function Teachers() {
       setRows(r.data.items);
       setTotal(r.data.total);
     } catch {
-      toast('教师列表加载失败');
+      setRows([]);
+      setTotal(0);
+      setLoadError(true);
+      toast('教师列表加载失败', { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -111,7 +118,23 @@ export function Teachers() {
           loading={loading}
           rows={rows}
           rowKey={(t) => t.id}
-          emptyText="还没有教师,点击右上角「+ 添加教师」"
+          empty={loadError ? (
+            <EmptyState
+              icon="⚠"
+              text="教师列表加载失败"
+              hint="可能是网络波动,请重试"
+              action={<Button variant="primary" onClick={() => void load()}>重新加载</Button>}
+            />
+          ) : filtered ? (
+            <EmptyState
+              icon="◌"
+              text="没有符合筛选条件的教师"
+              hint="换个关键词或状态试试;库里是有教师的,只是当前条件筛不到"
+              action={<Button onClick={() => { setKeyword(''); setStatus(''); setPage(1); }}>清空筛选</Button>}
+            />
+          ) : (
+            <EmptyState text="还没有教师,点击右上角「+ 添加教师」" />
+          )}
           columns={[
             { key: 'name', title: '姓名', render: (t) => <b>{t.name}</b> },
             { key: 'teacherNo', title: '工号' },

@@ -50,7 +50,7 @@ export function StudentFormModal({ open, courses, onClose, onSaved }: StudentFor
         },
       });
       toast('学生已创建,请设置初始登录密码');
-      onSaved(r.data as StudentDto);
+      onSaved(r.data);
       onClose();
     } catch (e) {
       toast(e instanceof Error ? e.message : '创建失败,请重试');

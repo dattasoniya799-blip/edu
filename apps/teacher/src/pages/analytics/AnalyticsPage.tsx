@@ -10,15 +10,15 @@
  */
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import type { AiDiagnosisDto, CourseDto, MasteryItemDto } from '@qiming/contracts';
 import { Button, Card, EmptyState, Skeleton, StatCard, Tag, useToast } from '@qiming/ui';
-import { api } from '../../api';
+import { api, type GetData, type PostData } from '../../api';
 import { PageHead } from '../Shell';
 import { fmtDateTime } from '../course/lib/format';
 
-interface MasteryHeatCell { nodeId: number; nodeName: string; avgMastery: number; studentCount: number }
-interface AttentionItem { studentId: number; name: string; reason: string }
-interface StudentReport { mastery: MasteryItemDto[]; wrongOpenCount: number; attempts30d: number }
+/** 报文形状一律从客户端签名推导,不本地重声明(契约一改这里立刻编译报错) */
+type AttentionItem = GetData<'/analytics/courses/{id}/attention'>[number];
+type StudentReport = GetData<'/analytics/students/{id}'>;
+type Diagnosis = PostData<'/analytics/students/{id}/diagnose'>;
 
 /** 掌握度分档配色(与全局 soft 色板一致;bar 用字面类名,避免 Tailwind 扫描不到) */
 function masteryTone(pct: number): { bg: string; text: string; bar: string; label: string } {
@@ -32,8 +32,8 @@ export function AnalyticsPage() {
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [courses, setCourses] = useState<CourseDto[]>([]);
-  const [heat, setHeat] = useState<MasteryHeatCell[]>([]);
+  const [courses, setCourses] = useState<GetData<'/teacher/courses'>>([]);
+  const [heat, setHeat] = useState<GetData<'/analytics/courses/{id}/mastery'>>([]);
   const [attention, setAttention] = useState<AttentionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -45,14 +45,14 @@ export function AnalyticsPage() {
   const [reportLoading, setReportLoading] = useState(false);
 
   // AI 诊断
-  const [diagnosis, setDiagnosis] = useState<AiDiagnosisDto | null>(null);
+  const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
   const [diagnosing, setDiagnosing] = useState(false);
 
   const courseId = Number(searchParams.get('courseId')) || courses[0]?.id || 0;
   const course = courses.find((c) => c.id === courseId);
 
   useEffect(() => {
-    api.get('/teacher/courses').then((r) => setCourses(r.data as CourseDto[])).catch(() => undefined);
+    api.get('/teacher/courses').then((r) => setCourses(r.data)).catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -67,8 +67,8 @@ export function AnalyticsPage() {
       api.get('/analytics/courses/{id}/attention', { params: { id: courseId } }),
     ])
       .then(([m, a]) => {
-        setHeat(m.data as MasteryHeatCell[]);
-        setAttention(a.data as AttentionItem[]);
+        setHeat(m.data);
+        setAttention(a.data);
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
@@ -81,7 +81,7 @@ export function AnalyticsPage() {
     setReportLoading(true);
     setDiagnosis(null);
     api.get('/analytics/students/{id}', { params: { id: selected.studentId } })
-      .then((r) => { if (alive) setReport(r.data as StudentReport); })
+      .then((r) => { if (alive) setReport(r.data); })
       .catch(() => { if (alive) setReport(null); })
       .finally(() => { if (alive) setReportLoading(false); });
     return () => { alive = false; };
@@ -92,9 +92,9 @@ export function AnalyticsPage() {
     setDiagnosing(true);
     try {
       const r = await api.post('/analytics/students/{id}/diagnose', { params: { id: selected.studentId } });
-      setDiagnosis(r.data as AiDiagnosisDto);
+      setDiagnosis(r.data);
     } catch (e) {
-      toast(e instanceof Error ? e.message : 'AI 诊断失败,请稍后重试');
+      toast(e instanceof Error ? e.message : 'AI 诊断失败,请稍后重试', { variant: 'error' });
     } finally {
       setDiagnosing(false);
     }

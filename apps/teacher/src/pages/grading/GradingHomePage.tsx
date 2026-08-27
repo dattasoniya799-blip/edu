@@ -5,15 +5,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, EmptyState, Skeleton, Tag } from '@qiming/ui';
-import { api } from '../../api';
+import { api, type GetData } from '../../api';
 import { PageHead } from '../Shell';
 
-interface PendingGroup {
-  assignmentId: number;
-  paperName: string;
-  pendingCount: number;
-  aiAvgScore: number | null;
-}
+type PendingGroup = GetData<'/grading/pending'>[number];
 
 export function GradingHomePage() {
   const navigate = useNavigate();
@@ -26,7 +21,7 @@ export function GradingHomePage() {
     setLoading(true);
     setError(false);
     api.get('/grading/pending')
-      .then((r) => setGroups(r.data as PendingGroup[]))
+      .then((r) => setGroups(r.data))
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [reload]);

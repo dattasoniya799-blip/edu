@@ -4,7 +4,6 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { AssignmentDto } from '@qiming/contracts';
 import { Button, Card, EmptyState, Skeleton, useToast } from '@qiming/ui';
 import { api, errorMessage } from '../../api';
 import { WrongItemCard } from './WrongItemCard';
@@ -35,7 +34,7 @@ export function WrongBookPage() {
   useEffect(() => {
     // 复用既有契约接口判定「待出分」,不发明新接口;失败静默(提示属锦上添花)
     api.get('/student/assignments', { query: { status: 'all' } })
-      .then((r) => setPendingGrading((r.data as AssignmentDto[]).some((a) => a.myAttempt?.status === 'submitted')))
+      .then((r) => setPendingGrading(r.data.some((a) => a.myAttempt?.status === 'submitted')))
       .catch(() => setPendingGrading(false));
   }, [reload]);
 
@@ -54,13 +53,13 @@ export function WrongBookPage() {
   const visible = filter ? bySubject.filter((w) => w.errorTags.includes(filter)) : bySubject;
   const pickSubject = (s: string | null) => { setSubject(s); setFilter(null); }; // 切学科重置错因筛选
 
-  const go = (a: AssignmentDto) => navigate(`/homework/${a.id}`);
+  const go = (a: { id: number }) => navigate(`/homework/${a.id}`);
 
   const redoOne = async (id: number) => {
     setBusy(true);
     try {
       const r = await api.post('/student/wrong-book/{id}/redo', { params: { id } });
-      go(r.data as AssignmentDto);
+      go(r.data);
     } catch (e) {
       toast(errorMessage(e, '生成重做卷失败'));
     } finally {
@@ -72,7 +71,7 @@ export function WrongBookPage() {
     setBusy(true);
     try {
       const r = await api.post('/student/wrong-book/redo-all');
-      go(r.data as AssignmentDto);
+      go(r.data);
     } catch (e) {
       toast(errorMessage(e, '生成重练卷失败'));
     } finally {

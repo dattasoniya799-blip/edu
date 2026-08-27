@@ -1,7 +1,7 @@
 /** 学生管理(原型 a-students):筛选 + 列表 + 添加 + 档案 + 重置密码 + 停用 + 解绑(档案内) */
 import { useCallback, useEffect, useState } from 'react';
 import type { CourseDto, StudentDto, UserStatus } from '@qiming/contracts';
-import { Button, Card, Table, Tag, useToast } from '@qiming/ui';
+import { Button, Card, EmptyState, Table, Tag, useToast } from '@qiming/ui';
 import { api } from '../api';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { Select, TextInput, Toolbar, LinkButton } from '../components/controls';
@@ -19,11 +19,14 @@ export function Students() {
   const [rows, setRows] = useState<StudentDto[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  /** 加载失败:此前只弹 2.4 秒 toast,表格落到「还没有学生」—— 空表格和加载失败是两回事 */
+  const [loadError, setLoadError] = useState(false);
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState('');
   const [status, setStatus] = useState('');
   const [courseId, setCourseId] = useState('');
   const [courses, setCourses] = useState<CourseDto[]>([]);
+  const filtered = keyword.trim() !== '' || status !== '' || courseId !== '';
   // 弹窗状态
   const [addOpen, setAddOpen] = useState(false);
   const [profileId, setProfileId] = useState<number | null>(null);
@@ -33,6 +36,7 @@ export function Students() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const r = await api.get('/admin/students', {
         query: {
@@ -45,7 +49,10 @@ export function Students() {
       setRows(r.data.items);
       setTotal(r.data.total);
     } catch {
-      toast('学生列表加载失败');
+      setRows([]);
+      setTotal(0);
+      setLoadError(true);
+      toast('学生列表加载失败', { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -113,7 +120,23 @@ export function Students() {
           loading={loading}
           rows={rows}
           rowKey={(s) => s.id}
-          emptyText="还没有学生,点击右上角「+ 添加学生」"
+          empty={loadError ? (
+            <EmptyState
+              icon="⚠"
+              text="学生列表加载失败"
+              hint="可能是网络波动,请重试"
+              action={<Button variant="primary" onClick={() => void load()}>重新加载</Button>}
+            />
+          ) : filtered ? (
+            <EmptyState
+              icon="◌"
+              text="没有符合筛选条件的学生"
+              hint="换个关键词、状态或课程试试;库里是有学生的,只是当前条件筛不到"
+              action={<Button onClick={() => { setKeyword(''); setStatus(''); setCourseId(''); setPage(1); }}>清空筛选</Button>}
+            />
+          ) : (
+            <EmptyState text="还没有学生,点击右上角「+ 添加学生」" />
+          )}
           columns={[
             { key: 'name', title: '姓名', render: (s) => <b>{s.name}</b> },
             { key: 'studentNo', title: '学号' },

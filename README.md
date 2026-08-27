@@ -21,6 +21,12 @@
 >   {attemptId,status,score};教师视角不下发);学生课程时间线 `myHomework` 增 `attemptId: number | null`。
 >   学生端新增「作业」历史页(路由 `/homework`,分待完成/已完成,已完成携 `?attempt=` 直达成绩单)+ 导航入口,
 >   课程时间线「作业 X 分」有 attemptId 时可点跳成绩单。可选/向后兼容、无 schema 迁移。
+> - [2026-08-22,已批准·AI生成课件] 教师端「AI 生成课件」正式化:openapi 增 4 个 [teacher] 端点
+>   (`POST /courseware/outline`、`POST /courseware/jobs`、`GET/POST /courseware/jobs/{jobId}[/retry]`)
+>   + 4 个 DTO(CoursewareStyleInput / CoursewareOutlinePageDto / CoursewareJobPageDto / CoursewareJobDto);
+>   `AiFeature` 与 `AiFeatureRoutesDto` 增第 5 个功能 `courseware`(**有 schema 迁移 0003**:PG
+>   `ALTER TYPE "AiFeature" ADD VALUE 'courseware'`,追加枚举值、无表结构变化);`CoursewarePageView`
+>   增可选 `imageUrl?`(整页图片课件,课堂组装后续接线)。jobId 为 Redis 运行态字符串,任务状态不落库。
 >
 > **A1 已交付**:后端骨架/认证/多租户/RBAC 见 `apps/server/README.md`(e2e 18/18)。
 

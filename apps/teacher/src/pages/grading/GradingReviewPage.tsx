@@ -8,6 +8,7 @@
  */
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ERROR_CODES } from '@qiming/contracts';
 import type { GradingAnswerBriefDto, GradingItemDto } from '@qiming/contracts';
 import { Button, Card, EmptyState, Skeleton, Tag, TexText, useToast } from '@qiming/ui';
 import { api } from '../../api';
@@ -31,21 +32,28 @@ export function GradingReviewPage() {
   const [score, setScore] = useState('');
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(true);
+  /** 名单加载失败:必须与「真没有主观题」分开 —— 后者会渲染「可直接出分」的主按钮 */
+  const [loadError, setLoadError] = useState(false);
+  /** 重试用计数器:setCurrentId(currentId) 是同值 setState,React 会直接跳过 */
+  const [reload, setReload] = useState(0);
+  const [detailReload, setDetailReload] = useState(0);
   const [busy, setBusy] = useState(false);
 
   /** 名单:GET /grading/assignments/{id}/answers(替换原 source.ts 适配层枚举) */
   const loadBriefs = async () => {
     const r = await api.get('/grading/assignments/{id}/answers', { params: { id: assignmentId } });
-    return r.data as GradingAnswerBriefDto[];
+    return r.data;
   };
 
   const init = async () => {
+    // 名单是本页的命脉:它失败而被当成空态,页面会渲染「✓ 没有需要人工复核的题目,可直接出分」,
+    // 教师照着点就会撞服务端 4501 且没有重试入口。所以只有 paperName 允许静默失败。
     const [pending, list] = await Promise.all([
       api.get('/grading/pending').catch(() => null),
       loadBriefs(),
     ]);
     if (pending) {
-      const g = (pending.data as { assignmentId: number; paperName: string }[]).find((x) => x.assignmentId === assignmentId);
+      const g = pending.data.find((x) => x.assignmentId === assignmentId);
       if (g) setPaperName(g.paperName);
     }
     setBriefs(list);
@@ -55,9 +63,12 @@ export function GradingReviewPage() {
 
   useEffect(() => {
     setLoading(true);
-    init().finally(() => setLoading(false));
+    setLoadError(false);
+    init()
+      .catch(() => { setBriefs([]); setCurrentId(null); setLoadError(true); })
+      .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assignmentId]);
+  }, [assignmentId, reload]);
 
   // 选中项 → GET /grading/answers/{answerId} 拉详情(原稿 + AI 预批 + rubric)
   useEffect(() => {
@@ -65,11 +76,11 @@ export function GradingReviewPage() {
     let alive = true;
     setDetailLoading(true);
     api.get('/grading/answers/{id}', { params: { id: currentId } })
-      .then((r) => { if (alive) setDetail(r.data as GradingItemDto); })
+      .then((r) => { if (alive) setDetail(r.data); })
       .catch(() => { if (alive) setDetail(null); })
       .finally(() => { if (alive) setDetailLoading(false); });
     return () => { alive = false; };
-  }, [currentId]);
+  }, [currentId, detailReload]);
 
   // 详情就绪 → 回填得分/评语:已复核回填 finalScore;
   // 解答题(人工判分)留空由老师填,公式填空回填 AI 建议分作参考
@@ -128,12 +139,15 @@ export function GradingReviewPage() {
       navigate('/grading');
     } catch (e) {
       const biz = bizError(e);
-      if (biz?.code === 4501) {
+      if (biz?.code === ERROR_CODES.GRADING_PENDING) {
         // 4501 detail 为对象 {pendingAnswerIds}(亦兼容裸数组);取 ids 计数(C3 #P2)
         const ids = pendingAnswerIds(biz.detail);
-        toast(`仍有 ${ids.length || pendingCount} 份未复核,复核完成后才能出分`);
+        toast(`仍有 ${ids.length || pendingCount} 份未复核,复核完成后才能出分`, {
+          variant: 'error',
+          ...(ids.length ? { detail: `待复核答卷号:${ids.join('、')}` } : {}),
+        });
       } else {
-        toast(e instanceof Error ? e.message : '出分失败');
+        toast(e instanceof Error ? e.message : '出分失败', { variant: 'error' });
       }
     } finally {
       setBusy(false);
@@ -148,6 +162,35 @@ export function GradingReviewPage() {
         <div className="grid gap-4" style={{ gridTemplateColumns: 'minmax(0,1fr) 360px' }}>
           <Skeleton className="h-72 w-full" />
           <Skeleton lines={2} className="h-32 w-full" />
+        </div>
+      </div>
+    );
+  }
+  if (loadError) {
+    // 加载失败 ≠ 没有主观题:这里绝不能给「可直接出分」,只给重试
+    return (
+      <div>
+        <PageHead
+          title={(
+            <span>
+              <Link className="text-[15px] font-semibold text-primary hover:underline" to="/grading">← 批改</Link>
+              <span className="text-ink-3"> / </span>{paperName || '课后作业'} · 主观题复核
+            </span>
+          )}
+          sub="待复核名单未能加载,暂时无法判断本次作业是否还有主观题待判分"
+        />
+        <div className="rounded-lg border border-line bg-card shadow-card">
+          <EmptyState
+            icon="⚠"
+            text="待复核名单加载失败"
+            hint="可能是网络波动。名单没拿到之前不要出分——未复核的主观题会被服务端拦下(4501)"
+            action={(
+              <div className="flex gap-2.5">
+                <Button onClick={() => navigate('/grading')}>返回批改列表</Button>
+                <Button variant="primary" onClick={() => setReload((n) => n + 1)}>重新加载</Button>
+              </div>
+            )}
+          />
         </div>
       </div>
     );
@@ -313,7 +356,12 @@ export function GradingReviewPage() {
         </div>
       ) : (
         <div className="rounded-lg border border-line bg-card shadow-card">
-          <EmptyState icon="✎" text="未能加载该份作答详情" action={<Button onClick={() => currentId != null && setCurrentId(currentId)}>重试</Button>} />
+          <EmptyState
+            icon="⚠"
+            text="未能加载该份作答详情"
+            hint="可能是网络波动,请重试"
+            action={<Button variant="primary" onClick={() => setDetailReload((n) => n + 1)}>重新加载</Button>}
+          />
         </div>
       )}
     </div>

@@ -25,6 +25,8 @@ export class AiFeatureRoutesInputDto {
   @IsIn(MODES) pre_grading!: AiFeatureMode;
   @IsIn(MODES) class_companion!: AiFeatureMode;
   @IsIn(MODES) diagnosis!: AiFeatureMode;
+  /** [2026-08-22 批准·契约] 第 5 个开关:AI 生成课件(大纲文本 LLM + 逐页生图) */
+  @IsIn(MODES) courseware!: AiFeatureMode;
 }
 
 /** POST /admin/ai/test —— 可选指定功能(连通性测试,不据此切路由) */

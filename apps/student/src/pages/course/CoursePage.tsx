@@ -27,13 +27,14 @@ export function CoursePage() {
     setCourses(null); setError(false);
     api.get('/student/courses')
       .then((r) => {
+        // openapi Course.status 是宽松 string,收窄为契约 CourseStatus 联合(与教师端 Dashboard 同源缺口)
         const list = r.data as CourseDto[];
         setCourses(list);
         setActiveId((id) => id ?? list[0]?.id ?? null);
       })
       .catch(() => setError(true));
     api.get('/student/assignments', { query: { status: 'pending' } })
-      .then((r) => setPending(r.data as AssignmentDto[]))
+      .then((r) => setPending(r.data))
       .catch(() => setPending([]));
   }, [reload]);
 
@@ -42,6 +43,7 @@ export function CoursePage() {
     setTimeline(null);
     setTimelineError(false);
     api.get('/student/courses/{id}/lessons', { params: { id: activeId } })
+      // openapi 的 Lesson schema 缺 sessionId(契约漂移,同 MonitorPage),推导类型装不进 TimelineItem.lesson
       .then((r) => setTimeline(r.data as TimelineItem[]))
       .catch(() => setTimelineError(true));
   }, [activeId, tlReload]);
@@ -54,8 +56,7 @@ export function CoursePage() {
   const openReplay = async (resourceId: number, name: string) => {
     try {
       const r = await api.get('/student/resources/{id}/view', { params: { id: resourceId } });
-      const d = r.data as { url: string; expiresAt: string };
-      setReplay({ name, url: d.url, expiresAt: d.expiresAt });
+      setReplay({ name, url: r.data.url, expiresAt: r.data.expiresAt });
     } catch {
       toast('课件链接获取失败,请重试');
     }
@@ -141,12 +142,16 @@ export function CoursePage() {
       <Modal open={replay != null} title={`回看课件 · ${replay?.name ?? ''}`} onClose={() => setReplay(null)}>
         {replay && (
           <div className="text-sm leading-7 text-ink-2">
-            <div className="flex h-44 items-center justify-center rounded-md border border-dashed border-line bg-bg/60 text-ink-3">
-              课件在线预览即将上线,可先通过下方链接打开查看
-            </div>
+            <p>课件已就绪,点下面的按钮在新窗口打开。</p>
+            <Button
+              variant="primary"
+              className="mt-3 min-h-touch"
+              onClick={() => window.open(replay.url, '_blank', 'noopener')}
+            >
+              打开课件
+            </Button>
             <div className="mt-3 break-all text-xs text-ink-3">
-              链接:{replay.url}
-              <br />有效期至:{new Date(replay.expiresAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
+              有效期至:{new Date(replay.expiresAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
             </div>
           </div>
         )}

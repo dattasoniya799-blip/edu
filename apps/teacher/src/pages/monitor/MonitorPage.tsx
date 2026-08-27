@@ -7,7 +7,7 @@
 import { memo, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { LessonDto, ParticipantMonitor } from '@qiming/contracts';
-import { Card, EmptyState, Skeleton, StatCard } from '@qiming/ui';
+import { Button, Card, EmptyState, Skeleton, StatCard } from '@qiming/ui';
 import { api } from '../../api';
 import { getToken } from '../../auth/token';
 import { PageHead } from '../Shell';
@@ -18,6 +18,8 @@ import { createMonitorSource } from './source';
 
 /** 随堂练题数兜底(实际取讲次 practice 卷题数) */
 const FALLBACK_QUESTION_TOTAL = 5;
+/** 首帧等待上限:mock 源立即推第 0 帧、真实 WS 握手秒级,超过即视为连不上 */
+const CONNECT_TIMEOUT_MS = 15_000;
 
 const STATE_UI: Record<ParticipantMonitor['state'], { cls: string; label: (p: ParticipantMonitor) => string }> = {
   normal: { cls: 'bg-green-soft text-green', label: () => '正常' },
@@ -63,6 +65,11 @@ export function MonitorPage() {
   const { id } = useParams();
   const lessonId = Number(id);
   const useMock = import.meta.env.VITE_USE_MOCK === 'true';
+  /**
+   * 本页是全仓唯一读 `lesson.sessionId` 的地方,而 openapi 的 `Lesson` schema 至今没有这个属性
+   * (只有 dto.ts 的 `LessonDto` 有,见 [2026-06-14 批准·B6课堂]),推导类型里因此拿不到它。
+   * 这个 `as LessonDto` 是「推导类型确不完整」的断言,补 openapi + gen:sdk 之后才能删。
+   */
   const [lesson, setLesson] = useState<LessonDto | null>(null);
   /** seq → 环节名(取自讲次编排;mock 流的 segment=3 即随堂练) */
   const [segNames, setSegNames] = useState<Map<number, string>>(new Map());
@@ -70,9 +77,17 @@ export function MonitorPage() {
   const [participants, setParticipants] = useState<ParticipantMonitor[]>([]);
   const [alerts, setAlerts] = useState<AlertEntry[]>([]);
   const [connected, setConnected] = useState(false);
+  /** 讲次信息拉不到:此前会让骨架屏永远转(lesson 为 null → 连 WS 的 effect 直接 return) */
+  const [lessonError, setLessonError] = useState(false);
+  /** 连上 WS 前的等待上限:超时给提示 + 重试,而不是无限骨架屏 */
+  const [connectTimedOut, setConnectTimedOut] = useState(false);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
-    api.get('/lessons/{id}', { params: { id: lessonId } }).then((r) => setLesson(r.data as LessonDto)).catch(() => {});
+    setLessonError(false);
+    api.get('/lessons/{id}', { params: { id: lessonId } })
+      .then((r) => setLesson(r.data as LessonDto))
+      .catch(() => setLessonError(true));
     // 随堂练题数 = 讲次 practice 环节挂的卷的题数(进度条分母)
     api.get('/lessons/{id}/segments', { params: { id: lessonId } })
       .then(async (r) => {
@@ -84,7 +99,7 @@ export function MonitorPage() {
         }
       })
       .catch(() => {});
-  }, [lessonId]);
+  }, [lessonId, reload]);
 
   // 真实模式需用真实 ClassSession id 连 WS(契约 LessonDto.sessionId,GET /lessons/:id 返回);
   // 无在开会话(sessionId=null)则不连,渲染时给出提示。mock 模式流自带帧,sessionId 仅占位。
@@ -94,6 +109,7 @@ export function MonitorPage() {
   useEffect(() => {
     if (lesson == null) return; // 等讲次加载,拿到真实 sessionId 再决定是否连
     if (!useMock && sessionId == null) return; // 真实模式无进行中会话:不连 WS,避免 join 报错
+    setConnectTimedOut(false);
     // 真实模式以本课教师身份 class:join 进监控房(sessionId=真实 ClassSession id)
     const source = createMonitorSource({ sessionId: sessionId ?? lessonId, token: getToken() });
     const stop = source.connect({
@@ -104,8 +120,10 @@ export function MonitorPage() {
       },
       onAlert: (e) => setAlerts((prev) => pushAlerts(prev, [e], Date.now())),
     });
-    return stop;
-  }, [lessonId, sessionId, useMock, lesson]);
+    // mock 流 5s 一帧、真实 WS 握手也是秒级;15s 还没首帧就是连不上,给提示别让骨架屏永远转
+    const timer = setTimeout(() => setConnectTimedOut(true), CONNECT_TIMEOUT_MS);
+    return () => { clearTimeout(timer); stop(); };
+  }, [lessonId, sessionId, useMock, lesson, reload]);
 
   const stats = useMemo(() => deriveStats(participants), [participants]);
 
@@ -121,12 +139,30 @@ export function MonitorPage() {
         sub={`本页仅上课中实时可用,每 5 秒刷新;课后无回放${lesson?.scheduledStart ? ` · ${fmtDateTime(lesson.scheduledStart)}` : ''}`}
       />
 
-      {noSession ? (
+      {lessonError ? (
+        <div className="rounded-lg border border-line bg-card shadow-card">
+          <EmptyState
+            icon="⚠"
+            text="讲次信息加载失败"
+            hint="拿不到讲次就无法判断课堂是否在进行中,请重试"
+            action={<Button variant="primary" onClick={() => setReload((n) => n + 1)}>重新加载</Button>}
+          />
+        </div>
+      ) : noSession ? (
         <div className="rounded-lg border border-line bg-card shadow-card">
           <EmptyState
             icon="◷"
             text="课堂未开始"
             hint="该讲次暂无进行中的课堂会话;待教师发布/开课后,这里实时显示每个学生的进度。"
+          />
+        </div>
+      ) : !connected && connectTimedOut ? (
+        <div className="rounded-lg border border-line bg-card shadow-card">
+          <EmptyState
+            icon="⚠"
+            text="课堂实时数据未连上"
+            hint="已等待 15 秒仍未收到首帧。可能是网络波动或课堂会话已结束,可重试连接。"
+            action={<Button variant="primary" onClick={() => setReload((n) => n + 1)}>重新连接</Button>}
           />
         </div>
       ) : !connected ? (

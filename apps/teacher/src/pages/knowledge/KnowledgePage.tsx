@@ -8,7 +8,7 @@
  * 资源选择可按 kpNode 过滤(ResourceDto.kpNodeId)。
  */
 import { useEffect, useMemo, useState } from 'react';
-import type { KpContentPackDto, KpGraphDto, KpNodeDto, PaperDto, ResourceDto } from '@qiming/contracts';
+import type { KpContentPackDto, KpNodeDto, PaperDto, ResourceDto } from '@qiming/contracts';
 import { Button, Card, EmptyState, Modal, Skeleton, Tag, TexText, useToast } from '@qiming/ui';
 import { api } from '../../api';
 import { PageHead } from '../Shell';
@@ -39,6 +39,9 @@ export function KnowledgePage() {
   const [pack, setPack] = useState<KpContentPackDto | null>(null);
   const [tpl, setTpl] = useState<SummaryTpl>({ min: 2, max: 4 });
   const [packLoading, setPackLoading] = useState(false);
+  /** 内容包拉取失败:此前 pack 留在 null,右侧骨架屏永远不消失 */
+  const [packError, setPackError] = useState(false);
+  const [packReload, setPackReload] = useState(0);
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
   /** 挂载弹窗:讲解课件 / 随堂练卷 */
@@ -55,12 +58,12 @@ export function KnowledgePage() {
     setLoading(true);
     api.get('/kp/graphs')
       .then(async (g) => {
-        const graph = pickKnowledgeGraph(g.data as KpGraphDto[]);
+        const graph = pickKnowledgeGraph(g.data);
         const n = graph
           ? await api.get('/kp/nodes', { query: { graphId: graph.id } })
           : { data: [] as KpNodeDto[] };
         if (!alive) return;
-        const list = n.data as KpNodeDto[];
+        const list = n.data;
         setNodes(list);
         if (list[0]) setSelectedId(list[0].id);
         setLoading(false); // 树就绪即渲染,不等次要数据
@@ -68,14 +71,14 @@ export function KnowledgePage() {
         // 次要数据:并行、各自 catch,失败仅令对应区缺省,不影响知识点树/搜索
         if (graph) {
           api.get('/knowledge/content-packs', { query: { graphId: graph.id } })
-            .then((r) => { if (alive) setPacked(new Set((r.data as KpContentPackDto[]).map((x) => x.kpNodeId))); })
+            .then((r) => { if (alive) setPacked(new Set(r.data.map((x) => x.kpNodeId))); })
             .catch(() => undefined);
         }
         api.get('/resources', { query: { page: 1, size: 50 } })
-          .then((r) => { if (alive) setResources(r.data.items as ResourceDto[]); })
+          .then((r) => { if (alive) setResources(r.data.items); })
           .catch(() => undefined);
         api.get('/papers', { query: { page: 1, size: 50 } })
-          .then((r) => { if (alive) setPapers(r.data.items as PaperDto[]); })
+          .then((r) => { if (alive) setPapers(r.data.items); })
           .catch(() => undefined);
       })
       .catch(() => { if (alive) setLoading(false); });
@@ -87,18 +90,19 @@ export function KnowledgePage() {
     if (selectedId == null) { setPack(null); return; }
     let alive = true;
     setPackLoading(true);
+    setPackError(false);
     setDirty(false);
     api.get('/knowledge/content-packs/{kpNodeId}', { params: { kpNodeId: selectedId } })
       .then((r) => {
         if (!alive) return;
-        const p = r.data as KpContentPackDto;
+        const p = r.data;
         setPack(p);
         setTpl(tplFromConfig(p.summaryConfig));
       })
-      .catch(() => { if (alive) setPack(null); })
+      .catch(() => { if (alive) { setPack(null); setPackError(true); } })
       .finally(() => { if (alive) setPackLoading(false); });
     return () => { alive = false; };
-  }, [selectedId]);
+  }, [selectedId, packReload]);
 
   const patchPack = (patch: Partial<KpContentPackDto>) => { setPack((p) => (p ? { ...p, ...patch } : p)); setDirty(true); };
   const patchTpl = (patch: Partial<SummaryTpl>) => { setTpl((t) => ({ ...t, ...patch })); setDirty(true); };
@@ -117,7 +121,7 @@ export function KnowledgePage() {
       });
       // 回读以拿到只读名;标记该知识点已维护
       const r = await api.get('/knowledge/content-packs/{kpNodeId}', { params: { kpNodeId: selectedId } });
-      const fresh = r.data as KpContentPackDto;
+      const fresh = r.data;
       setPack(fresh);
       setTpl(tplFromConfig(fresh.summaryConfig));
       setPacked((prev) => new Set(prev).add(selectedId));
@@ -222,8 +226,18 @@ export function KnowledgePage() {
               </div>
             </Card>
 
-            {packLoading || !pack ? (
+            {packLoading ? (
               <Skeleton lines={3} className="h-40 w-full" />
+            ) : packError || !pack ? (
+              <Card title="内容包">
+                <EmptyState
+                  icon="⚠"
+                  text="内容包加载失败"
+                  hint="可能是网络波动,请重试"
+                  className="py-6"
+                  action={<Button variant="primary" onClick={() => setPackReload((n) => n + 1)}>重新加载</Button>}
+                />
+              </Card>
             ) : (
               <Card title="内容包" bodyClassName="p-0">
                 {/* 讲解课件 */}

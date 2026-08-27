@@ -11,6 +11,13 @@
  */
 import type { LessonDto, LessonSegmentDto, SegmentType } from '@qiming/contracts';
 
+/**
+ * 环节报文的「读」形状。openapi 把 `kpNodeName` 标了 `readOnly: true`,生成类型里因此是
+ * `readonly kpNodeName?`,而 dto.ts 的 `LessonSegmentDto` 写成必填 —— 两者只差可选性。
+ * 页面直接消费客户端推导类型(不再 `.data as LessonSegmentDto[]`),故这里按较宽的一侧收参。
+ */
+export type SegmentLike = Omit<LessonSegmentDto, 'kpNodeName'> & { readonly kpNodeName?: string | null };
+
 /** 单元内三段固定槽(顺序固定:讲解→随堂练→小结) */
 export const UNIT_SLOT_TYPES = ['lecture', 'practice', 'summary'] as const;
 export type UnitSlotType = (typeof UNIT_SLOT_TYPES)[number];
@@ -54,7 +61,7 @@ export function newUnit(unitSeq: number): KpUnit {
 }
 
 /** lesson_segments → 知识点单元(按 unitSeq 分组;旧无 unitSeq 段各自独立成单元) */
-export function segmentsToUnits(segments: LessonSegmentDto[]): KpUnit[] {
+export function segmentsToUnits(segments: SegmentLike[]): KpUnit[] {
   const order: number[] = [];
   const map = new Map<number, KpUnit>();
   let autoKey = -1;
@@ -64,12 +71,12 @@ export function segmentsToUnits(segments: LessonSegmentDto[]): KpUnit[] {
     if (!map.has(key)) {
       const u = newUnit(0);
       u.kpNodeId = s.kpNodeId;
-      u.kpNodeName = s.kpNodeName;
+      u.kpNodeName = s.kpNodeName ?? null;
       map.set(key, u);
       order.push(key);
     }
     const u = map.get(key)!;
-    if (u.kpNodeId == null && s.kpNodeId != null) { u.kpNodeId = s.kpNodeId; u.kpNodeName = s.kpNodeName; }
+    if (u.kpNodeId == null && s.kpNodeId != null) { u.kpNodeId = s.kpNodeId; u.kpNodeName = s.kpNodeName ?? null; }
     u[s.type as UnitSlotType] = {
       id: s.id,
       durationMin: s.durationMin,
@@ -110,7 +117,7 @@ export function unitsToSegments(units: KpUnit[]): LessonSegmentDto[] {
  * (开场回顾 warmup / 课后作业 homework / 休息 break_time)。这些段不进入知识点单元模型,
  * 但全量 PUT segments 时必须一并写回,否则保存编排会把它们删掉(尤其课后作业卷会丢)。
  */
-export function outsideSegments(segments: LessonSegmentDto[]): LessonSegmentDto[] {
+export function outsideSegments<T extends SegmentLike>(segments: T[]): T[] {
   return segments.filter((s) => !UNIT_SLOT_TYPES.includes(s.type as UnitSlotType));
 }
 
@@ -118,7 +125,7 @@ export function outsideSegments(segments: LessonSegmentDto[]): LessonSegmentDto[
  * 合并单元段与单元外段为整页 segments(全量 PUT 用):单元段在前、单元外段在后,
  * 统一按数组顺序重排 seq。保证保存时不丢 warmup/homework/break_time。
  */
-export function mergeSegments(unitSegs: LessonSegmentDto[], outside: LessonSegmentDto[]): LessonSegmentDto[] {
+export function mergeSegments(unitSegs: SegmentLike[], outside: SegmentLike[]): SegmentLike[] {
   return [...unitSegs, ...outside].map((s, i) => ({ ...s, seq: i + 1 }));
 }
 

@@ -154,6 +154,7 @@ export function CourseLessonsPage() {
   const course = courses.find((c) => c.id === courseId);
 
   useEffect(() => {
+    // openapi Course.status 为宽松 string,收窄为 DTO 联合类型(同 Dashboard)
     api.get('/teacher/courses').then((r) => setCourses(r.data as CourseDto[])).catch(() => undefined);
   }, []);
 
@@ -162,6 +163,7 @@ export function CourseLessonsPage() {
     setLoading(true);
     setError(false);
     api.get('/courses/{id}/lessons', { params: { id: courseId } })
+      // openapi 的 Lesson schema 缺 sessionId(契约漂移,同 MonitorPage):推导类型装不进 LessonDto
       .then((r) => setLessons(r.data as LessonDto[]))
       .catch(() => setError(true))
       .finally(() => setLoading(false));

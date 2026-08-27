@@ -105,7 +105,9 @@ export const handlers = [
   })),
   http.put(`${BASE}/admin/teachers/:id`, authed(() => okVoid())),
   http.delete(`${BASE}/admin/teachers/:id`, authed(() => okVoid())),
-  http.post(`${BASE}/admin/teachers/:id/reset-password`, authed(() => okVoid())),
+  // 契约把 data.password 定为必填(同 admin 版):此前返 okVoid() 违约,消费方拿不到明文临时密码
+  http.post(`${BASE}/admin/teachers/:id/reset-password`, authed(({ params }) =>
+    ok({ password: `Qm-${String(params.id).padStart(4, '0')}-${Math.random().toString(36).slice(2, 6)}` }))),
 
   http.get(`${BASE}/admin/students`, authed(({ request }) => {
     const url = new URL(request.url);

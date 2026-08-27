@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { AiUsageBreakdownDto, AiUsageSummaryDto } from '@qiming/contracts';
 import { Button, Card, EmptyState, Modal, ProgressBar, Skeleton, StatCard, useToast } from '@qiming/ui';
-import { api } from '../api';
+import { api, type GetData } from '../api';
 import { BarChart } from '../components/BarChart';
 import { Field, FormRow, Select, TextInput } from '../components/controls';
 import { formatDayShort, formatMoney, formatWan } from '../lib/format';
@@ -10,8 +10,8 @@ import { OVER_POLICY_LABEL } from '../lib/labels';
 import { validateQuota } from '../lib/validate';
 import { PageHead } from './Shell';
 
-interface DailyItem { date: string; tokens: number; cost: number }
-interface Quota { monthlyLimit: number; alertThreshold: number; overPolicy: string }
+type DailyItem = GetData<'/admin/ai-usage/daily'>[number];
+type Quota = GetData<'/admin/ai-quota'>;
 
 /** 拆分条配色按原型顺序循环:主色 / 紫 / 橙 / 绿 */
 const BREAKDOWN_FILL = ['bg-primary', 'bg-violet', 'bg-orange', 'bg-green'] as const;
@@ -36,9 +36,9 @@ export function AiUsage() {
         api.get('/admin/ai-quota'),
       ]);
       setSummary(s.data);
-      setDaily(d.data as DailyItem[]);
+      setDaily(d.data);
       setBreakdown(b.data);
-      setQuota(q.data as Quota);
+      setQuota(q.data);
     } catch {
       setFailed(true);
     } finally {
@@ -100,10 +100,10 @@ export function AiUsage() {
               label="课均 AI 成本"
               value={
                 summary.avgCostPerLesson != null
-                  ? <>¥{summary.avgCostPerLesson}<span className="text-[13px] font-semibold text-ink-2"> /课次</span></>
+                  ? <>¥{summary.avgCostPerLesson}<span className="text-[13px] font-semibold text-ink-2"> /讲次</span></>
                   : '—'
               }
-              delta="按本月已上课次折算"
+              delta="按本月已上讲次折算"
             />
             <StatCard
               ribbon="red"

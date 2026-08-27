@@ -38,6 +38,9 @@ export function BankList() {
   const [graphId, setGraphId] = useState<number | null>(null);
   const [nodes, setNodes] = useState<KpNodeDto[]>([]);
   const [nodesLoading, setNodesLoading] = useState(true);
+  /** 图谱/节点请求失败:不能落到「该知识体系暂无知识点」的空态,那是在撒谎 */
+  const [nodesError, setNodesError] = useState(false);
+  const [nodesReload, setNodesReload] = useState(0);
   const [grade, setGrade] = useState('');
   const [nodeId, setNodeId] = useState<number | null>(null);
   const [nodeKw, setNodeKw] = useState('');
@@ -53,23 +56,29 @@ export function BankList() {
   const [items, setItems] = useState<QuestionDto[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  /** 题目列表加载失败:同样不能伪装成「没有符合条件的题目」 */
+  const [listError, setListError] = useState(false);
   const [refresh, setRefresh] = useState(0);
 
   useEffect(() => {
+    setNodesError(false);
     api.get('/kp/graphs').then((r) => {
       setGraphs(r.data);
       const curriculum = r.data.find((g) => g.graphType === 'curriculum_knowledge') ?? r.data[0];
       setGraphId(curriculum ? curriculum.id : null);
-    }).catch(() => setNodesLoading(false));
-  }, []);
+      if (!curriculum) setNodesLoading(false);
+    }).catch(() => { setNodesError(true); setNodesLoading(false); });
+  }, [nodesReload]);
 
   useEffect(() => {
     if (graphId == null) return;
     setNodesLoading(true);
+    setNodesError(false);
     api.get('/kp/nodes', { query: { graphId } })
       .then((r) => setNodes(r.data))
+      .catch(() => { setNodes([]); setNodesError(true); })
       .finally(() => setNodesLoading(false));
-  }, [graphId]);
+  }, [graphId, nodesReload]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedKw(keyword.trim()), 300);
@@ -78,6 +87,7 @@ export function BankList() {
 
   useEffect(() => {
     setLoading(true);
+    setListError(false);
     api.get('/questions', {
       query: {
         page, size: PAGE_SIZE,
@@ -90,6 +100,7 @@ export function BankList() {
       },
     })
       .then((r) => { setItems(r.data.items); setTotal(r.data.total); })
+      .catch(() => { setItems([]); setTotal(0); setListError(true); })
       .finally(() => setLoading(false));
   }, [page, debouncedKw, subject, type, status, difficulty, nodeId, refresh]);
 
@@ -181,6 +192,17 @@ export function BankList() {
           />
           {nodesLoading ? (
             <Skeleton lines={6} className="h-7 w-full" />
+          ) : nodesError ? (
+            <div className="flex flex-col items-start gap-2 px-2.5 py-3 text-xs text-ink-3">
+              <span>⚠ 知识点目录加载失败</span>
+              <button
+                type="button"
+                className="text-[12.5px] font-semibold text-primary hover:underline"
+                onClick={() => setNodesReload((n) => n + 1)}
+              >
+                重新加载
+              </button>
+            </div>
           ) : (
             <div className="flex flex-col">
               <button
@@ -249,6 +271,13 @@ export function BankList() {
 
           {loading ? (
             <div className="space-y-3 p-5"><Skeleton lines={4} className="h-20 w-full" /></div>
+          ) : listError ? (
+            <EmptyState
+              icon="⚠"
+              text="题目列表加载失败"
+              hint="可能是网络波动,请重试"
+              action={<Button variant="primary" onClick={() => setRefresh((n) => n + 1)}>重新加载</Button>}
+            />
           ) : items.length === 0 ? (
             <EmptyState
               text="没有符合条件的题目"

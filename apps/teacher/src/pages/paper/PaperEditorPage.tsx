@@ -77,7 +77,7 @@ export function PaperEditorPage() {
         applyQuestions(qc.questions);
         if (qc.truncated) toast('题库题目较多,已载入前 1000 道用于组卷;可在选题弹窗搜索缩小范围');
         if (p) {
-          const paper = p.data as PaperDto;
+          const paper = p.data;
           setName(paper.name);
           setType(paper.type);
           setItems(paper.questions.map((pq) => ({ questionId: pq.questionId, score: pq.score })));

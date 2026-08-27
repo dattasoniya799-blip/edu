@@ -2,7 +2,7 @@
  * 验收覆盖(任务卡 A7 · AI 网关:供应商抽象 + 计量 + 四能力):
  * - mock 下计量字段完整(全归因)且 费用 = 单价 × token 可手算(对账路由表单价);
  * - /ai/qa SSE 流式 + 引导模式输出审查(检出最终答案模式 → 拦截重写,策略在配置文件);
- * - 限流 6 次/分/学生,第 7 次返回业务码 4501;
+ * - 限流 6 次/分/学生,第 7 次返回业务码 4505;
  * - 预批走 A5 真实 BullMQ 链路(AI_GATEWAY 已绑 LlmPreGradeGateway),
  *   输出严格符合 grading_records 结构(JSON Schema 校验)+ photo 占位经 OCR 接口(local stub);
  * - 切路由表(Redis 覆盖键)不重启生效 + fallback 切换;
@@ -182,14 +182,16 @@ describe('AI 网关:供应商抽象 + 计量 + 四能力(A7)', () => {
     await askQa(s1, { message: 'x'.repeat(501) }).expect(400);
   });
 
-  // ================= 限流(验收:第 7 次 4501) =================
+  // ================= 限流(验收:第 7 次 4505) =================
 
-  it('验收:限流 6 次/分/学生 —— 第 7 次返回业务码 4501(HTTP 429)', async () => {
+  // [2026-08-22 audit-fix-server · C1] 业务码由 4501 迁到 4505:4501 已被 grading 的
+  // ERR_GRADING_PENDING 占用,而契约里 code 是全局业务码,双占会让按 code 分支的前端误判。
+  it('验收:限流 6 次/分/学生 —— 第 7 次返回业务码 4505(HTTP 429)', async () => {
     for (let i = 0; i < 6; i++) {
       await askQa(s2, { message: `第 ${i + 1} 次提问` }).expect(200);
     }
     const res = await askQa(s2, { message: '第 7 次提问' }).expect(429);
-    expect(res.body.code).toBe(4501);
+    expect(res.body.code).toBe(4505);
     expect(res.body.detail).toEqual({ limitPerMin: 6 });
     // 不影响其他学生
     await askQa(s1, { message: '我还能问' }).expect(200);

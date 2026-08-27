@@ -1,5 +1,5 @@
 /** 接口调用唯一入口:contracts createClient(宪法:禁止手写 fetch) */
-import { createClient } from '@qiming/contracts';
+import { ApiError, createClient, ERROR_CODES } from '@qiming/contracts';
 import { resolveOssUrlAsync, type FigureSrcResolver } from '@qiming/ui';
 import { getToken } from './auth/token';
 
@@ -14,6 +14,15 @@ export const api = createClient({
   getToken,
   onUnauthorized: () => unauthorizedHandler(),
 });
+
+/**
+ * 端点响应 data 的推导类型(从客户端签名反推,页面不再本地重声明报文形状 ——
+ * 契约一改立刻编译报错,而 `.data as X` 只要新旧形状部分重叠就照过)。
+ */
+export type GetData<P extends Parameters<typeof api.get>[0]> =
+  Awaited<ReturnType<typeof api.get<P>>> extends { data: infer D } ? D : never;
+export type PostData<P extends Parameters<typeof api.post>[0]> =
+  Awaited<ReturnType<typeof api.post<P>>> extends { data: infer D } ? D : never;
 
 /**
  * REV-front #1:由 ossKey 换后端签名直链。`GET /uploads/view-url?ossKey=` 不属于 openapi
@@ -54,21 +63,10 @@ export async function uploadAnswerPhoto(file: File): Promise<string> {
   return ossKey;
 }
 
-/** 业务错误文案(contracts 未导出 ApiError 类,按形状取 message) */
+/** 业务错误文案(ApiError 的 message 即服务端下发的 message) */
 export function errorMessage(e: unknown, fallback: string): string {
   if (e instanceof Error && e.message && e.message !== 'error') return e.message;
   return fallback;
-}
-
-/** 按形状取错误三元组(contracts ApiError 未导出类,只能鸭子类型) */
-function errShape(e: unknown): { code: number; httpStatus: number; message: string } | null {
-  if (!(e instanceof Error)) return null;
-  const { code, httpStatus } = e as Error & { code?: unknown; httpStatus?: unknown };
-  return {
-    code: typeof code === 'number' ? code : -1,
-    httpStatus: typeof httpStatus === 'number' ? httpStatus : -1,
-    message: e.message ?? '',
-  };
 }
 
 /**
@@ -77,8 +75,8 @@ function errShape(e: unknown): { code: number; httpStatus: number; message: stri
  * 服务端正在做创建幂等化 —— 此类错误重试一次创建即可拿到已有 attempt。
  */
 export function isConflictAlreadyExists(e: unknown): boolean {
-  const s = errShape(e);
-  return s != null && s.httpStatus === 409 && (s.message.includes('已存在') || s.message.includes('唯一约束'));
+  if (!(e instanceof ApiError)) return false;
+  return e.httpStatus === 409 && (e.message.includes('已存在') || e.message.includes('唯一约束'));
 }
 
 /**
@@ -86,8 +84,7 @@ export function isConflictAlreadyExists(e: unknown): boolean {
  * 无 ?attempt= 直开已完成作业时触发 —— 应改从作业列表取 myAttempt.attemptId 看成绩单。
  */
 export function isConflictAttemptCompleted(e: unknown): boolean {
-  const s = errShape(e);
-  return s != null
-    && (s.httpStatus === 409 || s.code === 4502)
-    && (s.message.includes('已完成') || s.message.includes('不可重复作答'));
+  if (!(e instanceof ApiError)) return false;
+  return (e.httpStatus === 409 || e.code === ERROR_CODES.ATTEMPT_STATE)
+    && (e.message.includes('已完成') || e.message.includes('不可重复作答'));
 }

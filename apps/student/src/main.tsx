@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { ToastProvider } from '@qiming/ui';
+import { ErrorBoundary, ToastProvider } from '@qiming/ui';
 import { App } from './App';
 import './index.css';
 
@@ -53,11 +53,14 @@ async function prepare(): Promise<void> {
 prepare().then(() => {
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
-      <BrowserRouter>
-        <ToastProvider>
-          <App />
-        </ToastProvider>
-      </BrowserRouter>
+      {/* 渲染期异常兜底:没有它,任何一次渲染抛错都会让 React 卸载整棵树 → 整站白屏 */}
+      <ErrorBoundary>
+        <BrowserRouter>
+          <ToastProvider>
+            <App />
+          </ToastProvider>
+        </BrowserRouter>
+      </ErrorBoundary>
     </React.StrictMode>,
   );
 });

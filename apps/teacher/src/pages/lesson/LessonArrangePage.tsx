@@ -9,9 +9,10 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import type { KpContentPackDto, KpNodeDto, LessonDto, LessonSegmentDto, PaperDto, ResourceDto } from '@qiming/contracts';
+import { ERROR_CODES } from '@qiming/contracts';
+import type { KpNodeDto, PaperDto } from '@qiming/contracts';
 import { Button, Card, EmptyState, Modal, Skeleton, Tag, useToast } from '@qiming/ui';
-import { api } from '../../api';
+import { api, type GetData } from '../../api';
 import { PageHead } from '../Shell';
 import { PAPER_TYPE_LABEL } from '../paper/lib/paperLibrary';
 import { CHECKLIST_LABEL, bizError, missingMessages, newSegment, pendingPaperKeys } from './lib/segments';
@@ -19,7 +20,7 @@ import { arrangeKpGraphId, homeworkPaperChoices } from './lib/pickers';
 import {
   UNIT_SLOT_LABEL, mergeSegments, newUnit, openingFromLesson, openingToConfig, outsideSegments,
   segmentsToUnits, unitWarnings, unitsDuration, unitsToSegments,
-  type KpUnit, type OpeningConfig, type UnitSlotType,
+  type KpUnit, type OpeningConfig, type SegmentLike, type UnitSlotType,
 } from './lib/units';
 
 const LINK_CLS = 'text-[13px] font-semibold text-primary hover:underline';
@@ -40,15 +41,18 @@ export function LessonArrangePage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [lesson, setLesson] = useState<LessonDto | null>(null);
+  const [lesson, setLesson] = useState<GetData<'/lessons/{id}'> | null>(null);
   const [units, setUnits] = useState<KpUnit[] | null>(null);
   /** 单元外段(开场回顾/课后作业/休息)—— 不入单元模型,但保存时一并写回(C3 #P0-2 不丢段) */
-  const [extras, setExtras] = useState<LessonSegmentDto[]>([]);
+  const [extras, setExtras] = useState<SegmentLike[]>([]);
   const [opening, setOpening] = useState<OpeningConfig>({ enabled: false, text: '', resourceId: null });
-  const [papers, setPapers] = useState<PaperDto[]>([]);
-  const [resources, setResources] = useState<ResourceDto[]>([]);
-  const [kpNodes, setKpNodes] = useState<KpNodeDto[]>([]);
+  const [papers, setPapers] = useState<GetData<'/papers'>['items']>([]);
+  const [resources, setResources] = useState<GetData<'/resources'>['items']>([]);
+  const [kpNodes, setKpNodes] = useState<GetData<'/kp/nodes'>>([]);
   const [loading, setLoading] = useState(true);
+  /** 初始加载失败 ≠ 讲次不存在:后者会把教师引去讲次列表,前者只需重试 */
+  const [loadError, setLoadError] = useState(false);
+  const [reload, setReload] = useState(0);
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [missing, setMissing] = useState<string[] | null>(null);
@@ -60,6 +64,7 @@ export function LessonArrangePage() {
 
   useEffect(() => {
     setLoading(true);
+    setLoadError(false);
     Promise.all([
       api.get('/lessons/{id}', { params: { id: lessonId } }),
       api.get('/lessons/{id}/segments', { params: { id: lessonId } }),
@@ -67,16 +72,17 @@ export function LessonArrangePage() {
       api.get('/resources', { query: { page: 1, size: 50 } }),
     ])
       .then(([l, s, p, r]) => {
-        const lessonDto = l.data as LessonDto;
+        const lessonDto = l.data;
         setLesson(lessonDto);
         setOpening(openingFromLesson(lessonDto));
-        setUnits(segmentsToUnits(s.data as LessonSegmentDto[]));
-        setExtras(outsideSegments(s.data as LessonSegmentDto[]));
-        setPapers(p.data.items as PaperDto[]);
-        setResources(r.data.items as ResourceDto[]);
+        setUnits(segmentsToUnits(s.data));
+        setExtras(outsideSegments(s.data));
+        setPapers(p.data.items);
+        setResources(r.data.items);
       })
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
-  }, [lessonId]);
+  }, [lessonId, reload]);
 
   // 「选择知识点」弹窗的图谱按课程学科取(此前恒取第一张 curriculum 图谱 → 非数学课也列数学知识点);
   // 课程学科经 lesson.courseId ↔ GET /teacher/courses 解析(讲次本身不带 subject)。
@@ -121,7 +127,7 @@ export function LessonArrangePage() {
     setKpIdx(null);
     try {
       const r = await api.get('/knowledge/content-packs/{kpNodeId}', { params: { kpNodeId: node.id } });
-      const pack = r.data as KpContentPackDto;
+      const pack = r.data;
       const hasPrefill = pack.lectureResourceId != null || pack.practicePaperId != null || Object.keys(pack.summaryConfig ?? {}).length > 0;
       if (!hasPrefill) return;
       setUnits((prev) => prev?.map((u, j) => (j === idx ? {
@@ -158,10 +164,10 @@ export function LessonArrangePage() {
       await api.put('/lessons/{id}/segments', { params: { id: lessonId }, body: mergeSegments(unitsToSegments(units), extras) });
       setDirty(false);
       const l = await api.get('/lessons/{id}', { params: { id: lessonId } });
-      setLesson(l.data as LessonDto);
+      setLesson(l.data);
       return true;
     } catch (e) {
-      toast(e instanceof Error ? e.message : '保存失败');
+      toast(e instanceof Error ? e.message : '保存失败', { variant: 'error' });
       return false;
     }
   };
@@ -171,16 +177,16 @@ export function LessonArrangePage() {
     try {
       if (!(await save())) return;
       await api.post('/lessons/{id}/publish', { params: { id: lessonId } });
-      toast('课堂已发布,讲次已就绪');
+      toast('课堂已发布,讲次已就绪', { variant: 'success' });
       const l = await api.get('/lessons/{id}', { params: { id: lessonId } });
-      setLesson(l.data as LessonDto);
+      setLesson(l.data);
     } catch (e) {
       const biz = bizError(e);
-      if (biz?.code === 4201) {
+      if (biz?.code === ERROR_CODES.LESSON_CHECKLIST) {
         // 4201 detail:['empty'](空讲次)或挂卷键 → 完整中文提示(C3 #P2)
         setMissing(missingMessages(biz.detail));
       } else {
-        toast(e instanceof Error ? e.message : '发布失败');
+        toast(e instanceof Error ? e.message : '发布失败', { variant: 'error' });
       }
     } finally {
       setBusy(false);
@@ -193,12 +199,33 @@ export function LessonArrangePage() {
     navigate(`/lessons/${lessonId}/paper${homeworkSeg?.paperId ? `?paperId=${homeworkSeg.paperId}` : ''}`);
   };
 
+  /** 资源库没有合适课件时:去 AI 生成课件向导(带讲次 + 当前单元知识点上下文);同去组卷,先保存避免编排丢失 */
+  const goToCoursewareWizard = async (kpNodeId: number | null) => {
+    if (dirty && !(await save())) return;
+    navigate(`/courseware/new?lessonId=${lessonId}${kpNodeId != null ? `&kpNodeId=${kpNodeId}` : ''}`);
+  };
+
   if (loading) {
     return (
       <div>
         <Skeleton className="mb-5 h-9 w-2/3" />
         <Skeleton lines={5} className="h-20 w-full" />
       </div>
+    );
+  }
+  if (loadError) {
+    return (
+      <EmptyState
+        icon="⚠"
+        text="编排数据加载失败"
+        hint="可能是网络波动,请重试"
+        action={(
+          <div className="flex gap-2.5">
+            <Button onClick={() => navigate('/courses')}>返回讲次列表</Button>
+            <Button variant="primary" onClick={() => setReload((n) => n + 1)}>重新加载</Button>
+          </div>
+        )}
+      />
     );
   }
   if (!lesson || !units) {
@@ -435,6 +462,14 @@ export function LessonArrangePage() {
         title={mountSlot === 'lecture' ? '挂载课件' : mountSlot === 'homework' ? '选择课后作业试卷' : '选择随堂练试卷'}
         onClose={() => setMount(null)}
       >
+        {mountSlot === 'lecture' && (
+          <div className="mb-3 flex flex-wrap items-center gap-1.5 rounded-md bg-primary-soft px-3.5 py-2.5 text-[12.5px] text-primary">
+            没有合适的课件?
+            <button type="button" className="font-bold hover:underline" onClick={() => void goToCoursewareWizard(mountUnitKp)}>
+              ✦ AI 生成课件 →
+            </button>
+          </div>
+        )}
         {mountItems.length === 0 ? (
           <EmptyState icon="▣" text={mountSlot === 'lecture' ? '资源库暂无课件' : mountSlot === 'homework' ? '暂无可用课后作业试卷,可「去组卷」新建' : '暂无可用随堂练试卷'} />
         ) : (

@@ -26,6 +26,9 @@ export function TagPickerModal({ open, graphs, subject, value, onClose, onConfir
   const [activeGraphId, setActiveGraphId] = useState<number | null>(null);
   const [nodesByGraph, setNodesByGraph] = useState<Record<number, KpNodeDto[]>>({});
   const [loading, setLoading] = useState(false);
+  /** 节点请求失败:与「没有匹配的知识点」分开,否则教师会以为图谱是空的 */
+  const [error, setError] = useState(false);
+  const [reload, setReload] = useState(0);
   const [keyword, setKeyword] = useState('');
   const [picked, setPicked] = useState<Map<number, TagPick>>(new Map());
 
@@ -48,10 +51,12 @@ export function TagPickerModal({ open, graphs, subject, value, onClose, onConfir
   useEffect(() => {
     if (!open || activeGraphId == null || nodesByGraph[activeGraphId]) return;
     setLoading(true);
+    setError(false);
     api.get('/kp/nodes', { query: { graphId: activeGraphId } })
       .then((r) => setNodesByGraph((m) => ({ ...m, [activeGraphId]: r.data })))
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, [open, activeGraphId, nodesByGraph]);
+  }, [open, activeGraphId, nodesByGraph, reload]);
 
   const activeGraph = graphs.find((g) => g.id === activeGraphId);
   /** 搜索(name/chapter/section)+ 按章节/类目分组:找知识点时先见章、再见节点 */
@@ -117,6 +122,14 @@ export function TagPickerModal({ open, graphs, subject, value, onClose, onConfir
       <div className="max-h-[300px] overflow-auto">
         {loading ? (
           <Skeleton lines={5} className="h-8 w-full" />
+        ) : error ? (
+          <EmptyState
+            icon="⚠"
+            text="知识点加载失败"
+            hint="可能是网络波动,请重试"
+            className="py-8"
+            action={<Button variant="primary" onClick={() => setReload((n) => n + 1)}>重新加载</Button>}
+          />
         ) : matchCount === 0 ? (
           <EmptyState text="该知识体系下没有匹配的知识点" hint="试试换个关键词,或搜章节名(如「一次函数」)" className="py-8" />
         ) : (

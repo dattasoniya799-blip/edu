@@ -14,6 +14,32 @@ const REAL_PROVIDER = 'openai_compatible';
 const REAL_DEFAULT_FEATURES: AiFeature[] = ['qa', 'pre_grading', 'class_companion', 'diagnosis'];
 
 /**
+ * [2026-08-22 courseware] 生图是独立供应商与独立 key:文本 key(LLM_API_KEY)配了不代表能出图,
+ * 故 courseware 的「默认走真实」由 IMAGE_API_KEY 单独决定(与四个文本能力互不牵连)。
+ */
+const IMAGE_REAL_PROVIDER = 'openai_compatible_image';
+/** IMAGE_MODEL 未配置时的生图模型名(与 provider 内部默认一致,亦是 pricing 表键) */
+export const DEFAULT_IMAGE_MODEL = 'gpt-image-2';
+
+/**
+ * courseware=real 的路由条目。与文本能力的 `model:'env'` 不同,这里把**真实模型名**写进条目:
+ * 生图 provider 的模型来自 env(接口不收 model 参数),把模型名落进路由表能让
+ * ai_calls.model 与 pricing 表(gpt-image-2 单价)对得上,而不是全部落 pricing.default。
+ *
+ * [2026-08-22 audit-fix-server · P0-1] **fallback 恒为 null**。文本能力回退 mock 时人
+ * 一眼看得出是假数据;生图回退 mock 拿到的是一张「合法但全白」的 1×1 PNG,前端 <img>
+ * 正常渲染、计量按 mock 单价记账,教师会被告知「N 页已生成完成并存入资源库」而拿到一套
+ * 空白课件。真实生图失败必须老实变成 failed 页(业务层本来就有 retry 出口)。
+ */
+export function imageRealEntry(cfg: ConfigService): RouteEntry {
+  return {
+    provider: IMAGE_REAL_PROVIDER,
+    model: cfg.get<string>('IMAGE_MODEL', DEFAULT_IMAGE_MODEL) || DEFAULT_IMAGE_MODEL,
+    fallback: null,
+  };
+}
+
+/**
  * 路由表(任务卡 A7 选型:config 文件保存默认值 + Redis 覆盖实现热更新):
  * - 默认值:src/ai/config/ai-routes.default.json(feature → provider/model/fallback + 单价表);
  * - 热更新:向 Redis SET a7:ai:routes 写同形状的**部分**JSON(routes/pricing 均可只给改动项),
@@ -42,12 +68,18 @@ export class RouteTableService {
    */
   private effectiveDefaults(): RouteTable {
     const hasRealKey = !!(this.cfg.get<string>('LLM_API_KEY', '') ?? '').trim();
-    if (!hasRealKey) return this.mockDefaults;
+    const hasImageKey = !!(this.cfg.get<string>('IMAGE_API_KEY', '') ?? '').trim();
+    if (!hasRealKey && !hasImageKey) return this.mockDefaults;
     const routes = { ...this.mockDefaults.routes };
-    for (const f of REAL_DEFAULT_FEATURES) {
-      const def = this.mockDefaults.routes[f];
-      const mockModel = def?.provider === 'mock' ? def.model : (def?.fallback?.model ?? 'mock-chat-mini');
-      routes[f] = { provider: REAL_PROVIDER, model: 'env', fallback: { provider: 'mock', model: mockModel } };
+    if (hasRealKey) {
+      for (const f of REAL_DEFAULT_FEATURES) {
+        const def = this.mockDefaults.routes[f];
+        const mockModel = def?.provider === 'mock' ? def.model : (def?.fallback?.model ?? 'mock-chat-mini');
+        routes[f] = { provider: REAL_PROVIDER, model: 'env', fallback: { provider: 'mock', model: mockModel } };
+      }
+    }
+    if (hasImageKey) {
+      routes.courseware = imageRealEntry(this.cfg);
     }
     return { routes, pricing: this.mockDefaults.pricing };
   }

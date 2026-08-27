@@ -34,7 +34,7 @@ export function AssignmentsPage() {
     setLoading(true);
     setError(false);
     api.get('/assignments', { query: filter === 'all' ? undefined : { status: filter } })
-      .then((r) => setList(r.data as AssignmentBriefDto[]))
+      .then((r) => setList(r.data))
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [filter, reload]);

@@ -6,6 +6,7 @@
  * 发布唯一硬门槛 = 已存在的 practice / homework 环节必须挂「已发布」试卷;
  * 其余环节(warmup/lecture/summary)缺失不再拦截。
  */
+import { ApiError } from '@qiming/contracts';
 import type { LessonSegmentDto, SegmentType } from '@qiming/contracts';
 
 /** 发布门槛键(仅这两类挂卷会拦截发布;顺序即展示顺序) */
@@ -40,8 +41,12 @@ export function removeSegment(list: LessonSegmentDto[], index: number): LessonSe
   return reseq(list.filter((_, i) => i !== index));
 }
 
-/** seq 始终 = 数组顺序(A4:题序/环节序以数组顺序为准) */
-export function reseq(list: LessonSegmentDto[]): LessonSegmentDto[] {
+/**
+ * seq 始终 = 数组顺序(A4:题序/环节序以数组顺序为准)。
+ * 泛型:调用方可能拿的是 PUT /lessons/{id}/segments 请求体的推导类型(kpNodeName 可选),
+ * 与 LessonSegmentDto 只差可选性,写死成 LessonSegmentDto[] 会逼调用方回到 as 断言。
+ */
+export function reseq<T extends { seq: number }>(list: T[]): T[] {
   return list.map((s, i) => (s.seq === i + 1 ? s : { ...s, seq: i + 1 }));
 }
 
@@ -126,11 +131,9 @@ export function pendingAnswerIds(detail: unknown): number[] {
   return arr.filter((x): x is number => typeof x === 'number');
 }
 
-/** 业务错误(createClient 抛 ApiError:含 code/detail)的安全提取 */
+/** 业务错误(createClient 抛的 ApiError:含 code/detail)的安全提取 */
 export function bizError(e: unknown): { code: number; message: string; detail?: unknown } | null {
-  if (e instanceof Error && typeof (e as { code?: unknown }).code === 'number') {
-    return { code: (e as unknown as { code: number }).code, message: e.message, detail: (e as { detail?: unknown }).detail };
-  }
+  if (e instanceof ApiError) return { code: e.code, message: e.message, detail: e.detail };
   return null;
 }
 

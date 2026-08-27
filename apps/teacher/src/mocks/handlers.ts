@@ -2,12 +2,14 @@
  * msw handlers · 按 packages/contracts/openapi.yaml 全量覆盖(三端共用同一份)
  * 统一响应包 {code,message,data};未带合法 Bearer → 401 {code:4011}
  */
-import { http, HttpResponse, type HttpResponseResolver } from 'msw';
+import { delay, http, HttpResponse, type HttpResponseResolver } from 'msw';
 import type {
-  AssignmentBriefDto, AssignmentDto, AssignmentKind, KpContentPackDto,
+  AssignmentBriefDto, AssignmentDto, AssignmentKind, CoursewareJobDto, CoursewareOutlinePageDto,
+  CoursewareStyleInput, KpContentPackDto,
   LessonSegmentDto, MeDto, PaperDto, PaperType,
   QuestionAnswer, QuestionDto, QuestionOptionDto, QuestionType, RubricStep,
 } from '@qiming/contracts';
+import { LIMITS as CW_LIMITS } from '../pages/courseware/lib/outline';
 import { CHECKLIST_KEYS, computeChecklist } from '../pages/lesson/lib/segments';
 import * as D from './data';
 
@@ -73,6 +75,26 @@ function contentPackDto(kpNodeId: number): KpContentPackDto {
     practicePaperId,
     practicePaperName: practicePaperId != null ? (D.papers.find((p) => p.id === practicePaperId)?.name ?? null) : null,
     summaryConfig: stored?.summaryConfig ?? {},
+  };
+}
+
+/**
+ * 课件生成 job → 轮询响应(形状 = 契约 CoursewareJobDto,required: jobId/status/total/done/pages)
+ * status:未开始结算=queued;有 pending=running;全结算且有失败=failed;全成功=done
+ */
+function coursewareJobDto(job: D.CoursewareJobState): CoursewareJobDto {
+  const pending = job.pages.filter((p) => p.status === 'pending').length;
+  const failed = job.pages.filter((p) => p.status === 'failed').length;
+  const done = job.pages.filter((p) => p.status === 'done').length;
+  const settled = job.pages.length - pending;
+  const status = pending > 0 ? (settled === 0 ? 'queued' : 'running') : failed > 0 ? 'failed' : 'done';
+  return {
+    jobId: job.id, status, total: job.pages.length, done,
+    pages: job.pages.map((p) => ({
+      seq: p.seq, title: p.title, status: p.status,
+      ...(p.imageUrl ? { imageUrl: p.imageUrl } : {}),
+    })),
+    ...(job.resourceId != null ? { resourceId: job.resourceId } : {}),
   };
 }
 
@@ -184,7 +206,9 @@ export const handlers = [
   })),
   http.put(`${BASE}/admin/teachers/:id`, authed(() => okVoid())),
   http.delete(`${BASE}/admin/teachers/:id`, authed(() => okVoid())),
-  http.post(`${BASE}/admin/teachers/:id/reset-password`, authed(() => okVoid())),
+  // 契约把 data.password 定为必填(同 admin 版):此前返 okVoid() 违约,消费方拿不到明文临时密码
+  http.post(`${BASE}/admin/teachers/:id/reset-password`, authed(({ params }) =>
+    ok({ password: `Qm-${String(params.id).padStart(4, '0')}-${Math.random().toString(36).slice(2, 6)}` }))),
 
   http.get(`${BASE}/admin/students`, authed(({ request }) => {
     const url = new URL(request.url);
@@ -358,6 +382,73 @@ export const handlers = [
   })),
   http.put(`${BASE}/resources/:id`, authed(() => okVoid())),
   http.delete(`${BASE}/resources/:id`, authed(() => okVoid())),
+
+  // ============ AI 生成课件(契约 /courseware/*,走查用有状态 mock) ============
+  // 文字稿 → 逐页大纲(文本 LLM,真实需数秒,此处延迟 1.5s 让加载态可见);pageCount 契约可选,缺省 8
+  http.post(`${BASE}/courseware/outline`, authed(async ({ request }) => {
+    const body = (await request.json()) as {
+      sourceText: string; pageCount?: number; lessonId?: number; kpNodeId?: number;
+      style: CoursewareStyleInput;
+    };
+    // 上限与 server courseware.dto.ts 同数(前端 lib/outline.ts LIMITS 也是同一套)
+    if (!body.sourceText?.trim()) return err(400, 4000, '文字稿不能为空');
+    if (body.sourceText.length > CW_LIMITS.sourceText) return err(400, 4000, `文字稿最多 ${CW_LIMITS.sourceText} 字`);
+    if (body.pageCount != null && (body.pageCount < 3 || body.pageCount > CW_LIMITS.pages)) {
+      return err(400, 4000, `期望页数需在 3–${CW_LIMITS.pages} 之间`);
+    }
+    if (body.style?.id === 'custom' && (body.style.customText ?? '').length > CW_LIMITS.customText) {
+      return err(400, 4000, `风格描述最多 ${CW_LIMITS.customText} 字`);
+    }
+    await delay(1500);
+    // 真实后端会把风格一并交给文本 LLM,使各页画面描述贴合风格;mock 在画面描述前标出风格名
+    return ok({ pages: D.coursewareOutline(body.sourceText ?? '', body.pageCount ?? 8, body.style) });
+  })),
+  // 建生图任务(真实后端 BullMQ 入队);pages 为教师确认后的大纲,style 决定逐页提示词的风格前缀
+  http.post(`${BASE}/courseware/jobs`, authed(async ({ request }) => {
+    const body = (await request.json()) as {
+      name: string; lessonId?: number; kpNodeId?: number;
+      style: CoursewareStyleInput;
+      pages: CoursewareOutlinePageDto[];
+    };
+    if (!body.name?.trim()) return err(400, 4000, '课件名称不能为空');
+    if (body.name.length > CW_LIMITS.name) return err(400, 4000, `课件名称最多 ${CW_LIMITS.name} 字`);
+    if (!Array.isArray(body.pages) || body.pages.length === 0) return err(400, 4000, '大纲至少需要 1 页');
+    if (body.pages.length > CW_LIMITS.pages) return err(400, 4000, `大纲最多 ${CW_LIMITS.pages} 页`);
+    // 逐页文本上限(与 server DTO 的 MaxLength 同数):title 200 / body 2000 / imagePrompt 1000
+    for (const [i, p] of body.pages.entries()) {
+      if (!p?.title?.trim()) return err(400, 4000, `第 ${i + 1} 页缺少标题`);
+      if (p.title.length > CW_LIMITS.title) return err(400, 4000, `第 ${i + 1} 页标题最多 ${CW_LIMITS.title} 字`);
+      if ((p.body ?? '').length > CW_LIMITS.body) return err(400, 4000, `第 ${i + 1} 页要点最多 ${CW_LIMITS.body} 字`);
+      if ((p.imagePrompt ?? '').length > CW_LIMITS.imagePrompt) {
+        return err(400, 4000, `第 ${i + 1} 页画面描述最多 ${CW_LIMITS.imagePrompt} 字`);
+      }
+    }
+    if (body.style?.id === 'custom' && !body.style.customText?.trim()) {
+      return err(400, 4000, '自定义风格需要填写风格描述');
+    }
+    if (body.style?.id === 'custom' && (body.style.customText ?? '').length > CW_LIMITS.customText) {
+      return err(400, 4000, `风格描述最多 ${CW_LIMITS.customText} 字`);
+    }
+    const job = D.createCoursewareJob({
+      name: body.name.trim(), lessonId: body.lessonId, kpNodeId: body.kpNodeId,
+      style: body.style, pages: body.pages,
+    });
+    return ok({ jobId: job.id });
+  })),
+  // 轮询进度:每次查询按创建以来经过的时间推进(3 秒/页,比真实的约 23 秒快,便于走查)
+  // 真实后端 jobId 是 Redis 运行态(存 24h);mock 是内存表,刷新即 404 → 前端提示「任务已过期」
+  http.get(`${BASE}/courseware/jobs/:jobId`, authed(({ params }) => {
+    const job = D.coursewareJobs.get(String(params.jobId));
+    if (!job) return err(404, 4040, '生成任务不存在或已过期');
+    return ok(coursewareJobDto(D.advanceCoursewareJob(job)));
+  })),
+  // 重试失败页(无 body)→ 该页下一轮转成功;契约响应是 OkVoid,进度仍由轮询读取
+  http.post(`${BASE}/courseware/jobs/:jobId/retry`, authed(({ params }) => {
+    const job = D.coursewareJobs.get(String(params.jobId));
+    if (!job) return err(404, 4040, '生成任务不存在或已过期');
+    D.retryCoursewareJob(job);
+    return okVoid();
+  })),
 
   // ============ 教师 · 课程/讲次/编排/组卷/发布(B4:有状态 mock,口径同 A4 服务端) ============
   http.get(`${BASE}/teacher/courses`, authed(() => ok(D.courses))),
@@ -580,7 +671,8 @@ export const handlers = [
     ok({ ...D.assignments[0], id: 701, kind: 'wrong_redo', scoreCounted: false, questionCount: D.wrongBook.length }))),
   http.get(`${BASE}/student/report`, authed(() => ok(D.studentReport))),
   http.get(`${BASE}/student/resources/:id/view`, authed(({ params }) =>
-    ok({ url: `https://oss.example.com/view/${params.id}?sig=mock`, expiresAt: '2026-06-11T23:59:59.000Z' }))),
+    // 相对时间(同 server VIEW_TTL_SEC 口径):固定过去时刻会让「有效期至」永远显示已过期
+    ok({ url: `https://oss.example.com/view/${params.id}?sig=mock`, expiresAt: new Date(Date.now() + 10 * 60e3).toISOString() }))),
 
   // ================= 学情(教师) =================
   http.get(`${BASE}/analytics/courses/:id/mastery`, authed(() => ok(D.courseMasteryHeat))),

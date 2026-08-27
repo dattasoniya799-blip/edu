@@ -11,6 +11,7 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiError, ERROR_CODES } from '@qiming/contracts';
 import type { AssignmentDto } from '@qiming/contracts';
 import { ToastProvider } from '@qiming/ui';
 import type { AttemptWithQuestions } from '../types';
@@ -29,9 +30,9 @@ import { HomeworkPage } from '../HomeworkPage';
 
 // ---------- fixtures ----------
 const err409Exists = () =>
-  Object.assign(new Error('资源已存在或唯一约束冲突'), { code: 409, httpStatus: 409 });
+  new ApiError(409, '资源已存在或唯一约束冲突', undefined, 409);
 const err409Completed = () =>
-  Object.assign(new Error('该作业已完成,不可重复作答'), { code: 4502, httpStatus: 409 });
+  new ApiError(ERROR_CODES.ATTEMPT_STATE, '该作业已完成,不可重复作答', undefined, 409);
 
 const attemptOf = (over: Partial<AttemptWithQuestions> = {}): AttemptWithQuestions => ({
   id: 77, assignmentId: 1, status: 'in_progress', attemptNo: 1,

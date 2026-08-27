@@ -3,15 +3,11 @@
  * 周数据四卡 + 知识点掌握度条形(绿≥80 / 主色 60–79 / 红<60,ProgressBar auto 规则)
  */
 import { useEffect, useState } from 'react';
-import type { MasteryItemDto } from '@qiming/contracts';
 import { Button, Card, EmptyState, ProgressBar, Skeleton, StatCard } from '@qiming/ui';
-import { api } from '../../api';
+import { api, type GetData } from '../../api';
 import { formatCorrectRate } from '../../lib/format';
 
-interface ReportData {
-  mastery: MasteryItemDto[];
-  weekStats: { answeredCount: number; correctRate: number | null; studySec: number; wrongOpenCount: number };
-}
+type ReportData = GetData<'/student/report'>;
 
 export function ReportPage() {
   const [data, setData] = useState<ReportData | null>(null);
@@ -21,7 +17,7 @@ export function ReportPage() {
   useEffect(() => {
     setData(null); setError(false);
     api.get('/student/report')
-      .then((r) => setData(r.data as ReportData))
+      .then((r) => setData(r.data))
       .catch(() => setError(true));
   }, [reload]);
 

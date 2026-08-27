@@ -289,6 +289,7 @@ export const aiFeatureRoutes: AiFeatureRoutesDto = {
   pre_grading: 'real',
   class_companion: 'real',
   diagnosis: 'mock',
+  courseware: 'mock',
 };
 
 export const auditLogs = [

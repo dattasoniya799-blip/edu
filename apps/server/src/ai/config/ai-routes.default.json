@@ -3,12 +3,15 @@
     "qa": { "provider": "mock", "model": "mock-chat-v1", "fallback": { "provider": "mock", "model": "mock-chat-mini" } },
     "pre_grading": { "provider": "mock", "model": "mock-grader-v1", "fallback": null },
     "class_companion": { "provider": "mock", "model": "mock-chat-mini", "fallback": null },
-    "diagnosis": { "provider": "mock", "model": "mock-chat-mini", "fallback": null }
+    "diagnosis": { "provider": "mock", "model": "mock-chat-mini", "fallback": null },
+    "courseware": { "provider": "mock_image", "model": "mock-image-v1", "fallback": null }
   },
   "pricing": {
     "mock-chat-v1": { "inPer1k": 1, "outPer1k": 2 },
     "mock-grader-v1": { "inPer1k": 1, "outPer1k": 2 },
     "mock-chat-mini": { "inPer1k": 0.5, "outPer1k": 1 },
+    "mock-image-v1": { "inPer1k": 0.5, "outPer1k": 1 },
+    "gpt-image-2": { "inPer1k": 0.036, "outPer1k": 0.288, "perImage": 0.45 },
     "default": { "inPer1k": 1, "outPer1k": 2 }
   }
 }

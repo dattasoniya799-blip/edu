@@ -1,13 +1,12 @@
 /** 学生档案弹窗(原型 modalStuDetail):mini-stats + 在读课程 */
 import { useCallback, useEffect, useState } from 'react';
-import type { MasteryItemDto, StudentDto } from '@qiming/contracts';
 import { Button, Modal, Skeleton, Tag } from '@qiming/ui';
-import { api } from '../api';
+import { api, type GetData } from '../api';
 import { formatDurationHM } from '../lib/format';
 import { CLASS_TYPE_LABEL } from '../lib/labels';
 import type { ResetPasswordTarget } from './ResetPasswordModal';
 
-interface Profile { student: StudentDto; mastery: MasteryItemDto[]; wrongOpenCount: number }
+type Profile = GetData<'/admin/students/{id}/profile'>;
 
 export interface StudentProfileModalProps {
   /** 为 null 时关闭 */
@@ -25,7 +24,7 @@ export function StudentProfileModal({ studentId, onClose, onResetPassword }: Stu
     setFailed(false);
     try {
       const r = await api.get('/admin/students/{id}/profile', { params: { id } });
-      setProfile(r.data as Profile);
+      setProfile(r.data);
     } catch {
       setFailed(true);
     }

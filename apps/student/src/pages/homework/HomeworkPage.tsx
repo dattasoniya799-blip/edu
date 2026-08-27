@@ -36,7 +36,7 @@ export function HomeworkPage() {
 
   useEffect(() => {
     api.get('/student/assignments', { query: { status: 'all' } })
-      .then((r) => setAssignment((r.data as AssignmentDto[]).find((a) => a.id === assignmentId) ?? null))
+      .then((r) => setAssignment(r.data.find((a) => a.id === assignmentId) ?? null))
       .catch(() => setAssignment(null));
   }, [assignmentId]);
 

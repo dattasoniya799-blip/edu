@@ -34,7 +34,9 @@ export function Shell() {
   if (!me) return <Navigate to="/login" replace />;
   const current = NAV_ITEMS.find((n) => (n.to === '/' ? location.pathname === '/' : location.pathname.startsWith(n.to)))?.label
     // B4 子页面(讲次编排/组卷/监控/批改)归属「我的课程」面包屑
-    ?? (/^\/(lessons|grading)/.test(location.pathname) ? '我的课程' : '');
+    ?? (/^\/(lessons|grading)/.test(location.pathname) ? '我的课程'
+      // AI 生成课件向导(/courseware/new)产出的是课件资源,归属「资源库」面包屑
+      : /^\/courseware/.test(location.pathname) ? '资源库' : '');
 
   return (
     <div className="flex min-h-screen bg-bg font-sans text-ink">

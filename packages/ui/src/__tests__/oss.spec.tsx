@@ -7,6 +7,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { resolveOssUrl, resolveOssUrlAsync } from '../oss';
 
 describe('resolveOssUrl(同步)', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('已是 http(s) URL → 原样返回', () => {
     expect(resolveOssUrl('https://oss.example.com/a.png')).toBe('https://oss.example.com/a.png');
   });
@@ -18,6 +22,8 @@ describe('resolveOssUrl(同步)', () => {
     expect(resolveOssUrl('')).toBeNull();
   });
   it('mock 模式下普通 ossKey → 可加载的占位 data URL', () => {
+    // mock 判定是 opt-in(仅 VITE_USE_MOCK==='true'),vitest 下两个来源都没有该变量 → 必须显式桩
+    vi.stubEnv('VITE_USE_MOCK', 'true');
     const url = resolveOssUrl('k/figs/stem-1.png');
     expect(url).toMatch(/^data:image\/svg\+xml,/);
   });
@@ -35,6 +41,7 @@ describe('resolveOssUrlAsync(异步)', () => {
   });
 
   it('mock 模式 → 占位 data URL,不调用 fetcher', async () => {
+    vi.stubEnv('VITE_USE_MOCK', 'true');
     const fetcher = vi.fn();
     const url = await resolveOssUrlAsync('k/figs/m.png', fetcher);
     expect(url).toMatch(/^data:image\/svg\+xml,/);

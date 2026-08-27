@@ -14,12 +14,14 @@ export interface TableProps<T> {
   rowKey: (row: T) => string | number;
   /** 空态文案(基线:每个列表必须有空态) */
   emptyText?: string;
+  /** 自定义空态节点;给了就整块替换 emptyText —— 用于区分「加载失败」「筛选无结果」「还没有数据」 */
+  empty?: ReactNode;
   loading?: boolean;
   className?: string;
 }
 
 /** 表头 12px ink-2 灰底,行 hover 微底色(基线表格规约;灰底由 bg token 派生) */
-export function Table<T>({ columns, rows, rowKey, emptyText = '暂无数据', loading, className = '' }: TableProps<T>) {
+export function Table<T>({ columns, rows, rowKey, emptyText = '暂无数据', empty, loading, className = '' }: TableProps<T>) {
   if (loading) {
     return (
       <div className={`animate-pulse space-y-2 p-4 ${className}`} aria-label="加载中">
@@ -29,7 +31,7 @@ export function Table<T>({ columns, rows, rowKey, emptyText = '暂无数据', lo
       </div>
     );
   }
-  if (!rows.length) return <EmptyState text={emptyText} />;
+  if (!rows.length) return <>{empty ?? <EmptyState text={emptyText} />}</>;
   return (
     <table className={`w-full border-collapse text-sm tabular-nums ${className}`}>
       <thead>

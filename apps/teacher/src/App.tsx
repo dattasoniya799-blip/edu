@@ -15,6 +15,7 @@ import { GradingHomePage } from './pages/grading/GradingHomePage';
 import { GradingReviewPage } from './pages/grading/GradingReviewPage';
 import { MonitorPage } from './pages/monitor/MonitorPage';
 import { ResourcesPage } from './pages/resources/ResourcesPage';
+import { CoursewareWizardPage } from './pages/courseware/CoursewareWizardPage';
 import { KnowledgePage } from './pages/knowledge/KnowledgePage';
 import { AssignmentsPage } from './pages/assignments/AssignmentsPage';
 import { AnalyticsPage } from './pages/analytics/AnalyticsPage';
@@ -42,6 +43,7 @@ export function App() {
           <Route path="/bank/:id/edit" element={<EditorPage />} />
           <Route path="/knowledge" element={<KnowledgePage />} />
           <Route path="/resources" element={<ResourcesPage />} />
+          <Route path="/courseware/new" element={<CoursewareWizardPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="*" element={<NotFound />} />
         </Route>

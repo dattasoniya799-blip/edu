@@ -12,18 +12,22 @@ import type {
 import { AuditService } from '../audit/audit.service';
 import type { JwtUser } from '../auth/auth.service';
 import { REDIS } from '../redis/redis.module';
+import { BizException, ERR_AI_IMAGE_KEY_MISSING } from './ai.codes';
 import { loadAiConfigJson } from './config-loader';
 import { LlmGatewayService } from './llm/llm-gateway.service';
+import { OpenAiCompatibleImageProvider } from './llm/providers/openai-compatible-image.provider';
 import {
   DEFAULT_CONCURRENCY,
   OpenAiCompatibleProvider,
   PROVIDER_CONFIG_KEY,
 } from './llm/providers/openai-compatible.provider';
-import { ROUTES_OVERRIDE_KEY, RouteTableService } from './llm/route-table.service';
+import { imageRealEntry, ROUTES_OVERRIDE_KEY, RouteTableService } from './llm/route-table.service';
 import type { RouteEntry, RouteTable } from './llm/types';
 
-const FEATURES: AiFeature[] = ['qa', 'pre_grading', 'class_companion', 'diagnosis'];
+const FEATURES: AiFeature[] = ['qa', 'pre_grading', 'class_companion', 'diagnosis', 'courseware'];
 const REAL_PROVIDER = 'openai_compatible';
+/** [2026-08-22 courseware] 生图能力的真实供应商(与文本能力不同 provider、不同 key) */
+const IMAGE_REAL_PROVIDER = 'openai_compatible_image';
 
 /** apiKey 脱敏:前缀 + **** + 后 4 位(绝不回明文);过短的整体打码 */
 function maskApiKey(key: string): string {
@@ -50,6 +54,7 @@ export class AiAdminService {
     private readonly routes: RouteTableService,
     private readonly gateway: LlmGatewayService,
     private readonly provider: OpenAiCompatibleProvider,
+    private readonly imageProvider: OpenAiCompatibleImageProvider,
     private readonly audit: AuditService,
   ) {}
 
@@ -119,16 +124,26 @@ export class AiAdminService {
   async getRoutes(): Promise<AiFeatureRoutesDto> {
     const table = await this.routes.table();
     const modeOf = (f: AiFeature): AiFeatureMode =>
-      table.routes[f]?.provider === REAL_PROVIDER ? 'real' : 'mock';
+      table.routes[f]?.provider === this.realProviderOf(f) ? 'real' : 'mock';
     return {
       qa: modeOf('qa'),
       pre_grading: modeOf('pre_grading'),
       class_companion: modeOf('class_companion'),
       diagnosis: modeOf('diagnosis'),
+      courseware: modeOf('courseware'),
     };
   }
 
   async putRoutes(user: JwtUser, dto: AiFeatureRoutesDto, ip?: string): Promise<null> {
+    // [2026-08-22 audit-fix-server · P1-11] 生图是独立 key:切真实前先确认 IMAGE_API_KEY 有值,
+    // 否则教师一发起就逐页失败(P0-1 后不再静默降级 mock),而管理员在这一步毫无提示。
+    if (dto.courseware === 'real' && !this.envImageKey()) {
+      throw new BizException(
+        ERR_AI_IMAGE_KEY_MISSING,
+        '未配置生图 API Key(IMAGE_API_KEY),无法把「课件生成」切到真实供应商',
+        { feature: 'courseware', envVar: 'IMAGE_API_KEY' },
+      );
+    }
     const routes: Record<string, RouteEntry> = {};
     for (const f of FEATURES) {
       routes[f] = this.entryFor(f, dto[f]);
@@ -156,26 +171,50 @@ export class AiAdminService {
     return null;
   }
 
-  /** real → openai_compatible + model=env + fallback 回该 feature 的 mock;mock → 默认 mock 条目 */
+  /**
+   * real → 真实供应商 + fallback 回该 feature 的 mock;mock → 默认 mock 条目。
+   * courseware 走生图供应商(model 取 IMAGE_MODEL 真实名,见 imageRealEntry);
+   * 四个文本能力照旧 openai_compatible + model=env。
+   */
   private entryFor(feature: AiFeature, mode: AiFeatureMode): RouteEntry {
+    const def = this.defaults.routes[feature];
+    const mockProvider = this.mockProviderOf(feature);
     const mockModel = this.mockModelOf(feature);
     if (mode === 'real') {
-      return { provider: REAL_PROVIDER, model: 'env', fallback: { provider: 'mock', model: mockModel } };
+      return feature === 'courseware'
+        ? imageRealEntry(this.cfg)
+        : { provider: REAL_PROVIDER, model: 'env', fallback: { provider: 'mock', model: mockModel } };
     }
-    const def = this.defaults.routes[feature];
-    return { provider: 'mock', model: mockModel, fallback: def?.fallback ?? null };
+    return { provider: mockProvider, model: mockModel, fallback: def?.fallback ?? null };
   }
 
-  /** 该 feature 的标准 mock 模型(默认表 provider 恒为 mock,故取其 model) */
+  /** 该 feature 的真实供应商名(生图能力与文本能力不同) */
+  private realProviderOf(feature: AiFeature): string {
+    return feature === 'courseware' ? IMAGE_REAL_PROVIDER : REAL_PROVIDER;
+  }
+
+  /** 该 feature 的 mock 供应商名(生图能力为 mock_image) */
+  private mockProviderOf(feature: AiFeature): string {
+    return feature === 'courseware' ? 'mock_image' : 'mock';
+  }
+
+  /** 该 feature 的标准 mock 模型(默认表 provider 恒为 mock/mock_image,故取其 model) */
   private mockModelOf(feature: AiFeature): string {
     const def = this.defaults.routes[feature];
-    if (def?.provider === 'mock') return def.model;
-    return def?.fallback?.model ?? 'mock-chat-mini';
+    if (def?.provider === this.mockProviderOf(feature)) return def.model;
+    return def?.fallback?.model ?? (feature === 'courseware' ? 'mock-image-v1' : 'mock-chat-mini');
   }
 
   // ---------------- 连通性测试 ----------------
 
-  async test(_feature?: string): Promise<AiTestResultDto> {
+  /**
+   * [2026-08-22 audit-fix-server · P1-11] 按 feature 分流:入参此前被整个忽略,
+   * 恒测文本供应商 —— 管理员切了「课件生成」再点测试,验的其实是 LLM_API_KEY。
+   * courseware → 生图 provider 的最小探活(GET /models,不出图);其余四个文本能力照旧。
+   * 两条路径都永不抛错,一律返回结构化 {ok,error}(controller 不该因此 500)。
+   */
+  async test(feature?: string): Promise<AiTestResultDto> {
+    if (feature === 'courseware') return this.imageProvider.testConnection();
     // 直接用配置好的 openai_compatible provider 打一发极小 prompt(绕开路由/额度);永不抛 500
     return this.provider.testConnection();
   }
@@ -192,5 +231,10 @@ export class AiAdminService {
 
   private envKey(): string {
     return this.cfg.get<string>('LLM_API_KEY', '');
+  }
+
+  /** 生图 key(与文本 key 完全独立;只判空,绝不回显) */
+  private envImageKey(): string {
+    return (this.cfg.get<string>('IMAGE_API_KEY', '') ?? '').trim();
   }
 }

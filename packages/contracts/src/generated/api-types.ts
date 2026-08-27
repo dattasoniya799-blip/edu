@@ -3880,6 +3880,194 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/courseware/outline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 文字稿 → 逐页大纲(文本 LLM;教师编辑确认后再提交生图) [teacher] */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        sourceText: string;
+                        pageCount?: number;
+                        lessonId?: number;
+                        kpNodeId?: number;
+                        style: components["schemas"]["CoursewareStyleInput"];
+                    };
+                };
+            };
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: number;
+                            message: string;
+                            data: {
+                                pages: components["schemas"]["CoursewareOutlinePage"][];
+                            };
+                        };
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/courseware/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 建生图任务(逐页调 GPT Image;pages 为教师确认后的大纲) [teacher] */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        lessonId?: number;
+                        kpNodeId?: number;
+                        style: components["schemas"]["CoursewareStyleInput"];
+                        pages: components["schemas"]["CoursewareOutlinePage"][];
+                    };
+                };
+            };
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: number;
+                            message: string;
+                            data: {
+                                jobId: string;
+                            };
+                        };
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/courseware/jobs/{jobId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 轮询生成进度(全部页成功后 resourceId 为落库的 Resource.type=ppt) [teacher] */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    jobId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: number;
+                            message: string;
+                            data: components["schemas"]["CoursewareJob"];
+                        };
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/courseware/jobs/{jobId}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 重试失败页(重新入队该任务内 status=failed 的页) [teacher] */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    jobId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OkVoid"];
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4422,6 +4610,11 @@ export interface components {
             class_companion: "real" | "mock";
             /** @enum {string} */
             diagnosis: "real" | "mock";
+            /**
+             * @description AI 生成课件(大纲文本 LLM + 逐页生图)
+             * @enum {string}
+             */
+            courseware: "real" | "mock";
         };
         AiTestResult: {
             ok: boolean;
@@ -4437,6 +4630,40 @@ export interface components {
             ossKey: string;
             /** Format: date-time */
             expiresAt: string;
+        };
+        /** @description 整套课件的 PPT 风格;内置风格只传 id,id=custom 时 customText 为教师描述的视觉主题。 */
+        CoursewareStyleInput: {
+            id: string;
+            /** @description 自定义风格描述(id=custom 时必填) */
+            customText?: string;
+        };
+        /** @description 逐页大纲的一页(文本 LLM 产出,教师可编辑后再提交生图) */
+        CoursewareOutlinePage: {
+            /** @description 页标题 */
+            title: string;
+            /** @description 该页要点文字 */
+            body: string;
+            /** @description 画面描述(传给 GPT Image 的提示词) */
+            imagePrompt: string;
+        };
+        CoursewareJobPage: {
+            seq: number;
+            title: string;
+            /** @enum {string} */
+            status: "pending" | "done" | "failed";
+            /** @description 整页幻灯片图片直链;未完成时缺省或 null */
+            imageUrl?: null | string;
+        };
+        /** @description 生图任务运行态(jobId 为 Redis 运行态字符串,任务状态不落库);全部页成功后成品落 Resource(type=ppt),resourceId 才有值。 */
+        CoursewareJob: {
+            jobId: string;
+            /** @enum {string} */
+            status: "queued" | "running" | "done" | "failed";
+            total: number;
+            done: number;
+            pages: components["schemas"]["CoursewareJobPage"][];
+            /** @description 成品资源 id(未落库时缺省或 null) */
+            resourceId?: null | number;
         };
         /** @description AI 学情诊断结果:整体诊断文字 + 薄弱知识点列表 */
         AiDiagnosis: {

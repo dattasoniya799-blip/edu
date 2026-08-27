@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ApiError, ERROR_CODES } from '@qiming/contracts';
 import type { LessonSegmentDto } from '@qiming/contracts';
 import {
   CHECKLIST_KEYS, bizError, computeChecklist, missingLabels, missingMessages, pendingAnswerIds,
@@ -113,10 +114,12 @@ describe('pendingAnswerIds(C3 #P2:4501 detail 兼容对象/数组)', () => {
 });
 
 describe('bizError / totalDuration / reseq / newSegment', () => {
-  it('bizError 提取 ApiError 形状的 code/detail', () => {
-    const e = Object.assign(new Error('备课检查未通过'), { code: 4201, detail: ['homework'] });
+  it('bizError 提取 ApiError 的 code/detail', () => {
+    const e = new ApiError(ERROR_CODES.LESSON_CHECKLIST, '备课检查未通过', ['homework'], 409);
     expect(bizError(e)).toEqual({ code: 4201, message: '备课检查未通过', detail: ['homework'] });
     expect(bizError(new Error('普通错误'))).toBeNull();
+    // 形状像但不是 ApiError:改用 instanceof 后不再误认
+    expect(bizError(Object.assign(new Error('x'), { code: 4201 }))).toBeNull();
     expect(bizError('not-an-error')).toBeNull();
   });
   it('totalDuration 求和(非法值按 0)', () => {

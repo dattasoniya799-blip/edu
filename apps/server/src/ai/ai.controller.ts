@@ -22,7 +22,7 @@ export class AiController {
   /**
    * POST /ai/qa [student]:SSE 流(openapi:event=delta data={"text"};结束 event=done)。
    * 自管响应(@Res)→ 全局拦截器/过滤器不参与,错误体在此按 ErrResp 形状手写
-   * (BizException 保留业务码:4501 限流 / 4504 超额关闭)。
+   * (BizException 保留业务码:4505 限流 / 4504 超额关闭)。
    */
   @Post('qa')
   @Roles('student')

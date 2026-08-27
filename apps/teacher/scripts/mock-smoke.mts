@@ -212,9 +212,14 @@ try {
   await api.put('/grading/answers/{id}/review', { params: { id: 41 }, body: { finalScore: 5, comment: '注意还原方向' } });
   const pending1 = await api.get('/grading/pending');
   assert(pending1.data[0]?.pendingCount === 3, '改分确认后 pending 数下降 4→3(验收项)');
-  await api.post('/grading/assignments/{id}/adopt-ai', { params: { id: 1 } });
+  // 其余 3 份逐份采纳 AI 分(此前调的 /grading/assignments/{id}/adopt-ai 是幽灵端点:
+  // openapi、api-types、三份 handlers 里都没有,msw error 策略下整脚本断在这里)
+  const rest = await api.get('/grading/assignments/{id}/answers', { params: { id: 1 }, query: { status: 'pending' } });
+  for (const b of rest.data) {
+    await api.put('/grading/answers/{id}/review', { params: { id: b.answerId }, body: { finalScore: b.aiScore ?? 0 } });
+  }
   const pending2 = await api.get('/grading/pending');
-  assert(pending2.data[0]?.pendingCount === 0, '全部采纳 AI 分后 pending=0');
+  assert(pending2.data[0]?.pendingCount === 0, '逐份采纳 AI 分后 pending=0');
   const prog = await api.get('/assignments/{id}/progress', { params: { id: 1 } });
   assert(prog.data.pendingSubjective === 0 && prog.data.gradedSubjective === 12, 'progress 与复核状态对账');
   await api.post('/grading/assignments/{id}/finalize', { params: { id: 1 } });

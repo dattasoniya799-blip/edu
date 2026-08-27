@@ -30,11 +30,29 @@ export function formatSize(bytes: number): string {
   return `${(mb / 1024).toFixed(1)} GB`;
 }
 
+/**
+ * meta.pages 的页数:两种在库形状都要认 ——
+ * 上传型资源存页数数字;AI 生成课件(kind=ai_courseware)存的是逐页对象数组(后端
+ * courseware-page.service 口径),此前只判 `typeof === 'number'`,AI 课件卡片一直不显示页数。
+ */
+export function resourcePageCount(meta: unknown): number | null {
+  const m = (meta ?? {}) as { pages?: unknown };
+  if (typeof m.pages === 'number' && Number.isFinite(m.pages)) return m.pages;
+  if (Array.isArray(m.pages)) return m.pages.length;
+  return null;
+}
+
+/** AI 生成课件(资源库卡片要标「AI 生成」,与教师手工上传的课件区分) */
+export function isAiCourseware(meta: unknown): boolean {
+  return ((meta ?? {}) as { kind?: unknown }).kind === 'ai_courseware';
+}
+
 /** meta(页数/时长/打点数)→ 简短描述 */
 export function formatResourceMeta(r: ResourceDto): string {
-  const m = r.meta as { pages?: number; durationSec?: number; checkpoints?: unknown[] };
+  const m = r.meta as { durationSec?: number; checkpoints?: unknown[] };
   const parts: string[] = [];
-  if (typeof m.pages === 'number') parts.push(`${m.pages} 页`);
+  const pages = resourcePageCount(r.meta);
+  if (pages != null) parts.push(`${pages} 页${isAiCourseware(r.meta) ? ' · AI 生成' : ''}`);
   if (typeof m.durationSec === 'number') {
     const min = Math.floor(m.durationSec / 60);
     const sec = m.durationSec % 60;

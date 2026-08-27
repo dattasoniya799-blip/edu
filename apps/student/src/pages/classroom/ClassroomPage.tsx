@@ -41,7 +41,7 @@ function ClassroomInner({ sessionId }: { sessionId: number }) {
   const [reviewed, setReviewed] = useState<number[]>([]);
   useEffect(() => {
     api.get('/student/wrong-book', { query: { status: 'open' } })
-      .then((r) => setWarmup((r.data as { items: WrongBookItemDto[] }).items.slice(0, 3)))
+      .then((r) => setWarmup(r.data.items.slice(0, 3)))
       .catch(() => setWarmup([]));
   }, []);
 
@@ -52,7 +52,7 @@ function ClassroomInner({ sessionId }: { sessionId: number }) {
   useEffect(() => {
     if (!atSummary || pendingTasks != null) return;
     api.get('/student/assignments', { query: { status: 'pending' } })
-      .then((r) => setPendingTasks(r.data as AssignmentDto[]))
+      .then((r) => setPendingTasks(r.data))
       .catch(() => setPendingTasks([]));
   }, [atSummary, pendingTasks]);
 

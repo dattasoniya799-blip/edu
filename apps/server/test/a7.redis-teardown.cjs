@@ -12,7 +12,8 @@ module.exports = async () => {
     maxRetriesPerRequest: 2,
   });
   try {
-    const keys = await redis.keys('a7:ai:*');
+    // a7:ai:*(计量/额度/运行态配置)+ a7:courseware:*(AI 生成课件运行态任务,TTL 24h)
+    const keys = [...(await redis.keys('a7:ai:*')), ...(await redis.keys('a7:courseware:*'))];
     if (keys.length) await redis.del(...keys);
   } finally {
     await redis.quit().catch(() => undefined);
