@@ -59,3 +59,17 @@ npm run test:mock    # msw/node 冒烟:登录→/me→列表接口(与浏览器�
 | 切真实 API 零代码改动 | 全部经 `api`(createClient);`VITE_USE_MOCK=false` 仅切代理 |
 | 每页有空态与加载骨架 | 列表页 = Table 骨架 + 空态文案;总览/课程/AI/设置 = `Skeleton` 块 + `EmptyState`(含失败重试) |
 | build / 测试 | `npm run build` 绿;`npm test` 绿;`npm run test:mock` 冒烟绿 |
+
+## E1 · 实验室管理(2026-08-27)
+
+功能三级流水线「本地实验 → 系统内测(白名单)→ 正式」的放行台,导航挂在「运 维」组 AI 接口管理下面。
+
+- `pages/FeatureLab.tsx`:表格列 = 功能 / 面向角色 / 当前阶段 / 白名单人数 / 操作。
+  阶段下拉(off / beta / ga)变更即 `PUT /admin/features/{key}` + Toast + 回读;
+  「详情」展开登记区,显示功能说明、已知缺陷(为什么还没转正)、转正验收条件、当前白名单与目录默认阶段。
+- `components/FeatureWhitelistModal.tsx`:按功能的 `audienceRole` 复用现有用户列表接口选人
+  (teacher 向 → `/admin/teachers`,student 向 → `/admin/students`,单页 50 + 关键字搜索);
+  选中集跨页保留,保存 = `PUT /admin/features/{key}/whitelist`,**replace 语义**(取消全部勾选即清空)。
+- mock 见 `src/mocks/features.ts`(服务端功能目录的只读镜像 + 运行态 stage/白名单,有状态,刷新复位)。
+- 测试 `src/pages/__tests__/FeatureLab.spec.tsx`:jsdom 页面级 —— 渲染、详情展开、改阶段、白名单增删与清空、
+  学生向功能改列学生名单。本端首个页面级用例,故 `vitest.config.ts` 补齐 `@qiming/ui` 与 react 别名(口径同学生端)。

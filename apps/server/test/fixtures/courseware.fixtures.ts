@@ -65,6 +65,13 @@ export async function createCwOrg(): Promise<CwFixture> {
     data: { orgId, graphId: graph.id, code: 'CW-KP-001', name: kpNodeName },
   });
 
+  // E1 前置:/courseware/* 现挂 ai_courseware 功能门禁(默认 beta=仅白名单)——
+  // 显式落 flag 行并把 t1/t2 加入白名单(t2 需过 gate 才能验"同机构他人 404"的归属语义)。
+  await raw.featureFlag.create({ data: { orgId, key: 'ai_courseware', stage: 'beta' } });
+  await raw.featureAccess.createMany({
+    data: [t1.id, t2.id].map((uid) => ({ orgId, featureKey: 'ai_courseware', userId: uid })),
+  });
+
   return {
     orgId,
     t1Id: t1.id, t1Phone: t1.phone!,
@@ -76,6 +83,8 @@ export async function createCwOrg(): Promise<CwFixture> {
 }
 
 export async function dropCwOrg(orgId: bigint): Promise<void> {
+  await raw.featureAccess.deleteMany({ where: { orgId } });
+  await raw.featureFlag.deleteMany({ where: { orgId } });
   await raw.resource.deleteMany({ where: { orgId } });
   await raw.aiCall.deleteMany({ where: { orgId } });
   await raw.kpNode.deleteMany({ where: { orgId } });

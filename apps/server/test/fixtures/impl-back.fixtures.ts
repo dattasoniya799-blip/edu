@@ -112,6 +112,11 @@ export async function createImplOrg(): Promise<ImplFixture> {
     },
   });
 
+  // E1 前置:公式填空预批入队现受 photo_pregrade 功能门禁(默认 off)——
+  // 显式落 flag 行(stage=beta)并把作答学生 s1 加入白名单,保住本套件的真实预批链路。
+  await raw.featureFlag.create({ data: { orgId, key: 'photo_pregrade', stage: 'beta' } });
+  await raw.featureAccess.create({ data: { orgId, featureKey: 'photo_pregrade', userId: s1.id } });
+
   return {
     orgId,
     teacherId: teacher.id,
@@ -126,6 +131,8 @@ export async function createImplOrg(): Promise<ImplFixture> {
 }
 
 export async function dropImplOrg(orgId: bigint): Promise<void> {
+  await raw.featureAccess.deleteMany({ where: { orgId } });
+  await raw.featureFlag.deleteMany({ where: { orgId } });
   await raw.masterySnapshot.deleteMany({ where: { orgId } });
   await raw.wrongBookEntry.deleteMany({ where: { orgId } });
   await raw.gradingRecord.deleteMany({ where: { orgId } });

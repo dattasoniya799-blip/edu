@@ -14,6 +14,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { CoursewareJobDto, CoursewareJobPageDto, CoursewareOutlinePageDto } from '@qiming/contracts';
 import { Button, Card, EmptyState, useToast } from '@qiming/ui';
 import { api } from '../../api';
+import { useFeatureDeny } from '../../features/FeatureGuard';
 import { PageHead } from '../Shell';
 import { arrangePath, contextBody, contextHint, parseWizardContext, wizardPath } from './lib/context';
 import { PAGE_COUNT_DEFAULT, validateInput, validateOutline } from './lib/outline';
@@ -33,6 +34,8 @@ export function CoursewareWizardPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  // 服务端硬门禁 403+4701(白名单在别处被摘掉)→ 交回守卫,整页落到「内测功能,请联系管理员开通」
+  const denyIfDisabled = useFeatureDeny();
   const ctx = useMemo(() => parseWizardContext(searchParams), [searchParams]);
 
   // ① 输入
@@ -113,6 +116,7 @@ export function CoursewareWizardPage() {
       } catch (e) {
         if (stopped) return;
         stop();
+        if (denyIfDisabled(e)) return;
         // 任务过期/不存在(Redis 只存 24h;mock 内存表刷新即失效)与网络波动要分开提示
         if (isJobExpired(e)) setExpired(true);
         else setPollError(true);
@@ -120,7 +124,7 @@ export function CoursewareWizardPage() {
     };
     void tick();
     return () => { stopped = true; stop(); };
-  }, [jobId, pollNonce]);
+  }, [jobId, pollNonce, denyIfDisabled]);
 
   /** 大纲有未提交内容时,关标签/刷新前给一次原生确认(提交建任务后就不再拦) */
   useEffect(() => {
@@ -151,6 +155,7 @@ export function CoursewareWizardPage() {
       setPages(outlinePages);
       goStep(2);
     } catch (e) {
+      if (denyIfDisabled(e)) return;
       toast(e instanceof Error && e.message ? e.message : '大纲生成失败,请重试', { variant: 'error' });
     } finally {
       setOutlining(false);
@@ -170,6 +175,7 @@ export function CoursewareWizardPage() {
       // jobId + 步骤进地址栏:刷新或离开再回来能恢复到这一步继续轮询(保留 lessonId/kpNodeId)
       goStep(3, { jobId: newJobId });
     } catch (e) {
+      if (denyIfDisabled(e)) return;
       toast(e instanceof Error && e.message ? e.message : '提交生成任务失败,请重试', { variant: 'error' });
     } finally {
       setSubmitting(false);
@@ -194,6 +200,7 @@ export function CoursewareWizardPage() {
       toast(`已重新提交 ${progress.failedSeqs.length} 页,正在生成`);
       setPollNonce((n) => n + 1);
     } catch (e) {
+      if (denyIfDisabled(e)) return;
       toast(e instanceof Error && e.message ? e.message : '重试失败,请稍后再试', { variant: 'error' });
     } finally {
       setRetrying(false);
@@ -213,6 +220,7 @@ export function CoursewareWizardPage() {
         lastPolledAt.current = Date.now();
         return fresh.pages.find((p) => p.seq === page.seq) ?? page;
       } catch (e) {
+        if (denyIfDisabled(e)) return null;
         if (isJobExpired(e)) {
           setExpired(true);
           toast('生成任务已过期,预览不可用', { variant: 'error' });
@@ -221,7 +229,7 @@ export function CoursewareWizardPage() {
         return page;
       }
     },
-    [jobId, toast],
+    [jobId, toast, denyIfDisabled],
   );
 
   return (

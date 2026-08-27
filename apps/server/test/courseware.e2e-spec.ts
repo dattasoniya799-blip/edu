@@ -112,6 +112,10 @@ describe('AI 生成课件 · 大纲/生图任务/重试/租户隔离([2026-08-22
     http = app.getHttpServer() as never;
     fx = await createCwOrg();
     org2 = await createOrg2();
+    // E1 前置:/courseware/* 挂 ai_courseware 门禁(默认 beta=仅白名单)。跨租户教师也须先过
+    // 自己机构的 gate,才能验到"跨机构 GET job → 404"的归属语义(而非被 403 挡在门口)。
+    await raw.featureFlag.create({ data: { orgId: org2.orgId, key: 'ai_courseware', stage: 'beta' } });
+    await raw.featureAccess.create({ data: { orgId: org2.orgId, featureKey: 'ai_courseware', userId: org2.teacherId } });
     t1 = await login(fx.t1Phone, CW_PASSWORD);
     t2 = await login(fx.t2Phone, CW_PASSWORD);
     other = await login(org2.teacherPhone, org2.password);

@@ -85,18 +85,18 @@ describe('时间线作业分数可点(LessonTimeline)', () => {
   };
   const render = (item: TimelineItem) =>
     renderToStaticMarkup(
-      <LessonTimeline items={[item]} correctionByLesson={{}} onReplay={noop} onCorrect={noop} onEnterClass={noop} onOpenResult={noop} />,
+      <LessonTimeline items={[item]} correctionByLesson={{}} onCorrect={noop} onEnterClass={noop} onOpenResult={noop} />,
     );
 
   it('attemptId 有值 → 分数渲染为可点 button', () => {
-    const html = render({ lesson: finished, resources: [], myHomework: { assignmentId: 1, attemptId: 55, score: 16, wrongCount: 0 } });
+    const html = render({ lesson: finished, myHomework: { assignmentId: 1, attemptId: 55, score: 16, wrongCount: 0 } });
     expect(html).toContain('<button');
     expect(html).toContain('作业 16 分');
     expect(html).toMatch(/min-h-touch/);
   });
 
   it('attemptId 缺失 → 分数不可点(无 button,退化为 Tag)', () => {
-    const html = render({ lesson: finished, resources: [], myHomework: { assignmentId: 1, attemptId: null, score: 16, wrongCount: 0 } });
+    const html = render({ lesson: finished, myHomework: { assignmentId: 1, attemptId: null, score: 16, wrongCount: 0 } });
     expect(html).toContain('作业 16 分');
     expect(html).not.toContain('<button');
   });

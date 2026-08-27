@@ -13,6 +13,8 @@ import { ERROR_CODES } from '@qiming/contracts';
 import type { KpNodeDto, PaperDto } from '@qiming/contracts';
 import { Button, Card, EmptyState, Modal, Skeleton, Tag, useToast } from '@qiming/ui';
 import { api, type GetData } from '../../api';
+import { useFeatures } from '../../features/FeaturesProvider';
+import { FEATURE_AI_COURSEWARE } from '../../features/lib/features';
 import { PageHead } from '../Shell';
 import { PAPER_TYPE_LABEL } from '../paper/lib/paperLibrary';
 import { CHECKLIST_LABEL, bizError, missingMessages, newSegment, pendingPaperKeys } from './lib/segments';
@@ -40,6 +42,9 @@ export function LessonArrangePage() {
   const lessonId = Number(id);
   const navigate = useNavigate();
   const { toast } = useToast();
+  // E1:AI 生成课件是内测功能,挂载课件弹窗里的向导入口按 /features/my 门禁显示
+  const { has } = useFeatures();
+  const coursewareOn = has(FEATURE_AI_COURSEWARE);
 
   const [lesson, setLesson] = useState<GetData<'/lessons/{id}'> | null>(null);
   const [units, setUnits] = useState<KpUnit[] | null>(null);
@@ -462,7 +467,7 @@ export function LessonArrangePage() {
         title={mountSlot === 'lecture' ? '挂载课件' : mountSlot === 'homework' ? '选择课后作业试卷' : '选择随堂练试卷'}
         onClose={() => setMount(null)}
       >
-        {mountSlot === 'lecture' && (
+        {mountSlot === 'lecture' && coursewareOn && (
           <div className="mb-3 flex flex-wrap items-center gap-1.5 rounded-md bg-primary-soft px-3.5 py-2.5 text-[12.5px] text-primary">
             没有合适的课件?
             <button type="button" className="font-bold hover:underline" onClick={() => void goToCoursewareWizard(mountUnitKp)}>

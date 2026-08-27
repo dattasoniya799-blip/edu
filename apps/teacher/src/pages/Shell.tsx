@@ -4,6 +4,7 @@
  */
 import { NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
+import { useFeatures } from '../features/FeaturesProvider';
 
 export interface NavItem {
   to: string;
@@ -24,19 +25,28 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/analytics', label: '学情分析', icon: '◔', group: '学 生' },
 ];
 
+/** 实验室分区(E1):仅当 /features/my 含教师向条目时才挂进导航 */
+export const LAB_NAV_ITEM: NavItem = { to: '/lab', label: '实验室', icon: '🧪', group: '内 测' };
+
+export function navItems(hasLabEntries: boolean): NavItem[] {
+  return hasLabEntries ? [...NAV_ITEMS, LAB_NAV_ITEM] : NAV_ITEMS;
+}
+
 const ROLE_TITLE = '教师工作台';
 const CRUMB_PREFIX = '教师端';
 
 export function Shell() {
   const { me, ready, logout } = useAuth();
+  const { labEntries } = useFeatures();
   const location = useLocation();
   if (!ready) return <div className="flex min-h-screen items-center justify-center text-ink-3">加载中…</div>;
   if (!me) return <Navigate to="/login" replace />;
-  const current = NAV_ITEMS.find((n) => (n.to === '/' ? location.pathname === '/' : location.pathname.startsWith(n.to)))?.label
+  const items = navItems(labEntries.length > 0);
+  const current = items.find((n) => (n.to === '/' ? location.pathname === '/' : location.pathname.startsWith(n.to)))?.label
     // B4 子页面(讲次编排/组卷/监控/批改)归属「我的课程」面包屑
     ?? (/^\/(lessons|grading)/.test(location.pathname) ? '我的课程'
-      // AI 生成课件向导(/courseware/new)产出的是课件资源,归属「资源库」面包屑
-      : /^\/courseware/.test(location.pathname) ? '资源库' : '');
+      // AI 生成课件向导(/courseware/new)是内测功能,入口在实验室分区,面包屑随之归属「实验室」
+      : /^\/courseware/.test(location.pathname) ? '实验室' : '');
 
   return (
     <div className="flex min-h-screen bg-bg font-sans text-ink">
@@ -49,7 +59,7 @@ export function Shell() {
           <div className="mt-1 pl-8 text-[11.5px] text-ink-3">{ROLE_TITLE}</div>
         </div>
         <nav className="flex flex-1 flex-col gap-0.5 px-3 py-2">
-          {NAV_ITEMS.map((item) => (
+          {items.map((item) => (
             <div key={item.to}>
               {item.group && <div className="px-2.5 pb-1.5 pt-3.5 text-[11px] tracking-[0.08em] text-ink-3">{item.group}</div>}
               <NavLink

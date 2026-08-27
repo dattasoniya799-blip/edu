@@ -1,6 +1,10 @@
 import { Route, Routes } from 'react-router-dom';
 import { MockBadge } from '@qiming/ui';
 import { AuthProvider } from './auth/AuthProvider';
+import { FeaturesProvider } from './features/FeaturesProvider';
+import { FeatureGuard } from './features/FeatureGuard';
+import { FEATURE_AI_COURSEWARE } from './features/lib/features';
+import { LabPage } from './pages/lab/LabPage';
 import { LoginPage } from './pages/LoginPage';
 import { Shell } from './pages/Shell';
 import { Dashboard } from './pages/Dashboard';
@@ -24,30 +28,41 @@ import { NotFound } from './pages/NotFound';
 export function App() {
   return (
     <AuthProvider>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route element={<Shell />}>
-          <Route index element={<Dashboard />} />
-          <Route path="/courses" element={<CourseLessonsPage />} />
-          <Route path="/lessons/:id/arrange" element={<LessonArrangePage />} />
-          <Route path="/lessons/:id/paper" element={<PaperBuilderPage />} />
-          <Route path="/lessons/:id/monitor" element={<MonitorPage />} />
-          <Route path="/assignments" element={<AssignmentsPage />} />
-          <Route path="/grading" element={<GradingHomePage />} />
-          <Route path="/grading/:assignmentId" element={<GradingReviewPage />} />
-          <Route path="/papers" element={<PaperLibraryPage />} />
-          <Route path="/papers/new" element={<PaperEditorPage />} />
-          <Route path="/papers/:id/edit" element={<PaperEditorPage />} />
-          <Route path="/bank" element={<BankList />} />
-          <Route path="/bank/new" element={<EditorPage />} />
-          <Route path="/bank/:id/edit" element={<EditorPage />} />
-          <Route path="/knowledge" element={<KnowledgePage />} />
-          <Route path="/resources" element={<ResourcesPage />} />
-          <Route path="/courseware/new" element={<CoursewareWizardPage />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Route>
-      </Routes>
+      <FeaturesProvider>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route element={<Shell />}>
+            <Route index element={<Dashboard />} />
+            <Route path="/courses" element={<CourseLessonsPage />} />
+            <Route path="/lessons/:id/arrange" element={<LessonArrangePage />} />
+            <Route path="/lessons/:id/paper" element={<PaperBuilderPage />} />
+            <Route path="/lessons/:id/monitor" element={<MonitorPage />} />
+            <Route path="/assignments" element={<AssignmentsPage />} />
+            <Route path="/grading" element={<GradingHomePage />} />
+            <Route path="/grading/:assignmentId" element={<GradingReviewPage />} />
+            <Route path="/papers" element={<PaperLibraryPage />} />
+            <Route path="/papers/new" element={<PaperEditorPage />} />
+            <Route path="/papers/:id/edit" element={<PaperEditorPage />} />
+            <Route path="/bank" element={<BankList />} />
+            <Route path="/bank/new" element={<EditorPage />} />
+            <Route path="/bank/:id/edit" element={<EditorPage />} />
+            <Route path="/knowledge" element={<KnowledgePage />} />
+            <Route path="/resources" element={<ResourcesPage />} />
+            <Route path="/lab" element={<LabPage />} />
+            {/* 内测功能:路由不变,进页前先过 /features/my 门禁(无 flag → 提示页) */}
+            <Route
+              path="/courseware/new"
+              element={
+                <FeatureGuard featureKey={FEATURE_AI_COURSEWARE} name="AI 生成课件">
+                  <CoursewareWizardPage />
+                </FeatureGuard>
+              }
+            />
+            <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </FeaturesProvider>
       <MockBadge />
     </AuthProvider>
   );

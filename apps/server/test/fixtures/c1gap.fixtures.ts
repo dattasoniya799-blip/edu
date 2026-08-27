@@ -144,6 +144,11 @@ export async function createC1Org(): Promise<C1Fixture> {
     },
   });
 
+  // E1 前置:公式填空预批入队现受 photo_pregrade 功能门禁(默认 off)——
+  // 显式落 flag 行(stage=beta)并把作答学生 s1 加入白名单,保住 #B 的真实预批链路。
+  await raw.featureFlag.create({ data: { orgId, key: 'photo_pregrade', stage: 'beta' } });
+  await raw.featureAccess.create({ data: { orgId, featureKey: 'photo_pregrade', userId: s1.id } });
+
   // ---- 机构B(跨租户)----
   const orgB = await raw.org.create({ data: { name: 'C1跨租户机构B', settings } });
   const [teacherB, studentB] = await Promise.all([
@@ -170,6 +175,8 @@ export async function createC1Org(): Promise<C1Fixture> {
 
 export async function dropC1Org(orgId: bigint, orgBId: bigint): Promise<void> {
   for (const oid of [orgId, orgBId]) {
+    await raw.featureAccess.deleteMany({ where: { orgId: oid } });
+    await raw.featureFlag.deleteMany({ where: { orgId: oid } });
     await raw.masterySnapshot.deleteMany({ where: { orgId: oid } });
     await raw.wrongBookEntry.deleteMany({ where: { orgId: oid } });
     await raw.gradingRecord.deleteMany({ where: { orgId: oid } });

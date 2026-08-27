@@ -12,6 +12,7 @@
  * - 43xx paper/resource/question(43xx 历史上跨了 course 与 question 两个文件,故一并登记)
  * - 45xx grading/attempt/wrongbook + ai 限流与额度
  * - 46xx courseware(AI 生成课件)
+ * - 47xx features(内测区与功能分级 E1)
  *
  * 异常类:全域统一 `BizException`(响应体含 detail),配套 `BizExceptionFilter`。
  * question 域原有的 `BusinessException`(丢弃 detail)已于本波次删除。
@@ -56,3 +57,7 @@ export const ERR_COURSEWARE_OUTLINE_INVALID = 4601;
 export const ERR_COURSEWARE_JOB_NOT_FOUND = 4602;
 /** courseware 端点按教师限流,或在飞任务数超上限;HTTP 429 */
 export const ERR_COURSEWARE_RATE_LIMIT = 4603;
+
+// ---------------- 47xx · features(内测区与功能分级 E1) ----------------
+/** 功能未对当前用户开放(off 全员禁用 / beta 白名单外);HTTP 403 */
+export const ERR_FEATURE_NOT_ENABLED = 4701;

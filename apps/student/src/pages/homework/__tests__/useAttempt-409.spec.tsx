@@ -24,6 +24,11 @@ vi.mock('../../../api', async (importOriginal) => {
   const orig = await importOriginal<typeof import('../../../api')>();
   return { ...orig, api: { get: apiGet, post: apiPost, put: apiPut } };
 });
+// E1:本用例只测错误态按钮,不挂 AuthProvider/FeaturesProvider —— 预批门禁固定为关
+vi.mock('../../../features/FeaturesProvider', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('../../../features/FeaturesProvider')>();
+  return { ...orig, useFeatures: () => ({ features: [], has: () => false }) };
+});
 
 import { useAttempt, type UseAttempt } from '../useAttempt';
 import { HomeworkPage } from '../HomeworkPage';

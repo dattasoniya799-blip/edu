@@ -226,3 +226,20 @@ B4 期间「按作业列主观题答卷」缺端点,批改页学生切换条经 
 - 内容包小结模板仅维护「个性化巩固题量区间」(`personal_consolidation.{min,max}`),其余 summaryConfig 自定义字段透传但无 UI。
 - 编排页 homework 段在 `extras` 中本地管理,新挂卷在保存前无 `id`(由服务端分配);PaperBuilder 仍是 homework 段/assignment 的权威创建路径,二者对同一讲的 homework 段以「数组顺序 + 后写覆盖」收敛。
 - 作业总览「去批改」对无主观题的作业会进入空名单复核页(沿用 C1 既有空态);进度为概览口径,非逐生明细。
+
+## E1 · 内测区与功能分级(2026-08-27)
+
+- **实验室分区**:进 app 后拉一次 `GET /features/my`(`src/features/FeaturesProvider.tsx`,模块级内存缓存,退出登录即清)。
+  目录里有本端登记了入口的条目时,侧边导航才多出「内 测 / 实验室」分组(`pages/Shell.tsx` 的 `navItems()`);
+  分区页 `pages/lab/LabPage.tsx` = 功能卡片(内测徽标 + 说明 + 进入)。key → 路由的登记表在 `features/lib/features.ts`。
+- **「AI 生成课件」入口迁移**:资源库页顶部的 `✦ AI 生成课件` 按钮已删,正式入口改为实验室卡片;
+  路由 `/courseware/new` **不变**,编排页「挂载课件」弹窗里的上下文入口保留但按 flag 显示。面包屑由「资源库」改挂「实验室」。
+- **路由守卫**:`features/FeatureGuard.tsx` 包住 `/courseware/new`。目录里没有 `ai_courseware` → 落提示页
+  (文案含「内测功能,请联系管理员开通」);目录未到达时只显示加载中,不误判成无权限。
+  页内请求收到服务端硬门禁 **403 + `FEATURE_NOT_ENABLED`(4701)** 时,向导在 catch 里调 `useFeatureDeny()`
+  把整页翻到同一张提示页(白名单在别处被摘掉、手上目录已是旧快照时走这条)。
+- **mock**:`src/mocks/features.ts` 是服务端功能目录的只读镜像 + 运行态 stage/白名单(有状态,刷新复位);
+  走查口径 `ai_courseware=beta` 且演示教师张明在白名单。四个 `/courseware/*` 端点在 handlers 里统一挂 `gated()`,
+  白名单外一律 403+4701 —— UI 隐藏不是安全边界,mock 也照拦。
+- **测试**:`src/mocks/__tests__/feature-flags.spec.ts`(下发口径 / 端点门禁 / 管理端改阶段与白名单)、
+  `src/features/__tests__/lab-gate.spec.tsx`(导航、分区页、守卫三态、4701 翻页)。

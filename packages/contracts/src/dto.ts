@@ -298,3 +298,31 @@ export interface CoursewareJobDto {
   pages: CoursewareJobPageDto[];
   resourceId?: number | null;
 }
+
+// ---------- 内测区与功能分级(E1,2026-08-27 批准) ----------
+/** 功能阶段:off=全员不可见(仅管理端登记);beta=白名单可见可用;ga=按角色全量可见 */
+export type FeatureStage = 'off' | 'beta' | 'ga';
+/** GET /features/my 下发项(off 不下发,故 stage 仅 beta/ga) */
+export interface MyFeatureDto {
+  key: string;
+  name: string;
+  stage: 'beta' | 'ga';
+  description: string;
+}
+export interface AdminFeatureWhitelistItemDto {
+  userId: number;
+  name: string;
+  role: Role;
+}
+/** GET /admin/features 条目:目录全量 + 当前生效 stage + 白名单 */
+export interface AdminFeatureDto {
+  key: string;
+  name: string;
+  description: string;
+  audienceRole: Role;
+  defaultStage: FeatureStage;
+  stage: FeatureStage;
+  whitelist: AdminFeatureWhitelistItemDto[];
+  knownIssues: string[];
+  acceptance: string[];
+}

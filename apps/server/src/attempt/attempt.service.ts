@@ -12,6 +12,8 @@ import type {
 import { dec, iso, num, round1 } from '../admin/helpers';
 import { AssignmentService } from '../assignment/assignment.service';
 import type { JwtUser } from '../auth/auth.service';
+import { FeatureGateService } from '../features/feature-gate.service';
+import { FEATURE_PHOTO_PREGRADE } from '../features/feature-catalog';
 import { BizException, ERR_ATTEMPT_STATE } from '../grading/business.exception';
 import { questionNeedsReview } from '../grading/formula-blank.util';
 import { GradingService } from '../grading/grading.service';
@@ -92,6 +94,7 @@ export class AttemptService {
     private readonly assignments: AssignmentService,
     private readonly grading: GradingService,
     private readonly preGradingQueue: PreGradingQueueService,
+    private readonly featureGate: FeatureGateService,
   ) {}
 
   /** POST /student/attempts(幂等开始) */
@@ -219,9 +222,16 @@ export class AttemptService {
 
     if (needsReview) {
       // solution 大题:不跑 AI 预批,直接进教师人工复核(isCorrect=null 待复核)。
-      // 公式填空(blank + 参考答案含 LaTeX):仍走 AI 预批,但受 org.settings.ai.preGrading 开关控制
-      //(关则不入队,仍 needsReview=true 待复核)。
-      if (question.type === 'blank' && (await this.preGradingEnabled())) {
+      // 公式填空(blank + 参考答案含 LaTeX):仍走 AI 预批,入队须同时过两道门:
+      // - org.settings.ai.preGrading 机构级平台开关(商用化保留,显式 false 才关);
+      // - E1 photo_pregrade 功能门禁(默认 off 全员禁用;beta 白名单;ga 学生全量)。
+      // 门禁只拦"假预批"入队本身 —— 作答提交/拍照上传照常落库进人工复核,不许被 403 打断,
+      // 故这里用非抛错的 isEnabled 而非 assertEnabled(HTTP 触发层唯一预批入口,worker 不动)。
+      if (
+        question.type === 'blank' &&
+        (await this.preGradingEnabled()) &&
+        (await this.featureGate.isEnabled(user, FEATURE_PHOTO_PREGRADE))
+      ) {
         await this.preGradingQueue.enqueue(user.orgId, num(saved.id));
       }
       return { judged: false, isCorrect: null, correctAnswer: null, analysisLatex: null };

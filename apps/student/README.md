@@ -25,7 +25,7 @@ npm run test:mock    # msw/node 冒烟(同一份 handlers,含学号密码登录 
 | 页 | 路由 | 代码 | 对照原型 |
 |---|---|---|---|
 | 今日 | `/` | `pages/today/`(TodayPage + TaskRow) | s-home:课程 hero + 任务列表 + 本周学习 mini-stats |
-| 我的课程 | `/courses` | `pages/course/`(CoursePage + LessonTimeline) | s-course:课程卡 + 讲次时间线,回看课件 / 订正错题入口 |
+| 我的课程 | `/courses` | `pages/course/`(CoursePage + LessonTimeline) | s-course:课程卡 + 讲次时间线,进课堂 / 订正错题入口(E1 已删「回看课件」死按钮) |
 | 课后答题器 | `/homework/:assignmentId` | `pages/homework/`(HomeworkPage / useAttempt / machine / QuestionPanel / AnswerCard / ResultView) | s-homework:进度条 + 答题卡 + 单选/填空/拍照 + 即时判分反馈与解析 |
 | 错题本 | `/wrong-book` | `pages/wrong/`(WrongBookPage + WrongItemCard) | s-wrong:错因筛选 + 解析折叠 + 重做单题 + 一键重练 |
 | 报告 | `/report` | `pages/report/`(ReportPage) | s-report:周数据四卡 + 掌握度条形(绿≥80/主色 60–79/红<60) |
@@ -240,3 +240,18 @@ B5 期间题面缺口用私有降级形状(`pages/homework/types.ts`)兜底;本�
 ### 与后端对接假设(C2)
 - #9 要求「后端同步放开」:`apps/server` 不在本任务负责目录,mock 已按「发布即可进」放行(`/student/today` 对已发布讲次下发可用 sessionId);真实后端需放开课堂进入的时间校验,改以讲次发布状态为准。
 - #7 三种解析在学生视图(错题/作答)依赖后端把 `analysisBriefLatex`/`analysisDetailLatex` 补进 `WrongBookItemDto`/`AttemptQuestionView`;契约本次仅给 `QuestionDto`/`QuestionInput`,故学生侧目前以 mock 预演,组件已就绪。
+
+## E1 · 内测区与功能分级(2026-08-27)
+
+- **删除「回看课件」死按钮**:契约的讲次报文本就没有 `resources` 字段,该按钮永远点不亮。
+  一并删除的有 `pages/course/LessonTimeline.tsx` 的 `resources` / `onReplay`、`pages/course/CoursePage.tsx` 的
+  `openReplay` 与回看弹窗、`mocks/student-store.ts` 里 `lessonTimeline()` 自造的 `resources` 字段。
+  契约端点 `GET /student/resources/{id}/view` 仍在(mock handler 保留),只是前端不再有入口。
+- **拍照预批门禁**:`src/features/FeaturesProvider.tsx` 拉一次 `GET /features/my`,`photo_pregrade` 当前 `off`
+  = 对所有人隐藏。展示组件保持纯粹,由页面注入 `preGrade` 布尔:`HomeworkPage`(作业流)与 `ClassroomPage`(课堂)。
+  关时 `QuestionPanel` 的「待 AI 预批」→「待老师批改」、待批改文案改说老师批改;`PracticeSegment` 的预批结果卡整卡不出;
+  `SummarySegment` 的「压轴大题(AI 预批,待老师复核)」→「(待老师批改)」。
+  **拍照上传作为作答附件的能力不受门禁影响**(`uploadAnswerPhoto` + `SolutionPad` 的 file input 两态都在,已写断言)。
+- **测试**:`src/mocks/__tests__/feature-flags.spec.ts`(学生侧下发口径 + 时间线报文不含 resources)、
+  `src/pages/__tests__/pregrade-gate.spec.tsx`(门禁两态 + 上传入口保留 + 时间线删按钮后的渲染);
+  `touch44.spec.tsx` / `homework-history.spec.tsx` 的时间线夹具与断言同步修掉 resources。

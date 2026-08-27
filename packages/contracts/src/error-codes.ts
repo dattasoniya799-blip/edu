@@ -42,6 +42,9 @@ export const ERROR_CODES = {
   COURSEWARE_OUTLINE_INVALID: 4601,
   /** 生图任务不存在 / 已过期 / 不属于当前教师(运行态 24h TTL) */
   COURSEWARE_JOB_NOT_FOUND: 4602,
+
+  /** 功能未对当前用户开放(内测分级 E1:off 或 beta 白名单外;HTTP 403) */
+  FEATURE_NOT_ENABLED: 4701,
 } as const;
 
 /**
