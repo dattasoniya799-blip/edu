@@ -51,15 +51,15 @@ const wrongItem: WrongBookItemDto = {
   sourceName: '第3讲课后作业', createdAt: '2026-06-07T10:30:00.000Z', subject: '数学',
 };
 
+// E1:契约的讲次报文没有 resources 字段,「回看课件」入口已删,夹具随之去掉该字段
 const timelineItems = [
   {
     lesson: { id: 3, courseId: 1, seq: 3, title: '第3讲 · 待定系数法', scheduledStart: '2026-06-06T06:00:00.000Z', scheduledEnd: null, status: 'finished' as const, prepChecklist: {}, openingConfig: null, sessionId: null },
     myHomework: { assignmentId: 1, attemptId: 55, score: 16, wrongCount: 3 },
-    resources: [{ id: 2, name: '微课视频', type: 'video' }],
   },
   {
     lesson: { id: 4, courseId: 1, seq: 4, title: '第4讲 · 图象平移', scheduledStart: new Date().toISOString(), scheduledEnd: null, status: 'ready' as const, prepChecklist: {}, openingConfig: null, sessionId: 401 },
-    myHomework: null, resources: [],
+    myHomework: null,
   },
 ];
 
@@ -103,11 +103,11 @@ describe('可点目标 ≥44px(min-h-touch)', () => {
       '任务行',
     );
   });
-  it('讲次时间线:回看/订正/进入课堂', () => {
-    assertTouch44(
-      mount(<LessonTimeline items={timelineItems} correctionByLesson={{ 3: 2 }} onReplay={noop} onCorrect={noop} onEnterClass={noop} onOpenResult={noop} />),
-      '讲次时间线',
-    );
+  it('讲次时间线:订正/进入课堂(回看课件入口已删)', () => {
+    const host = mount(<LessonTimeline items={timelineItems} correctionByLesson={{ 3: 2 }} onCorrect={noop} onEnterClass={noop} onOpenResult={noop} />);
+    assertTouch44(host, '讲次时间线');
+    expect(host.textContent).not.toContain('回看课件');
+    expect(host.textContent).toContain('订正错题');
   });
   it('错题卡:重做/看解析;错因筛选胶囊', () => {
     assertTouch44(mount(<WrongItemCard item={wrongItem} onRedo={noop} />), '错题卡');

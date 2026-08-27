@@ -411,7 +411,7 @@ export function reportView() {
   };
 }
 
-/** GET /student/courses/{id}/lessons(resources 字段 = 契约变更申请 B5-1 之回看入口) */
+/** GET /student/courses/{id}/lessons(E1:删掉了 mock 自造的 resources 字段,契约本无此字段) */
 export function lessonTimeline(courseId: number) {
   if (courseId !== 1) return [];
   const hw = state.attempts.filter((a) => a.assignmentId === 1).pop();
@@ -428,10 +428,5 @@ export function lessonTimeline(courseId: number) {
     myHomework: lesson.id === 3 ? { assignmentId: 1, attemptId: hw?.id ?? null, score: hw?.score ?? null, wrongCount: hwWrong } : null,
     // 发布即建会话:已发布(ready/in_progress)讲次带 sessionId,前端据此进课堂;未发布(draft)/已结课为 null
     sessionId: lesson.status === 'ready' || lesson.status === 'in_progress' ? CLASS_SESSION_ID : null,
-    resources: lesson.id === 3
-      ? [{ id: 2, name: D.resources[1].name, type: D.resources[1].type }]
-      : lesson.id === 4
-        ? [{ id: 1, name: D.resources[0].name, type: D.resources[0].type }]
-        : [],
   }));
 }

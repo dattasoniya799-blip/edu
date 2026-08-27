@@ -7,6 +7,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import type { AnswerResponse, AssignmentDto } from '@qiming/contracts';
 import { Button, Modal, ProgressBar, Skeleton, useToast } from '@qiming/ui';
 import { api, uploadAnswerPhoto } from '../../api';
+import { FEATURE_PHOTO_PREGRADE, useFeatures } from '../../features/FeaturesProvider';
 import { AnswerCard } from './AnswerCard';
 import { allAnswered, answeredCount } from './machine';
 import { QuestionPanel } from './QuestionPanel';
@@ -24,6 +25,8 @@ export function HomeworkPage() {
   const attemptInUrl = sp.get('attempt') ? Number(sp.get('attempt')) : null;
   const navigate = useNavigate();
   const { toast } = useToast();
+  // E1:拍照预批(photo_pregrade)当前 off —— 关时作业流里不出现任何「AI 预批」字样
+  const preGradeOn = useFeatures().has(FEATURE_PHOTO_PREGRADE);
 
   const [assignment, setAssignment] = useState<AssignmentDto | null>(null);
   const [drafts, setDrafts] = useState<Record<number, AnswerResponse | null>>({});
@@ -165,6 +168,7 @@ export function HomeworkPage() {
           </div>
 
           <QuestionPanel q={q} item={item} draft={draft} redoKind={redoKind} onUploadPhoto={uploadAnswerPhoto}
+            preGrade={preGradeOn}
             onDraft={(r) => setDrafts((d) => ({ ...d, [q.questionId]: r }))} />
 
           {/* 底部操作 */}

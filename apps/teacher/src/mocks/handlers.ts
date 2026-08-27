@@ -5,13 +5,15 @@
 import { delay, http, HttpResponse, type HttpResponseResolver } from 'msw';
 import type {
   AssignmentBriefDto, AssignmentDto, AssignmentKind, CoursewareJobDto, CoursewareOutlinePageDto,
-  CoursewareStyleInput, KpContentPackDto,
+  CoursewareStyleInput, FeatureStage, KpContentPackDto,
   LessonSegmentDto, MeDto, PaperDto, PaperType,
   QuestionAnswer, QuestionDto, QuestionOptionDto, QuestionType, RubricStep,
 } from '@qiming/contracts';
+import { ERROR_CODES } from '@qiming/contracts';
 import { LIMITS as CW_LIMITS } from '../pages/courseware/lib/outline';
 import { CHECKLIST_KEYS, computeChecklist } from '../pages/lesson/lib/segments';
 import * as D from './data';
+import * as F from './features';
 
 /** /questions 写接口的请求体(形状 = openapi QuestionInput,字段类型全部复用 contracts) */
 interface QuestionInput {
@@ -147,6 +149,22 @@ const authed = (resolver: HttpResponseResolver): HttpResponseResolver => (info) 
   if (!currentUser(info.request)) return err(401, 4011, '未登录或登录已过期');
   return resolver(info);
 };
+
+/**
+ * 功能门禁包装(E1):stage/白名单不通过 → 403 + code 4701 + detail.key,
+ * 口径同服务端 FeatureGateService.assertEnabled —— UI 隐藏不是安全边界,mock 也照拦。
+ */
+const gated = (key: string, resolver: HttpResponseResolver): HttpResponseResolver =>
+  authed((info) => {
+    const me = currentUser(info.request)!;
+    if (!F.featureEnabled(me, key)) {
+      return HttpResponse.json(
+        { code: ERROR_CODES.FEATURE_NOT_ENABLED, message: '该功能未对当前账号开放', detail: { key } },
+        { status: 403 },
+      );
+    }
+    return resolver(info);
+  });
 
 function paginate<T>(items: T[], url: URL) {
   const page = Number(url.searchParams.get('page') ?? 1);
@@ -384,8 +402,9 @@ export const handlers = [
   http.delete(`${BASE}/resources/:id`, authed(() => okVoid())),
 
   // ============ AI 生成课件(契约 /courseware/*,走查用有状态 mock) ============
+  // E1:四个端点全部挂 ai_courseware 硬门禁(同服务端 courseware.controller),白名单外一律 403+4701
   // 文字稿 → 逐页大纲(文本 LLM,真实需数秒,此处延迟 1.5s 让加载态可见);pageCount 契约可选,缺省 8
-  http.post(`${BASE}/courseware/outline`, authed(async ({ request }) => {
+  http.post(`${BASE}/courseware/outline`, gated(F.FEATURE_AI_COURSEWARE, async ({ request }) => {
     const body = (await request.json()) as {
       sourceText: string; pageCount?: number; lessonId?: number; kpNodeId?: number;
       style: CoursewareStyleInput;
@@ -404,7 +423,7 @@ export const handlers = [
     return ok({ pages: D.coursewareOutline(body.sourceText ?? '', body.pageCount ?? 8, body.style) });
   })),
   // 建生图任务(真实后端 BullMQ 入队);pages 为教师确认后的大纲,style 决定逐页提示词的风格前缀
-  http.post(`${BASE}/courseware/jobs`, authed(async ({ request }) => {
+  http.post(`${BASE}/courseware/jobs`, gated(F.FEATURE_AI_COURSEWARE, async ({ request }) => {
     const body = (await request.json()) as {
       name: string; lessonId?: number; kpNodeId?: number;
       style: CoursewareStyleInput;
@@ -437,13 +456,13 @@ export const handlers = [
   })),
   // 轮询进度:每次查询按创建以来经过的时间推进(3 秒/页,比真实的约 23 秒快,便于走查)
   // 真实后端 jobId 是 Redis 运行态(存 24h);mock 是内存表,刷新即 404 → 前端提示「任务已过期」
-  http.get(`${BASE}/courseware/jobs/:jobId`, authed(({ params }) => {
+  http.get(`${BASE}/courseware/jobs/:jobId`, gated(F.FEATURE_AI_COURSEWARE, ({ params }) => {
     const job = D.coursewareJobs.get(String(params.jobId));
     if (!job) return err(404, 4040, '生成任务不存在或已过期');
     return ok(coursewareJobDto(D.advanceCoursewareJob(job)));
   })),
   // 重试失败页(无 body)→ 该页下一轮转成功;契约响应是 OkVoid,进度仍由轮询读取
-  http.post(`${BASE}/courseware/jobs/:jobId/retry`, authed(({ params }) => {
+  http.post(`${BASE}/courseware/jobs/:jobId/retry`, gated(F.FEATURE_AI_COURSEWARE, ({ params }) => {
     const job = D.coursewareJobs.get(String(params.jobId));
     if (!job) return err(404, 4040, '生成任务不存在或已过期');
     D.retryCoursewareJob(job);
@@ -691,4 +710,24 @@ export const handlers = [
     return new HttpResponse(body, { headers: { 'Content-Type': 'text/event-stream' } });
   })),
   http.get(`${BASE}/ai/health`, authed(() => ok(D.aiHealth))),
+
+  // ============ 内测区与功能分级(E1:实验室分区 / 路由门禁 / 管理端登记) ============
+  http.get(`${BASE}/features/my`, authed((info) => ok({ features: F.myFeatures(currentUser(info.request)!) }))),
+  http.get(`${BASE}/admin/features`, authed(() => ok(F.adminFeatures()))),
+  http.put(`${BASE}/admin/features/:key`, authed(async ({ params, request }) => {
+    const item = F.featureByKey(String(params.key));
+    if (!item) return err(404, 4040, '功能不存在');
+    const body = (await request.json()) as { stage: FeatureStage };
+    if (!['off', 'beta', 'ga'].includes(body.stage)) return err(400, 4000, '阶段取值非法');
+    F.featureStages[item.key] = body.stage;
+    return okVoid();
+  })),
+  http.put(`${BASE}/admin/features/:key/whitelist`, authed(async ({ params, request }) => {
+    const item = F.featureByKey(String(params.key));
+    if (!item) return err(404, 4040, '功能不存在');
+    const body = (await request.json()) as { userIds: number[] };
+    // replace 语义:整表覆写该 key 的名单(空数组 = 清空)
+    F.featureWhitelist[item.key] = [...new Set(body.userIds ?? [])];
+    return okVoid();
+  })),
 ];

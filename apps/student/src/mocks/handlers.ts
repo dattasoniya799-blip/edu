@@ -3,8 +3,9 @@
  * 统一响应包 {code,message,data};未带合法 Bearer → 401 {code:4011}
  */
 import { http, HttpResponse, type HttpResponseResolver } from 'msw';
-import type { MeDto } from '@qiming/contracts';
+import type { FeatureStage, MeDto } from '@qiming/contracts';
 import * as D from './data';
+import * as F from './features';
 import * as S from './student-store';
 
 // 通配任意 origin:浏览器 Service Worker 与 node(冒烟脚本)都能匹配
@@ -304,4 +305,24 @@ export const handlers = [
     return new HttpResponse(body, { headers: { 'Content-Type': 'text/event-stream' } });
   })),
   http.get(`${BASE}/ai/health`, authed(() => ok(D.aiHealth))),
+
+  // ============ 内测区与功能分级(E1:实验室分区 / 路由门禁 / 管理端登记) ============
+  http.get(`${BASE}/features/my`, authed((info) => ok({ features: F.myFeatures(currentUser(info.request)!) }))),
+  http.get(`${BASE}/admin/features`, authed(() => ok(F.adminFeatures()))),
+  http.put(`${BASE}/admin/features/:key`, authed(async ({ params, request }) => {
+    const item = F.featureByKey(String(params.key));
+    if (!item) return err(404, 4040, '功能不存在');
+    const body = (await request.json()) as { stage: FeatureStage };
+    if (!['off', 'beta', 'ga'].includes(body.stage)) return err(400, 4000, '阶段取值非法');
+    F.featureStages[item.key] = body.stage;
+    return okVoid();
+  })),
+  http.put(`${BASE}/admin/features/:key/whitelist`, authed(async ({ params, request }) => {
+    const item = F.featureByKey(String(params.key));
+    if (!item) return err(404, 4040, '功能不存在');
+    const body = (await request.json()) as { userIds: number[] };
+    // replace 语义:整表覆写该 key 的名单(空数组 = 清空)
+    F.featureWhitelist[item.key] = [...new Set(body.userIds ?? [])];
+    return okVoid();
+  })),
 ];

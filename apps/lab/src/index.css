@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 全局基线:颜色全部来自 design-tokens 生成的 Tailwind 主题(口径同三端) */
+@layer base {
+  body {
+    @apply bg-bg font-sans text-sm text-ink antialiased;
+  }
+  button {
+    @apply cursor-pointer;
+  }
+}

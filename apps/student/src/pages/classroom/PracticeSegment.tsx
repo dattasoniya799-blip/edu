@@ -3,6 +3,7 @@
  * 复用 B5 答题组件(QuestionPanel/AnswerCard,不改其行为)+ AI 助教侧栏;
  * 作答走 WS class:answer;大题(解答题)拍照上传 → AI 预批结果卡(AnswerResult.narration 按行渲染)。
  * 题面缺失(契约 B6-1 未落地)→ 降级占位。
+ * E1:预批结果卡按 photo_pregrade 门禁显示(当前 off = 对所有人隐藏);拍照上传本身不受影响。
  */
 import { useState } from 'react';
 import type { AnswerResponse } from '@qiming/contracts';
@@ -23,6 +24,8 @@ export interface PracticeSegmentProps {
   onTouch(questionId?: number | null): void;
   /** 完成随堂练 → 小结 */
   onDone(): void;
+  /** E1 photo_pregrade 门禁(页面从 /features/my 注入,缺省关) */
+  preGrade?: boolean;
 }
 
 /** AI 预批结果卡(原型 .ai-grade):narration 按行渲染,✓ 绿 / ✕ 红 */
@@ -42,7 +45,7 @@ export function PreGradeCard({ narration, onDone }: { narration: string; onDone(
   );
 }
 
-export function PracticeSegment({ state, onAnswer, onGoto, onFlag, onAsk, onTouch, onDone }: PracticeSegmentProps) {
+export function PracticeSegment({ state, onAnswer, onGoto, onFlag, onAsk, onTouch, onDone, preGrade = false }: PracticeSegmentProps) {
   const { toast } = useToast();
   const [drafts, setDrafts] = useState<Record<number, AnswerResponse | null>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -95,11 +98,11 @@ export function PracticeSegment({ state, onAnswer, onGoto, onFlag, onAsk, onTouc
           {isBigQ && <Tag tone="green" className="shrink-0">压轴大题</Tag>}
         </div>
 
-        <QuestionPanel q={q} item={item} draft={draft} onUploadPhoto={uploadAnswerPhoto}
+        <QuestionPanel q={q} item={item} draft={draft} onUploadPhoto={uploadAnswerPhoto} preGrade={preGrade}
           onDraft={(r) => { setDrafts((d) => ({ ...d, [q.questionId]: r })); onTouch(q.questionId); }} />
 
-        {/* 大题:提交后展示 AI 预批结果卡 */}
-        {isBigQ && confirmed && state.preGrade[q.questionId] && (
+        {/* 大题:提交后展示 AI 预批结果卡(photo_pregrade 关时整卡不出) */}
+        {preGrade && isBigQ && confirmed && state.preGrade[q.questionId] && (
           <PreGradeCard narration={state.preGrade[q.questionId]} onDone={onDone} />
         )}
 

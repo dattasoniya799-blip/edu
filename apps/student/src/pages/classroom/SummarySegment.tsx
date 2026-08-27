@@ -12,13 +12,15 @@ export interface SummarySegmentProps {
   pendingTasks: AssignmentDto[] | null;
   onOpenTask(assignmentId: number): void;
   onExit(): void;
+  /** E1 photo_pregrade 门禁(页面从 /features/my 注入,缺省关):关时不提「AI 预批」 */
+  preGrade?: boolean;
 }
 
 const KIND_LABEL: Record<string, string> = {
   homework: '课后作业', correction: '订正', wrong_redo: '错题重做', consolidation: '巩固练', in_class: '随堂练',
 };
 
-export function SummarySegment({ state, pendingTasks, onOpenTask, onExit }: SummarySegmentProps) {
+export function SummarySegment({ state, pendingTasks, onOpenTask, onExit, preGrade = false }: SummarySegmentProps) {
   const { answered, correct, total } = practiceStats(state);
   const judged = state.quiz.items.filter((it) => it.feedback?.judged).length;
   const rate = judged > 0 ? Math.round((correct / judged) * 100) : null;
@@ -54,7 +56,7 @@ export function SummarySegment({ state, pendingTasks, onOpenTask, onExit }: Summ
               </div>
               <ProgressBar value={rate ?? 0} />
               <div className="mt-3 flex items-center justify-between text-[13px]">
-                <span>压轴大题(AI 预批,待老师复核)</span>
+                <span>压轴大题({preGrade ? 'AI 预批,待老师复核' : '待老师批改'})</span>
                 <b>{Object.keys(state.preGrade).length > 0 ? '已提交' : '未提交'}</b>
               </div>
             </>

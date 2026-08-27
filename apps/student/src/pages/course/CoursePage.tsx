@@ -1,10 +1,11 @@
 /**
- * 我的课程(原型 s-course 段):左侧课程卡 + 右侧讲次时间线(回看/订正入口)
+ * 我的课程(原型 s-course 段):左侧课程卡 + 右侧讲次时间线(订正入口)
+ * E1:「回看课件」入口与其弹窗一并删除(契约的讲次报文没有 resources 字段,原按钮永远不出现)。
  */
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { AssignmentDto, CourseDto } from '@qiming/contracts';
-import { Button, Card, EmptyState, Modal, Skeleton, Tag, useToast } from '@qiming/ui';
+import { Button, Card, EmptyState, Skeleton, Tag, useToast } from '@qiming/ui';
 import { api } from '../../api';
 import { LessonTimeline, type TimelineItem } from './LessonTimeline';
 
@@ -17,7 +18,6 @@ export function CoursePage() {
   const [activeId, setActiveId] = useState<number | null>(null);
   const [timeline, setTimeline] = useState<TimelineItem[] | null>(null);
   const [pending, setPending] = useState<AssignmentDto[]>([]);
-  const [replay, setReplay] = useState<{ name: string; url: string; expiresAt: string } | null>(null);
   const [error, setError] = useState(false); // 课程列表加载失败(整页可重试)
   const [reload, setReload] = useState(0);
   const [timelineError, setTimelineError] = useState(false); // 讲次时间线加载失败(局部可重试)
@@ -53,21 +53,12 @@ export function CoursePage() {
     pending.filter((a) => a.kind === 'correction' && a.lessonId != null).map((a) => [a.lessonId as number, a.id]),
   ) as Record<number, number>;
 
-  const openReplay = async (resourceId: number, name: string) => {
-    try {
-      const r = await api.get('/student/resources/{id}/view', { params: { id: resourceId } });
-      setReplay({ name, url: r.data.url, expiresAt: r.data.expiresAt });
-    } catch {
-      toast('课件链接获取失败,请重试');
-    }
-  };
-
   if (error) {
     return (
       <div className="mx-auto max-w-[1080px]">
         <div className="mb-5">
           <h2 className="text-[21px] font-extrabold">我的课程</h2>
-          <p className="mt-1 text-[13px] text-ink-2">已上的讲次可以回看课件、订正错题</p>
+          <p className="mt-1 text-[13px] text-ink-2">已上的讲次可以订正错题,已发布的讲次可以进入课堂</p>
         </div>
         <Card>
           <EmptyState icon="⚠" text="课程加载失败" hint="可能是网络波动,请重试"
@@ -81,7 +72,7 @@ export function CoursePage() {
     <div className="mx-auto max-w-[1080px]">
       <div className="mb-5">
         <h2 className="text-[21px] font-extrabold">我的课程</h2>
-        <p className="mt-1 text-[13px] text-ink-2">已上的讲次可以回看课件、订正错题</p>
+        <p className="mt-1 text-[13px] text-ink-2">已上的讲次可以订正错题,已发布的讲次可以进入课堂</p>
       </div>
 
       {!courses ? (
@@ -126,7 +117,6 @@ export function CoursePage() {
               <Card><EmptyState text="讲次安排准备中" hint="老师排课后这里会出现讲次时间线" /></Card>
             ) : (
               <LessonTimeline items={timeline} correctionByLesson={correctionByLesson}
-                onReplay={openReplay}
                 onCorrect={(id) => navigate(`/homework/${id}`)}
                 onOpenResult={(id, attemptId) => navigate(`/homework/${id}?attempt=${attemptId}`)}
                 onEnterClass={(_lesson, sessionId) => {
@@ -138,24 +128,6 @@ export function CoursePage() {
           </div>
         </div>
       )}
-
-      <Modal open={replay != null} title={`回看课件 · ${replay?.name ?? ''}`} onClose={() => setReplay(null)}>
-        {replay && (
-          <div className="text-sm leading-7 text-ink-2">
-            <p>课件已就绪,点下面的按钮在新窗口打开。</p>
-            <Button
-              variant="primary"
-              className="mt-3 min-h-touch"
-              onClick={() => window.open(replay.url, '_blank', 'noopener')}
-            >
-              打开课件
-            </Button>
-            <div className="mt-3 break-all text-xs text-ink-3">
-              有效期至:{new Date(replay.expiresAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
-            </div>
-          </div>
-        )}
-      </Modal>
     </div>
   );
 }

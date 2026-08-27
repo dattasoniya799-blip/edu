@@ -4,9 +4,9 @@
  * FIX2 问题3:此页原属分工缝隙(B3=题库、B4=course/lesson/paper/grading/monitor,/resources 无人认领),
  *   后端 A4 已实现 /resources;此处按 A4 契约形状走 createClient + mock 补齐前端页面。
  * 数据:GET /resources(分页 + type 过滤)· POST /resources(两步直传后落库)· DELETE /resources/{id}
+ * E1:「AI 生成课件」是内测功能,入口已从本页迁到实验室分区(路由 /courseware/new 不变)。
  */
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import type { ResourceDto, ResourceType } from '@qiming/contracts';
 import { Button, EmptyState, Skeleton, Tag, useToast } from '@qiming/ui';
 import { api, resolveFigureSrc } from '../../api';
@@ -44,7 +44,6 @@ const TYPE_TABS: { value: '' | ResourceType; label: string }[] = [
 
 export function ResourcesPage() {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [type, setType] = useState<'' | ResourceType>('');
@@ -128,13 +127,9 @@ export function ResourcesPage() {
         title="资源库"
         sub="课件、讲义、视频统一存放,在「编排课堂」时挂载到讲次 · 每个资源显示被哪些讲次引用"
         actions={
-          <>
-            {/* AI 生成课件向导(/courseware/new):文字稿 → 逐页大纲 → 逐页生图 → 成品落本资源库 */}
-            <Button onClick={() => navigate('/courseware/new')}>✦ AI 生成课件</Button>
-            <Button variant="primary" disabled={uploading} onClick={() => fileRef.current?.click()}>
-              {uploading ? '上传中…' : '↑ 上传资源'}
-            </Button>
-          </>
+          <Button variant="primary" disabled={uploading} onClick={() => fileRef.current?.click()}>
+            {uploading ? '上传中…' : '↑ 上传资源'}
+          </Button>
         }
       />
       <input

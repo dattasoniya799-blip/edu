@@ -9,6 +9,7 @@ import { Students } from './pages/Students';
 import { Courses } from './pages/Courses';
 import { AiUsage } from './pages/AiUsage';
 import { AiConfig } from './pages/AiConfig';
+import { FeatureLab } from './pages/FeatureLab';
 import { Settings } from './pages/Settings';
 
 /** 真实 404 空态:未匹配任何路由时的兜底页(返回首页可回到概览) */
@@ -41,6 +42,7 @@ export function App() {
           <Route path="/courses" element={<Courses />} />
           <Route path="/ai-usage" element={<AiUsage />} />
           <Route path="/ai/config" element={<AiConfig />} />
+          <Route path="/features" element={<FeatureLab />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Route>

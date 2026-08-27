@@ -9,6 +9,7 @@ import type { AssignmentDto, WrongBookItemDto } from '@qiming/contracts';
 import { Button, useToast } from '@qiming/ui';
 import { api } from '../../api';
 import { useAuth } from '../../auth/AuthProvider';
+import { FEATURE_PHOTO_PREGRADE, useFeatures } from '../../features/FeaturesProvider';
 import { Stage } from '../../Stage';
 import { ClassFoot } from './ClassFoot';
 import { ClassHead } from './ClassHead';
@@ -35,6 +36,8 @@ function ClassroomInner({ sessionId }: { sessionId: number }) {
   const { toast } = useToast();
   const cls = useClassroom(sessionId);
   const { state } = cls;
+  // E1:大题预批展示按 photo_pregrade 门禁(当前 off = 谁都看不到预批卡)
+  const preGrade = useFeatures().has(FEATURE_PHOTO_PREGRADE);
 
   // ①回顾:错题卡列表(warmup config source=auto_wrong,取 open 前 3)
   const [warmup, setWarmup] = useState<WrongBookItemDto[] | null>(null);
@@ -138,7 +141,7 @@ function ClassroomInner({ sessionId }: { sessionId: number }) {
               onDone={() => cls.gotoSegment(state.seg + 1)} />
           )}
           {segType === 'practice' && (
-            <PracticeSegment state={state}
+            <PracticeSegment state={state} preGrade={preGrade}
               onAnswer={(qid, r) => cls.answer(qid, r)}
               onGoto={(i) => cls.gotoQuestion(i)}
               onFlag={(qid) => cls.flag(qid)}
@@ -147,7 +150,7 @@ function ClassroomInner({ sessionId }: { sessionId: number }) {
               onDone={() => cls.gotoSegment(state.seg + 1)} />
           )}
           {(segType === 'summary' || segType === 'homework' || segType === 'break_time') && (
-            <SummarySegment state={state} pendingTasks={pendingTasks}
+            <SummarySegment state={state} pendingTasks={pendingTasks} preGrade={preGrade}
               onOpenTask={(id) => { cls.leave(); navigate(`/homework/${id}`); }}
               onExit={exit} />
           )}

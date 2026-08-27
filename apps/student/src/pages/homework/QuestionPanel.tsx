@@ -25,9 +25,15 @@ export interface QuestionPanelProps {
    * 未注入时拍照入口禁用(降级,不落假 key)。
    */
   onUploadPhoto?: (file: File) => Promise<string>;
+  /**
+   * E1 photo_pregrade 门禁(由页面从 /features/my 注入,缺省关):
+   * 关 = 不出现任何「AI 预批」字样,提交后一律说「待老师批改」。
+   * 只影响这层文案,拍照上传作为作答附件的能力不受影响。
+   */
+  preGrade?: boolean;
 }
 
-export function QuestionPanel({ q, item, draft, onDraft, redoKind, onUploadPhoto }: QuestionPanelProps) {
+export function QuestionPanel({ q, item, draft, onDraft, redoKind, onUploadPhoto, preGrade = false }: QuestionPanelProps) {
   const locked = item.response != null;
   return (
     <div className="rounded-lg border border-line bg-card p-5 shadow-card">
@@ -48,10 +54,10 @@ export function QuestionPanel({ q, item, draft, onDraft, redoKind, onUploadPhoto
           <OptionList q={q} item={item} draft={draft} onDraft={onDraft} locked={locked} />
         )}
         {q.type === 'blank' && <BlankInputs q={q} item={item} draft={draft} onDraft={onDraft} locked={locked} />}
-        {q.type === 'solution' && <SolutionPad item={item} draft={draft} onDraft={onDraft} locked={locked} onUploadPhoto={onUploadPhoto} />}
+        {q.type === 'solution' && <SolutionPad item={item} draft={draft} onDraft={onDraft} locked={locked} onUploadPhoto={onUploadPhoto} preGrade={preGrade} />}
       </div>
 
-      <FeedbackPanel item={item} q={q} />
+      <FeedbackPanel item={item} q={q} preGrade={preGrade} />
     </div>
   );
 }
@@ -143,7 +149,7 @@ function BlankInputs({ q, item, draft, onDraft, locked }: QuestionPanelProps & {
 }
 
 // ---------------- 解答题:拍照真上传(sts+PUT 经注入回调;纸上作答 → 拍照上传兜底) ----------------
-function SolutionPad({ item, draft, onDraft, locked, onUploadPhoto }: Pick<QuestionPanelProps, 'item' | 'draft' | 'onDraft' | 'onUploadPhoto'> & { locked: boolean }) {
+function SolutionPad({ item, draft, onDraft, locked, onUploadPhoto, preGrade }: Pick<QuestionPanelProps, 'item' | 'draft' | 'onDraft' | 'onUploadPhoto'> & { locked: boolean; preGrade: boolean }) {
   const inputId = useId();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -195,7 +201,9 @@ function SolutionPad({ item, draft, onDraft, locked, onUploadPhoto }: Pick<Quest
             <span className="text-[13px] text-ink-2">
               {uploading ? '上传中…' : photoKey ? '重新拍摄' : '拍摄纸质作答并上传'}
             </span>
-            <span className="text-xs text-ink-3">在纸上写完整过程 → 拍照,AI 预批后由老师复核给分</span>
+            <span className="text-xs text-ink-3">
+              在纸上写完整过程 → 拍照,{preGrade ? 'AI 预批后由老师复核给分' : '由老师批改给分'}
+            </span>
           </label>
         </>
       )}
@@ -208,7 +216,7 @@ function SolutionPad({ item, draft, onDraft, locked, onUploadPhoto }: Pick<Quest
         <div className="mt-3 flex min-h-touch items-center gap-2 rounded-md border border-line bg-card px-3.5 text-[13px] text-ink-2">
           <span aria-hidden>🖼</span>
           <span className="truncate">已上传作答照片:{photoKey.split('/').pop()}</span>
-          {locked && <Tag tone="violet" className="ml-auto shrink-0">待 AI 预批</Tag>}
+          {locked && <Tag tone="violet" className="ml-auto shrink-0">{preGrade ? '待 AI 预批' : '待老师批改'}</Tag>}
         </div>
       )}
     </div>
@@ -216,7 +224,7 @@ function SolutionPad({ item, draft, onDraft, locked, onUploadPhoto }: Pick<Quest
 }
 
 // ---------------- 即时判分反馈 ----------------
-function FeedbackPanel({ item, q }: { item: ItemState; q: AttemptQuestionView }) {
+function FeedbackPanel({ item, q, preGrade }: { item: ItemState; q: AttemptQuestionView; preGrade: boolean }) {
   const fb = item.feedback;
   if (!fb) return null;
   // 待批改(judged=false):解答题拍照 + 含公式的填空(后端 isCorrect=null,不即时判分)
@@ -224,8 +232,12 @@ function FeedbackPanel({ item, q }: { item: ItemState; q: AttemptQuestionView })
     return (
       <div className="mt-4 rounded-md bg-violet-soft px-4 py-3 text-[13px] leading-6 text-violet">
         {q.type === 'solution'
-          ? '✓ 解答已提交:AI 预批后由老师复核,最终得分以老师复核为准。'
-          : '✓ 已提交 · 待批改:含公式的作答由 AI 预批后老师复核,得分以复核为准。'}
+          ? preGrade
+            ? '✓ 解答已提交:AI 预批后由老师复核,最终得分以老师复核为准。'
+            : '✓ 解答已提交 · 待批改:由老师批改给分。'
+          : preGrade
+            ? '✓ 已提交 · 待批改:含公式的作答由 AI 预批后老师复核,得分以复核为准。'
+            : '✓ 已提交 · 待批改:含公式的作答由老师批改给分。'}
       </div>
     );
   }
