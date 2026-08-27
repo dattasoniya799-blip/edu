@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "validate:anim": "node tools/validate-animations.mjs"
   },
   "dependencies": {
     "katex": "^0.16.10",

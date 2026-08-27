@@ -1,0 +1,173 @@
+{
+  "generatedAt": "2026-08-27",
+  "generator": "apps/lab/tools/validate-animations.mjs",
+  "rules": [
+    {
+      "id": "size",
+      "label": "文件体积 ≤ 120KB"
+    },
+    {
+      "id": "meta",
+      "label": "六项必填 meta 齐全且取值合法(grade/topic/difficulty/cognitive/desc/kpNodeId)"
+    },
+    {
+      "id": "grade-dir",
+      "label": "meta.grade 与所在学段目录一致"
+    },
+    {
+      "id": "viewport",
+      "label": "声明 viewport(width=device-width)"
+    },
+    {
+      "id": "reset",
+      "label": "存在重置按钮(button 文案含「重置」或「重新开始」)"
+    },
+    {
+      "id": "no-external",
+      "label": "无外链资源(script src / link / @import / http(s) 引用)"
+    },
+    {
+      "id": "no-network",
+      "label": "无网络能力(fetch / XHR / WebSocket / EventSource / sendBeacon)"
+    },
+    {
+      "id": "no-cross-window",
+      "label": "无跨窗口访问(window.top / parent / opener / postMessage / open)"
+    },
+    {
+      "id": "no-storage",
+      "label": "无本地存储(localStorage / sessionStorage / indexedDB / cookie)"
+    },
+    {
+      "id": "no-eval",
+      "label": "无动态求值(eval / new Function)"
+    },
+    {
+      "id": "color-vars",
+      "label": "颜色全部走 CSS 变量(:root 之外与脚本内不得出现裸色值)"
+    },
+    {
+      "id": "accent-limit",
+      "label": "强调色不超过 3 组(--hi-a / --hi-b / --hi-c)"
+    },
+    {
+      "id": "tap-size",
+      "label": "触控目标下限 --tap ≥ 44px 且按钮引用它"
+    },
+    {
+      "id": "narrow-safe",
+      "label": "窄屏保护(body 声明 overflow-x:hidden)"
+    },
+    {
+      "id": "prd-comment",
+      "label": "PRD 六字段以头部注释内嵌留档"
+    },
+    {
+      "id": "dom-ids",
+      "label": "脚本里 getElementById 取的 id 在 HTML 中都存在"
+    },
+    {
+      "id": "script-syntax",
+      "label": "内联脚本可被解析(语法粗检)"
+    }
+  ],
+  "total": 5,
+  "passed": 5,
+  "items": [
+    {
+      "path": "animations/初中/一次函数参数实验.html",
+      "title": "一次函数参数实验",
+      "grade": "初中",
+      "meta": {
+        "grade": "初中",
+        "topic": "一次函数的图象与性质",
+        "difficulty": "中",
+        "cognitive": "变换",
+        "desc": "拖 k 与 b 两根滑杆,看直线怎么转、怎么上下平移。",
+        "kpNodeId": "MATH-JH-8B-19-CP13"
+      },
+      "sizeKB": 13.4,
+      "validation": {
+        "ok": true,
+        "checked": 17,
+        "issues": []
+      }
+    },
+    {
+      "path": "animations/初中/勾股定理面积对账.html",
+      "title": "勾股定理面积对账",
+      "grade": "初中",
+      "meta": {
+        "grade": "初中",
+        "topic": "勾股定理的面积证明",
+        "difficulty": "中",
+        "cognitive": "分解",
+        "desc": "拖动两条直角边,三个正方形的面积实时对账。",
+        "kpNodeId": "MATH-JH-8B-17-CP06"
+      },
+      "sizeKB": 14.3,
+      "validation": {
+        "ok": true,
+        "checked": 17,
+        "issues": []
+      }
+    },
+    {
+      "path": "animations/高中/导数的几何意义.html",
+      "title": "导数的几何意义",
+      "grade": "高中",
+      "meta": {
+        "grade": "高中",
+        "topic": "导数的几何意义",
+        "difficulty": "高",
+        "cognitive": "逼近",
+        "desc": "拖点并缩小 Δx,看割线一步步躺到切线上。",
+        "kpNodeId": ""
+      },
+      "sizeKB": 15.9,
+      "validation": {
+        "ok": true,
+        "checked": 17,
+        "issues": []
+      }
+    },
+    {
+      "path": "animations/高中/椭圆的定义.html",
+      "title": "椭圆的定义",
+      "grade": "高中",
+      "meta": {
+        "grade": "高中",
+        "topic": "椭圆的定义",
+        "difficulty": "中",
+        "cognitive": "守恒",
+        "desc": "拖动点 P,看到两焦点的距离之和始终不变。",
+        "kpNodeId": ""
+      },
+      "sizeKB": 16,
+      "validation": {
+        "ok": true,
+        "checked": 17,
+        "issues": []
+      }
+    },
+    {
+      "path": "animations/高中/正弦函数三参数变换.html",
+      "title": "正弦函数三参数变换",
+      "grade": "高中",
+      "meta": {
+        "grade": "高中",
+        "topic": "正弦型函数 y=Asin(ωx+φ) 的图象变换",
+        "difficulty": "高",
+        "cognitive": "变换",
+        "desc": "三根滑杆独立调 A、ω、φ,看拉伸、压缩、平移。",
+        "kpNodeId": ""
+      },
+      "sizeKB": 15.9,
+      "validation": {
+        "ok": true,
+        "checked": 17,
+        "issues": []
+      }
+    }
+  ]
+}
