@@ -1,12 +1,12 @@
 # 知识图谱导入对账报告
 
 - 目标机构 org_id: 1
-- 导入时间: 2026-07-05T04:28:56.512Z
+- 导入时间: 2026-08-27T13:19:10.754Z
 
 ## chemistry_junior_pep_v1.json
 - 图谱: chemistry_junior_pep_v1(curriculum_knowledge)
 - 节点: 源文件 59 → 入库 59 ✓ 一致
-- 边:   源文件 47 → 入库 47 ✓
+- 边:   源文件 48 → 入库 48 ✓
 - 年级分布: 初三:59
 
 ## math_junior_ability_v1.json
