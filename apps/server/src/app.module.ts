@@ -24,6 +24,7 @@ import { maskSensitive } from './common/logging/mask';
 import { ContextMiddleware } from './common/middleware/context.middleware';
 import { CourseModule } from './course/course.module';
 import { CoursewareModule } from './courseware/courseware.module';
+import { FeaturesModule } from './features/features.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
 import { KpModule } from './kp/kp.module';
 import { LessonModule } from './lesson/lesson.module';
@@ -70,6 +71,7 @@ import { UploadModule } from './upload/upload.module';
     AuditModule,
     AiModule,
     AuthModule,
+    FeaturesModule,
     AdminModule,
     KpModule,
     KnowledgeModule,

@@ -88,6 +88,11 @@ export async function createA7Org(): Promise<A7Fixture> {
     },
   });
 
+  // E1 前置:公式填空预批入队现受 photo_pregrade 功能门禁(默认 off)——
+  // 显式落 flag 行(stage=beta)并把作答学生 s1 加入白名单,保住本套件的真实预批链路。
+  await raw.featureFlag.create({ data: { orgId, key: 'photo_pregrade', stage: 'beta' } });
+  await raw.featureAccess.create({ data: { orgId, featureKey: 'photo_pregrade', userId: s1.id } });
+
   const orgB = await raw.org.create({
     data: {
       name: 'A7跨租户机构B',
@@ -116,6 +121,8 @@ export async function createA7Org(): Promise<A7Fixture> {
 
 export async function dropA7Org(orgId: bigint, orgBId: bigint): Promise<void> {
   for (const oid of [orgId, orgBId]) {
+    await raw.featureAccess.deleteMany({ where: { orgId: oid } });
+    await raw.featureFlag.deleteMany({ where: { orgId: oid } });
     await raw.aiCall.deleteMany({ where: { orgId: oid } });
     await raw.aiQuota.deleteMany({ where: { orgId: oid } });
     await raw.masterySnapshot.deleteMany({ where: { orgId: oid } });

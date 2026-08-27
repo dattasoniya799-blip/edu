@@ -645,6 +645,38 @@ components:
             required: [kpName, reason]
             properties: { kpName: { type: string }, reason: { type: string } }
         generatedAt: { type: string, format: date-time }
+    # ---- 内测区与功能分级(E1,2026-08-27 批准) ----
+    FeatureStage: { type: string, enum: ['off', 'beta', 'ga'], description: off=全员不可见(仅管理端登记);beta=白名单账号可见可用;ga=按角色全量可见 }
+    MyFeature:
+      type: object
+      description: /features/my 下发项(off 不下发,故 stage 仅 beta/ga)
+      required: [key, name, stage, description]
+      properties:
+        key: { type: string }
+        name: { type: string }
+        stage: { type: string, enum: ['beta', 'ga'] }
+        description: { type: string }
+    AdminFeatureWhitelistItem:
+      type: object
+      required: [userId, name, role]
+      properties:
+        userId: { type: integer }
+        name: { type: string }
+        role: { $ref: '#/components/schemas/Role' }
+    AdminFeature:
+      type: object
+      description: 实验室管理条目:功能目录全量 + 当前生效 stage + 白名单
+      required: [key, name, description, audienceRole, defaultStage, stage, whitelist, knownIssues, acceptance]
+      properties:
+        key: { type: string }
+        name: { type: string }
+        description: { type: string }
+        audienceRole: { $ref: '#/components/schemas/Role' }
+        defaultStage: { $ref: '#/components/schemas/FeatureStage' }
+        stage: { $ref: '#/components/schemas/FeatureStage' }
+        whitelist: { type: array, items: { $ref: '#/components/schemas/AdminFeatureWhitelistItem' } }
+        knownIssues: { type: array, items: { type: string } }
+        acceptance: { type: array, items: { type: string }, description: 转正(切 ga)验收条件 }
 
 paths:
   # ================= 认证 =================
@@ -1326,6 +1358,36 @@ paths:
     post:
       summary: 重试失败页(重新入队该任务内 status=failed 的页) [teacher]
       parameters: [{name: jobId, in: path, required: true, schema: {type: string}}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+
+  # ================= 内测区与功能分级(E1,2026-08-27 批准) =================
+  /features/my:
+    get:
+      summary: 当前用户可见的功能条目(ga 且角色匹配全下发;beta 仅白名单内;off 不下发) [*]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [features], properties: {features: {type: array, items: {$ref: '#/components/schemas/MyFeature'}}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/features:
+    get:
+      summary: 实验室管理·功能目录全量(含当前阶段与白名单) [admin]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: array, items: {$ref: '#/components/schemas/AdminFeature'}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/features/{key}:
+    put:
+      summary: 切换功能阶段(未知 key 404) [admin]
+      parameters: [{name: key, in: path, required: true, schema: {type: string}}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [stage], properties: {stage: {$ref: '#/components/schemas/FeatureStage'}}}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /admin/features/{key}/whitelist:
+    put:
+      summary: 覆写功能白名单(replace 语义;校验同机构用户) [admin]
+      parameters: [{name: key, in: path, required: true, schema: {type: string}}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [userIds], properties: {userIds: {type: array, items: {type: integer}}}}}}}
       responses:
         '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
         default: {$ref: '#/components/responses/Err'}

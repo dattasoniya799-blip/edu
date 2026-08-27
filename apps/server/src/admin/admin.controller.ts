@@ -34,6 +34,8 @@ import {
 } from './admin.dto';
 import { AiFeatureRoutesInputDto, AiProviderConfigInputDto, AiTestInputDto } from '../ai/ai-admin.dto';
 import { AiAdminService } from '../ai/ai-admin.service';
+import { FeatureStageInputDto, FeatureWhitelistInputDto } from '../features/features.dto';
+import { FeaturesService } from '../features/features.service';
 import { CoursesService } from './courses.service';
 import { InsightsService } from './insights.service';
 import { StudentsService } from './students.service';
@@ -51,6 +53,7 @@ export class AdminController {
     private readonly courses: CoursesService,
     private readonly insights: InsightsService,
     private readonly aiAdmin: AiAdminService,
+    private readonly features: FeaturesService,
   ) {}
 
   // ================= 教师 =================
@@ -258,5 +261,31 @@ export class AdminController {
   @HttpCode(200)
   aiTest(@Body() dto: AiTestInputDto) {
     return this.aiAdmin.test(dto?.feature);
+  }
+
+  // ================= 实验室管理(E1 内测区与功能分级) =================
+  @Get('features')
+  listFeatures() {
+    return this.features.adminList();
+  }
+
+  @Put('features/:key')
+  setFeatureStage(
+    @CurrentUser() user: JwtUser,
+    @Param('key') key: string,
+    @Body() dto: FeatureStageInputDto,
+    @Ip() ip: string,
+  ) {
+    return this.features.setStage(user, key, dto.stage, ip);
+  }
+
+  @Put('features/:key/whitelist')
+  setFeatureWhitelist(
+    @CurrentUser() user: JwtUser,
+    @Param('key') key: string,
+    @Body() dto: FeatureWhitelistInputDto,
+    @Ip() ip: string,
+  ) {
+    return this.features.setWhitelist(user, key, dto.userIds, ip);
   }
 }

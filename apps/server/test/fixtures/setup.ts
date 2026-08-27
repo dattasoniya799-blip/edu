@@ -60,6 +60,9 @@ export async function createOrg2(): Promise<Org2Fixture> {
 }
 
 export async function dropOrg2(orgId: bigint): Promise<void> {
+  // E1:个别套件会给第二机构落功能 flag/白名单(FK 指向 users),先清再删用户
+  await raw.featureAccess.deleteMany({ where: { orgId } });
+  await raw.featureFlag.deleteMany({ where: { orgId } });
   await raw.device.deleteMany({ where: { orgId } });
   await raw.loginTicket.deleteMany({ where: { orgId } });
   await raw.auditLog.deleteMany({ where: { orgId } });

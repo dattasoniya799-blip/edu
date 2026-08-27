@@ -4068,6 +4068,180 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/features/my": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 当前用户可见的功能条目(ga 且角色匹配全下发;beta 仅白名单内;off 不下发) [*] */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: number;
+                            message: string;
+                            data: {
+                                features: components["schemas"]["MyFeature"][];
+                            };
+                        };
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/features": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 实验室管理·功能目录全量(含当前阶段与白名单) [admin] */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: number;
+                            message: string;
+                            data: components["schemas"]["AdminFeature"][];
+                        };
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/features/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 切换功能阶段(未知 key 404) [admin] */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    key: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        stage: components["schemas"]["FeatureStage"];
+                    };
+                };
+            };
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OkVoid"];
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/features/{key}/whitelist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 覆写功能白名单(replace 语义;校验同机构用户) [admin] */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    key: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        userIds: number[];
+                    };
+                };
+            };
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OkVoid"];
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4676,6 +4850,37 @@ export interface components {
             }[];
             /** Format: date-time */
             generatedAt?: string;
+        };
+        /**
+         * @description off=全员不可见(仅管理端登记);beta=白名单账号可见可用;ga=按角色全量可见
+         * @enum {string}
+         */
+        FeatureStage: "off" | "beta" | "ga";
+        /** @description /features/my 下发项(off 不下发,故 stage 仅 beta/ga) */
+        MyFeature: {
+            key: string;
+            name: string;
+            /** @enum {string} */
+            stage: "beta" | "ga";
+            description: string;
+        };
+        AdminFeatureWhitelistItem: {
+            userId: number;
+            name: string;
+            role: components["schemas"]["Role"];
+        };
+        /** @description 实验室管理条目:功能目录全量 + 当前生效 stage + 白名单 */
+        AdminFeature: {
+            key: string;
+            name: string;
+            description: string;
+            audienceRole: components["schemas"]["Role"];
+            defaultStage: components["schemas"]["FeatureStage"];
+            stage: components["schemas"]["FeatureStage"];
+            whitelist: components["schemas"]["AdminFeatureWhitelistItem"][];
+            knownIssues: string[];
+            /** @description 转正(切 ga)验收条件 */
+            acceptance: string[];
         };
     };
     responses: {

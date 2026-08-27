@@ -137,6 +137,8 @@ model Org {
 
   users     User[]
   courses   Course[]
+  featureFlags  FeatureFlag[]   // E1:功能阶段覆盖
+  featureAccess FeatureAccess[] // E1:beta 白名单
   @@map("orgs")
 }
 
@@ -161,6 +163,7 @@ model User {
   attempts     Attempt[]
   wrongBook    WrongBookEntry[]
   mastery      MasterySnapshot[]
+  featureAccess FeatureAccess[] // E1:beta 白名单成员
   @@unique([orgId, teacherNo])
   @@unique([orgId, studentNo])
   @@index([orgId, role])
@@ -674,4 +677,31 @@ model AuditLog {
   createdAt  DateTime @default(now()) @map("created_at")
   @@index([orgId, createdAt])
   @@map("audit_logs")
+}
+
+// ---------------- 内测区与功能分级(E1,迁移 0004) ----------------
+// 功能目录是代码内静态注册表(features/feature-catalog.ts);库里只存覆盖值:
+// 无 flag 行 = 用目录 defaultStage。stage 用 VARCHAR + 应用层校验(off/beta/ga),避免 PG enum 迁移负担。
+model FeatureFlag {
+  id        BigInt   @id @default(autoincrement())
+  orgId     BigInt   @map("org_id")
+  key       String   @db.VarChar(64)
+  stage     String   @db.VarChar(16) // off/beta/ga(应用层校验)
+  updatedAt DateTime @updatedAt @map("updated_at")
+  org       Org      @relation(fields: [orgId], references: [id])
+  @@unique([orgId, key])
+  @@map("feature_flags")
+}
+
+// beta 白名单(replace 语义:整表覆写该 key 的名单)
+model FeatureAccess {
+  id         BigInt   @id @default(autoincrement())
+  orgId      BigInt   @map("org_id")
+  featureKey String   @map("feature_key") @db.VarChar(64)
+  userId     BigInt   @map("user_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  org        Org      @relation(fields: [orgId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
+  @@unique([orgId, featureKey, userId])
+  @@map("feature_access")
 }
