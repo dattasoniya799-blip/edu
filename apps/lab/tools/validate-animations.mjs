@@ -184,6 +184,58 @@ const RULES = [
       return missing.length ? `找不到 #${missing.join(' #')}` : null;
     },
   },
+  /* ── 运动引擎(skill v2 第三章「运动」):后四条是启发式,只拦「明显没做」，
+        真手感靠 npm run smoke:anim 的 jsdom 桩逐帧量,以及人审上手试。 ── */
+  {
+    id: 'raf-loop',
+    label: '存在常驻主循环(requestAnimationFrame 且在函数内自递归)',
+    check: (f) => {
+      if (!/\brequestAnimationFrame\s*\(/.test(f.code)) return '没有 requestAnimationFrame';
+      const names = [...new Set([...f.code.matchAll(/requestAnimationFrame\(\s*([A-Za-z_$][\w$]*)\s*\)/g)]
+        .map((m) => m[1]))];
+      if (names.length === 0) return 'requestAnimationFrame 没有传具名函数,查不出自递归';
+      const selfCalling = names.some((n) => {
+        const body = funcBody(f.code, n);
+        return body !== null && new RegExp(`requestAnimationFrame\\(\\s*${n}\\s*\\)`).test(body);
+      });
+      return selfCalling ? null : `${names.join('/')} 里没有再排下一帧:不是常驻循环`;
+    },
+  },
+  {
+    id: 'play-button',
+    label: '存在播放模式按钮(button 文案含「播放」「暂停」或「演示」)',
+    check: (f) => {
+      const buttons = f.html.match(/<button\b[\s\S]*?<\/button>/gi) || [];
+      return buttons.some((b) => /播放|暂停|演示/.test(b)) ? null : '未找到播放/暂停/演示按钮';
+    },
+  },
+  {
+    id: 'dual-state',
+    label: '状态双轨制(target/current 命名对 或 时间基缓动表达式)· 启发式',
+    check: (f) => {
+      // 两类命中其一即过:① 明显的目标/当前值命名对;② 明显的时间基缓动算式。
+      // 故意写宽:双轨的写法很多,这里只负责拦「压根没有缓动层」的稿子。
+      const namePair = /\b(?:tgt|target|targets|want|goal|desired)\b/.test(f.code) &&
+        /\b(?:cur|current|shown|drawn|view|actual)\b/.test(f.code);
+      const timeEase = /\(\s*1\s*-\s*Math\.pow\(/.test(f.code) ||
+        /Math\.pow\([^)]*,\s*dt\s*\*/.test(f.code) ||
+        /\*\s*dt\b/.test(f.code) || /\bdt\s*\*/.test(f.code) ||
+        /\b(?:approach|lerp|ease|damp|towards)\w*\s*\(/i.test(f.code);
+      if (namePair || timeEase) return null;
+      return '既找不到 target/current 命名对,也找不到时间基缓动算式(1-Math.pow(k,dt*60) 之类)';
+    },
+  },
+  {
+    id: 'dt-clamp',
+    label: 'dt 有上限保护(标签页切回来不跳跃)· 启发式',
+    check: (f) => {
+      if (!/\bdt\b|\bdtms\b|\bdelta\b/i.test(f.code)) return '脚本里没有 dt,主循环不是时间基的';
+      // 认 Math.min(…, 50) / Math.min(50, …) / Math.min(…, 0.05) 这一族写法。
+      const clamped = /Math\.min\([^;\n]{0,90}?,\s*(?:50|0?\.05)\s*\)/.test(f.code) ||
+        /Math\.min\(\s*(?:50|0?\.05)\s*,[^;\n]{0,90}?\)/.test(f.code);
+      return clamped ? null : '找不到 dt 上限保护(Math.min(…, 50) 之类)';
+    },
+  },
   {
     id: 'script-syntax',
     label: '内联脚本可被解析(语法粗检)',
@@ -200,6 +252,25 @@ const RULES = [
     },
   },
 ];
+
+/**
+ * 粗取一个具名函数的函数体(含大括号)。只数大括号,不解析字符串里的括号 ——
+ * 动画脚本都很简单,够用;取不到就让规则报「查不出自递归」,由人去看。
+ */
+function funcBody(code, name) {
+  const m = new RegExp(`function\\s+${name}\\s*\\([^)]*\\)\\s*\\{`).exec(code);
+  if (!m) return null;
+  const start = m.index + m[0].length - 1;
+  let depth = 0;
+  for (let j = start; j < code.length; j++) {
+    if (code[j] === '{') depth += 1;
+    else if (code[j] === '}') {
+      depth -= 1;
+      if (depth === 0) return code.slice(start, j + 1);
+    }
+  }
+  return null;
+}
 
 function hits(text, pairs) {
   const found = pairs.filter(([re]) => re.test(text)).map(([, name]) => name);

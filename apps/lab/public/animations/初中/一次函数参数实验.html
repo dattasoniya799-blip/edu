@@ -29,6 +29,12 @@ EVAL:动态收益 4(k、b 各管一种性质,静态要画一族直线才说得�
   - 「k = 1.8 是正数,x 每往右 1 格,y 就抬 1.8 格 —— 这就是 k 为正时 y 随 x 增大而增大。」
   - 「k 从头到尾在变,直线却一直穿过 (0, 2.0) 这一个点:b 没动,交点就不会动。」
   - 「b = -1.5,直线与 y 轴交在 (0, -1.5)。它是纵轴上的交点,不是与 x 轴的交点。」
+
+运动设计(引擎 v2):
+  常驻 rAF 主循环;k / b / 阶段透明度全部 target-current 双轨缓动,事件只改 target。
+  巡航脚本:k 1→2→-2 扫过 0(只动 k,截距点定住)→ 回正并出台阶 → 只动 b 上下平移
+  → 出解析式 → 两参数同动 → 无缝回到起点。台阶上有一个「右 1 格」的持续行走标记,
+  反复把 k 读成一个可数的抬升动作。
 ════════════════════════════════════════════════════
 -->
 <html lang="zh-CN">
@@ -75,11 +81,13 @@ canvas{display:block;width:100%;height:auto;touch-action:none;border-radius:var(
 input[type=range]{flex:1;min-width:0;height:var(--tap);background:transparent}
 .row.pk input[type=range]{accent-color:var(--hi-a)}
 .row.pb input[type=range]{accent-color:var(--hi-b)}
-.hint{font-size:12px;color:var(--ink-3);margin:2px 0 0}
+.hint{font-size:12px;color:var(--ink-3);margin:2px 0 0;transition:opacity .25s ease}
 .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}
 button{font-family:var(--font);font-size:13.5px;min-height:var(--tap);padding:0 15px;
        border-radius:var(--r-sm);border:1px solid var(--rule);background:var(--sheet-sub);
-       color:var(--ink-1);cursor:pointer}
+       color:var(--ink-1);cursor:pointer;transition:background-color .2s ease,color .2s ease}
+button.play{background:var(--hi-c-soft);border-color:var(--hi-c);color:var(--hi-c);font-weight:600;
+            min-width:106px}
 button.go{background:var(--hi-a-soft);border-color:var(--hi-a);color:var(--hi-a);font-weight:600}
 button:disabled{opacity:.45;cursor:default}
 .step{font-size:12px;color:var(--ink-2);margin-left:auto}
@@ -87,17 +95,37 @@ button:disabled{opacity:.45;cursor:default}
     padding:9px 11px;font-size:13px;color:var(--ink-1)}
 .fb b{color:var(--hi-b)}
 .eq{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--hi-c);
-    background:var(--hi-c-soft);border-radius:var(--r-sm);padding:8px 11px;margin-top:9px}
+    background:var(--hi-c-soft);border-radius:var(--r-sm);padding:8px 11px}
 .eq small{display:block;font-family:var(--font);font-size:12px;font-weight:400;
           color:var(--ink-2);margin-top:3px}
 .mono{font-family:var(--mono)}
-.hide{display:none}
+/* 分步揭示也不许闪现:用 max-height + opacity 缓出,和画布里的 alpha 双轨同一个手感。 */
+.slot{max-height:0;opacity:0;overflow:hidden;
+      transition:max-height .42s ease,opacity .32s ease,margin-top .42s ease}
+.slot.on{max-height:150px;opacity:1;margin-top:9px}
+/* 宽屏两栏(平板横屏单屏收纳):画布卡锁左、反馈卡在右,整页 100dvh 不滚动;
+   ≤900px 维持原单列(375px 校验行为不变)。 */
+@media (min-width: 900px){
+  .wrap{
+    max-width:none;height:100dvh;box-sizing:border-box;overflow:hidden;
+    display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,.85fr);
+    grid-template-rows:auto auto auto minmax(0,1fr);
+    column-gap:16px;align-content:start;padding:12px 18px;
+  }
+  .wrap > h1{grid-column:1/-1;margin:0 0 2px}
+  .wrap > .lead{grid-column:1/-1;margin:0 0 6px}
+  .wrap > .tags{grid-column:1/-1;margin:0 0 8px}
+  body{overflow:hidden}
+  .wrap > .card{grid-row:4;margin:0;min-height:0;overflow:hidden}
+  .wrap > .card:nth-of-type(1){grid-column:1}
+  .wrap > .card:nth-of-type(2){grid-column:2}
+}
 </style>
 </head>
 <body>
 <main class="wrap">
   <h1>一次函数参数实验</h1>
-  <p class="lead">拖两根滑杆,看 <span class="mono">y = kx + b</span> 里的 k 和 b 各自管着直线的什么。</p>
+  <p class="lead">按「播放演示」看一遍,或者自己拖两根滑杆:<span class="mono">y = kx + b</span> 里的 k 和 b 各自管着直线的什么。</p>
   <div class="tags">
     <span class="tag">初中 · 一次函数</span>
     <span class="tag">认知动作:变换</span>
@@ -109,16 +137,17 @@ button:disabled{opacity:.45;cursor:default}
     <div class="ctl">
       <div class="row pk">
         <span class="name">k</span>
-        <input id="sk" type="range" min="-3" max="3" step="0.1" value="1" aria-label="斜率 k">
+        <input id="sk" type="range" min="-3" max="3" step="0.01" value="1" aria-label="斜率 k">
         <span class="val" id="vk">1.0</span>
       </div>
       <div class="row pb">
         <span class="name">b</span>
-        <input id="sb" type="range" min="-4" max="4" step="0.5" value="0" aria-label="截距 b">
+        <input id="sb" type="range" min="-4" max="4" step="0.05" value="0" aria-label="截距 b">
         <span class="val" id="vb">0.0</span>
       </div>
       <p class="hint" id="hint">先只管 k:向右拖,看直线怎么动。</p>
       <div class="bar">
+        <button id="play" class="play" type="button">播放演示</button>
         <button id="next" class="go" type="button">下一步</button>
         <button id="reset" type="button">重置</button>
         <span class="step" id="stage">阶段 1 / 3</span>
@@ -127,8 +156,8 @@ button:disabled{opacity:.45;cursor:default}
   </section>
 
   <section class="card">
-    <div class="fb" id="fb">向右拖 k 滑杆试试。</div>
-    <div class="eq hide" id="eq"></div>
+    <div class="fb" id="fb">向右拖 k 滑杆试试,或者按播放让它自己走。</div>
+    <div class="slot" id="eqSlot"><div class="eq" id="eq"></div></div>
   </section>
 </main>
 
@@ -150,17 +179,46 @@ button:disabled{opacity:.45;cursor:default}
   var sk = document.getElementById('sk'), sb = document.getElementById('sb');
   var vk = document.getElementById('vk'), vb = document.getElementById('vb');
   var fb = document.getElementById('fb'), eq = document.getElementById('eq');
+  var eqSlot = document.getElementById('eqSlot');
   var hint = document.getElementById('hint'), stageEl = document.getElementById('stage');
+  var btnPlay = document.getElementById('play');
   var btnNext = document.getElementById('next'), btnReset = document.getElementById('reset');
 
+  /* ══════════ 运动引擎:双轨状态 + 常驻主循环 ══════════ */
+  // k 是「每 1/60 秒还剩多少差距」:越小越快。SMOOTH 常规,GRAB 拖拽跟手,SNAP 重置回摆。
+  var K_SMOOTH = 0.90, K_GRAB = 0.55, K_SNAP = 0.78;
+  function approach(now, want, dt, kk){
+    return now + (want - now) * (1 - Math.pow(kk, dt * 60));
+  }
+  function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
+  function smoothstep(u){ u = clamp(u, 0, 1); return u * u * (3 - 2 * u); }
+
   var K0 = 1, B0 = 0;
-  var state = { k:K0, b:B0, stage:1, last:'k' };
+  // target = 交互与巡航写入的目标;current = 画面上真正在用的值,每帧向 target 缓动。
+  var tgt = { k:K0, b:B0, stage:1 };
+  var cur = { k:K0, b:B0, a2:0, a3:0, walk:0 };
+  var play = { on:false, t:0 };
+  var drag = { key:null };
+  var focus = 'k', boost = 0;
+
   var W = 360, H = 290, unit = 30, ox = 180, oy = 145;
 
   // 世界坐标固定 x∈[-6,6];y 半幅由画布高度决定,保证横纵同比例(不歪曲斜率)。
+  // 宽屏两栏时,画布高度按卡片竖向剩余空间封顶 —— 平板上卡片内容必须完整可见,禁止滚动。
+  function fitH(){
+    if (!window.matchMedia('(min-width:900px)').matches) return 0;
+    var card = cv.parentElement; if (!card) return 0;
+    var used = 0, kids = card.children;
+    for (var i = 0; i < kids.length; i++){ if (kids[i] !== cv) used += kids[i].offsetHeight; }
+    var cs = getComputedStyle(card);
+    var lim = card.clientHeight - used - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 10;
+    if (card.querySelector('.slot') && !card.querySelector('.slot.on')) lim -= 80;
+    return lim > 200 ? lim : 0;
+  }
   function layout(){
     var w = Math.max(cv.clientWidth || 340, 260);
     var h = Math.round(Math.min(Math.max(w * 0.80, 250), 400));
+    var cap = fitH(); if (cap) h = Math.min(h, Math.round(cap));
     var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
     cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -169,9 +227,51 @@ button:disabled{opacity:.45;cursor:default}
   function px(x){ return ox + x * unit; }
   function py(y){ return oy - y * unit; }
   function yTop(){ return (H / 2) / unit; }
-
   function num(v, d){ return v.toFixed(d === undefined ? 1 : d); }
 
+  /* ══════════ 巡航脚本:课堂投屏直接放的那条故事线 ══════════ */
+  // 段内线性插值只改 target,current 再缓动一层 → 双重平滑;末帧回到首帧,循环无缝。
+  var SCRIPT = [
+    { t:0.0,  k:1.0,  b:0.0,  stage:1 },
+    { t:2.6,  k:2.0,  b:0.0,  stage:1 },   // 只动 k:变陡
+    { t:6.0,  k:-2.0, b:0.0,  stage:1 },   // 扫过 0:翻向右下
+    { t:8.2,  k:1.6,  b:0.0,  stage:2 },   // 回正,放出台阶标注
+    { t:10.8, k:1.6,  b:3.0,  stage:2 },   // 只动 b:平行上移
+    { t:13.4, k:1.6,  b:-2.5, stage:2 },   // 只动 b:平行下移
+    { t:15.6, k:1.6,  b:0.0,  stage:3 },   // 出解析式
+    { t:18.0, k:0.6,  b:1.5,  stage:3 },   // 两个一起动
+    { t:20.4, k:1.0,  b:0.0,  stage:1 }
+  ];
+  var CYCLE = SCRIPT[SCRIPT.length - 1].t;
+
+  function cruise(dt){
+    if (!play.on) return;
+    play.t += dt;
+    if (play.t >= CYCLE) play.t -= CYCLE;
+    var i = 0;
+    while (i < SCRIPT.length - 2 && SCRIPT[i + 1].t <= play.t) i++;
+    var s0 = SCRIPT[i], s1 = SCRIPT[i + 1];
+    var u = smoothstep((play.t - s0.t) / (s1.t - s0.t));
+    var nk = s0.k + (s1.k - s0.k) * u, nb = s0.b + (s1.b - s0.b) * u;
+    // 字幕跟着「此刻正在动的那个参数」走。
+    var dk = Math.abs(nk - tgt.k), db = Math.abs(nb - tgt.b);
+    if (dk > db + 1e-5) focus = 'k'; else if (db > dk + 1e-5) focus = 'b';
+    tgt.k = nk; tgt.b = nb; tgt.stage = s0.stage;
+  }
+
+  function settle(dt){
+    var base = boost > 0 ? K_SNAP : K_SMOOTH;
+    if (boost > 0) boost = Math.max(0, boost - dt);
+    cur.k = approach(cur.k, tgt.k, dt, drag.key === 'k' ? K_GRAB : base);
+    cur.b = approach(cur.b, tgt.b, dt, drag.key === 'b' ? K_GRAB : base);
+    cur.a2 = approach(cur.a2, tgt.stage >= 2 ? 1 : 0, dt, base);
+    cur.a3 = approach(cur.a3, tgt.stage >= 3 ? 1 : 0, dt, base);
+    // 「右 1 格」的行走标记:阶段 2 起持续巡游,把 k 读成一个可数的抬升动作。
+    cur.walk += dt * 0.42;
+    if (cur.walk > 1) cur.walk -= 1;
+  }
+
+  /* ══════════ 绘制:全部读 current,不读 target ══════════ */
   function drawGrid(){
     ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = COL.sheet; ctx.fillRect(0, 0, W, H);
@@ -195,11 +295,11 @@ button:disabled{opacity:.45;cursor:default}
     }
     ctx.textAlign = 'left';
     ctx.fillText('x', W - 12, py(0) + 4);
-    ctx.textBaseline = 'top'; ctx.fillText('y', px(0) + 5, 3);
+    ctx.fillText('y', px(0) + 5, 3);
   }
 
   function drawLine(){
-    var k = state.k, b = state.b;
+    var k = cur.k, b = cur.b;
     ctx.strokeStyle = COL.a; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.moveTo(px(-6), py(k * -6 + b));
@@ -207,9 +307,11 @@ button:disabled{opacity:.45;cursor:default}
     ctx.stroke();
   }
 
-  // 阶段 2:截距点 + 「右 1 格、抬 k 格」的台阶,把 k 读成一个可数的动作。
-  function drawStep(){
-    var k = state.k, b = state.b;
+  // 阶段 2:截距点 + 「右 1 格、抬 k 格」的台阶,alpha 由双轨缓动喂进来。
+  function drawStep(alpha){
+    var k = cur.k, b = cur.b;
+    ctx.save();
+    ctx.globalAlpha = alpha;
     ctx.setLineDash([5, 4]); ctx.lineWidth = 1.6; ctx.strokeStyle = COL.cc;
     ctx.beginPath();
     ctx.moveTo(px(0), py(b)); ctx.lineTo(px(1), py(b));
@@ -222,45 +324,37 @@ button:disabled{opacity:.45;cursor:default}
     ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
     ctx.fillText('Δy=' + num(k), px(1) + 6, py(b + k / 2));
 
+    // 行走标记:x 从 0 走到 1,竖线实时显示这一步抬了多少。
+    var wx = cur.walk, fade = Math.sin(Math.PI * wx);
+    ctx.globalAlpha = alpha * fade * 0.9;
+    ctx.strokeStyle = COL.cc; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(px(wx), py(b)); ctx.lineTo(px(wx), py(k * wx + b));
+    ctx.stroke();
+    ctx.beginPath(); ctx.arc(px(wx), py(k * wx + b), 3.4, 0, Math.PI * 2);
+    ctx.fillStyle = COL.cc; ctx.fill();
+
+    ctx.globalAlpha = alpha;
     ctx.fillStyle = COL.b;
     ctx.beginPath(); ctx.arc(px(0), py(b), 5.5, 0, Math.PI * 2); ctx.fill();
     ctx.font = '700 12px ' + MONO; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
     ctx.fillText('(0, ' + num(b) + ')', px(0) + 9, py(b) - 7);
+    ctx.restore();
   }
 
   function draw(){
     drawGrid();
     drawLine();
-    if (state.stage >= 2) drawStep();
+    if (cur.a2 > 0.01) drawStep(cur.a2);
   }
 
-  function feedback(){
-    var k = state.k, b = state.b, msg;
-    if (state.last === 'k'){
-      if (Math.abs(k) < 0.05){
-        msg = '<b>k = 0</b> 时图象成了一条水平线,y 不再随 x 变 —— 一次函数要求 k ≠ 0,' +
-              '往左或往右挪一点再看。';
-      } else if (k > 0){
-        msg = '<b>k = ' + num(k) + '</b> 是正数:x 每往右 1 格,y 就抬 ' + num(k) +
-              ' 格,所以 y 随 x 增大而增大。刚才这一路,直线始终穿过 (0, ' + num(b) + ')。';
-      } else {
-        msg = '<b>k = ' + num(k) + '</b> 是负数:x 每往右 1 格,y 反而降 ' + num(-k) +
-              ' 格,所以 y 随 x 增大而减小。直线还是穿过 (0, ' + num(b) + ') 那一点。';
-      }
-    } else {
-      msg = '<b>b = ' + num(b) + '</b>:直线与 y 轴交在 (0, ' + num(b) +
-            ')。它是纵轴上的交点,不是与 x 轴的交点。整条线只是平行搬了个家,倾斜程度没变。';
-    }
-    fb.innerHTML = msg;
+  /* ══════════ 文字:只在内容变化时写 DOM ══════════ */
+  var shown = { vk:'', vb:'', fb:'', eq:'', stage:'', hint:'', play:'' };
+  function setText(el, key, text){
+    if (shown[key] !== text){ shown[key] = text; el.textContent = text; }
   }
-
-  function equation(){
-    var k = state.k, b = state.b;
-    var sign = b < 0 ? ' − ' : ' + ';
-    var trend = Math.abs(k) < 0.05 ? '（k = 0,此时不是一次函数）'
-      : (k > 0 ? 'k > 0:y 随 x 增大而增大' : 'k < 0:y 随 x 增大而减小');
-    eq.innerHTML = 'y = ' + num(k) + 'x' + sign + num(Math.abs(b)) +
-      '<small>' + trend + '　·　直线与 y 轴交点 (0, ' + num(b) + ')</small>';
+  function setHTML(el, key, html){
+    if (shown[key] !== html){ shown[key] = html; el.innerHTML = html; }
   }
 
   var HINTS = [
@@ -269,36 +363,107 @@ button:disabled{opacity:.45;cursor:default}
     '两个参数一起看:k 管倾斜,b 管上下,互不干扰。'
   ];
 
-  function render(){
-    vk.textContent = num(state.k);
-    vb.textContent = num(state.b);
-    stageEl.textContent = '阶段 ' + state.stage + ' / 3';
-    hint.textContent = HINTS[state.stage - 1];
-    btnNext.disabled = state.stage >= 3;
-    if (state.stage >= 3){ eq.classList.remove('hide'); equation(); }
-    else eq.classList.add('hide');
-    draw();
-    feedback();
+  function feedbackHTML(){
+    var k = cur.k, b = cur.b;
+    if (focus === 'k'){
+      if (Math.abs(k) < 0.05){
+        return '<b>k = 0</b> 时图象成了一条水平线,y 不再随 x 变 —— 一次函数要求 k ≠ 0,' +
+               '往左或往右挪一点再看。';
+      }
+      if (k > 0){
+        return '<b>k = ' + num(k) + '</b> 是正数:x 每往右 1 格,y 就抬 ' + num(k) +
+               ' 格,所以 y 随 x 增大而增大。刚才这一路,直线始终穿过 (0, ' + num(b) + ')。';
+      }
+      return '<b>k = ' + num(k) + '</b> 是负数:x 每往右 1 格,y 反而降 ' + num(-k) +
+             ' 格,所以 y 随 x 增大而减小。直线还是穿过 (0, ' + num(b) + ') 那一点。';
+    }
+    return '<b>b = ' + num(b) + '</b>:直线与 y 轴交在 (0, ' + num(b) +
+           ')。它是纵轴上的交点,不是与 x 轴的交点。整条线只是平行搬了个家,倾斜程度没变。';
   }
 
-  sk.addEventListener('input', function(){ state.k = parseFloat(sk.value); state.last = 'k'; render(); });
-  sb.addEventListener('input', function(){ state.b = parseFloat(sb.value); state.last = 'b'; render(); });
-  btnNext.addEventListener('click', function(){ if (state.stage < 3){ state.stage++; render(); } });
-  btnReset.addEventListener('click', function(){
-    state.k = K0; state.b = B0; state.stage = 1; state.last = 'k';
-    sk.value = String(K0); sb.value = String(B0);
-    fb.textContent = '向右拖 k 滑杆试试。';
-    vk.textContent = num(K0); vb.textContent = num(B0);
-    stageEl.textContent = '阶段 1 / 3';
-    hint.textContent = HINTS[0];
-    btnNext.disabled = false;
-    eq.classList.add('hide');
-    layout(); draw();
-  });
-  window.addEventListener('resize', function(){ layout(); draw(); });
+  function equationHTML(){
+    var k = cur.k, b = cur.b;
+    var sign = b < 0 ? ' − ' : ' + ';
+    var trend = Math.abs(k) < 0.05 ? '（k = 0,此时不是一次函数）'
+      : (k > 0 ? 'k > 0:y 随 x 增大而增大' : 'k < 0:y 随 x 增大而减小');
+    return 'y = ' + num(k) + 'x' + sign + num(Math.abs(b)) +
+      '<small>' + trend + '　·　直线与 y 轴交点 (0, ' + num(b) + ')</small>';
+  }
 
-  layout(); draw();
-  vk.textContent = num(K0); vb.textContent = num(B0);
+  var textClock = 0;
+  function syncUI(dt){
+    setText(vk, 'vk', num(cur.k));
+    setText(vb, 'vb', num(cur.b));
+    setText(stageEl, 'stage', '阶段 ' + tgt.stage + ' / 3');
+    setText(hint, 'hint', HINTS[tgt.stage - 1]);
+    setText(btnPlay, 'play', play.on ? '暂停演示' : '播放演示');
+    if (btnNext.disabled !== (tgt.stage >= 3)) btnNext.disabled = tgt.stage >= 3;
+    if (eqSlot.classList.contains('on') !== (tgt.stage >= 3)) eqSlot.classList.toggle('on', tgt.stage >= 3);
+    // 反馈与解析式每 0.12 秒一次:数值在动,但不必每帧改 DOM。
+    textClock += dt;
+    if (textClock >= 0.12){
+      textClock = 0;
+      setHTML(fb, 'fb', feedbackHTML());
+      if (tgt.stage >= 3) setHTML(eq, 'eq', equationHTML());
+    }
+    if (play.on || boost > 0){
+      if (Math.abs(parseFloat(sk.value) - cur.k) > 0.006) sk.value = String(Math.round(cur.k * 100) / 100);
+      if (Math.abs(parseFloat(sb.value) - cur.b) > 0.03) sb.value = String(Math.round(cur.b * 20) / 20);
+    }
+  }
+
+  /* ══════════ 唯一的主循环 ══════════ */
+  var loop = { last:0, id:0 };
+  function frame(now){
+    // dt 夹到 50ms:标签页切回来、断点续跑都不会让画面瞬移。
+    var dtms = loop.last ? Math.min(now - loop.last, 50) : 16.7;
+    loop.last = now;
+    var dt = dtms / 1000;
+    cruise(dt);
+    settle(dt);
+    draw();
+    syncUI(dt);
+    loop.id = requestAnimationFrame(frame);
+  }
+
+  /* ══════════ 事件:只改 target,不画 ══════════ */
+  function takeOver(){ if (play.on){ play.on = false; } }
+
+  sk.addEventListener('pointerdown', function(){ takeOver(); drag.key = 'k'; });
+  sb.addEventListener('pointerdown', function(){ takeOver(); drag.key = 'b'; });
+  function endSlider(){ drag.key = null; }
+  window.addEventListener('pointerup', endSlider);
+  window.addEventListener('pointercancel', endSlider);
+
+  sk.addEventListener('input', function(){
+    takeOver(); focus = 'k'; drag.key = 'k'; tgt.k = parseFloat(sk.value);
+  });
+  sb.addEventListener('input', function(){
+    takeOver(); focus = 'b'; drag.key = 'b'; tgt.b = parseFloat(sb.value);
+  });
+  sk.addEventListener('change', endSlider);
+  sb.addEventListener('change', endSlider);
+
+  btnPlay.addEventListener('click', function(){ play.on = !play.on; });
+  btnNext.addEventListener('click', function(){
+    takeOver();
+    if (tgt.stage < 3) tgt.stage++;
+  });
+  btnReset.addEventListener('click', function(){
+    play.on = false; play.t = 0; drag.key = null;
+    tgt.k = K0; tgt.b = B0; tgt.stage = 1; focus = 'k';
+    boost = 0.55;   // 快速回摆,不闪回
+  });
+  window.addEventListener('resize', layout);
+
+  // smoke 桩(tools/smoke-animations.mjs)用的只读探针:导出当前帧的 current 值。
+  window.__kpProbe = function(){
+    return { playing:play.on, stage:tgt.stage, grab:null,
+      vals:{ k:cur.k, b:cur.b, a2:cur.a2 } };
+  };
+
+  layout();
+  loop.id = requestAnimationFrame(frame);
 })();
 </script>
 </body>

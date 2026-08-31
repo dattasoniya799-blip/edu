@@ -31,6 +31,13 @@ EVAL:动态收益 5(A、ω、φ 三个参数各自对应一种几何操作,静�
   - 「ω = 2.0:周期 T = 2π/ω = 3.14,同一段 x 上的波形个数翻了一倍 —— ω 变大,周期变短。」
   - 「φ = 0.50π:曲线向左移了 φ/ω = 0.79。滑杆往右是 φ 增大,图像却往左走,
      因为 sin(ωx+φ) = sin(ω(x + φ/ω)),给 x 加正数等于让波形提前到达。」
+
+运动设计(引擎 v2):
+  常驻 rAF 主循环;A / ω / φ / 阶段透明度全部 target-current 双轨缓动,事件只改 target。
+  巡航脚本一次只动一个参数,让「哪一部分变了、哪一部分没变」看得干净:
+  A 拉高再回落(零点钉住不动)→ ω 压紧再放松(出标注)→ φ 往左再往右(箭头跟着翻向)
+  → 三者合成一个式子 → 无缝回到 y = sin x。
+  阶段 2 起有一段「长度恰好等于 T」的加粗高亮沿曲线滑行,把周期演成一个滑动的重复单元。
 ════════════════════════════════════════════════════
 -->
 <html lang="zh-CN">
@@ -83,7 +90,9 @@ input[type=range]{flex:1;min-width:0;height:var(--tap);background:transparent}
 .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}
 button{font-family:var(--font);font-size:13.5px;min-height:var(--tap);padding:0 15px;
        border-radius:var(--r-sm);border:1px solid var(--rule);background:var(--sheet-sub);
-       color:var(--ink-1);cursor:pointer}
+       color:var(--ink-1);cursor:pointer;transition:background-color .2s ease,color .2s ease}
+button.play{background:var(--hi-c-soft);border-color:var(--hi-c);color:var(--hi-c);font-weight:600;
+            min-width:106px}
 button.go{background:var(--hi-a-soft);border-color:var(--hi-a);color:var(--hi-a);font-weight:600}
 button:disabled{opacity:.45;cursor:default}
 .step{font-size:12px;color:var(--ink-2);margin-left:auto}
@@ -91,16 +100,35 @@ button:disabled{opacity:.45;cursor:default}
     padding:9px 11px;font-size:13px}
 .fb b{color:var(--hi-b);font-family:var(--mono)}
 .eq{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--hi-c);
-    background:var(--hi-c-soft);border-radius:var(--r-sm);padding:8px 11px;margin-top:9px}
+    background:var(--hi-c-soft);border-radius:var(--r-sm);padding:8px 11px}
 .eq small{display:block;font-family:var(--font);font-size:12px;font-weight:400;
           color:var(--ink-2);margin-top:3px}
-.hide{display:none}
+/* 分步揭示也不许闪现:max-height + opacity 缓出,和画布里的 alpha 双轨同一个手感。 */
+.slot{max-height:0;opacity:0;overflow:hidden;
+      transition:max-height .42s ease,opacity .32s ease,margin-top .42s ease}
+.slot.on{max-height:170px;opacity:1;margin-top:9px}
+/* 宽屏两栏(平板横屏单屏收纳):画布卡锁左、反馈卡在右,整页 100dvh 不滚动;≤900px 维持原单列。 */
+@media (min-width: 900px){
+  .wrap{
+    max-width:none;height:100dvh;box-sizing:border-box;overflow:hidden;
+    display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,.85fr);
+    grid-template-rows:auto auto auto minmax(0,1fr);
+    column-gap:16px;align-content:start;padding:12px 18px;
+  }
+  .wrap > h1{grid-column:1/-1;margin:0 0 2px}
+  .wrap > .lead{grid-column:1/-1;margin:0 0 6px}
+  .wrap > .tags{grid-column:1/-1;margin:0 0 8px}
+  body{overflow:hidden}
+  .wrap > .card{grid-row:4;margin:0;min-height:0;overflow:hidden}
+  .wrap > .card:nth-of-type(1){grid-column:1}
+  .wrap > .card:nth-of-type(2){grid-column:2}
+}
 </style>
 </head>
 <body>
 <main class="wrap">
   <h1>正弦函数三参数变换</h1>
-  <p class="lead">三根滑杆各管一件事。每次只动一根,盯住曲线的哪一部分变了、哪一部分没变。</p>
+  <p class="lead">按「播放演示」看一遍(一次只动一个参数),或者自己拖:盯住曲线的哪一部分变了、哪一部分没变。</p>
   <div class="tags">
     <span class="tag">高中 · 三角函数</span>
     <span class="tag">认知动作:变换</span>
@@ -111,21 +139,22 @@ button:disabled{opacity:.45;cursor:default}
     <canvas id="cv" width="360" height="260" aria-label="正弦型函数图象"></canvas>
     <div class="row pa">
       <span class="name">A</span>
-      <input id="sa" type="range" min="0.5" max="3" step="0.1" value="1" aria-label="振幅 A">
+      <input id="sa" type="range" min="0.5" max="3" step="0.01" value="1" aria-label="振幅 A">
       <span class="val" id="va">1.0</span>
     </div>
     <div class="row pw">
       <span class="name">ω</span>
-      <input id="sw" type="range" min="0.5" max="3" step="0.1" value="1" aria-label="角频率 omega">
+      <input id="sw" type="range" min="0.5" max="3" step="0.01" value="1" aria-label="角频率 omega">
       <span class="val" id="vw">1.0</span>
     </div>
     <div class="row pp">
       <span class="name">φ</span>
-      <input id="sp" type="range" min="-1" max="1" step="0.05" value="0" aria-label="初相 phi(以 π 为单位)">
+      <input id="sp" type="range" min="-1" max="1" step="0.01" value="0" aria-label="初相 phi(以 π 为单位)">
       <span class="val" id="vp">0.00π</span>
     </div>
     <p class="hint" id="hint">先只动 A,看曲线的高度和交点。</p>
     <div class="bar">
+      <button id="play" class="play" type="button">播放演示</button>
       <button id="next" class="go" type="button">下一步</button>
       <button id="reset" type="button">重置</button>
       <span class="step" id="stage">阶段 1 / 3</span>
@@ -133,8 +162,8 @@ button:disabled{opacity:.45;cursor:default}
   </section>
 
   <section class="card">
-    <div class="fb" id="fb">拖动任意一根滑杆开始。</div>
-    <div class="eq hide" id="eq"></div>
+    <div class="fb" id="fb">拖动任意一根滑杆,或者按播放让它自己走一遍。</div>
+    <div class="slot" id="eqSlot"><div class="eq" id="eq"></div></div>
   </section>
 </main>
 
@@ -156,18 +185,46 @@ button:disabled{opacity:.45;cursor:default}
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
   var sa = document.getElementById('sa'), sw = document.getElementById('sw'), sp = document.getElementById('sp');
   var va = document.getElementById('va'), vw = document.getElementById('vw'), vp = document.getElementById('vp');
-  var fb = document.getElementById('fb'), eq = document.getElementById('eq');
+  var fb = document.getElementById('fb');
+  var eq = document.getElementById('eq'), eqSlot = document.getElementById('eqSlot');
   var hint = document.getElementById('hint'), stageEl = document.getElementById('stage');
+  var btnPlay = document.getElementById('play');
   var btnNext = document.getElementById('next'), btnReset = document.getElementById('reset');
 
+  /* ══════════ 运动引擎:双轨状态 + 常驻主循环 ══════════ */
+  // k 是「每 1/60 秒还剩多少差距」:越小越快。SMOOTH 常规,GRAB 拖拽跟手,SNAP 重置回摆。
+  var K_SMOOTH = 0.90, K_GRAB = 0.55, K_SNAP = 0.78;
+  function approach(now, want, dt, kk){
+    return now + (want - now) * (1 - Math.pow(kk, dt * 60));
+  }
+  function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
+  function smoothstep(u){ u = clamp(u, 0, 1); return u * u * (3 - 2 * u); }
+
   var A0 = 1, W0 = 1, P0 = 0;
-  var st = { A:A0, w:W0, p:P0, stage:1, last:'A' };
+  // target = 交互与巡航写入的目标;current = 画面上真正在用的值,每帧向 target 缓动。
+  var tgt = { A:A0, w:W0, p:P0, stage:1 };
+  var cur = { A:A0, w:W0, p:P0, a2:0, a3:0, slide:0 };
+  var play = { on:false, t:0 };
+  var drag = { key:null };
+  var focus = 'A', boost = 0;
 
   var X0 = -PI, X1 = 3 * PI, YMAX = 3.45;
   var W = 360, H = 260, sx = 1, sy = 1, oy = 130;
+  // 宽屏两栏时,画布高度按卡片竖向剩余空间封顶 —— 平板上卡片内容必须完整可见,禁止滚动。
+  function fitH(){
+    if (!window.matchMedia('(min-width:900px)').matches) return 0;
+    var card = cv.parentElement; if (!card) return 0;
+    var used = 0, kids = card.children;
+    for (var i = 0; i < kids.length; i++){ if (kids[i] !== cv) used += kids[i].offsetHeight; }
+    var cs = getComputedStyle(card);
+    var lim = card.clientHeight - used - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 10;
+    if (card.querySelector('.slot') && !card.querySelector('.slot.on')) lim -= 80;
+    return lim > 200 ? lim : 0;
+  }
   function layout(){
     var w = Math.max(cv.clientWidth || 340, 260);
     var h = Math.round(Math.min(Math.max(w * 0.72, 230), 340));
+    var cap = fitH(); if (cap) h = Math.min(h, Math.round(cap));
     var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
     cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -178,8 +235,56 @@ button:disabled{opacity:.45;cursor:default}
   function n1(v){ return v.toFixed(1); }
   function n2(v){ return v.toFixed(2); }
   function piLabel(v){ return n2(v) + 'π'; }
-  function f(x){ return st.A * Math.sin(st.w * x + st.p); }
+  function f(x){ return cur.A * Math.sin(cur.w * x + cur.p); }
 
+  /* ══════════ 巡航脚本:课堂投屏直接放的那条故事线 ══════════ */
+  // 一次只动一个参数;段内线性插值只改 target,current 再缓动一层 → 双重平滑。
+  var SCRIPT = [
+    { t:0.0,  A:1.0, w:1.0, p:0.00 * PI, stage:1 },
+    { t:2.6,  A:2.4, w:1.0, p:0.00 * PI, stage:1 },   // 只动 A:拉高,零点钉住
+    { t:4.8,  A:1.6, w:1.0, p:0.00 * PI, stage:1 },
+    { t:7.4,  A:1.6, w:2.2, p:0.00 * PI, stage:2 },   // 只动 ω:周期变短,放出标注
+    { t:9.8,  A:1.6, w:1.2, p:0.00 * PI, stage:2 },
+    { t:12.4, A:1.6, w:1.2, p:0.60 * PI, stage:2 },   // 只动 φ:图像向左
+    { t:15.0, A:1.6, w:1.2, p:-0.50 * PI, stage:2 },  // 反向:图像向右
+    { t:17.6, A:1.8, w:1.5, p:0.25 * PI, stage:3 },   // 三者合成,出解析式
+    { t:20.4, A:1.0, w:1.0, p:0.00 * PI, stage:1 }
+  ];
+  var CYCLE = SCRIPT[SCRIPT.length - 1].t;
+
+  function cruise(dt){
+    if (!play.on) return;
+    play.t += dt;
+    if (play.t >= CYCLE) play.t -= CYCLE;
+    var i = 0;
+    while (i < SCRIPT.length - 2 && SCRIPT[i + 1].t <= play.t) i++;
+    var s0 = SCRIPT[i], s1 = SCRIPT[i + 1];
+    var u = smoothstep((play.t - s0.t) / (s1.t - s0.t));
+    var nA = s0.A + (s1.A - s0.A) * u;
+    var nw = s0.w + (s1.w - s0.w) * u;
+    var np = s0.p + (s1.p - s0.p) * u;
+    // 字幕跟着「此刻正在动的那个参数」走。
+    var dA = Math.abs(nA - tgt.A), dw = Math.abs(nw - tgt.w), dp = Math.abs(np - tgt.p);
+    if (dA > dw && dA > dp && dA > 1e-5) focus = 'A';
+    else if (dw > dp && dw > 1e-5) focus = 'ω';
+    else if (dp > 1e-5) focus = 'φ';
+    tgt.A = nA; tgt.w = nw; tgt.p = np; tgt.stage = s0.stage;
+  }
+
+  function settle(dt){
+    var base = boost > 0 ? K_SNAP : K_SMOOTH;
+    if (boost > 0) boost = Math.max(0, boost - dt);
+    cur.A = approach(cur.A, tgt.A, dt, drag.key === 'A' ? K_GRAB : base);
+    cur.w = approach(cur.w, tgt.w, dt, drag.key === 'w' ? K_GRAB : base);
+    cur.p = approach(cur.p, tgt.p, dt, drag.key === 'p' ? K_GRAB : base);
+    cur.a2 = approach(cur.a2, tgt.stage >= 2 ? 1 : 0, dt, base);
+    cur.a3 = approach(cur.a3, tgt.stage >= 3 ? 1 : 0, dt, base);
+    // 长度恰好一个周期的高亮段,自左向右滑:周期是一个「可以搬走再贴一次」的重复单元。
+    cur.slide += dt * 0.16;
+    if (cur.slide > 1) cur.slide -= 1;
+  }
+
+  /* ══════════ 绘制:全部读 current,不读 target ══════════ */
   function drawFrame(){
     ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = COL.sheet; ctx.fillRect(0, 0, W, H);
@@ -220,8 +325,29 @@ button:disabled{opacity:.45;cursor:default}
     ctx.restore();
   }
 
-  function arrow(x1, x2, y, color, text){
+  // 滑动的「一个周期」:加粗一段长度为 T 的曲线,从左边滑到右边再回来。
+  function drawSlidingPeriod(alpha){
+    var T = TAU / cur.w;
+    var span = X1 - X0;
+    var x0 = X0 + cur.slide * span;
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.4;
+    ctx.strokeStyle = COL.b; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    var started = false;
+    for (var s = 0; s <= W; s += 1){
+      var x = X0 + s / sx;
+      if (x < x0 || x > x0 + T) continue;
+      if (!started){ ctx.moveTo(s, py(f(x))); started = true; } else ctx.lineTo(s, py(f(x)));
+    }
+    if (started) ctx.stroke();
+    ctx.restore();
+  }
+
+  function arrow(x1, x2, y, color, text, alpha){
     var a = px(x1), b = px(x2), yy = py(y);
+    ctx.save();
+    ctx.globalAlpha = alpha;
     ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(a, yy); ctx.lineTo(b, yy); ctx.stroke();
     var dir = b >= a ? 1 : -1;
@@ -230,18 +356,20 @@ button:disabled{opacity:.45;cursor:default}
     ctx.closePath(); ctx.fill();
     ctx.font = '700 11.5px ' + MONO; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
     ctx.fillText(text, (a + b) / 2, yy - 6);
+    ctx.restore();
   }
 
   // 阶段 2:三组标注,一组一个强调色,分别对应 A、ω、φ。
-  function drawMarks(){
-    var A = st.A, w = st.w, p = st.p;
+  function drawMarks(alpha){
+    var A = cur.A, w = cur.w, p = cur.p;
     ctx.save();
+    ctx.globalAlpha = alpha;
     ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5; ctx.strokeStyle = COL.a;
     ctx.beginPath();
     ctx.moveTo(0, py(A)); ctx.lineTo(W, py(A));
     ctx.moveTo(0, py(-A)); ctx.lineTo(W, py(-A));
     ctx.stroke();
-    ctx.restore();
+    ctx.setLineDash([]);
     ctx.fillStyle = COL.a; ctx.font = '700 11.5px ' + MONO;
     ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
     ctx.fillText('A=' + n1(A), 4, py(A) - 3);
@@ -261,45 +389,30 @@ button:disabled{opacity:.45;cursor:default}
       ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
       ctx.fillText('T=' + n2(T), px((z + zEnd) / 2), py(-YMAX + 0.55) - 4);
     }
+    ctx.restore();
 
     // 平移:基准曲线的上升零点 0 → 当前曲线的上升零点 -φ/ω。真实方向由箭头给出。
     var shift = -p / w;
     if (Math.abs(shift) > 0.02){
-      arrow(0, shift, YMAX - 0.45, COL.cc, (shift < 0 ? '左移 ' : '右移 ') + n2(Math.abs(shift)));
+      arrow(0, shift, YMAX - 0.45, COL.cc, (shift < 0 ? '左移 ' : '右移 ') + n2(Math.abs(shift)), alpha);
     }
   }
 
-  function feedback(){
-    var A = st.A, w = st.w, p = st.p, msg;
-    if (st.last === 'A'){
-      msg = '<b>A = ' + n1(A) + '</b>:曲线纵向拉成 ' + n1(A) + ' 倍,最高 ' + n1(A) +
-            '、最低 -' + n1(A) + ';而它与 x 轴的交点一个都没动 —— A 只改高度,不改零点。';
-    } else if (st.last === 'ω'){
-      msg = '<b>ω = ' + n1(w) + '</b>:周期 T = 2π/ω = <b>' + n2(TAU / w) +
-            '</b>。ω 越大,同一段 x 上塞进的波形越多、周期越短(不是越长)。';
-    } else {
-      var shift = -p / w;
-      if (Math.abs(shift) < 0.02){
-        msg = '<b>φ = ' + piLabel(p / PI) + '</b>:没有平移。往两边拖 φ,看曲线整体挪动。';
-      } else {
-        msg = '<b>φ = ' + piLabel(p / PI) + '</b>:曲线整体' + (shift < 0 ? '向左' : '向右') +
-              '移了 |φ/ω| = <b>' + n2(Math.abs(shift)) + '</b>,不是 |φ| = ' + n2(Math.abs(p)) +
-              '。' + (p > 0 ? 'φ 增大(滑杆往右)图像反而往左走' : 'φ 减小(滑杆往左)图像反而往右走') +
-              ',因为 sin(ωx+φ) = sin(ω(x + φ/ω)):给 x 加正数,等于让波形提前到达。';
-      }
-    }
-    fb.innerHTML = msg;
+  function draw(){
+    drawFrame();
+    drawCurve(function(x){ return Math.sin(x); }, COL.ink3, 1.6, [5, 5]);
+    if (cur.a2 > 0.01) drawSlidingPeriod(cur.a2);
+    drawCurve(f, COL.ink1, 2.6);
+    if (cur.a2 > 0.01) drawMarks(cur.a2);
   }
 
-  function equation(){
-    var A = st.A, w = st.w, p = st.p, shift = -p / w;
-    var sign = p < 0 ? ' − ' : ' + ';
-    // 变换顺序不能乱:先横向压 ω 倍,平移量才是 φ/ω;若先平移则应平移 φ。
-    eq.innerHTML = 'y = ' + n1(A) + '·sin(' + n1(w) + 'x' + sign + n2(Math.abs(p)) + ')' +
-      '<small>振幅 ' + n1(A) + '　·　周期 T = 2π/ω = ' + n2(TAU / w) + '<br>' +
-      '由 y = sin x 先横向压 ' + n1(w) + ' 倍,再' +
-      (Math.abs(shift) < 0.02 ? '不平移' : ((shift < 0 ? '向左' : '向右') + '平移 ' + n2(Math.abs(shift)))) +
-      ',最后纵向拉 ' + n1(A) + ' 倍</small>';
+  /* ══════════ 文字:只在内容变化时写 DOM ══════════ */
+  var shown = { va:'', vw:'', vp:'', fb:'', eq:'', stage:'', hint:'', play:'' };
+  function setText(el, key, text){
+    if (shown[key] !== text){ shown[key] = text; el.textContent = text; }
+  }
+  function setHTML(el, key, html){
+    if (shown[key] !== html){ shown[key] = html; el.innerHTML = html; }
   }
 
   var HINTS = [
@@ -308,43 +421,118 @@ button:disabled{opacity:.45;cursor:default}
     '三件事凑成一个式子,对着下面读一遍。'
   ];
 
-  function draw(){
-    drawFrame();
-    drawCurve(function(x){ return Math.sin(x); }, COL.ink3, 1.6, [5, 5]);
-    drawCurve(f, COL.ink1, 2.6);
-    if (st.stage >= 2) drawMarks();
+  function feedbackHTML(){
+    var A = cur.A, w = cur.w, p = cur.p;
+    if (focus === 'A'){
+      return '<b>A = ' + n1(A) + '</b>:曲线纵向拉成 ' + n1(A) + ' 倍,最高 ' + n1(A) +
+             '、最低 -' + n1(A) + ';而它与 x 轴的交点一个都没动 —— A 只改高度,不改零点。';
+    }
+    if (focus === 'ω'){
+      return '<b>ω = ' + n1(w) + '</b>:周期 T = 2π/ω = <b>' + n2(TAU / w) +
+             '</b>。ω 越大,同一段 x 上塞进的波形越多、周期越短(不是越长)。';
+    }
+    var shift = -p / w;
+    if (Math.abs(shift) < 0.02){
+      return '<b>φ = ' + piLabel(p / PI) + '</b>:没有平移。往两边拖 φ,看曲线整体挪动。';
+    }
+    return '<b>φ = ' + piLabel(p / PI) + '</b>:曲线整体' + (shift < 0 ? '向左' : '向右') +
+           '移了 |φ/ω| = <b>' + n2(Math.abs(shift)) + '</b>,不是 |φ| = ' + n2(Math.abs(p)) +
+           '。' + (p > 0 ? 'φ 增大(滑杆往右)图像反而往左走' : 'φ 减小(滑杆往左)图像反而往右走') +
+           ',因为 sin(ωx+φ) = sin(ω(x + φ/ω)):给 x 加正数,等于让波形提前到达。';
   }
 
-  function render(){
-    va.textContent = n1(st.A);
-    vw.textContent = n1(st.w);
-    vp.textContent = piLabel(st.p / PI);
-    stageEl.textContent = '阶段 ' + st.stage + ' / 3';
-    hint.textContent = HINTS[st.stage - 1];
-    btnNext.disabled = st.stage >= 3;
-    if (st.stage >= 3){ eq.classList.remove('hide'); equation(); } else eq.classList.add('hide');
+  function equationHTML(){
+    var A = cur.A, w = cur.w, p = cur.p, shift = -p / w;
+    var sign = p < 0 ? ' − ' : ' + ';
+    // 变换顺序不能乱:先横向压 ω 倍,平移量才是 φ/ω;若先平移则应平移 φ。
+    return 'y = ' + n1(A) + '·sin(' + n1(w) + 'x' + sign + n2(Math.abs(p)) + ')' +
+      '<small>振幅 ' + n1(A) + '　·　周期 T = 2π/ω = ' + n2(TAU / w) + '<br>' +
+      '由 y = sin x 先横向压 ' + n1(w) + ' 倍,再' +
+      (Math.abs(shift) < 0.02 ? '不平移' : ((shift < 0 ? '向左' : '向右') + '平移 ' + n2(Math.abs(shift)))) +
+      ',最后纵向拉 ' + n1(A) + ' 倍</small>';
+  }
+
+  var textClock = 0;
+  function syncUI(dt){
+    setText(va, 'va', n1(cur.A));
+    setText(vw, 'vw', n1(cur.w));
+    setText(vp, 'vp', piLabel(cur.p / PI));
+    setText(stageEl, 'stage', '阶段 ' + tgt.stage + ' / 3');
+    setText(hint, 'hint', HINTS[tgt.stage - 1]);
+    setText(btnPlay, 'play', play.on ? '暂停演示' : '播放演示');
+    if (btnNext.disabled !== (tgt.stage >= 3)) btnNext.disabled = tgt.stage >= 3;
+    if (eqSlot.classList.contains('on') !== (tgt.stage >= 3)) eqSlot.classList.toggle('on', tgt.stage >= 3);
+    // 数值在动,但不必每帧改 DOM:0.12 秒一次够读了。
+    textClock += dt;
+    if (textClock >= 0.12){
+      textClock = 0;
+      setHTML(fb, 'fb', feedbackHTML());
+      if (tgt.stage >= 3) setHTML(eq, 'eq', equationHTML());
+    }
+    if (play.on || boost > 0){
+      if (Math.abs(parseFloat(sa.value) - cur.A) > 0.006) sa.value = String(Math.round(cur.A * 100) / 100);
+      if (Math.abs(parseFloat(sw.value) - cur.w) > 0.006) sw.value = String(Math.round(cur.w * 100) / 100);
+      if (Math.abs(parseFloat(sp.value) * PI - cur.p) > 0.02) sp.value = String(Math.round(cur.p / PI * 100) / 100);
+    }
+  }
+
+  /* ══════════ 唯一的主循环 ══════════ */
+  var loop = { last:0, id:0 };
+  function frame(now){
+    // dt 夹到 50ms:标签页切回来、断点续跑都不会让画面瞬移。
+    var dtms = loop.last ? Math.min(now - loop.last, 50) : 16.7;
+    loop.last = now;
+    var dt = dtms / 1000;
+    cruise(dt);
+    settle(dt);
     draw();
-    feedback();
+    syncUI(dt);
+    loop.id = requestAnimationFrame(frame);
   }
 
-  sa.addEventListener('input', function(){ st.A = parseFloat(sa.value); st.last = 'A'; render(); });
-  sw.addEventListener('input', function(){ st.w = parseFloat(sw.value); st.last = 'ω'; render(); });
-  sp.addEventListener('input', function(){ st.p = parseFloat(sp.value) * PI; st.last = 'φ'; render(); });
-  btnNext.addEventListener('click', function(){ if (st.stage < 3){ st.stage++; render(); } });
-  btnReset.addEventListener('click', function(){
-    st.A = A0; st.w = W0; st.p = P0; st.stage = 1; st.last = 'A';
-    sa.value = String(A0); sw.value = String(W0); sp.value = '0';
-    va.textContent = n1(A0); vw.textContent = n1(W0); vp.textContent = piLabel(0);
-    stageEl.textContent = '阶段 1 / 3';
-    hint.textContent = HINTS[0];
-    btnNext.disabled = false;
-    eq.classList.add('hide');
-    fb.textContent = '拖动任意一根滑杆开始。';
-    layout(); draw();
-  });
-  window.addEventListener('resize', function(){ layout(); draw(); });
+  /* ══════════ 事件:只改 target,不画 ══════════ */
+  function takeOver(){ if (play.on){ play.on = false; } }
+  function endSlider(){ drag.key = null; }
 
-  layout(); draw();
+  sa.addEventListener('pointerdown', function(){ takeOver(); drag.key = 'A'; });
+  sw.addEventListener('pointerdown', function(){ takeOver(); drag.key = 'w'; });
+  sp.addEventListener('pointerdown', function(){ takeOver(); drag.key = 'p'; });
+  window.addEventListener('pointerup', endSlider);
+  window.addEventListener('pointercancel', endSlider);
+  sa.addEventListener('change', endSlider);
+  sw.addEventListener('change', endSlider);
+  sp.addEventListener('change', endSlider);
+
+  sa.addEventListener('input', function(){
+    takeOver(); focus = 'A'; drag.key = 'A'; tgt.A = parseFloat(sa.value);
+  });
+  sw.addEventListener('input', function(){
+    takeOver(); focus = 'ω'; drag.key = 'w'; tgt.w = parseFloat(sw.value);
+  });
+  sp.addEventListener('input', function(){
+    takeOver(); focus = 'φ'; drag.key = 'p'; tgt.p = parseFloat(sp.value) * PI;
+  });
+
+  btnPlay.addEventListener('click', function(){ play.on = !play.on; });
+  btnNext.addEventListener('click', function(){
+    takeOver();
+    if (tgt.stage < 3) tgt.stage++;
+  });
+  btnReset.addEventListener('click', function(){
+    play.on = false; play.t = 0; drag.key = null;
+    tgt.A = A0; tgt.w = W0; tgt.p = P0; tgt.stage = 1; focus = 'A';
+    boost = 0.55;   // 快速回摆,不闪回
+  });
+  window.addEventListener('resize', layout);
+
+  // smoke 桩(tools/smoke-animations.mjs)用的只读探针:导出当前帧的 current 值。
+  window.__kpProbe = function(){
+    return { playing:play.on, stage:tgt.stage, grab:null,
+      vals:{ A:cur.A, w:cur.w, p:cur.p, a2:cur.a2 } };
+  };
+
+  layout();
+  loop.id = requestAnimationFrame(frame);
 })();
 </script>
 </body>
