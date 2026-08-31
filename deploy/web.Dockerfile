@@ -1,55 +1,59 @@
 # syntax=docker/dockerfile:1
 # =============================================================================
-# 启明智学 · 前端三端(student/admin/teacher)+ nginx 生产镜像 —— D3
+# 启明智学 · 前端三端(student/admin/teacher)+ nginx 生产镜像 —— D3(2026-08-31 npm workspaces)
 #
 # 构建上下文必须是【仓库根】(三端经 vite alias + tsconfig paths 引用 packages/ 源码):
 #   docker build -f deploy/web.Dockerfile .
-# 方案:三端各自独立构建阶段(各自 npm ci 层按各自 package-lock 缓存,互不牵连,
-# 改动单端不重装其它端依赖),产物合入同一 nginx 镜像,三个 server 块分端口托管。
+#
+# workspaces 布局:三端 + packages/ui(katex/qrcode 及其 @types 供 ui 源码就近编译)的依赖
+# 由根 lockfile 在 deps 阶段一次 npm ci 装齐,三个构建阶段共享该层。
+# 取舍:统一 lockfile 后,任一端改依赖都会使共享装依赖层失效(旧版"改单端不重装其它端"
+# 的缓存粒度不再存在,已接受;三端构建阶段本身仍并行)。
 #
 # 关键:VITE_USE_MOCK=false 必须显式给定 ——
 #   - main.tsx 的 MSW mock 是 opt-in('true' 才开),生产构建开了会直接 throw;
-#   - 但 teacher 监控页 source.ts 判定是 `!== 'false'` 即 mock,不设置会静默跑假数据。
+#   - 但 teacher 监控页 source.ts 判定是 `!== 'false'`,不设置会静默跑假数据。
 # =============================================================================
 
-# ---------- 共享包:安装 packages/ui 依赖(qrcode/katex 及其类型,从 ui 源码就近解析) ----------
-FROM node:22-slim AS pkgs
+# ---------- 共享依赖:根 lockfile 一次装齐三端 + ui ----------
+FROM node:22-slim AS deps
 WORKDIR /repo
-COPY packages/ui/package.json packages/ui/package-lock.json packages/ui/
-RUN cd packages/ui && npm ci
-# contracts 无运行时依赖(纯类型 + 生成的 api-types),拷源码即可
+# workspaces 依赖树清单:根 lockfile + 全部 workspace 的 package.json(缺一 npm ci 会报森林不一致)
+COPY package.json package-lock.json ./
+COPY apps/server/package.json apps/server/
+COPY apps/admin/package.json apps/admin/
+COPY apps/teacher/package.json apps/teacher/
+COPY apps/student/package.json apps/student/
+COPY apps/lab/package.json apps/lab/
+COPY packages/contracts/package.json packages/contracts/
+COPY packages/ui/package.json packages/ui/
+# ui 不带 --omit=dev:其 devDependencies 里的 @types/katex、@types/qrcode 是三端 tsc 编译
+# ui 源码所必需(contracts 无运行时依赖,拷源码即可,无需单列安装)
+RUN npm ci --workspace=apps/student --workspace=apps/admin --workspace=apps/teacher \
+      --workspace=packages/ui
 COPY packages ./packages
 
 # ---------- 学生端 ----------
-FROM node:22-slim AS build-student
+FROM deps AS build-student
 ENV VITE_USE_MOCK=false
+COPY apps/student ./apps/student
 WORKDIR /repo/apps/student
-COPY apps/student/package.json apps/student/package-lock.json ./
-RUN npm ci
-COPY --from=pkgs /repo/packages /repo/packages
-COPY apps/student ./
 RUN npm run build
 
 # ---------- 管理端(子路径 /admin/,同托管在 80 端口下) ----------
-FROM node:22-slim AS build-admin
+FROM deps AS build-admin
 ENV VITE_USE_MOCK=false
 ENV VITE_BASE=/admin/
+COPY apps/admin ./apps/admin
 WORKDIR /repo/apps/admin
-COPY apps/admin/package.json apps/admin/package-lock.json ./
-RUN npm ci
-COPY --from=pkgs /repo/packages /repo/packages
-COPY apps/admin ./
 RUN npm run build
 
 # ---------- 教师端(子路径 /teacher/,同托管在 80 端口下) ----------
-FROM node:22-slim AS build-teacher
+FROM deps AS build-teacher
 ENV VITE_USE_MOCK=false
 ENV VITE_BASE=/teacher/
+COPY apps/teacher ./apps/teacher
 WORKDIR /repo/apps/teacher
-COPY apps/teacher/package.json apps/teacher/package-lock.json ./
-RUN npm ci
-COPY --from=pkgs /repo/packages /repo/packages
-COPY apps/teacher ./
 RUN npm run build
 
 # ---------- nginx:三端静态托管 + API/WS/上传回看反代 ----------

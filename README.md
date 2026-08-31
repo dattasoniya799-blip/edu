@@ -18,14 +18,17 @@
 ## 快速启动
 
 ```bash
+npm install                                              # 仓库根,npm workspaces 一次装齐全部端
 docker compose -f docker-compose.dev.yml up -d          # Postgres 5432 + Redis 6379
-cd apps/server && npm install && cp .env.example .env
+cd apps/server && cp .env.example .env
 npm run db:apply-sql && npm run db:seed:base && npm run db:import-kp && npm run db:seed:business
 npm run start:dev                                        # 后端 :3000
 
-cd ../teacher && npm install
+cd ../teacher
 VITE_USE_MOCK=false npm run dev                          # 教师端 :5174,打真后端
 ```
+
+全量门禁:仓库根 `npm run check:all`(契约/ui/三端/lab/server);后端 e2e:`npm run e2e`(需 dev 库 + seed)。
 
 前端默认走 MSW mock(可完全离线开发);连真后端必须显式 `VITE_USE_MOCK=false`。
 
