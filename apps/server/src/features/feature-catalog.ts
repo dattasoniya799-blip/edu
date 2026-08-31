@@ -30,8 +30,9 @@ export const FEATURE_CATALOG: FeatureCatalogItem[] = [
     name: 'AI 生成课件',
     description: '文字稿一键生成逐页课件:大纲确认 → 逐页生图 → 成品落资源库,可挂到讲次环节。',
     audienceRole: 'teacher',
-    defaultStage: 'beta',
+    defaultStage: 'off',
     knownIssues: [
+      '2026-08-31 整体下线(经用户决策:假功能全部下线,真实生图一并下线),需求留档见 docs/需求文档/',
       '真实生图链路未真机验证(当前默认 mock 生图)',
       '课堂整页图未接线(课堂对 ai_courseware 显式跳过)',
     ],

@@ -13,7 +13,6 @@ import { describe, expect, it } from 'vitest';
 import type { WrongBookItemDto } from '@qiming/contracts';
 import { ToastProvider } from '@qiming/ui';
 import { CLASS_COURSEWARE, CLASS_LESSON_TITLE, CLASS_MODE, CLASS_QUESTIONS, CLASS_SEGMENTS, CLASS_SESSION_ID, NARRATION_PRE_GRADE } from '../../../mocks/class-data';
-import { ClassFoot } from '../ClassFoot';
 import { ClassHead } from '../ClassHead';
 import { LectureSegment } from '../LectureSegment';
 import { initialClassState, reduceClass } from '../machine';
@@ -116,10 +115,7 @@ describe('课堂模式可点目标 ≥44px(min-h-touch)', () => {
     assertTouch44(mount(<TutorPanel chat={[]} guideOnly onAsk={noop} />), 'tutor');
   });
 
-  it('底部 AI 旁白条渲染(narration 走 TexText)', () => {
-    const host = mount(<ClassFoot narration="想想 $b$ 会变大还是变小?" />);
-    expect(host.querySelectorAll('.katex').length).toBeGreaterThanOrEqual(1);
-  });
+  // [2026-08-31 假功能下线] 底部 AI 旁白条(ClassFoot)已随 narration 下线删除,用例一并移除。
 
   it('源码扫描兜底:classroom 目录所有 <Button/<button 均显式写 min-h-touch', () => {
     const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');

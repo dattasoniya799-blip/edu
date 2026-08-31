@@ -52,10 +52,10 @@ describe('认证(A1)', () => {
       .expect(200);
     const data = meRes.body.data;
     expect(data.orgName).toBe('鲸云演示机构');
-    // 断言对齐本轮 seed.ts 新 orgSettings 形状(新增 classCompanion/diagnosis=true,
-    // studentHours 放宽为全天 00:00-23:59,移除 deviceBinding)
+    // 断言对齐 seed.ts orgSettings 形状(2026-08-31 假功能下线:classCompanion/diagnosis 默认 false;
+    // studentHours 全天 00:00-23:59,无 deviceBinding)
     expect(data.orgSettings.ai).toEqual({
-      qaGuideOnly: true, preGrading: true, classCompanion: true, diagnosis: true,
+      qaGuideOnly: true, preGrading: true, classCompanion: false, diagnosis: false,
     });
     expect(data.orgSettings.studentHours).toEqual({ start: '00:00', end: '23:59' });
   });

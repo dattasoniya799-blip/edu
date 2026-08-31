@@ -261,9 +261,10 @@ export function PaperBuilderPage() {
                 onChange={(e) => setDueAt(e.target.value)}
               />
             </label>
+            {/* [2026-08-31 假功能下线] 原 Tag「AI 预批 + 教师复核」与 photo_pregrade=off 不符,改为如实口径 */}
             <div className="flex items-center justify-between rounded-md bg-bg px-3 py-2.5 text-xs text-ink-2">
               <span>解答题批改</span>
-              <Tag tone="violet">AI 预批 + 教师复核</Tag>
+              <Tag tone="violet">教师批改出分</Tag>
             </div>
             <div className="rounded-md bg-bg px-3 py-2.5 text-xs leading-relaxed text-ink-3">
               发布即生效:下课后推送学生平板,截止 {dueAt ? fmtDateTime(new Date(dueAt).toISOString()) : '未设置'};客观题提交后立即自动批改。

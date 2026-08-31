@@ -77,7 +77,7 @@ export function TodayPage() {
             <b className="block text-[15px]">{data.todayLesson.courseName} · {data.todayLesson.title}</b>
             <span className="text-[12.5px] text-card/80">
               {fmtDay(data.todayLesson.startAt)} – {new Date(data.todayLesson.endAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
-              {' '}· AI 伴学课堂
+              {' '}· 在线课堂
             </span>
           </div>
           <Button variant="secondary" className="min-h-touch shrink-0 !border-0 !bg-card !text-primary"

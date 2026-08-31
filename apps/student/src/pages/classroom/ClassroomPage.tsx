@@ -11,7 +11,6 @@ import { api } from '../../api';
 import { useAuth } from '../../auth/AuthProvider';
 import { FEATURE_PHOTO_PREGRADE, useFeatures } from '../../features/FeaturesProvider';
 import { Stage } from '../../Stage';
-import { ClassFoot } from './ClassFoot';
 import { ClassHead } from './ClassHead';
 import { LectureSegment } from './LectureSegment';
 import { PracticeSegment } from './PracticeSegment';
@@ -156,7 +155,8 @@ function ClassroomInner({ sessionId }: { sessionId: number }) {
           )}
         </div>
 
-        <ClassFoot narration={state.narration} />
+        {/* [2026-08-31 假功能下线] 底部"小启"旁白条已移除:服务端 narration 不再下发(曾为模板拼句
+            冒充 AI 伴学);重启条件见 docs/需求文档/2026-08-31-下线功能需求留档.md */}
 
         {/* 教师暂停(class:control pause)→ 整屏遮罩 */}
         {state.paused && !state.ended && (

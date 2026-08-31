@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button, Card, EmptyState, Skeleton, StatCard, Tag, useToast } from '@qiming/ui';
 import { api, type GetData, type PostData } from '../../api';
+import { useAuth } from '../../auth/AuthProvider';
 import { PageHead } from '../Shell';
 import { fmtDateTime } from '../course/lib/format';
 
@@ -30,7 +31,11 @@ function masteryTone(pct: number): { bg: string; text: string; bar: string; labe
 
 export function AnalyticsPage() {
   const { toast } = useToast();
+  const { me } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+  // [2026-08-31 假功能下线] AI 诊断默认关闭(服务端 org.settings.ai.diagnosis 门禁,当前实现为模板文案);
+  // 机构显式开启时才展示入口,避免"点了报 403"或把模板文案当 AI 呈现。
+  const diagnosisEnabled = me?.orgSettings?.ai?.diagnosis === true;
 
   const [courses, setCourses] = useState<GetData<'/teacher/courses'>>([]);
   const [heat, setHeat] = useState<GetData<'/analytics/courses/{id}/mastery'>>([]);
@@ -106,7 +111,7 @@ export function AnalyticsPage() {
         title="学情分析"
         sub={course
           ? `${course.name} · 知识点掌握热力 + 待关注学生(近 30 天口径)`
-          : '知识点掌握热力 + 待关注名单 · 点学生下钻看详情 + AI 诊断'}
+          : `知识点掌握热力 + 待关注名单 · 点学生下钻看详情${diagnosisEnabled ? ' + AI 诊断' : ''}`}
         actions={courses.length > 0 && (
           <select
             className="cursor-pointer rounded-[10px] border-[1.5px] border-line bg-card px-3 py-2 text-[13.5px] font-semibold focus:border-primary focus:outline-none"
@@ -189,13 +194,16 @@ export function AnalyticsPage() {
             {/* 单生下钻 + AI 诊断 */}
             {!selected ? (
               <Card title="学生详情">
-                <EmptyState icon="◔" text="选择左侧待关注学生查看详情" hint="点名单里的学生:看其近 30 天掌握度、错题量,并可一键 AI 诊断" className="py-10" />
+                <EmptyState icon="◔" text="选择左侧待关注学生查看详情"
+                  hint={diagnosisEnabled ? '点名单里的学生:看其近 30 天掌握度、错题量,并可一键 AI 诊断' : '点名单里的学生:看其近 30 天掌握度与错题量'} className="py-10" />
               </Card>
             ) : (
               <div className="flex flex-col gap-4">
                 <Card
                   title={<span>{selected.name} · 近 30 天</span>}
-                  extra={<Button variant="primary" onClick={runDiagnose} disabled={diagnosing || reportLoading}>{diagnosing ? 'AI 诊断中…' : '✦ AI 诊断'}</Button>}
+                  extra={diagnosisEnabled
+                    ? <Button variant="primary" onClick={runDiagnose} disabled={diagnosing || reportLoading}>{diagnosing ? 'AI 诊断中…' : '✦ AI 诊断'}</Button>
+                    : undefined}
                 >
                   {reportLoading ? (
                     <Skeleton lines={3} className="h-24 w-full" />

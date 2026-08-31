@@ -99,7 +99,8 @@ async function main() {
     const org = await client.query(
       `INSERT INTO orgs(name, settings) VALUES ($1, $2) RETURNING id`,
       [orgName, JSON.stringify({
-        ai: { qaGuideOnly: true, preGrading: true, classCompanion: true, diagnosis: true },
+        // 2026-08-31 假功能下线:伴学旁白与 AI 诊断默认关(诊断当前为模板文案;伴学旁白服务端已不下发)
+        ai: { qaGuideOnly: true, preGrading: true, classCompanion: false, diagnosis: false },
         studentHours: { start: '06:00', end: '22:30' },
       })]);
     const orgId = org.rows[0].id;

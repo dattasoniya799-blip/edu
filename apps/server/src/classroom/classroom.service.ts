@@ -16,19 +16,15 @@ import type {
   SessionStatus,
 } from '@qiming/contracts';
 import { dec, num } from '../admin/helpers';
-import { CompanionService } from '../ai/features/companion.service';
 import { QaService } from '../ai/features/qa.service';
 import { AssignmentService } from '../assignment/assignment.service';
 import { AttemptService } from '../attempt/attempt.service';
 import type { JwtUser } from '../auth/auth.service';
-import { getJwtSecret } from '../common/env-assert';
 import { runAsUser } from '../common/tenant-context';
 import { BizException } from '../course/business.exception';
 import { GradingService } from '../grading/grading.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { REDIS } from '../redis/redis.module';
-import { isOssKeyOwned } from '../upload/oss-key.util';
-import { signStorageUrl } from '../upload/storage/storage-sign.util';
 import {
   kEvents,
   kEventsCursor,
@@ -52,18 +48,8 @@ const AI_ASK_FALLBACK =
 const ROOM = (sid: number) => `session:${sid}`;
 const TEACHER_ROOM = (sid: number) => `session:${sid}:teacher`;
 
-/**
- * 旁白模板兜底(受 org.settings.ai.classCompanion 关闭、或 LLM 失败/超时时回退):
- * classCompanion 开启时改由 AiModule 的 CompanionService.narration()(feature=class_companion)生成。
- */
-const NARRATION = {
-  correct: '回答正确,继续保持这个思路!',
-  wrong: '这题先别急,对照解析想想是哪一步出了偏差。',
-  pending: '过程已提交,老师稍后会查看你的解题步骤。',
-};
-
-/** 旁白等待 LLM 上限:随堂作答内联,超时即回退模板,绝不阻塞作答返回 */
-const NARRATION_TIMEOUT_MS = 4_000;
+// [2026-08-31 假功能下线] 原作答旁白模板常量与 LLM 超时兜底已移除(narration 不再下发);
+// 伴学能力的真实实现候选保留在 ai/features/companion.service.ts,重启见需求留档文档。
 
 interface MetaState {
   org_id: string;
@@ -106,9 +92,6 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
   private readonly throttleMs: number;
   private readonly consumerMs: number;
   private readonly writebackMs: number;
-  /** AI 课件整页图回看直链的签名参数(与 upload / courseware 两侧同一把 HMAC) */
-  private readonly uploadPublicBase: string;
-  private readonly storageSecret: string;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -117,18 +100,12 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
     private readonly attempts: AttemptService,
     private readonly grading: GradingService,
     private readonly qa: QaService,
-    private readonly companion: CompanionService,
     cfg: ConfigService,
   ) {
     // 周期可注入(测试用短周期);roster 节流契约值 5s
     this.throttleMs = Number(cfg.get('CLS_ROSTER_THROTTLE_MS', '5000'));
     this.consumerMs = Number(cfg.get('CLS_CONSUMER_INTERVAL_MS', '1000'));
     this.writebackMs = Number(cfg.get('CLS_WRITEBACK_INTERVAL_MS', '30000'));
-    this.uploadPublicBase = cfg.get<string>(
-      'UPLOAD_PUBLIC_BASE',
-      `http://127.0.0.1:${cfg.get('PORT', '3000')}`,
-    );
-    this.storageSecret = getJwtSecret(cfg);
   }
 
   setServer(nsp: Namespace) {
@@ -285,17 +262,18 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
       isCorrect: r.isCorrect,
     });
 
-    const narration = await this.buildNarration(meta, r);
     socket.emit('class:state', await this.selfState(sid, user.uid));
-    socket.emit('class:narration', { text: narration });
     this.markDirty(sid);
 
+    // [2026-08-31 假功能下线] 作答旁白(硬编码/模板拼句,曾以 AI 伴学形象呈现)不再生成与下发:
+    // 协议字段 narration 本就可空,置 null;class:narration 事件保留在 ws-protocol 中但不再 emit。
+    // 重启需求与验收条件见 docs/需求文档/2026-08-31-下线功能需求留档.md(真实 LLM 伴学)。
     return {
       questionId,
       judged: r.judged,
       isCorrect: r.isCorrect,
       correctAnswer: r.correctAnswer,
-      narration,
+      narration: null,
     };
   }
 
@@ -683,7 +661,7 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
     }
     if (questions.length) out.questions = questions;
 
-    const courseware = this.buildCourseware(segments, orgId);
+    const courseware = this.buildCourseware(segments);
     if (courseware.length) out.courseware = courseware;
     return out;
   }
@@ -696,25 +674,23 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
    */
   private buildCourseware(
     segments: { type: string; config: unknown; resource: { meta: unknown } | null }[],
-    orgId: number,
   ): CoursewarePageView[] {
     const out: CoursewarePageView[] = [];
     for (const seg of segments) {
       if (seg.type !== 'lecture') continue;
       const cfg = (seg.config ?? {}) as Record<string, unknown>;
       const meta = (seg.resource?.meta ?? {}) as Record<string, unknown>;
-      // [2026-08-22 audit-fix-server · P1-8] AI 生成课件(meta.kind='ai_courseware')的逐页
-      // 对象带 imageOssKey —— 整页图正是这个功能的全部价值。不签名就只剩 title/body 文字,
-      // 课堂上等于把成品降级成纯文本页。这里逐页签成 10 分钟回看直链填进 imageUrl;
-      // 非 ai_courseware 的 lecture 段行为逐字不变(数字 pages / 整数 checkpoints 照旧跳过)。
-      const signImages = meta.kind === 'ai_courseware';
-      out.push(...this.coursewarePages(cfg.pages ?? meta.pages, signImages ? orgId : null));
+      // [2026-08-31 假功能下线] AI 生成课件整体下线:catalog off 只拦新生成,这里把历史已挂讲次的
+      // ai_courseware 资源从课堂快照一并排除(课堂零残留;原 P1-8 的整页图签名随之移除)。
+      // 教师手工的结构化逐页内容(config.pages / 非 AI 资源的 meta.pages)行为不变。
+      if (meta.kind === 'ai_courseware') continue;
+      out.push(...this.coursewarePages(cfg.pages ?? meta.pages));
     }
     return out;
   }
 
   /** 逐页内容数组(对象含 title/body 才视为可渲染逐页;数字总页数 / 整数 checkpoints 等非结构化值 → 跳过) */
-  private coursewarePages(raw: unknown, signImagesForOrg: number | null = null): CoursewarePageView[] {
+  private coursewarePages(raw: unknown): CoursewarePageView[] {
     if (!Array.isArray(raw)) return [];
     const out: CoursewarePageView[] = [];
     for (const p of raw) {
@@ -728,24 +704,9 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
       };
       const quiz = this.miniQuiz(o.quiz);
       if (quiz) page.quiz = quiz;
-      if (signImagesForOrg != null) {
-        const url = this.signCoursewareImage(o.imageOssKey, signImagesForOrg);
-        if (url) page.imageUrl = url;
-      }
       out.push(page);
     }
     return out;
-  }
-
-  /**
-   * AI 课件整页图的回看直链(HMAC 签名 + 10 分钟有效期,同 courseware/upload 两侧口径)。
-   * 签名前套 ossKey 归属校验(sec-back #6 的软失败口径):脏数据/跨租户键不下发,
-   * 但也不因此 403 掉整份课堂快照。
-   */
-  private signCoursewareImage(raw: unknown, orgId: number): string | null {
-    if (typeof raw !== 'string' || !raw) return null;
-    if (!Number.isFinite(orgId) || !isOssKeyOwned(raw, orgId, ['resource'])) return null;
-    return signStorageUrl(this.uploadPublicBase, this.storageSecret, raw);
   }
 
   /** 打点小测(lecture 翻页即时小测):stem + options 齐备才视为有效,否则缺省 */
@@ -1096,42 +1057,6 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
       select: { name: true },
     });
     return u?.name ?? '';
-  }
-
-  /**
-   * 随堂作答旁白:org.settings.ai.classCompanion 开启时经 CompanionService(feature=class_companion)
-   * 生成(受额度/计量护栏);关闭或 LLM 失败/超时(NARRATION_TIMEOUT_MS)→ 回退原模板文案。
-   * 绝不阻塞作答返回:任何异常/超时都返回模板兜底。
-   */
-  private async buildNarration(
-    meta: MetaState,
-    r: { judged: boolean; isCorrect: boolean | null },
-  ): Promise<string> {
-    const kind = r.judged
-      ? r.isCorrect
-        ? ('answer_correct' as const)
-        : ('answer_wrong' as const)
-      : ('answer_pending' as const);
-    const fallback = r.judged ? (r.isCorrect ? NARRATION.correct : NARRATION.wrong) : NARRATION.pending;
-    if (!(await this.classCompanionEnabled())) return fallback;
-    try {
-      const text = await Promise.race([
-        this.companion.narration({ orgId: Number(meta.org_id), kind, vars: {} }),
-        new Promise<string>((_, reject) =>
-          setTimeout(() => reject(new Error('NARRATION_TIMEOUT')), NARRATION_TIMEOUT_MS),
-        ),
-      ]);
-      return text && text.trim() ? text : fallback;
-    } catch {
-      return fallback;
-    }
-  }
-
-  /** org.settings.ai.classCompanion 开关(默认关:未显式开启则用模板兜底) */
-  private async classCompanionEnabled(): Promise<boolean> {
-    const org = await this.prisma.client.org.findFirst({ select: { settings: true } });
-    const ai = (org?.settings as { ai?: { classCompanion?: boolean } } | null)?.ai;
-    return ai?.classCompanion === true;
   }
 
   private async xadd(sid: number, type: string, studentId: number | null, payload: object): Promise<void> {

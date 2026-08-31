@@ -376,16 +376,18 @@ describe('课堂实时 WebSocket(A6,/classroom)', () => {
     expect(snap.me.segment).toBe(3);
   });
 
-  it('验收:class:answer 复用 A5 判分 —— 对/错判定、解析回传、PG 落库、narration', async () => {
-    // q1 答对
-    const narrationP = waitEvent<{ text: string }>(s1, 'class:narration');
+  it('验收:class:answer 复用 A5 判分 —— 对/错判定、解析回传、PG 落库、narration 已下线恒 null', async () => {
+    // q1 答对。[2026-08-31 假功能下线] 作答旁白不再生成:ack 的 narration 恒 null,
+    // class:narration 事件不再下发(此处以"事件监听器不被触发"侧证,主断言是 ack null)。
+    let narrationFired = false;
+    s1.once('class:narration', () => { narrationFired = true; });
     const stateP = waitEvent<ParticipantSelfState>(s1, 'class:state');
     const r1 = await emitAck<AnswerResult>(s1, 'class:answer', { questionId: qid(0), response: { choice: 'A' } });
     exactKeys(r1, ANSWER_RESULT_KEYS);
     expect(r1).toMatchObject({ questionId: qid(0), judged: true, isCorrect: true, correctAnswer: null });
-    expect(typeof r1.narration).toBe('string');
-    expect((await narrationP).text).toBe(r1.narration);
+    expect(r1.narration).toBeNull();
     expect(await stateP).toMatchObject({ answeredCount: 1, correctCount: 1 });
+    expect(narrationFired).toBe(false); // class:state 已到达,同一 socket 顺序保证下 narration 未发即未发
 
     // q2 答错:回传正确答案(A5 口径)
     const r2 = await emitAck<AnswerResult>(s1, 'class:answer', { questionId: qid(1), response: { texts: ['y=x'] } });
