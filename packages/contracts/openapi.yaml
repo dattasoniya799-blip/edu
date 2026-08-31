@@ -1033,6 +1033,34 @@ paths:
       responses:
         '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {$ref: '#/components/schemas/StsCredential'}}}}}}
         default: {$ref: '#/components/responses/Err'}
+  # 以下三个端点原为 FIX4/A3 时代的"灰色端点"(真实依赖但不在契约),2026-08-31 契约收口正式化:
+  /uploads/view-url:
+    get:
+      summary: ossKey 换签名回看 URL [*](仅放行本机构前缀的 key,签名指向 GET /storage/*)
+      parameters: [{name: ossKey, in: query, required: true, schema: {type: string}, description: '形如 purpose/orgId/ym/rand.ext(UploadService.createSts 生成)'}]
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [url], properties: {url: {type: string}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /uploads/local/{token}:
+    put:
+      summary: 本地驱动预签名 PUT(一次性 token 即凭证,无需 Bearer;等价 OSS 外部直传地址;25MB 上限)
+      security: []
+      parameters: [{name: token, in: path, required: true, schema: {type: string}}]
+      requestBody: {required: true, content: {application/octet-stream: {schema: {type: string, format: binary}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [ossKey, size], properties: {ossKey: {type: string}, size: {type: integer}}}}}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /storage/{ossKey}:
+    get:
+      summary: 签名 GET 回看(HMAC sig+exp 即凭证,无需 Bearer;local 驱动专用,等价 OSS 外部回看地址)
+      security: []
+      parameters:
+        - {name: ossKey, in: path, required: true, schema: {type: string}, description: '实际为多段路径(purpose/orgId/ym/rand.ext),服务端以通配路由实现,契约以单参数表达'}
+        - {name: exp, in: query, required: true, schema: {type: integer}}
+        - {name: sig, in: query, required: true, schema: {type: string}}
+      responses:
+        '200': {description: 文件二进制, content: {application/octet-stream: {schema: {type: string, format: binary}}}}
+        default: {$ref: '#/components/responses/Err'}
 
   # ================= 资源库 =================
   /resources:

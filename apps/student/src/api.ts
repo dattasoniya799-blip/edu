@@ -25,17 +25,12 @@ export type PostData<P extends Parameters<typeof api.post>[0]> =
   Awaited<ReturnType<typeof api.post<P>>> extends { data: infer D } ? D : never;
 
 /**
- * REV-front #1:由 ossKey 换后端签名直链。`GET /uploads/view-url?ossKey=` 不属于 openapi
- * 契约(server upload.controller 标注,见 README · REV-front),故 createClient 的类型化
- * 路径里没有它;此处经 api(仍带 token + 401 处理)调用,只在路径处做类型放宽 —— 不是手写
- * fetch。返回统一响应包 {code,message,data:{url}}。
+ * REV-front #1:由 ossKey 换后端签名直链。
+ * 2026-08-31 契约收口:`GET /uploads/view-url` 已进 openapi,此处为完全类型化调用
+ * (历史上曾因端点不在契约而做类型放宽,已移除)。
  */
 async function fetchViewUrl(ossKey: string): Promise<string> {
-  const get = api.get as unknown as (
-    p: string,
-    a: { query: Record<string, string> },
-  ) => Promise<{ data: { url: string } }>;
-  const r = await get('/uploads/view-url', { query: { ossKey } });
+  const r = await api.get('/uploads/view-url', { query: { ossKey } });
   return r.data.url;
 }
 
@@ -48,8 +43,10 @@ export const MAX_ANSWER_PHOTO_BYTES = 15 * 1024 * 1024;
 /**
  * 解答题拍照真上传(#2,两步直传,契约形状同教师录题插图):
  *   1. POST /uploads/sts(purpose=answer_photo)→ { uploadUrl, ossKey }(走 contracts createClient,带 token)
- *   2. 对 uploadUrl 直接 PUT 原始文件字节 —— 预签名直传不属于 openapi 契约接口,无法经 createClient
- *      表达,这是仓库内允许的原生 fetch(local 驱动 uploadUrl=/uploads/local/:token;mock 由 msw 拦截)
+ *   2. 对 uploadUrl 直接 PUT 原始文件字节 —— 这是仓库内**唯一豁免**的原生 fetch:uploadUrl 是
+ *      sts 下发的预签名**绝对 URL**(local 驱动指向 PUT /uploads/local/{token},该端点 2026-08-31
+ *      已进 openapi;OSS 驱动则指向外部对象存储),createClient 只表达相对 baseUrl 的契约路径,
+ *      预签名直传按其语义就应绕过鉴权头直接 PUT(mock 由 msw 拦截)。
  * 返回入库用的真实 ossKey;任一步失败抛错(调用方提示用户、不落假 key)。
  */
 export async function uploadAnswerPhoto(file: File): Promise<string> {

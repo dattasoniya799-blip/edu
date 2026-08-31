@@ -2066,6 +2066,145 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/uploads/view-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ossKey 换签名回看 URL [*](仅放行本机构前缀的 key,签名指向 GET /storage/*) */
+        get: {
+            parameters: {
+                query: {
+                    /** @description 形如 purpose/orgId/ym/rand.ext(UploadService.createSts 生成) */
+                    ossKey: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: number;
+                            message: string;
+                            data: {
+                                url: string;
+                            };
+                        };
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/uploads/local/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 本地驱动预签名 PUT(一次性 token 即凭证,无需 Bearer;等价 OSS 外部直传地址;25MB 上限) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    token: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: number;
+                            message: string;
+                            data: {
+                                ossKey: string;
+                                size: number;
+                            };
+                        };
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/storage/{ossKey}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 签名 GET 回看(HMAC sig+exp 即凭证,无需 Bearer;local 驱动专用,等价 OSS 外部回看地址) */
+        get: {
+            parameters: {
+                query: {
+                    exp: number;
+                    sig: string;
+                };
+                header?: never;
+                path: {
+                    /** @description 实际为多段路径(purpose/orgId/ym/rand.ext),服务端以通配路由实现,契约以单参数表达 */
+                    ossKey: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description 文件二进制 */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/octet-stream": string;
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/resources": {
         parameters: {
             query?: never;
