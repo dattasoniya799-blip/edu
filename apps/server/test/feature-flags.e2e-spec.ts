@@ -102,7 +102,7 @@ describe('E1 · 内测区与功能分级(目录下发/管控/门禁/wrong_redo)'
 
   // ================= ① 目录下发 · 默认态 =================
 
-  it('默认态(无 flag 行):ai_courseware=beta 无白名单、photo_pregrade=off → 三角色 /features/my 均为空', async () => {
+  it('默认态(无 flag 行):ai_courseware=off(2026-08-31 下线)、photo_pregrade=off → 三角色 /features/my 均为空', async () => {
     expect(await myFeatures(admin)).toEqual([]);
     expect(await myFeatures(t1)).toEqual([]);
     expect(await myFeatures(s1)).toEqual([]);
@@ -113,7 +113,7 @@ describe('E1 · 内测区与功能分级(目录下发/管控/门禁/wrong_redo)'
     expect(list.map((f) => f.key)).toEqual(['ai_courseware', 'photo_pregrade']);
     for (const f of list) exactKeys(f, ADMIN_FEATURE_KEYS);
     const cw = list.find((f) => f.key === 'ai_courseware')!;
-    expect(cw).toMatchObject({ name: 'AI 生成课件', audienceRole: 'teacher', defaultStage: 'beta', stage: 'beta', whitelist: [] });
+    expect(cw).toMatchObject({ name: 'AI 生成课件', audienceRole: 'teacher', defaultStage: 'off', stage: 'off', whitelist: [] });
     expect(cw.knownIssues.length).toBeGreaterThan(0);
     expect(cw.acceptance.length).toBeGreaterThan(0);
     const pre = list.find((f) => f.key === 'photo_pregrade')!;
@@ -148,6 +148,7 @@ describe('E1 · 内测区与功能分级(目录下发/管控/门禁/wrong_redo)'
   });
 
   it('beta 下发口径:白名单内可见、白名单外不可见(MyFeature 形状)', async () => {
+    await setStage('ai_courseware', 'beta'); // 2026-08-31 起目录默认 off,本用例显式开 beta
     await setWhitelist('ai_courseware', [Number(fx.t1Id)]);
     const mineT1 = await myFeatures(t1);
     expect(mineT1).toHaveLength(1);
@@ -184,9 +185,9 @@ describe('E1 · 内测区与功能分级(目录下发/管控/门禁/wrong_redo)'
 
   it('租户隔离:本机构 stage 覆盖与白名单对他机构不可见、不生效', async () => {
     await setStage('ai_courseware', 'ga');
-    // 他机构管理端仍是默认态(beta + 空白名单)
+    // 他机构管理端仍是默认态(off + 空白名单;2026-08-31 起目录默认 off)
     const other = (await adminList(org2Admin)).find((f) => f.key === 'ai_courseware')!;
-    expect(other.stage).toBe('beta');
+    expect(other.stage).toBe('off');
     expect(other.whitelist).toEqual([]);
     // 他机构教师不因本机构 ga 而可见
     expect(await myFeatures(org2Teacher)).toEqual([]);

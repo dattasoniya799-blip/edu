@@ -83,7 +83,7 @@ export class MockProvider implements LlmProvider {
     return `我们一步步来:先回顾题目条件,你觉得第一步该用什么方法?(mock 引导回复,提问长度 ${lastUser.length})`;
   }
 
-  /** 与 A5 StubAiGateway 同规则的确定性预批,输出严格 JSON(snake_case,设计文档 §8.2) */
+  /** 确定性预批,输出严格 JSON(snake_case,设计文档 §8.2)。规则继承自 A5 的 StubAiGateway(该文件已删,此处是唯一实现) */
   private preGradeJson(json: string): string {
     let input: { ocrText?: string; rubric?: PreGradeRubricStep[] };
     try {

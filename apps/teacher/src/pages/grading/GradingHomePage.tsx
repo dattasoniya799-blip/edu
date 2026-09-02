@@ -28,7 +28,8 @@ export function GradingHomePage() {
 
   return (
     <div>
-      <PageHead title="作业批改" sub="客观题已自动批改;解答题经 AI 预批,逐份复核后出分" />
+      {/* [2026-08-31 假功能下线] 文案对齐现状:预批(photo_pregrade)已 off,解答题为教师人工批改 */}
+      <PageHead title="作业批改" sub="客观题已自动批改;解答题逐份人工批改后出分" />
       {loading ? (
         <Skeleton lines={2} className="h-20 w-full" />
       ) : error ? (
@@ -38,7 +39,7 @@ export function GradingHomePage() {
         </div>
       ) : groups.length === 0 ? (
         <div className="rounded-lg border border-line bg-card shadow-card">
-          <EmptyState icon="✓" text="暂无待复核的作业" hint="学生提交解答题后,AI 预批结果会出现在这里" />
+          <EmptyState icon="✓" text="暂无待批改的作业" hint="学生提交解答题后会出现在这里" />
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -49,8 +50,9 @@ export function GradingHomePage() {
                 <div className="min-w-0 flex-1">
                   <b className="text-sm">{g.paperName}</b>
                   <div className="mt-0.5 text-[12.5px] text-ink-2">
-                    AI 预批均分 <span className="tabular-nums">{g.aiAvgScore ?? '—'}</span>
-                    {g.pendingCount > 0 ? ' · 建议优先抽查低分卷' : ' · 全部已复核,可出分'}
+                    {/* aiAvgScore 为历史预批数据(预批已下线,新作业无此值) */}
+                    {g.aiAvgScore != null && <>预批均分(历史) <span className="tabular-nums">{g.aiAvgScore}</span> · </>}
+                    {g.pendingCount > 0 ? '建议优先批改低分卷' : '全部已批改,可出分'}
                   </div>
                 </div>
                 {g.pendingCount > 0

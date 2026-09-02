@@ -26,17 +26,12 @@ export type PostData<P extends Parameters<typeof api.post>[0]> =
   Awaited<ReturnType<typeof api.post<P>>> extends { data: infer D } ? D : never;
 
 /**
- * REV-front #1:由 ossKey 换后端签名直链。`GET /uploads/view-url?ossKey=` 不属于 openapi
- * 契约(server upload.controller 标注,见 README · REV-front),故 createClient 的类型化
- * 路径里没有它;此处经 api(仍带 token + 401 处理)调用,只在路径处做类型放宽 —— 不是手写
- * fetch。返回统一响应包 {code,message,data:{url}}。
+ * REV-front #1:由 ossKey 换后端签名直链。
+ * 2026-08-31 契约收口:`GET /uploads/view-url` 已进 openapi,此处为完全类型化调用
+ * (历史上曾因端点不在契约而做类型放宽,已移除)。
  */
 async function fetchViewUrl(ossKey: string): Promise<string> {
-  const get = api.get as unknown as (
-    p: string,
-    a: { query: Record<string, string> },
-  ) => Promise<{ data: { url: string } }>;
-  const r = await get('/uploads/view-url', { query: { ossKey } });
+  const r = await api.get('/uploads/view-url', { query: { ossKey } });
   return r.data.url;
 }
 

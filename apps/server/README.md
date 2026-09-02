@@ -249,7 +249,7 @@ e2e 以服务层断言(runAsUser 注入学生租户上下文)+ assignments 表�
     ): Promise<{ aiScore: number; steps: { step; ok; comment? }[]; errorTags: string[] }>;
   }   // aiScore/steps/errorTags 即文档的 ai_score/steps[]/error_tags[](驼峰镜像)
   ```
-- DI token `AI_GATEWAY`,当前在 `GradingModule` 绑定 `StubAiGateway`;**A7 接线 = 只替换该 Provider 绑定**(`{ provide: AI_GATEWAY, useClass: RealAiGateway }`),调用方零改动。ai_calls 计量、额度与限流由 A7 网关内部完成(本卡 stub 不产生计量)。
+- DI token `AI_GATEWAY`,A5 时在 `GradingModule` 绑定 `StubAiGateway`;**A7 接线 = 只替换该 Provider 绑定**(现绑 `LlmPreGradeGateway`,stub 文件已于 2026-08-31 删除,规则活在 mock provider),调用方零改动。ai_calls 计量、额度与限流由 A7 网关内部完成(A5 阶段 stub 不产生计量)。
 - stub 规则(确定性,零外部依赖):rubric 第 1 步恒 ok;其余步骤 OCR 文本含 `√{step}` 标记才 ok;aiScore=Σ(ok 步骤分),errorTags=未通过步骤 desc。拍照作答无 OCR 能力,worker 以 `[photo:{ossKey}]` 占位 → 仅得第 1 步分。A7 落地后该占位由真实 OCR/手写识别输出替换。
 - 宪法 §4:本卡未 import 任何 LLM SDK;`grading/answers/:id` 的 photoUrl 为短时效(10min)HMAC 签名 URL(base=UPLOAD_PUBLIC_BASE,生产切 OSS 时由 storage 适配器换真实签名,字段形状不变)。
 

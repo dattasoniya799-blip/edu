@@ -34,13 +34,13 @@ export function Dashboard() {
   return (
     <div>
       <PageHead title={`${me?.name ?? ''} 老师,你好`} sub="今天的备课与批改安排都在这里" />
-      <div className="mb-5 grid grid-cols-2 gap-4 xl:grid-cols-4">
+      {/* [2026-08-31 假功能下线] 原第四卡「AI 预批 · 已开启」为写死文案(与 photo_pregrade=off 不符),已移除 */}
+      <div className="mb-5 grid grid-cols-2 gap-4 xl:grid-cols-3">
         <StatCard ribbon="primary" label="在带课程" value={loaded ? courses.length : '—'} />
         <Link to="/grading" aria-label="去批改复核">
           <StatCard ribbon="orange" label="待复核答卷" value={loaded ? pending : '—'} delta="点击进入批改复核 →" />
         </Link>
         <StatCard ribbon="green" label="本周讲次" value={loaded ? courses.filter((c) => c.nextLessonAt).length : '—'} />
-        <StatCard ribbon="violet" label="AI 预批" value="已开启" />
       </div>
       <Card title="我的课程">
         {error ? (

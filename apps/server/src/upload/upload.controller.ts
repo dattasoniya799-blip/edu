@@ -46,7 +46,7 @@ export class UploadController {
   }
 
   /**
-   * FIX4 · #3:由 ossKey 换签名 GET URL(已登录角色;不属于 openapi 契约,见 README · FIX4)。
+   * FIX4 · #3:由 ossKey 换签名 GET URL(已登录角色;2026-08-31 契约收口,已进 openapi)。
    * 题目/作答返回的 figures / photoOssKey 是 ossKey,前端调本端点拿可直接展示的签名 URL
    * (指向 #2 的 @Public GET /storage/*)。签名 secret 在后端,故必须经此端点换取。
    */
@@ -71,7 +71,7 @@ export class UploadController {
   }
 
   /**
-   * 本地驱动的"预签名 PUT"端点(不属于 openapi 契约,等价于 OSS 外部直传地址):
+   * 本地驱动的"预签名 PUT"端点(2026-08-31 已进 openapi,等价于 OSS 外部直传地址):
    * 一次性 token 即凭证,故 @Public;token 无效/过期/已使用 → 403。
    */
   @Public()
@@ -108,8 +108,9 @@ export class UploadController {
 }
 
 /**
- * FIX4 · #2:签名 GET 下载端点(@Public GET /storage/*,不属于 openapi 契约;
- * 等价于 OSS 的外部回看地址)。GradingService.signPhotoUrl / #3 view-url 生成的
+ * FIX4 · #2:签名 GET 下载端点(@Public GET /storage/*,2026-08-31 已进 openapi,
+ * 契约以 /storage/{ossKey} 单参数表达多段路径;等价于 OSS 的外部回看地址)。
+ * GradingService.signPhotoUrl / #3 view-url 生成的
  * `${base}/api/v1/storage/${ossKey}?exp&sig` 由本端点服务:
  * - 校验 HMAC sig + exp(与 signStorageUrl 同算法/同 secret),过期/签名错 → 403;
  * - 通过后从本地 UPLOAD_ROOT 流式回文件;路径穿越(resolve 后越出 root)→ 403,文件缺失 → 404。

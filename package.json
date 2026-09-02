@@ -1,0 +1,23 @@
+{
+  "name": "qiming",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "check:contracts": "npm -w @qiming/contracts run check && npm -w @qiming/contracts run lint:openapi",
+    "check:ui": "npm -w @qiming/ui run test && npm -w @qiming/ui run check",
+    "check:admin": "npm -w @qiming/admin run build && npm -w @qiming/admin run test",
+    "check:teacher": "npm -w @qiming/teacher run build && npm -w @qiming/teacher run test",
+    "check:student": "npm -w @qiming/student run build && npm -w @qiming/student run test",
+    "check:lab": "npm -w @qiming/lab run build",
+    "check:server": "npm -w @qiming/server run build",
+    "check:all": "npm run check:contracts && npm run check:ui && npm run check:admin && npm run check:teacher && npm run check:student && npm run check:lab && npm run check:server",
+    "test:mock": "npm -w @qiming/admin run test:mock && npm -w @qiming/teacher run test:mock && npm -w @qiming/student run test:mock",
+    "e2e": "npm -w @qiming/server run test"
+  }
+}

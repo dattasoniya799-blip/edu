@@ -43,23 +43,6 @@ export function Settings() {
     }
   };
 
-  /** AI 能力开关(classCompanion / preGrading / diagnosis):乐观更新 + PUT /admin/settings */
-  const toggleAi = async (patch: Partial<OrgSettings['ai']>, msg: string) => {
-    if (!settings) return;
-    setSaving(true);
-    const prev = settings;
-    setSettings({ ...settings, ai: { ...settings.ai, ...patch } }); // 乐观更新
-    try {
-      await api.put('/admin/settings', { body: patch });
-      toast(msg);
-    } catch {
-      setSettings(prev);
-      toast('保存失败,请重试');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const saveHours = async (start: string, end: string) => {
     await api.put('/admin/settings', { body: { studentHours: { start, end } } });
     toast('学生端使用时段已更新,对全机构生效');
@@ -80,14 +63,13 @@ export function Settings() {
       ) : (
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           <Card title={<span className="flex items-center gap-2">AI 能力 <Tag tone="violet">AI</Tag></span>}>
+            {/* [2026-08-31 假功能下线] 伴学旁白/预批/诊断三项的原开关已移除:
+                伴学旁白服务端已不下发(开关无消费);预批被 photo_pregrade=off 硬门禁挡住(开关无效);
+                诊断当前为模板文案实现,开启即恢复假功能。统一改为「已下线」登记态,
+                重启条件见 qiming/docs/需求文档/2026-08-31-下线功能需求留档.md。 */}
             <div className="flex flex-col gap-4">
-              <SettingRow title="课堂 AI 伴学" desc="上课场景核心能力:按教师编排的流程带学生上课">
-                <Switch
-                  checked={!!settings.ai.classCompanion}
-                  disabled={saving}
-                  label="课堂 AI 伴学"
-                  onChange={(v) => void toggleAi({ classCompanion: v }, v ? '已开启课堂 AI 伴学,对全机构生效' : '已关闭课堂 AI 伴学')}
-                />
+              <SettingRow title="课堂 AI 伴学旁白" desc="已下线:曾为模板拼句,待真实 LLM 伴学落地后重启">
+                <Tag tone="orange">已下线</Tag>
               </SettingRow>
               <SettingRow title="AI 答疑助教" desc="做题时可向 AI 提问;开启后「仅引导不报答案」">
                 <span className="flex items-center gap-2.5">
@@ -95,21 +77,11 @@ export function Settings() {
                   <Switch checked={settings.ai.qaGuideOnly} disabled={saving} label="仅引导不报答案" onChange={(v) => void toggleGuideOnly(v)} />
                 </span>
               </SettingRow>
-              <SettingRow title="公式题AI预批" desc="公式题先由 AI 预批,教师复核后才出分">
-                <Switch
-                  checked={!!settings.ai.preGrading}
-                  disabled={saving}
-                  label="公式题AI预批"
-                  onChange={(v) => void toggleAi({ preGrading: v }, v ? '已开启公式题 AI 预批,对全机构生效' : '已关闭公式题 AI 预批')}
-                />
+              <SettingRow title="公式题 AI 预批" desc="已下线:等真实 OCR 接入(拍照预批同此),由实验室功能分级重启">
+                <Tag tone="orange">已下线</Tag>
               </SettingRow>
-              <SettingRow title="AI 学情诊断" desc="错题自动归因到知识点,生成课程与个人薄弱点分析" last>
-                <Switch
-                  checked={!!settings.ai.diagnosis}
-                  disabled={saving}
-                  label="AI 学情诊断"
-                  onChange={(v) => void toggleAi({ diagnosis: v }, v ? '已开启 AI 学情诊断,对全机构生效' : '已关闭 AI 学情诊断')}
-                />
+              <SettingRow title="AI 学情诊断" desc="已下线:曾为模板文案,接真实 LLM 诊断并验收后重启" last>
+                <Tag tone="orange">已下线</Tag>
               </SettingRow>
             </div>
           </Card>

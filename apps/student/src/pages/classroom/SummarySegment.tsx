@@ -61,13 +61,13 @@ export function SummarySegment({ state, pendingTasks, onOpenTask, onExit, preGra
               </div>
             </>
           )}
+          {/* [2026-08-31 假功能下线] 原「AI · 小启总结」为前端规则拼句冒充 AI,已改为如实的课堂小结 */}
           <div className="mt-4 rounded-md bg-violet-soft px-3.5 py-3 text-[12.5px] leading-6 text-ink">
-            <span className="mr-1.5 rounded-[6px] bg-violet px-1.5 py-0.5 text-[10px] font-bold text-card">AI</span>
-            小启总结:{answered === 0
-              ? '这堂课你还没动笔,回到随堂练试两题吧~'
+            课堂小结:{answered === 0
+              ? '这堂课你还没有提交作答,回到随堂练完成几题吧。'
               : state.wrongAdded.length > 0
-                ? `答错的 ${state.wrongAdded.length} 道题已收入错题本,课后作业里我会安排同类巩固,记得「上加下减」。`
-                : '本堂没有新增错题,继续保持!课后作业按时完成哦。'}
+                ? `答错的 ${state.wrongAdded.length} 道题已收入错题本,课后可在错题本巩固。`
+                : '本堂没有新增错题,继续保持,课后作业记得按时完成。'}
           </div>
         </div>
 

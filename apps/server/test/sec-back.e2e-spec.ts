@@ -3,7 +3,9 @@
  *  #5 并发安全:并发交卷 / 并发 finalize 都只结算一次(错题 wrongCount 只 +1);
  *  #4 批改/讲次归属:同机构「他班」教师访问他人课程的 grading pending/名单/详情/review/
  *     finalize/adopt-ai → 404,讲次写操作(update/segments/publish)→ 404;授课教师正常;
- *  #6 资源 key 归属:作答 photoOssKey 与资源 ossKey 非本机构前缀/异用途/路径穿越 → 400/403。
+ *  #6 资源 key 归属:作答 photoOssKey 与资源 ossKey 非本机构前缀/异用途/路径穿越 → 400/403;
+ *  #7 paper/resource 行级 owner 写校验(2026-08-31 结构性债务 Wave 4 补验收):
+ *     同机构他教师改他人试卷 / 改删他人资源 → 403;创建者本人正常。
  */
 import { INestApplication } from '@nestjs/common';
 import Redis from 'ioredis';
@@ -164,6 +166,40 @@ describe('安全修复(并发安全 #5 / 批改讲次归属 #4 / 资源 key 归�
     await post(`resource/${Number(fx.orgId) + 1}/202606/x.pdf`).expect(403); // 他机构前缀
     await post(`answer_photo/${Number(fx.orgId)}/202606/x.pdf`).expect(403); // 异用途 purpose
     await post(`resource/${Number(fx.orgId)}/202606/ok.pdf`).expect(200); // 合法
+  });
+
+  // ================= #7 paper/resource owner 写校验 =================
+
+  it('#7 同机构他教师 PUT 他人试卷 → 403;创建者本人 → 200', async () => {
+    const body = {
+      name: 'SEC owner 校验卷',
+      type: 'practice',
+      questions: [{ questionId: Number(fx.qSingleA1Id), score: 5 }],
+    };
+    const created = await request(http).post('/api/v1/papers').set(auth(teacherA)).send(body).expect(200);
+    const paperId = created.body.data.id as number;
+
+    // 同机构非创建者(teacherB2)→ 403(不是 404:租户内可见,但无权写)
+    await request(http).put(`/api/v1/papers/${paperId}`).set(auth(teacherB2))
+      .send({ ...body, name: '越权改名' }).expect(403);
+    // 创建者本人正常(未被作业引用)
+    await request(http).put(`/api/v1/papers/${paperId}`).set(auth(teacherA))
+      .send({ ...body, name: 'SEC owner 校验卷(改)' }).expect(200);
+  });
+
+  it('#7 同机构他教师 PUT/DELETE 他人资源 → 403;创建者本人 → 200', async () => {
+    const created = await request(http).post('/api/v1/resources').set(auth(teacherA))
+      .send({ type: 'pdf', name: 'SEC owner 资源', ossKey: `resource/${Number(fx.orgId)}/202606/owner.pdf`, size: 10 })
+      .expect(200);
+    const resourceId = created.body.data.id as number;
+
+    await request(http).put(`/api/v1/resources/${resourceId}`).set(auth(teacherB2))
+      .send({ name: '越权改名' }).expect(403);
+    await request(http).delete(`/api/v1/resources/${resourceId}`).set(auth(teacherB2)).expect(403);
+    // 创建者本人改/删正常(未被讲次引用)
+    await request(http).put(`/api/v1/resources/${resourceId}`).set(auth(teacherA))
+      .send({ name: 'SEC owner 资源(改)' }).expect(200);
+    await request(http).delete(`/api/v1/resources/${resourceId}`).set(auth(teacherA)).expect(200);
   });
 
   // ================= #5 并发 finalize =================

@@ -84,7 +84,7 @@ export function LessonTimeline({ items, correctionByLesson, onCorrect, onEnterCl
                   : finished
                     ? <span>本讲无作业</span>
                     : enterable
-                      ? <span>AI 伴学课堂已开放 · 约 100 分钟</span>
+                      ? <span>在线课堂已开放</span>
                       : published
                         ? <span>课堂未开放,请稍候</span>
                         : <span>老师发布后即可进入课堂</span>}

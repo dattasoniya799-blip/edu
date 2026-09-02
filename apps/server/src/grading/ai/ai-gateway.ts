@@ -5,7 +5,8 @@ import type { RubricStep } from '@qiming/contracts';
  * - 输入:OCR 文本(或手写识别结果)+ 参考答案 + rubric
  * - 输出:{ai_score, steps[], error_tags[]}(本接口字段为驼峰镜像:aiScore/steps/errorTags)
  * - 宪法 §4:业务模块禁止 import LLM SDK,一律经本接口;
- *   本卡绑定 StubAiGateway(规则返回),A7 落地真实网关时只替换 AI_GATEWAY 的 Provider 绑定。
+ *   当前绑定 AiModule 导出的 LlmPreGradeGateway(见 grading.module.ts)。
+ *   A5 时代的规则版 StubAiGateway 已删除(git 历史可查),等价规则活在 mock provider 里。
  */
 export interface PreGradeInput {
   /** OCR 文本或手写识别结果(拍照作答在 stub 阶段用 `[photo:{ossKey}]` 占位) */

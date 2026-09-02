@@ -9,15 +9,10 @@ export default defineConfig({
     alias: {
       '@qiming/contracts': path.resolve(__dirname, '../../packages/contracts/src/index.ts'),
       '@qiming/ui': path.resolve(__dirname, '../../packages/ui/src/index.ts'),
-      // packages/ui 源码直引时,react/katex 一律解析到本应用依赖(避免双 React/jsx-runtime 解析失败)
-      'katex/contrib/mhchem': path.resolve(__dirname, 'node_modules/katex/contrib/mhchem/mhchem.js'),
-      'katex/dist/katex.min.css': path.resolve(__dirname, 'node_modules/katex/dist/katex.min.css'),
-      katex: path.resolve(__dirname, 'node_modules/katex'),
-      'react/jsx-dev-runtime': path.resolve(__dirname, 'node_modules/react/jsx-dev-runtime.js'),
-      'react/jsx-runtime': path.resolve(__dirname, 'node_modules/react/jsx-runtime.js'),
-      'react-dom/server': path.resolve(__dirname, 'node_modules/react-dom/server.js'),
-      react: path.resolve(__dirname, 'node_modules/react'),
-      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
+      // 旧布局(各目录独立 node_modules)时代这里曾把 react/katex 硬别名到本应用依赖,避免
+      // packages/ui 源码直引时出现双 React。npm workspaces(2026-08-31)后全仓只有根 node_modules
+      // 一份副本,这些别名反而指向不存在的路径(vi.mock 组件测试报 Failed to resolve "react"),
+      // 故删除;dedupe 保留即可保证单实例。
     },
     dedupe: ['react', 'react-dom'],
   },
