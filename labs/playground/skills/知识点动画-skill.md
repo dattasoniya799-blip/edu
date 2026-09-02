@@ -7,7 +7,7 @@ EVAL 不过线就停,不要硬写;PRD 没写完不许进 CODE。
 产物只有一种形态:**零依赖单文件交互 HTML**。原生 HTML + CSS + JavaScript,
 画图用 Canvas 2D 或内联 SVG,单文件目标 30KB 级、硬上限 120KB,不引任何外部资源。
 动画是内容资产,不是前端代码:本阶段先落在
-`apps/lab/public/animations/{初中|高中}/<中文文件名>.html`,人审通过后再谈上资源库。
+`labs/playground/public/animations/{初中|高中}/<中文文件名>.html`,人审通过后再谈上资源库。
 
 调用格式(给生成方的输入):
 
@@ -110,7 +110,7 @@ PRD 不另开文件,直接作为 HTML 头部注释内嵌留档(见 CODE 规范�
 
 ## 三、CODE — 强制规范
 
-以下每条都是硬要求,`npm run validate:anim`(`apps/lab/tools/validate-animations.mjs`)会逐条检。
+以下每条都是硬要求,`npm run validate:anim`(`labs/playground/tools/validate-animations.mjs`)会逐条检。
 校验不过的文件不进人审。
 
 ### 1. 文件骨架与 meta

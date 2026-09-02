@@ -39,7 +39,7 @@ COPY apps/server/package.json apps/server/
 COPY apps/admin/package.json apps/admin/
 COPY apps/teacher/package.json apps/teacher/
 COPY apps/student/package.json apps/student/
-COPY apps/lab/package.json apps/lab/
+COPY labs/playground/package.json labs/playground/
 COPY packages/contracts/package.json packages/contracts/
 COPY packages/ui/package.json packages/ui/
 RUN npm ci --workspace=apps/server
@@ -65,7 +65,7 @@ COPY apps/server/package.json apps/server/
 COPY apps/admin/package.json apps/admin/
 COPY apps/teacher/package.json apps/teacher/
 COPY apps/student/package.json apps/student/
-COPY apps/lab/package.json apps/lab/
+COPY labs/playground/package.json labs/playground/
 COPY packages/contracts/package.json packages/contracts/
 COPY packages/ui/package.json packages/ui/
 # prisma CLI(migrate deploy)与 tsx(npm run init:prod)是 devDependencies;

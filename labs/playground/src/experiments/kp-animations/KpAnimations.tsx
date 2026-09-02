@@ -115,7 +115,7 @@ export function KpAnimations() {
       <EmptyState
         icon="⚠️"
         text={`读不到 manifest.json(${error})`}
-        hint="先在 apps/lab 跑一次 npm run validate:anim 生成 public/animations/manifest.json。"
+        hint="先在 labs/playground 跑一次 npm run validate:anim 生成 public/animations/manifest.json。"
       />
     );
   }

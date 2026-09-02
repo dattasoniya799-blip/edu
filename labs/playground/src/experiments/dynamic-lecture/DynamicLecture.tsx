@@ -1,6 +1,6 @@
 /**
  * 动画课堂 · 学生课表 + 整页上课。
- * 需求:qiming/docs/需求文档/02-动画课堂-学生端demo需求.md
+ * 需求:qiming/docs/需求文档/2026-08-31-动画课堂-学生端demo需求.md
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { parseLectureScript, type LectureScript, type LectureScriptInput } from './script-schema';

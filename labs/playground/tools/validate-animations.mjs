@@ -378,7 +378,7 @@ async function main() {
 
   const manifest = {
     generatedAt: new Date().toISOString().slice(0, 10),
-    generator: 'apps/lab/tools/validate-animations.mjs',
+    generator: 'labs/playground/tools/validate-animations.mjs',
     rules: RULES.map((r) => ({ id: r.id, label: r.label })),
     total: items.length,
     passed: items.length - failed,
