@@ -6,7 +6,12 @@ import { parseLectureScript } from '../src/experiments/dynamic-lecture/script-sc
 import { runReferenceChecks } from '../src/experiments/dynamic-lecture/expr';
 import { DEMO_LESSONS } from '../src/experiments/dynamic-lecture/samples';
 
-const JUNIOR_IDS = new Set(['kp-linear-kb', 'math-linear-spring-1']);
+const JUNIOR_IDS = new Set([
+  'kp-linear-kb',
+  'math-linear-spring-1',
+  'math-taxi-fare-1',
+  'math-meet-120-1',
+]);
 const FORBIDDEN_SPEECH = /我来画|接下来添加|让我画|我来添加/;
 const JUNIOR_TERMS = /斜率|截距/;
 

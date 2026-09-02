@@ -24,7 +24,7 @@ export function DynamicLecture() {
   return (
     <div style={{ maxWidth: 1200 }}>
       <p style={{ fontSize: 13, lineHeight: 1.8, color: '#5B6B86', margin: '0 0 14px' }}>
-        三堂课共用一套上课页:老师讲、画面跟、指定拍才放手让你拖。点一张进入。
+        五堂课共用一套上课页:老师讲、画面跟、指定拍才放手让你拖。点一张进入。
       </p>
       <div
         style={{

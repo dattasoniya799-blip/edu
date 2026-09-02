@@ -34,7 +34,8 @@ export const taxiFare: LectureScriptInput = {
     board: { xMin: -0.8, xMax: 13, yMin: -2, yMax: 30, xLabel: 'x/km', yLabel: 'y/元', grid: true },
     params: [{ id: 'd', label: '行驶路程', min: 0, max: 11, step: 0.5, initial: 1.5, unit: 'km' }],
     elements: [
-      { kind: 'functiongraph', id: 'fare', expr: 'max(10, 2*x + 4)', domain: [0, 12], color: 'primary', hidden: true },
+      { kind: 'functiongraph', id: 'fareFlat', expr: '10', domain: [0, 3], color: 'primary', hidden: true },
+      { kind: 'functiongraph', id: 'fareRise', expr: '2*x + 4', domain: [3, 12], color: 'primary', hidden: true },
       { kind: 'point', id: 'p0', x: 0, y: 10, label: '(0, 10)', color: 'green', hidden: true },
       { kind: 'text', id: 'startt', x: 0.3, y: 12.2, text: '起步价 10 元', color: 'green', hidden: true },
       { kind: 'point', id: 'kink', x: 3, y: 10, label: '(3, 10)', color: 'orange', hidden: true },
@@ -69,7 +70,7 @@ export const taxiFare: LectureScriptInput = {
       narration:
         '把零到三千米连成一段。这一段高度始终是十,走了两千米还是十元,走满三千米还是十元。拐弯的那个点,横坐标是三,纵坐标是十。过了它,才开始加钱。',
       sceneActions: [
-        { op: 'show', target: 'fare' },
+        { op: 'show', target: 'fareFlat' },
         { op: 'show', target: 'kink' },
         { op: 'show', target: 'v3' },
         { op: 'highlight', target: 'kink' },
@@ -84,7 +85,8 @@ export const taxiFare: LectureScriptInput = {
       narration:
         '过了三千米,每多一千米加两元。台阶上这一格,就是一千米带来的两元。千万别从零开始按两千米乘二去算,那样会把前三千米已经付过的十元再算一遍。',
       sceneActions: [
-        { op: 'show', target: 'fare' },
+        { op: 'show', target: 'fareFlat' },
+        { op: 'show', target: 'fareRise' },
         { op: 'show', target: 'ladder' },
         { op: 'highlight', target: 'ladder' },
         { op: 'sweepParam', param: 'd', from: 3, to: 8, seconds: 5 },

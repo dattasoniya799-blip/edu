@@ -22,7 +22,7 @@ export const EXPERIMENTS: Experiment[] = [
     id: 'dynamic-lecture',
     title: '动画课堂',
     summary:
-      '学生端上课页:三堂课(一次函数、导数、弹簧讲题)共用一套播放器。能听、能看、指定拍能动手。教师制作与分发不在本实验。',
+      '学生端上课页:知识点两堂 + 中考讲题三堂,共用一套播放器。能听、能看、指定拍能动手。教师制作与分发不在本实验。',
     owner: '实验区',
     status: 'running',
     render: () => createElement(DynamicLecture),
