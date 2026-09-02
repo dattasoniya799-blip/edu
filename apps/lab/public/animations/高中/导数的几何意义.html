@@ -31,6 +31,13 @@ EVAL:动态收益 5(「割线趋于切线」本身就是一个过程,截图之�
   - 「Δx = 0.05:割线斜率 1.256,切线斜率 f'(x₀) = 1.250,差 0.006。
      割线的极限位置就是切线,这个极限值就是导数。」
   - 「Δx 不能真的取 0:那时 Q 和 P 重合,连割线都画不出来。导数是 Δx → 0 的极限,不是代入 0。」
+
+运动设计(引擎 v2):
+  常驻 rAF 主循环;x₀ / Δx / 阶段透明度双轨缓动,「让 Δx → 0」只是把 target 设成下限,
+  逼近过程由缓动本身走出来。巡航脚本:P 先沿曲线巡游一段(割线跟着转)→ 收 Δx 并出数字
+  → 逼到 0.05 出切线 → 放开再收紧、放开再收紧的呼吸式逼近(这是本页的核心手感)
+  → 换一个 x₀ 再看一遍 → 无缝回到起点。
+  Q 沿曲线留一串渐隐的收敛痕迹(余晖),把「从哪儿一路走过来的」留在画面上。
 ════════════════════════════════════════════════════
 -->
 <html lang="zh-CN">
@@ -77,12 +84,14 @@ input[type=range]{flex:1;min-width:0;height:var(--tap);background:transparent;ac
 .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}
 button{font-family:var(--font);font-size:13.5px;min-height:var(--tap);padding:0 15px;
        border-radius:var(--r-sm);border:1px solid var(--rule);background:var(--sheet-sub);
-       color:var(--ink-1);cursor:pointer}
+       color:var(--ink-1);cursor:pointer;transition:background-color .2s ease,color .2s ease}
+button.play{background:var(--hi-c-soft);border-color:var(--hi-c);color:var(--hi-c);font-weight:600;
+            min-width:106px}
 button.go{background:var(--hi-a-soft);border-color:var(--hi-a);color:var(--hi-a);font-weight:600}
-button.lim{background:var(--hi-c-soft);border-color:var(--hi-c);color:var(--hi-c);font-weight:600}
+button.lim{background:var(--hi-b-soft);border-color:var(--hi-b);color:var(--hi-b);font-weight:600}
 button:disabled{opacity:.45;cursor:default}
 .step{font-size:12px;color:var(--ink-2);margin-left:auto}
-.panel{font-family:var(--mono);font-size:13px;margin-top:9px;border-top:1px solid var(--rule);padding-top:8px}
+.panel{font-family:var(--mono);font-size:13px;border-top:1px solid var(--rule);padding-top:8px}
 .panel div{display:flex;justify-content:space-between;min-height:24px;align-items:center}
 .panel .k1{color:var(--hi-c)}
 .panel .k2{color:var(--hi-b);border-top:1px dashed var(--rule);margin-top:4px;padding-top:4px}
@@ -90,17 +99,36 @@ button:disabled{opacity:.45;cursor:default}
     padding:9px 11px;font-size:13px}
 .fb b{color:var(--hi-b);font-family:var(--mono)}
 .eq{font-family:var(--mono);font-size:14.5px;font-weight:700;color:var(--hi-c);
-    background:var(--hi-c-soft);border-radius:var(--r-sm);padding:8px 11px;margin-top:9px}
+    background:var(--hi-c-soft);border-radius:var(--r-sm);padding:8px 11px}
 .eq small{display:block;font-family:var(--font);font-size:12px;font-weight:400;
           color:var(--ink-2);margin-top:3px}
 .mono{font-family:var(--mono)}
-.hide{display:none}
+/* 分步揭示也不许闪现:max-height + opacity 缓出,和画布里的 alpha 双轨同一个手感。 */
+.slot{max-height:0;opacity:0;overflow:hidden;
+      transition:max-height .42s ease,opacity .32s ease,margin-top .42s ease}
+.slot.on{max-height:210px;opacity:1;margin-top:9px}
+/* 宽屏两栏(平板横屏单屏收纳):画布卡锁左、反馈卡在右,整页 100dvh 不滚动;≤900px 维持原单列。 */
+@media (min-width: 900px){
+  .wrap{
+    max-width:none;height:100dvh;box-sizing:border-box;overflow:hidden;
+    display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,.85fr);
+    grid-template-rows:auto auto auto minmax(0,1fr);
+    column-gap:16px;align-content:start;padding:12px 18px;
+  }
+  .wrap > h1{grid-column:1/-1;margin:0 0 2px}
+  .wrap > .lead{grid-column:1/-1;margin:0 0 6px}
+  .wrap > .tags{grid-column:1/-1;margin:0 0 8px}
+  body{overflow:hidden}
+  .wrap > .card{grid-row:4;margin:0;min-height:0;overflow:hidden}
+  .wrap > .card:nth-of-type(1){grid-column:1}
+  .wrap > .card:nth-of-type(2){grid-column:2}
+}
 </style>
 </head>
 <body>
 <main class="wrap">
   <h1>导数的几何意义</h1>
-  <p class="lead">曲线 <span class="mono">f(x) = 0.25x³ − x</span>。左右拖点 P,再把 Δx 缩小,看割线怎么变成切线。</p>
+  <p class="lead">曲线 <span class="mono">f(x) = 0.25x³ − x</span>。按「播放演示」看一遍,或者自己左右拖点 P、把 Δx 缩小。</p>
   <div class="tags">
     <span class="tag">高中 · 导数</span>
     <span class="tag">认知动作:逼近</span>
@@ -111,22 +139,23 @@ button:disabled{opacity:.45;cursor:default}
     <canvas id="cv" width="360" height="300" aria-label="曲线、割线与切线"></canvas>
     <div class="row">
       <span class="name">Δx</span>
-      <input id="sh" type="range" min="0.05" max="2" step="0.05" value="1.5" aria-label="Δx 的大小">
+      <input id="sh" type="range" min="0.05" max="2" step="0.01" value="1.5" aria-label="Δx 的大小">
       <span class="val" id="vh">1.50</span>
     </div>
     <p class="hint" id="hint">先左右拖曲线上那个橙点,感觉一下割线怎么跟着转。</p>
     <div class="bar">
+      <button id="play" class="play" type="button">播放演示</button>
       <button id="lim" class="lim" type="button">让 Δx → 0</button>
       <button id="next" class="go" type="button">下一步</button>
       <button id="reset" type="button">重置</button>
       <span class="step" id="stage">阶段 1 / 3</span>
     </div>
-    <div class="panel hide" id="panel"></div>
+    <div class="slot" id="panelSlot"><div class="panel" id="panel"></div></div>
   </section>
 
   <section class="card">
     <div class="fb" id="fb">先拖点 P,再动 Δx 滑杆。</div>
-    <div class="eq hide" id="eq"></div>
+    <div class="slot" id="eqSlot"><div class="eq" id="eq"></div></div>
   </section>
 </main>
 
@@ -143,26 +172,57 @@ button:disabled{opacity:.45;cursor:default}
     cc:c('--hi-c'), ccSoft:c('--hi-c-soft')
   };
   var MONO = c('--mono');
+  var TAU = Math.PI * 2;
 
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
   var sh = document.getElementById('sh'), vh = document.getElementById('vh');
-  var panel = document.getElementById('panel'), fb = document.getElementById('fb');
-  var eq = document.getElementById('eq'), hint = document.getElementById('hint');
-  var stageEl = document.getElementById('stage');
-  var btnLim = document.getElementById('lim'), btnNext = document.getElementById('next');
-  var btnReset = document.getElementById('reset');
+  var panel = document.getElementById('panel'), panelSlot = document.getElementById('panelSlot');
+  var fb = document.getElementById('fb');
+  var eq = document.getElementById('eq'), eqSlot = document.getElementById('eqSlot');
+  var hint = document.getElementById('hint'), stageEl = document.getElementById('stage');
+  var btnPlay = document.getElementById('play'), btnLim = document.getElementById('lim');
+  var btnNext = document.getElementById('next'), btnReset = document.getElementById('reset');
 
   function f(x){ return 0.25 * x * x * x - x; }
   function df(x){ return 0.75 * x * x - 1; }
 
-  var X00 = -1.4, H0 = 1.5, HMIN = 0.05, XLIM = 2.3;
-  var st = { x0:X00, h:H0, stage:1, drag:false, anim:0 };
+  /* ══════════ 运动引擎:双轨状态 + 常驻主循环 ══════════ */
+  // k 是「每 1/60 秒还剩多少差距」:越小越快。SMOOTH 常规,GRAB 拖拽跟手,SNAP 重置回摆。
+  var K_SMOOTH = 0.90, K_GRAB = 0.55, K_SNAP = 0.78;
+  function approach(now, want, dt, kk){
+    return now + (want - now) * (1 - Math.pow(kk, dt * 60));
+  }
+  function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
+  function smoothstep(u){ u = clamp(u, 0, 1); return u * u * (3 - 2 * u); }
+
+  var X00 = -1.4, H0 = 1.5, HMIN = 0.05, HMAX = 2, XLIM = 2.3;
+  // target = 交互与巡航写入的目标;current = 画面上真正在用的值,每帧向 target 缓动。
+  var tgt = { x0:X00, h:H0, stage:1 };
+  var cur = { x0:X00, h:H0, a2:0, a3:0 };
+  var play = { on:false, t:0 };
+  var drag = { on:false };
+  var boost = 0;
+
+  // Q 的收敛痕迹(余晖):环形缓冲区,不在帧里新建对象。
+  var TRAIL = 26, trailX = new Float64Array(TRAIL), trailN = 0, trailHead = 0, trailClock = 0;
 
   var X0 = -3.2, X1 = 3.2, YMAX = 4.3;
   var W = 360, H = 300, sx = 1, sy = 1, ox = 180, oy = 150;
+  // 宽屏两栏时,画布高度按卡片竖向剩余空间封顶 —— 平板上卡片内容必须完整可见,禁止滚动。
+  function fitH(){
+    if (!window.matchMedia('(min-width:900px)').matches) return 0;
+    var card = cv.parentElement; if (!card) return 0;
+    var used = 0, kids = card.children;
+    for (var i = 0; i < kids.length; i++){ if (kids[i] !== cv) used += kids[i].offsetHeight; }
+    var cs = getComputedStyle(card);
+    var lim = card.clientHeight - used - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 10;
+    if (card.querySelector('.slot') && !card.querySelector('.slot.on')) lim -= 80;
+    return lim > 200 ? lim : 0;
+  }
   function layout(){
     var w = Math.max(cv.clientWidth || 340, 260);
     var h = Math.round(Math.min(Math.max(w * 0.86, 250), 380));
+    var cap = fitH(); if (cap) h = Math.min(h, Math.round(cap));
     var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
     cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -173,15 +233,60 @@ button:disabled{opacity:.45;cursor:default}
   function wx(s){ return (s - ox) / sx; }
   function n2(v){ return v.toFixed(2); }
   function n3(v){ return v.toFixed(3); }
-  function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
 
-  // Q 始终留在画布内:x₀ 靠右时让 Δx 朝左取,方向仍与「Δx 大小」一致。
-  function qx(){ return st.x0 + (st.x0 > 1.2 ? -st.h : st.h); }
+  // Δx 一律朝右取,并按右边界收一收,保证 Q 永远在画面内 —— 这样方向不会突然翻面。
+  function hEff(){ return Math.min(cur.h, 3.05 - cur.x0); }
+  function qx(){ return cur.x0 + hEff(); }
   function slope(){
-    var a = st.x0, b = qx();
+    var a = cur.x0, b = qx();
     return (f(b) - f(a)) / (b - a);
   }
 
+  /* ══════════ 巡航脚本:课堂投屏直接放的那条故事线 ══════════ */
+  var SCRIPT = [
+    { t:0.0,  x0:-1.4, h:1.5,  stage:1 },
+    { t:3.2,  x0:1.0,  h:1.2,  stage:1 },   // P 巡游,割线跟着转,Δx 顺手先收一点
+    { t:5.6,  x0:1.0,  h:0.7,  stage:2 },   // 收 Δx,出数字
+    { t:8.2,  x0:1.0,  h:0.05, stage:3 },   // 逼到下限,出切线
+    { t:10.4, x0:1.0,  h:1.2,  stage:3 },   // 呼吸:放开
+    { t:12.8, x0:1.0,  h:0.05, stage:3 },   // 呼吸:再收
+    { t:15.4, x0:-0.6, h:0.05, stage:3 },   // 换个 x₀,切线跟着换
+    { t:17.8, x0:-1.4, h:0.9,  stage:3 },
+    { t:20.0, x0:-1.4, h:1.5,  stage:1 }
+  ];
+  var CYCLE = SCRIPT[SCRIPT.length - 1].t;
+
+  function cruise(dt){
+    if (!play.on) return;
+    play.t += dt;
+    if (play.t >= CYCLE) play.t -= CYCLE;
+    var i = 0;
+    while (i < SCRIPT.length - 2 && SCRIPT[i + 1].t <= play.t) i++;
+    var s0 = SCRIPT[i], s1 = SCRIPT[i + 1];
+    var u = smoothstep((play.t - s0.t) / (s1.t - s0.t));
+    tgt.x0 = s0.x0 + (s1.x0 - s0.x0) * u;
+    tgt.h = s0.h + (s1.h - s0.h) * u;
+    tgt.stage = s0.stage;
+  }
+
+  function settle(dt){
+    var base = boost > 0 ? K_SNAP : K_SMOOTH;
+    if (boost > 0) boost = Math.max(0, boost - dt);
+    cur.x0 = approach(cur.x0, tgt.x0, dt, drag.on ? K_GRAB : base);
+    cur.h = approach(cur.h, tgt.h, dt, base);
+    cur.a2 = approach(cur.a2, tgt.stage >= 2 ? 1 : 0, dt, base);
+    cur.a3 = approach(cur.a3, tgt.stage >= 3 ? 1 : 0, dt, base);
+    // 每 40ms 记一个 Q 的位置,画成渐隐的收敛痕迹。
+    trailClock += dt;
+    if (trailClock >= 0.04){
+      trailClock = 0;
+      trailX[trailHead] = qx();
+      trailHead = (trailHead + 1) % TRAIL;
+      if (trailN < TRAIL) trailN++;
+    }
+  }
+
+  /* ══════════ 绘制:全部读 current,不读 target ══════════ */
   function drawFrame(){
     ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = COL.sheet; ctx.fillRect(0, 0, W, H);
@@ -207,8 +312,9 @@ button:disabled{opacity:.45;cursor:default}
     ctx.stroke();
   }
 
-  function drawLineThrough(x, y, k, color, lw, dash){
+  function drawLineThrough(x, y, k, color, lw, dash, alpha){
     ctx.save();
+    ctx.globalAlpha = alpha === undefined ? 1 : alpha;
     ctx.setLineDash(dash || []);
     ctx.strokeStyle = color; ctx.lineWidth = lw;
     ctx.beginPath();
@@ -219,34 +325,51 @@ button:disabled{opacity:.45;cursor:default}
   }
 
   function dot(x, y, color, r){
-    ctx.beginPath(); ctx.arc(px(x), py(y), (r || 6) + 3, 0, Math.PI * 2);
+    ctx.beginPath(); ctx.arc(px(x), py(y), (r || 6) + 3, 0, TAU);
     ctx.fillStyle = COL.sheet; ctx.fill();
-    ctx.beginPath(); ctx.arc(px(x), py(y), r || 6, 0, Math.PI * 2);
+    ctx.beginPath(); ctx.arc(px(x), py(y), r || 6, 0, TAU);
     ctx.fillStyle = color; ctx.fill();
   }
 
-  function drawStepMark(){
-    var a = st.x0, b = qx();
+  // Q 一路走过来的痕迹:越旧越淡,一眼看出「从哪儿逼近过来的」。
+  function drawTrail(){
     ctx.save();
+    ctx.fillStyle = COL.b;
+    for (var i = 0; i < trailN; i++){
+      var age = (trailN - i) / trailN;
+      var idx = (trailHead - 1 - i + TRAIL * 2) % TRAIL;
+      var x = trailX[idx];
+      ctx.globalAlpha = 0.30 * (1 - age);
+      ctx.beginPath(); ctx.arc(px(x), py(f(x)), 2.6, 0, TAU); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawStepMark(alpha){
+    var a = cur.x0, b = qx();
+    ctx.save();
+    ctx.globalAlpha = alpha;
     ctx.setLineDash([5, 4]); ctx.strokeStyle = COL.cc; ctx.lineWidth = 1.6;
     ctx.beginPath();
     ctx.moveTo(px(a), py(f(a))); ctx.lineTo(px(b), py(f(a))); ctx.lineTo(px(b), py(f(b)));
     ctx.stroke();
-    ctx.restore();
+    ctx.setLineDash([]);
     ctx.fillStyle = COL.cc; ctx.font = '700 11.5px ' + MONO;
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     ctx.fillText('Δx', px((a + b) / 2), py(f(a)) + 4);
-    ctx.textAlign = b > a ? 'left' : 'right'; ctx.textBaseline = 'middle';
-    ctx.fillText('Δy', px(b) + (b > a ? 6 : -6), py((f(a) + f(b)) / 2));
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('Δy', px(b) + 6, py((f(a) + f(b)) / 2));
+    ctx.restore();
   }
 
   function draw(){
-    var a = st.x0, b = qx(), k = slope();
+    var a = cur.x0, b = qx(), k = slope();
     drawFrame();
     drawCurve();
-    if (st.stage >= 3) drawLineThrough(a, f(a), df(a), COL.b, 2, [6, 5]);
+    drawTrail();
+    if (cur.a3 > 0.01) drawLineThrough(a, f(a), df(a), COL.b, 2, [6, 5], cur.a3);
     drawLineThrough(a, f(a), k, COL.cc, 2.2);
-    if (st.stage >= 2) drawStepMark();
+    if (cur.a2 > 0.01) drawStepMark(cur.a2);
     dot(b, f(b), COL.b, 5);
     dot(a, f(a), COL.a, 7);
     ctx.fillStyle = COL.a; ctx.font = '700 12px ' + MONO;
@@ -256,107 +379,154 @@ button:disabled{opacity:.45;cursor:default}
     ctx.fillText('Q', px(b), py(f(b)) - 10);
   }
 
-  function renderPanel(){
-    var a = st.x0, b = qx(), k = slope(), d = df(a);
-    var rows =
-      '<div><span>x₀</span><span>' + n2(a) + '</span></div>' +
-      '<div><span>Δx</span><span>' + n2(b - a) + '</span></div>' +
-      '<div><span>Δy</span><span>' + n3(f(b) - f(a)) + '</span></div>' +
-      '<div class="k1"><span>割线斜率 Δy/Δx</span><span>' + n3(k) + '</span></div>';
-    if (st.stage >= 3){
-      rows += '<div class="k2"><span>切线斜率 f\u2032(x₀)</span><span>' + n3(d) + '</span></div>' +
-        '<div class="k2"><span>两者相差</span><span>' + n3(Math.abs(k - d)) + '</span></div>';
-    }
-    panel.innerHTML = rows;
+  /* ══════════ 文字:只在内容变化时写 DOM ══════════ */
+  var shown = { vh:'', panel:'', fb:'', eq:'', stage:'', hint:'', play:'' };
+  function setText(el, key, text){
+    if (shown[key] !== text){ shown[key] = text; el.textContent = text; }
   }
-
-  function feedback(){
-    var a = st.x0, k = slope(), d = df(a), gap = Math.abs(k - d);
-    var dx = qx() - a, msg;
-    if (st.stage < 3){
-      msg = 'Δx = <b>' + n2(dx) + '</b>,此时割线斜率 Δy/Δx = <b>' + n3(k) +
-            '</b>。继续把 Δx 往 0 缩,盯住这个数往哪儿走。';
-    } else if (st.h <= 0.2){
-      msg = 'Δx = <b>' + n2(dx) + '</b>:割线斜率 <b>' + n3(k) + '</b>,切线斜率 f′(x₀) = <b>' +
-            n3(d) + '</b>,只差 ' + n3(gap) +
-            '。割线的极限位置就是切线,这个极限值就是导数 —— Δx 不能真取 0,那时 Q 与 P 重合,割线都不存在了。';
-    } else {
-      msg = 'Δx = <b>' + n2(dx) + '</b> 还偏大:割线斜率 ' + n3(k) + ' 与切线斜率 ' + n3(d) +
-            ' 差 ' + n3(gap) + '。按「让 Δx → 0」看这个差怎么缩下去。';
-    }
-    fb.innerHTML = msg;
+  function setHTML(el, key, html){
+    if (shown[key] !== html){ shown[key] = html; el.innerHTML = html; }
   }
 
   var HINTS = [
     '先左右拖曲线上那个橙点,感觉一下割线怎么跟着转。',
     '数字出来了:Δx、Δy 和它们的比。把 Δx 往左拖小一点。',
-    '绿虚线是切线。让 Δx → 0,看割线怎么躺到它上面。'
+    '绿虚线是切线。按「让 Δx → 0」,看割线怎么躺到它上面。'
   ];
 
-  function render(){
-    vh.textContent = n2(st.h);
-    stageEl.textContent = '阶段 ' + st.stage + ' / 3';
-    hint.textContent = HINTS[st.stage - 1];
-    btnNext.disabled = st.stage >= 3;
-    if (st.stage >= 2){ panel.classList.remove('hide'); renderPanel(); }
-    else panel.classList.add('hide');
-    if (st.stage >= 3){
-      eq.classList.remove('hide');
-      eq.innerHTML = 'f\u2032(x₀) = lim(Δx→0) Δy/Δx = ' + n3(df(st.x0)) +
-        '<small>x₀ = ' + n2(st.x0) + ' 处的切线斜率,就是平均变化率 Δy/Δx 在 Δx → 0 时的极限。' +
-        '这里 f(x) = 0.25x³ − x,f′(x) = 0.75x² − 1。</small>';
-    } else eq.classList.add('hide');
+  function panelHTML(){
+    var a = cur.x0, b = qx(), k = slope(), d = df(a);
+    var rows =
+      '<div><span>x₀</span><span>' + n2(a) + '</span></div>' +
+      '<div><span>Δx</span><span>' + n2(b - a) + '</span></div>' +
+      '<div><span>Δy</span><span>' + n3(f(b) - f(a)) + '</span></div>' +
+      '<div class="k1"><span>割线斜率 Δy/Δx</span><span>' + n3(k) + '</span></div>';
+    if (tgt.stage >= 3){
+      rows += '<div class="k2"><span>切线斜率 f\u2032(x₀)</span><span>' + n3(d) + '</span></div>' +
+        '<div class="k2"><span>两者相差</span><span>' + n3(Math.abs(k - d)) + '</span></div>';
+    }
+    return rows;
+  }
+
+  function feedbackHTML(){
+    var a = cur.x0, k = slope(), d = df(a), gap = Math.abs(k - d), dx = hEff();
+    if (tgt.stage < 3){
+      return 'Δx = <b>' + n2(dx) + '</b>,此时割线斜率 Δy/Δx = <b>' + n3(k) +
+             '</b>。继续把 Δx 往 0 缩,盯住这个数往哪儿走。';
+    }
+    if (dx <= 0.2){
+      return 'Δx = <b>' + n2(dx) + '</b>:割线斜率 <b>' + n3(k) + '</b>,切线斜率 f′(x₀) = <b>' +
+             n3(d) + '</b>,只差 ' + n3(gap) +
+             '。割线的极限位置就是切线,这个极限值就是导数 —— Δx 不能真取 0,那时 Q 与 P 重合,割线都不存在了。';
+    }
+    return 'Δx = <b>' + n2(dx) + '</b> 还偏大:割线斜率 ' + n3(k) + ' 与切线斜率 ' + n3(d) +
+           ' 差 ' + n3(gap) + '。按「让 Δx → 0」看这个差怎么缩下去。';
+  }
+
+  function equationHTML(){
+    return 'f\u2032(x₀) = lim(Δx→0) Δy/Δx = ' + n3(df(cur.x0)) +
+      '<small>x₀ = ' + n2(cur.x0) + ' 处的切线斜率,就是平均变化率 Δy/Δx 在 Δx → 0 时的极限。' +
+      '这里 f(x) = 0.25x³ − x,f′(x) = 0.75x² − 1。</small>';
+  }
+
+  var textClock = 0;
+  function syncUI(dt){
+    setText(vh, 'vh', n2(hEff()));
+    setText(stageEl, 'stage', '阶段 ' + tgt.stage + ' / 3');
+    setText(hint, 'hint', HINTS[tgt.stage - 1]);
+    setText(btnPlay, 'play', play.on ? '暂停演示' : '播放演示');
+    if (btnNext.disabled !== (tgt.stage >= 3)) btnNext.disabled = tgt.stage >= 3;
+    if (panelSlot.classList.contains('on') !== (tgt.stage >= 2)) panelSlot.classList.toggle('on', tgt.stage >= 2);
+    if (eqSlot.classList.contains('on') !== (tgt.stage >= 3)) eqSlot.classList.toggle('on', tgt.stage >= 3);
+    // 数值在动,但不必每帧改 DOM:0.12 秒一次够读了。
+    textClock += dt;
+    if (textClock >= 0.12){
+      textClock = 0;
+      setHTML(fb, 'fb', feedbackHTML());
+      if (tgt.stage >= 2) setHTML(panel, 'panel', panelHTML());
+      if (tgt.stage >= 3) setHTML(eq, 'eq', equationHTML());
+    }
+    if (play.on || boost > 0){
+      if (Math.abs(parseFloat(sh.value) - cur.h) > 0.008) sh.value = String(Math.round(cur.h * 100) / 100);
+    }
+  }
+
+  /* ══════════ 唯一的主循环 ══════════ */
+  var loop = { last:0, id:0 };
+  function frame(now){
+    // dt 夹到 50ms:标签页切回来、断点续跑都不会让画面瞬移。
+    var dtms = loop.last ? Math.min(now - loop.last, 50) : 16.7;
+    loop.last = now;
+    var dt = dtms / 1000;
+    cruise(dt);
+    settle(dt);
     draw();
-    feedback();
+    syncUI(dt);
+    loop.id = requestAnimationFrame(frame);
   }
 
-  function shrink(){
-    if (st.h <= HMIN + 1e-9){ st.anim = 0; render(); return; }
-    st.h = Math.max(HMIN, st.h * 0.90);
-    sh.value = String(Math.max(HMIN, Math.round(st.h * 100) / 100));
-    render();
-    st.anim = requestAnimationFrame(shrink);
-  }
-  function stopAnim(){ if (st.anim){ cancelAnimationFrame(st.anim); st.anim = 0; } }
-
+  /* ══════════ 事件:只改 target,不画 ══════════ */
+  function takeOver(){ if (play.on){ play.on = false; } }
   function local(ev){
     var r = cv.getBoundingClientRect();
     return [ev.clientX - r.left, ev.clientY - r.top];
   }
+
   cv.addEventListener('pointerdown', function(ev){
     var p = local(ev);
     // 命中范围放大到 26px,手指也能抓住 P。
-    if (Math.hypot(p[0] - px(st.x0), p[1] - py(f(st.x0))) <= 26){
-      st.drag = true; stopAnim(); cv.setPointerCapture(ev.pointerId); ev.preventDefault();
+    if (Math.hypot(p[0] - px(cur.x0), p[1] - py(f(cur.x0))) <= 26){
+      takeOver();
+      drag.on = true;
+      cv.setPointerCapture(ev.pointerId);
+      ev.preventDefault();
     }
   });
   cv.addEventListener('pointermove', function(ev){
-    if (!st.drag) return;
+    if (!drag.on) return;
     var p = local(ev);
-    st.x0 = clamp(Math.round(wx(p[0]) * 20) / 20, -XLIM, XLIM);
-    render(); ev.preventDefault();
+    // 跟手:直接吃连续量,拖动过程里不吸附。
+    tgt.x0 = clamp(wx(p[0]), -XLIM, XLIM);
+    ev.preventDefault();
   });
-  function endDrag(){ st.drag = false; }
+  function endDrag(){
+    if (!drag.on) return;
+    // 松手才归位:吸到 0.1 的整档,靠缓动走过去。
+    tgt.x0 = clamp(Math.round(tgt.x0 * 10) / 10, -XLIM, XLIM);
+    drag.on = false;
+  }
   cv.addEventListener('pointerup', endDrag);
   cv.addEventListener('pointercancel', endDrag);
 
-  sh.addEventListener('input', function(){ stopAnim(); st.h = parseFloat(sh.value); render(); });
-  btnLim.addEventListener('click', function(){ stopAnim(); st.anim = requestAnimationFrame(shrink); });
-  btnNext.addEventListener('click', function(){ if (st.stage < 3){ st.stage++; render(); } });
-  btnReset.addEventListener('click', function(){
-    stopAnim();
-    st.x0 = X00; st.h = H0; st.stage = 1; st.drag = false;
-    sh.value = String(H0); vh.textContent = n2(H0);
-    stageEl.textContent = '阶段 1 / 3';
-    hint.textContent = HINTS[0];
-    btnNext.disabled = false;
-    panel.classList.add('hide'); eq.classList.add('hide');
-    fb.textContent = '先拖点 P,再动 Δx 滑杆。';
-    layout(); draw();
+  sh.addEventListener('input', function(){
+    takeOver();
+    tgt.h = clamp(parseFloat(sh.value), HMIN, HMAX);
   });
-  window.addEventListener('resize', function(){ layout(); draw(); });
+  btnLim.addEventListener('click', function(){
+    takeOver();
+    tgt.h = HMIN;   // 逼近过程交给缓动本身走,不另起一个循环
+  });
+  btnPlay.addEventListener('click', function(){ play.on = !play.on; });
+  btnNext.addEventListener('click', function(){
+    takeOver();
+    if (tgt.stage < 3) tgt.stage++;
+  });
+  btnReset.addEventListener('click', function(){
+    play.on = false; play.t = 0; drag.on = false;
+    tgt.x0 = X00; tgt.h = H0; tgt.stage = 1;
+    trailN = 0; trailHead = 0;
+    boost = 0.55;   // 快速回摆,不闪回
+  });
+  window.addEventListener('resize', layout);
 
-  layout(); draw();
+  // smoke 桩(tools/smoke-animations.mjs)用的只读探针:current 值 + 可拖点屏幕坐标。
+  window.__kpProbe = function(){
+    return { playing:play.on, stage:tgt.stage, grab:[px(cur.x0), py(f(cur.x0))],
+      vals:{ x0:cur.x0, h:cur.h, a3:cur.a3 } };
+  };
+
+  layout();
+  loop.id = requestAnimationFrame(frame);
 })();
 </script>
 </body>

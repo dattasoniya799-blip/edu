@@ -30,6 +30,13 @@ EVAL:动态收益 5(「两小块拼成一大块」是面积关系,静态图只�
   - 「a = 3.00、b = 4.00:9.00 + 16.00 = 25.00,大正方形正好 25.00。」
   - 「你已经换了好几组直角边,两个小正方形的面积之和一直等于大正方形 —— 这就是勾股定理。」
   - 「注意大正方形一直贴在最长的那条边上:c 是斜边,不能拿直角边去当 c。」
+
+运动设计(引擎 v2):
+  常驻 rAF 主循环;a / b / 阶段透明度双轨缓动,拖拽跟手(连续量,不吸附),
+  松手后才缓动归位到 0.25 的整档。巡航脚本:先只拉长 a → 再压短 b → 回到 3·4 停一拍
+  读 9+16=25 → 换成 4.5·6 再换成小三角形,证明换几组都成立。
+  阶段 2 起有一枚「对账指针」沿 a 方、b 方、c 方三个正方形的边界依次巡游,
+  把「两小块 ⇔ 一大块」走成一个可看的动作。
 ════════════════════════════════════════════════════
 -->
 <html lang="zh-CN">
@@ -72,11 +79,13 @@ canvas{display:block;width:100%;height:auto;touch-action:none;border-radius:var(
 .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}
 button{font-family:var(--font);font-size:13.5px;min-height:var(--tap);padding:0 15px;
        border-radius:var(--r-sm);border:1px solid var(--rule);background:var(--sheet-sub);
-       color:var(--ink-1);cursor:pointer}
+       color:var(--ink-1);cursor:pointer;transition:background-color .2s ease,color .2s ease}
+button.play{background:var(--hi-c-soft);border-color:var(--hi-c);color:var(--hi-c);font-weight:600;
+            min-width:106px}
 button.go{background:var(--hi-a-soft);border-color:var(--hi-a);color:var(--hi-a);font-weight:600}
 button:disabled{opacity:.45;cursor:default}
 .step{font-size:12px;color:var(--ink-2);margin-left:auto}
-.ledger{font-family:var(--mono);font-size:13px;margin-top:9px;border-top:1px solid var(--rule);padding-top:8px}
+.ledger{font-family:var(--mono);font-size:13px;border-top:1px solid var(--rule);padding-top:8px}
 .ledger div{display:flex;justify-content:space-between;min-height:24px;align-items:center}
 .ledger .la{color:var(--hi-a)}
 .ledger .lb{color:var(--hi-b)}
@@ -86,16 +95,35 @@ button:disabled{opacity:.45;cursor:default}
     padding:9px 11px;font-size:13px}
 .fb b{color:var(--hi-b);font-family:var(--mono)}
 .eq{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--hi-c);
-    background:var(--hi-c-soft);border-radius:var(--r-sm);padding:8px 11px;margin-top:9px}
+    background:var(--hi-c-soft);border-radius:var(--r-sm);padding:8px 11px}
 .eq small{display:block;font-family:var(--font);font-size:12px;font-weight:400;
           color:var(--ink-2);margin-top:3px}
-.hide{display:none}
+/* 分步揭示也不许闪现:max-height + opacity 缓出,和画布里的 alpha 双轨同一个手感。 */
+.slot{max-height:0;opacity:0;overflow:hidden;
+      transition:max-height .42s ease,opacity .32s ease,margin-top .42s ease}
+.slot.on{max-height:190px;opacity:1;margin-top:9px}
+/* 宽屏两栏(平板横屏单屏收纳):画布卡锁左、反馈卡在右,整页 100dvh 不滚动;≤900px 维持原单列。 */
+@media (min-width: 900px){
+  .wrap{
+    max-width:none;height:100dvh;box-sizing:border-box;overflow:hidden;
+    display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,.85fr);
+    grid-template-rows:auto auto auto minmax(0,1fr);
+    column-gap:16px;align-content:start;padding:12px 18px;
+  }
+  .wrap > h1{grid-column:1/-1;margin:0 0 2px}
+  .wrap > .lead{grid-column:1/-1;margin:0 0 6px}
+  .wrap > .tags{grid-column:1/-1;margin:0 0 8px}
+  body{overflow:hidden}
+  .wrap > .card{grid-row:4;margin:0;min-height:0;overflow:hidden}
+  .wrap > .card:nth-of-type(1){grid-column:1}
+  .wrap > .card:nth-of-type(2){grid-column:2}
+}
 </style>
 </head>
 <body>
 <main class="wrap">
   <h1>勾股定理面积对账</h1>
-  <p class="lead">拖动图上两个圆点改变直角边,盯住三个正方形的面积。</p>
+  <p class="lead">按「播放演示」看一遍,或者自己拖图上两个圆点改变直角边,盯住三个正方形的面积。</p>
   <div class="tags">
     <span class="tag">初中 · 勾股定理</span>
     <span class="tag">认知动作:分解</span>
@@ -106,16 +134,17 @@ button:disabled{opacity:.45;cursor:default}
     <canvas id="cv" width="340" height="340" aria-label="直角三角形与三条边上的正方形"></canvas>
     <p class="hint" id="hint">拖右边那个点(改 a)和上面那个点(改 b),先只看形状。</p>
     <div class="bar">
+      <button id="play" class="play" type="button">播放演示</button>
       <button id="next" class="go" type="button">下一步</button>
       <button id="reset" type="button">重置</button>
       <span class="step" id="stage">阶段 1 / 3</span>
     </div>
-    <div class="ledger hide" id="ledger"></div>
+    <div class="slot" id="ledgerSlot"><div class="ledger" id="ledger"></div></div>
   </section>
 
   <section class="card">
-    <div class="fb" id="fb">先随手拖两下,把三角形拖成你喜欢的形状。</div>
-    <div class="eq hide" id="eq"></div>
+    <div class="fb" id="fb">先随手拖两下,或者按播放让它自己换几组直角边。</div>
+    <div class="slot" id="eqSlot"><div class="eq" id="eq"></div></div>
   </section>
 </main>
 
@@ -132,23 +161,61 @@ button:disabled{opacity:.45;cursor:default}
     cc:c('--hi-c'), ccSoft:c('--hi-c-soft')
   };
   var MONO = c('--mono');
+  var TAU = Math.PI * 2;
 
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
   var hint = document.getElementById('hint'), stageEl = document.getElementById('stage');
-  var ledger = document.getElementById('ledger'), fb = document.getElementById('fb');
-  var eq = document.getElementById('eq');
+  var ledger = document.getElementById('ledger'), ledgerSlot = document.getElementById('ledgerSlot');
+  var fb = document.getElementById('fb');
+  var eq = document.getElementById('eq'), eqSlot = document.getElementById('eqSlot');
+  var btnPlay = document.getElementById('play');
   var btnNext = document.getElementById('next'), btnReset = document.getElementById('reset');
 
+  /* ══════════ 运动引擎:双轨状态 + 常驻主循环 ══════════ */
+  // k 是「每 1/60 秒还剩多少差距」:越小越快。SMOOTH 常规,GRAB 拖拽跟手,SNAP 重置回摆。
+  var K_SMOOTH = 0.90, K_GRAB = 0.55, K_SNAP = 0.78;
+  function approach(now, want, dt, kk){
+    return now + (want - now) * (1 - Math.pow(kk, dt * 60));
+  }
+  function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
+  function smoothstep(u){ u = clamp(u, 0, 1); return u * u * (3 - 2 * u); }
+
   var A0 = 3, B0 = 4, MIN = 1.5, MAX = 6;
-  var st = { a:A0, b:B0, stage:1, moves:0, drag:null };
+  // target = 交互与巡航写入的目标;current = 画面上真正在用的值,每帧向 target 缓动。
+  var tgt = { a:A0, b:B0, stage:1 };
+  var cur = { a:A0, b:B0, a2:0, a3:0, scan:0 };
+  var play = { on:false, t:0, seg:0 };
+  var drag = { key:null };
+  var moves = 0, boost = 0;
 
   // 世界窗口固定不动:拖动时比例尺不变,「面积变大」才是真的变大。
   var VX0 = -6.6, VX1 = 12.4, W = 340, H = 340, unit = 18, pad = 0;
+  // 宽屏两栏时,画布边长按卡片竖向剩余空间封顶 —— 平板上卡片内容必须完整可见,禁止滚动。
+  function fitH(){
+    if (!window.matchMedia('(min-width:900px)').matches) return 0;
+    var card = cv.parentElement; if (!card) return 0;
+    var used = 0, kids = card.children;
+    for (var i = 0; i < kids.length; i++){ if (kids[i] !== cv) used += kids[i].offsetHeight; }
+    var cs = getComputedStyle(card);
+    var lim = card.clientHeight - used - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 10;
+    if (card.querySelector('.slot') && !card.querySelector('.slot.on')) lim -= 80;
+    return lim > 200 ? lim : 0;
+  }
   function layout(){
-    var w = Math.max(cv.clientWidth || 320, 250);
+    // 宽度从卡片量(画布显示宽可能被 style.width 收窄,不能再从自身量)
+    var card = cv.parentElement;
+    var cs0 = card ? getComputedStyle(card) : null;
+    var wAvail = card
+      ? card.clientWidth - parseFloat(cs0.paddingLeft) - parseFloat(cs0.paddingRight)
+      : (cv.clientWidth || 320);
+    var w = Math.max(wAvail, 250);
+    // 正方形画布:边长受宽、高双向约束;显示尺寸与逻辑尺寸严格一致,不歪曲拖拽命中
+    var cap = fitH();
+    var s = cap ? Math.min(w, Math.round(cap)) : w;
+    cv.style.width = s + 'px'; cv.style.height = s + 'px'; cv.style.margin = '0 auto';
     var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
-    W = w; H = w;
-    cv.width = Math.round(w * dpr); cv.height = Math.round(w * dpr);
+    W = s; H = s;
+    cv.width = Math.round(s * dpr); cv.height = Math.round(s * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     unit = W / (VX1 - VX0);
     pad = -VX0 * unit;
@@ -158,24 +225,49 @@ button:disabled{opacity:.45;cursor:default}
   function wx(sx){ return (sx - pad) / unit; }
   function wy(sy){ return (H - pad - sy) / unit; }
   function n2(v){ return v.toFixed(2); }
-  function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
 
-  function poly(pts, fill, stroke, lw){
-    ctx.beginPath();
-    ctx.moveTo(px(pts[0][0]), py(pts[0][1]));
-    for (var i = 1; i < pts.length; i++) ctx.lineTo(px(pts[i][0]), py(pts[i][1]));
-    ctx.closePath();
-    if (fill){ ctx.fillStyle = fill; ctx.fill(); }
-    if (stroke){ ctx.strokeStyle = stroke; ctx.lineWidth = lw || 2; ctx.stroke(); }
-  }
-  function label(text, x, y, color, size){
-    ctx.fillStyle = color; ctx.font = '700 ' + (size || 12) + 'px ' + MONO;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(text, px(x), py(y));
+  /* ══════════ 巡航脚本:课堂投屏直接放的那条故事线 ══════════ */
+  var SCRIPT = [
+    { t:0.0,  a:3.0, b:4.0, stage:1 },
+    { t:3.0,  a:5.5, b:4.0, stage:1 },   // 只拉长 a
+    { t:5.6,  a:5.5, b:2.0, stage:1 },   // 只压短 b
+    { t:8.2,  a:3.0, b:4.0, stage:2 },   // 回到 3·4,放出面积数字
+    { t:10.2, a:3.0, b:4.0, stage:2 },   // 停一拍:9 + 16 = 25
+    { t:13.0, a:4.5, b:6.0, stage:3 },   // 换一组,关系照旧
+    { t:15.8, a:2.0, b:2.6, stage:3 },   // 再换成小三角形
+    { t:18.4, a:3.0, b:4.0, stage:1 }
+  ];
+  var CYCLE = SCRIPT[SCRIPT.length - 1].t;
+
+  function cruise(dt){
+    if (!play.on) return;
+    play.t += dt;
+    if (play.t >= CYCLE) play.t -= CYCLE;
+    var i = 0;
+    while (i < SCRIPT.length - 2 && SCRIPT[i + 1].t <= play.t) i++;
+    if (i !== play.seg){ play.seg = i; moves++; }   // 每换一段就是「换了一组直角边」
+    var s0 = SCRIPT[i], s1 = SCRIPT[i + 1];
+    var u = smoothstep((play.t - s0.t) / (s1.t - s0.t));
+    tgt.a = s0.a + (s1.a - s0.a) * u;
+    tgt.b = s0.b + (s1.b - s0.b) * u;
+    tgt.stage = s0.stage;
   }
 
+  function settle(dt){
+    var base = boost > 0 ? K_SNAP : K_SMOOTH;
+    if (boost > 0) boost = Math.max(0, boost - dt);
+    cur.a = approach(cur.a, tgt.a, dt, drag.key === 'a' ? K_GRAB : base);
+    cur.b = approach(cur.b, tgt.b, dt, drag.key === 'b' ? K_GRAB : base);
+    cur.a2 = approach(cur.a2, tgt.stage >= 2 ? 1 : 0, dt, base);
+    cur.a3 = approach(cur.a3, tgt.stage >= 3 ? 1 : 0, dt, base);
+    // 对账指针:0→1 走 a 方的边,1→2 走 b 方的边,2→3 走 c 方的边,循环。
+    cur.scan += dt * 0.34;
+    if (cur.scan >= 3) cur.scan -= 3;
+  }
+
+  /* ══════════ 绘制:全部读 current,不读 target ══════════ */
   function geom(){
-    var a = st.a, b = st.b;
+    var a = cur.a, b = cur.b;
     var cLen = Math.sqrt(a * a + b * b);
     // 斜边正方形:把向量 AB 顺时针转 90° 得到向外的方向 (b, a)。
     return {
@@ -185,6 +277,23 @@ button:disabled{opacity:.45;cursor:default}
       sqC:[[a, 0], [0, b], [b, b + a], [a + b, a]],
       tri:[[0, 0], [a, 0], [0, b]]
     };
+  }
+
+  function poly(pts, fill, stroke, lw){
+    ctx.beginPath();
+    ctx.moveTo(px(pts[0][0]), py(pts[0][1]));
+    for (var i = 1; i < pts.length; i++) ctx.lineTo(px(pts[i][0]), py(pts[i][1]));
+    ctx.closePath();
+    if (fill){ ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke){ ctx.strokeStyle = stroke; ctx.lineWidth = lw || 2; ctx.stroke(); }
+  }
+  function label(text, x, y, color, size, alpha){
+    ctx.save();
+    ctx.globalAlpha = alpha === undefined ? 1 : alpha;
+    ctx.fillStyle = color; ctx.font = '700 ' + (size || 12) + 'px ' + MONO;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(text, px(x), py(y));
+    ctx.restore();
   }
 
   function drawGrid(){
@@ -199,13 +308,38 @@ button:disabled{opacity:.45;cursor:default}
     ctx.stroke();
   }
 
-  function drawHandle(x, y, color){
-    var r = 8;
-    ctx.beginPath(); ctx.arc(px(x), py(y), r + 3, 0, Math.PI * 2);
+  function drawHandle(x, y, color, lifted){
+    var r = 8 + lifted * 1.6;
+    ctx.beginPath(); ctx.arc(px(x), py(y), r + 3, 0, TAU);
     ctx.fillStyle = COL.sheet; ctx.fill();
-    ctx.beginPath(); ctx.arc(px(x), py(y), r, 0, Math.PI * 2);
+    ctx.beginPath(); ctx.arc(px(x), py(y), r, 0, TAU);
     ctx.fillStyle = color; ctx.fill();
     ctx.strokeStyle = COL.sheet; ctx.lineWidth = 2; ctx.stroke();
+  }
+
+  // 对账指针:沿某个正方形的四条边匀速走一圈。
+  function onPerimeter(pts, u){
+    var seg = Math.floor(u * 4) % 4, f = u * 4 - Math.floor(u * 4);
+    var p0 = pts[seg], p1 = pts[(seg + 1) % 4];
+    return [p0[0] + (p1[0] - p0[0]) * f, p0[1] + (p1[1] - p0[1]) * f];
+  }
+  function drawScan(g, alpha){
+    var which = Math.floor(cur.scan), u = cur.scan - which;
+    var box = which === 0 ? g.sqA : (which === 1 ? g.sqB : g.sqC);
+    var color = which === 0 ? COL.a : (which === 1 ? COL.b : COL.cc);
+    ctx.save();
+    ctx.globalAlpha = alpha * (0.35 + 0.65 * Math.sin(Math.PI * Math.min(u * 1.6, 1)));
+    ctx.strokeStyle = color; ctx.lineWidth = 3.4; ctx.lineCap = 'round';
+    ctx.beginPath();
+    for (var i = 0; i <= 14; i++){
+      var q = onPerimeter(box, (u + (i - 14) * 0.008 + 1) % 1);
+      if (i === 0) ctx.moveTo(px(q[0]), py(q[1])); else ctx.lineTo(px(q[0]), py(q[1]));
+    }
+    ctx.stroke();
+    var head = onPerimeter(box, u);
+    ctx.beginPath(); ctx.arc(px(head[0]), py(head[1]), 4, 0, TAU);
+    ctx.fillStyle = color; ctx.fill();
+    ctx.restore();
   }
 
   function draw(){
@@ -222,48 +356,31 @@ button:disabled{opacity:.45;cursor:default}
     ctx.moveTo(px(0.45), py(0)); ctx.lineTo(px(0.45), py(0.45)); ctx.lineTo(px(0), py(0.45));
     ctx.stroke();
 
-    if (st.stage >= 2){
-      label(n2(g.a * g.a), g.a / 2, -g.a / 2, COL.a, g.a > 2.4 ? 13 : 11);
-      label(n2(g.b * g.b), -g.b / 2, g.b / 2, COL.b, g.b > 2.4 ? 13 : 11);
-      label(n2(g.c * g.c), (g.a + g.b) / 2, (g.a + g.b) / 2, COL.cc, 13);
+    if (cur.a2 > 0.01){
+      drawScan(g, cur.a2);
+      label(n2(g.a * g.a), g.a / 2, -g.a / 2, COL.a, g.a > 2.4 ? 13 : 11, cur.a2);
+      label(n2(g.b * g.b), -g.b / 2, g.b / 2, COL.b, g.b > 2.4 ? 13 : 11, cur.a2);
+      label(n2(g.c * g.c), (g.a + g.b) / 2, (g.a + g.b) / 2, COL.cc, 13, cur.a2);
     }
-    if (st.stage >= 3){
+    if (cur.a3 > 0.01){
       // 斜边标签沿外法线 (b, a)/c 推出去一点,避免压在斜边上。
       var nx = g.b / g.c, ny = g.a / g.c;
-      label('a=' + n2(g.a), g.a / 2, 0.38, COL.a, 12);
-      label('b=' + n2(g.b), 0.6, g.b / 2, COL.b, 12);
-      label('c=' + n2(g.c), g.a / 2 + nx * 0.62, g.b / 2 + ny * 0.62, COL.cc, 12);
+      label('a=' + n2(g.a), g.a / 2, 0.38, COL.a, 12, cur.a3);
+      label('b=' + n2(g.b), 0.6, g.b / 2, COL.b, 12, cur.a3);
+      label('c=' + n2(g.c), g.a / 2 + nx * 0.62, g.b / 2 + ny * 0.62, COL.cc, 12, cur.a3);
     }
 
-    drawHandle(g.a, 0, COL.a);
-    drawHandle(0, g.b, COL.b);
+    drawHandle(g.a, 0, COL.a, drag.key === 'a' ? 1 : 0);
+    drawHandle(0, g.b, COL.b, drag.key === 'b' ? 1 : 0);
   }
 
-  function renderLedger(){
-    var g = geom();
-    var sum = g.a * g.a + g.b * g.b, big = g.c * g.c;
-    ledger.innerHTML =
-      '<div class="la"><span>a 上的正方形　a²</span><span>' + n2(g.a * g.a) + '</span></div>' +
-      '<div class="lb"><span>b 上的正方形　b²</span><span>' + n2(g.b * g.b) + '</span></div>' +
-      '<div class="sum"><span>两个小的加起来</span><span>' + n2(sum) + '</span></div>' +
-      '<div class="lc sum"><span>c 上的大正方形　c²</span><span>' + n2(big) + '</span></div>';
+  /* ══════════ 文字:只在内容变化时写 DOM ══════════ */
+  var shown = { stage:'', hint:'', play:'', ledger:'', fb:'', eq:'' };
+  function setText(el, key, text){
+    if (shown[key] !== text){ shown[key] = text; el.textContent = text; }
   }
-
-  function feedback(){
-    var g = geom(), sum = g.a * g.a + g.b * g.b;
-    var msg;
-    if (st.moves < 3){
-      msg = 'a = <b>' + n2(g.a) + '</b>、b = <b>' + n2(g.b) + '</b>:两个小正方形是 ' +
-            n2(g.a * g.a) + ' 和 ' + n2(g.b * g.b) + ',加起来 <b>' + n2(sum) +
-            '</b>;斜边上的大正方形也是 <b>' + n2(g.c * g.c) + '</b>。';
-    } else {
-      msg = '你已经换了 ' + st.moves + ' 组直角边,两个小正方形的面积之和一直等于大正方形(现在是 <b>' +
-            n2(sum) + '</b>)。变的是三条边长,不变的是这个面积关系 —— 这就是勾股定理。';
-    }
-    if (st.stage >= 3){
-      msg += ' 大正方形始终贴在最长的那条边上:c 是斜边,别拿直角边当 c。';
-    }
-    fb.innerHTML = msg;
+  function setHTML(el, key, html){
+    if (shown[key] !== html){ shown[key] = html; el.innerHTML = html; }
   }
 
   var HINTS = [
@@ -272,68 +389,132 @@ button:disabled{opacity:.45;cursor:default}
     '三条边都标出来了,对着数字读一遍下面那行式子。'
   ];
 
-  function render(){
-    stageEl.textContent = '阶段 ' + st.stage + ' / 3';
-    hint.textContent = HINTS[st.stage - 1];
-    btnNext.disabled = st.stage >= 3;
-    if (st.stage >= 2){ ledger.classList.remove('hide'); renderLedger(); }
-    else ledger.classList.add('hide');
-    if (st.stage >= 3){
-      var g = geom();
-      eq.classList.remove('hide');
-      eq.innerHTML = 'a² + b² = ' + n2(g.a * g.a) + ' + ' + n2(g.b * g.b) + ' = ' +
-        n2(g.c * g.c) + ' = c²<small>直角三角形里,两条直角边的平方和等于斜边的平方。</small>';
-    } else eq.classList.add('hide');
-    draw();
-    feedback();
+  function ledgerHTML(){
+    var g = geom(), sum = g.a * g.a + g.b * g.b;
+    return '<div class="la"><span>a 上的正方形　a²</span><span>' + n2(g.a * g.a) + '</span></div>' +
+      '<div class="lb"><span>b 上的正方形　b²</span><span>' + n2(g.b * g.b) + '</span></div>' +
+      '<div class="sum"><span>两个小的加起来</span><span>' + n2(sum) + '</span></div>' +
+      '<div class="lc sum"><span>c 上的大正方形　c²</span><span>' + n2(g.c * g.c) + '</span></div>';
   }
 
-  function hit(sx, sy){
-    var g = geom(), R = 24;
-    var da = Math.hypot(sx - px(g.a), sy - py(0));
-    var db = Math.hypot(sx - px(0), sy - py(g.b));
-    if (da <= R && da <= db) return 'a';
-    if (db <= R) return 'b';
-    return null;
+  function feedbackHTML(){
+    var g = geom(), sum = g.a * g.a + g.b * g.b, msg;
+    if (moves < 3){
+      msg = 'a = <b>' + n2(g.a) + '</b>、b = <b>' + n2(g.b) + '</b>:两个小正方形是 ' +
+            n2(g.a * g.a) + ' 和 ' + n2(g.b * g.b) + ',加起来 <b>' + n2(sum) +
+            '</b>;斜边上的大正方形也是 <b>' + n2(g.c * g.c) + '</b>。';
+    } else {
+      msg = '你已经换了 ' + moves + ' 组直角边,两个小正方形的面积之和一直等于大正方形(现在是 <b>' +
+            n2(sum) + '</b>)。变的是三条边长,不变的是这个面积关系 —— 这就是勾股定理。';
+    }
+    if (tgt.stage >= 3){
+      msg += ' 大正方形始终贴在最长的那条边上:c 是斜边,别拿直角边当 c。';
+    }
+    return msg;
   }
+
+  function equationHTML(){
+    var g = geom();
+    return 'a² + b² = ' + n2(g.a * g.a) + ' + ' + n2(g.b * g.b) + ' = ' +
+      n2(g.c * g.c) + ' = c²<small>直角三角形里,两条直角边的平方和等于斜边的平方。</small>';
+  }
+
+  var textClock = 0;
+  function syncUI(dt){
+    setText(stageEl, 'stage', '阶段 ' + tgt.stage + ' / 3');
+    setText(hint, 'hint', HINTS[tgt.stage - 1]);
+    setText(btnPlay, 'play', play.on ? '暂停演示' : '播放演示');
+    if (btnNext.disabled !== (tgt.stage >= 3)) btnNext.disabled = tgt.stage >= 3;
+    if (ledgerSlot.classList.contains('on') !== (tgt.stage >= 2)) ledgerSlot.classList.toggle('on', tgt.stage >= 2);
+    if (eqSlot.classList.contains('on') !== (tgt.stage >= 3)) eqSlot.classList.toggle('on', tgt.stage >= 3);
+    // 数值在动,但不必每帧改 DOM:0.12 秒一次够读了。
+    textClock += dt;
+    if (textClock >= 0.12){
+      textClock = 0;
+      setHTML(fb, 'fb', feedbackHTML());
+      if (tgt.stage >= 2) setHTML(ledger, 'ledger', ledgerHTML());
+      if (tgt.stage >= 3) setHTML(eq, 'eq', equationHTML());
+    }
+  }
+
+  /* ══════════ 唯一的主循环 ══════════ */
+  var loop = { last:0, id:0 };
+  function frame(now){
+    // dt 夹到 50ms:标签页切回来、断点续跑都不会让画面瞬移。
+    var dtms = loop.last ? Math.min(now - loop.last, 50) : 16.7;
+    loop.last = now;
+    var dt = dtms / 1000;
+    cruise(dt);
+    settle(dt);
+    draw();
+    syncUI(dt);
+    loop.id = requestAnimationFrame(frame);
+  }
+
+  /* ══════════ 事件:只改 target,不画 ══════════ */
+  function takeOver(){ if (play.on){ play.on = false; } }
   function local(ev){
     var r = cv.getBoundingClientRect();
     return [ev.clientX - r.left, ev.clientY - r.top];
   }
+  function hit(sx, sy){
+    var R = 26;
+    var da = Math.hypot(sx - px(cur.a), sy - py(0));
+    var db = Math.hypot(sx - px(0), sy - py(cur.b));
+    if (da <= R && da <= db) return 'a';
+    if (db <= R) return 'b';
+    return null;
+  }
 
   cv.addEventListener('pointerdown', function(ev){
     var p = local(ev);
-    st.drag = hit(p[0], p[1]);
-    if (st.drag){ cv.setPointerCapture(ev.pointerId); ev.preventDefault(); }
+    var k = hit(p[0], p[1]);
+    if (k){
+      takeOver();
+      drag.key = k;
+      cv.setPointerCapture(ev.pointerId);
+      ev.preventDefault();
+    }
   });
   cv.addEventListener('pointermove', function(ev){
-    if (!st.drag) return;
+    if (!drag.key) return;
     var p = local(ev);
-    // V6:向右拖 = a 变长;向上拖 = b 变长,方向与边的朝向一致。
-    if (st.drag === 'a') st.a = clamp(Math.round(wx(p[0]) * 4) / 4, MIN, MAX);
-    else st.b = clamp(Math.round(wy(p[1]) * 4) / 4, MIN, MAX);
-    render();
+    // 跟手:直接吃连续量,不在拖动过程里吸附档位。向右拖 = a 变长,向上拖 = b 变长。
+    if (drag.key === 'a') tgt.a = clamp(wx(p[0]), MIN, MAX);
+    else tgt.b = clamp(wy(p[1]), MIN, MAX);
     ev.preventDefault();
   });
   function endDrag(){
-    if (st.drag){ st.moves++; st.drag = null; feedback(); }
+    if (!drag.key) return;
+    // 松手才归位:吸到 0.25 的整档,靠缓动走过去,不闪。
+    if (drag.key === 'a') tgt.a = clamp(Math.round(tgt.a * 4) / 4, MIN, MAX);
+    else tgt.b = clamp(Math.round(tgt.b * 4) / 4, MIN, MAX);
+    drag.key = null;
+    moves++;
   }
   cv.addEventListener('pointerup', endDrag);
   cv.addEventListener('pointercancel', endDrag);
 
-  btnNext.addEventListener('click', function(){ if (st.stage < 3){ st.stage++; render(); } });
-  btnReset.addEventListener('click', function(){
-    st.a = A0; st.b = B0; st.stage = 1; st.moves = 0; st.drag = null;
-    stageEl.textContent = '阶段 1 / 3';
-    hint.textContent = HINTS[0];
-    btnNext.disabled = false;
-    ledger.classList.add('hide'); eq.classList.add('hide');
-    fb.textContent = '先随手拖两下,把三角形拖成你喜欢的形状。';
-    layout(); draw();
+  btnPlay.addEventListener('click', function(){ play.on = !play.on; });
+  btnNext.addEventListener('click', function(){
+    takeOver();
+    if (tgt.stage < 3) tgt.stage++;
   });
-  window.addEventListener('resize', function(){ layout(); draw(); });
+  btnReset.addEventListener('click', function(){
+    play.on = false; play.t = 0; play.seg = 0; drag.key = null;
+    tgt.a = A0; tgt.b = B0; tgt.stage = 1; moves = 0;
+    boost = 0.55;   // 快速回摆,不闪回
+  });
+  window.addEventListener('resize', layout);
 
-  layout(); draw();
+  // smoke 桩(tools/smoke-animations.mjs)用的只读探针:current 值 + 可拖点屏幕坐标。
+  window.__kpProbe = function(){
+    return { playing:play.on, stage:tgt.stage, grab:[px(cur.a), py(0)],
+      vals:{ a:cur.a, b:cur.b, a2:cur.a2 } };
+  };
+
+  layout();
+  loop.id = requestAnimationFrame(frame);
 })();
 </script>
 </body>

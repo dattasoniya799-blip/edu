@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-27",
+  "generatedAt": "2026-08-31",
   "generator": "apps/lab/tools/validate-animations.mjs",
   "rules": [
     {
@@ -67,6 +67,22 @@
       "label": "脚本里 getElementById 取的 id 在 HTML 中都存在"
     },
     {
+      "id": "raf-loop",
+      "label": "存在常驻主循环(requestAnimationFrame 且在函数内自递归)"
+    },
+    {
+      "id": "play-button",
+      "label": "存在播放模式按钮(button 文案含「播放」「暂停」或「演示」)"
+    },
+    {
+      "id": "dual-state",
+      "label": "状态双轨制(target/current 命名对 或 时间基缓动表达式)· 启发式"
+    },
+    {
+      "id": "dt-clamp",
+      "label": "dt 有上限保护(标签页切回来不跳跃)· 启发式"
+    },
+    {
       "id": "script-syntax",
       "label": "内联脚本可被解析(语法粗检)"
     }
@@ -86,10 +102,10 @@
         "desc": "拖 k 与 b 两根滑杆,看直线怎么转、怎么上下平移。",
         "kpNodeId": "MATH-JH-8B-19-CP13"
       },
-      "sizeKB": 13.4,
+      "sizeKB": 21.3,
       "validation": {
         "ok": true,
-        "checked": 17,
+        "checked": 21,
         "issues": []
       }
     },
@@ -105,10 +121,10 @@
         "desc": "拖动两条直角边,三个正方形的面积实时对账。",
         "kpNodeId": "MATH-JH-8B-17-CP06"
       },
-      "sizeKB": 14.3,
+      "sizeKB": 23.1,
       "validation": {
         "ok": true,
-        "checked": 17,
+        "checked": 21,
         "issues": []
       }
     },
@@ -124,10 +140,10 @@
         "desc": "拖点并缩小 Δx,看割线一步步躺到切线上。",
         "kpNodeId": ""
       },
-      "sizeKB": 15.9,
+      "sizeKB": 23.5,
       "validation": {
         "ok": true,
-        "checked": 17,
+        "checked": 21,
         "issues": []
       }
     },
@@ -143,10 +159,10 @@
         "desc": "拖动点 P,看到两焦点的距离之和始终不变。",
         "kpNodeId": ""
       },
-      "sizeKB": 16,
+      "sizeKB": 23.9,
       "validation": {
         "ok": true,
-        "checked": 17,
+        "checked": 21,
         "issues": []
       }
     },
@@ -162,10 +178,10 @@
         "desc": "三根滑杆独立调 A、ω、φ,看拉伸、压缩、平移。",
         "kpNodeId": ""
       },
-      "sizeKB": 15.9,
+      "sizeKB": 24.9,
       "validation": {
         "ok": true,
-        "checked": 17,
+        "checked": 21,
         "issues": []
       }
     }

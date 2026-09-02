@@ -3,7 +3,60 @@
  * manifest 由 `npm run validate:anim` 生成,这里不做任何校验,只忠实显示校验结果。
  */
 import { useEffect, useMemo, useState } from 'react';
-import { Button, EmptyState, Tag } from '@qiming/ui';
+import { EmptyState, Tag } from '@qiming/ui';
+import { PAPER_SHELL_CSS } from '../shared/paper-shell';
+
+/**
+ * 整页动画播放器:与动态讲义上课页同款纸感外壳(shared/paper-shell)。
+ * 非此即彼(打开时列表不渲染),平板单屏零滚动,返回/Esc 常驻。
+ */
+function AnimPlayer({ item, onExit }: { item: AnimItem; onExit: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onExit();
+    };
+    window.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onExit]);
+
+  return (
+    <div className="dl-stage">
+      <style>{PAPER_SHELL_CSS}</style>
+      <header className="dl-top">
+        <button type="button" className="dl-btn ghost" onClick={onExit}>
+          ← 返回动画列表
+        </button>
+        <div className="dl-title">
+          <b>{item.title}</b>
+          <span>
+            {item.meta.grade} · {item.meta.topic} · 认知动作:{item.meta.cognitive} · {item.sizeKB}KB
+            {item.meta.kpNodeId ? ` · 图谱 ${item.meta.kpNodeId}` : ''}
+          </span>
+        </div>
+        <span className={`dl-pill ${item.validation.ok ? 'ok' : 'bad'}`}>
+          {item.validation.ok ? '校验通过' : '校验失败'}
+        </span>
+        <a className="dl-link" href={`${BASE}${item.path}`} target="_blank" rel="noreferrer">
+          新标签页单独打开
+        </a>
+      </header>
+      <div className="dl-fill">
+        <iframe
+          key={item.path}
+          title={item.title}
+          src={`${BASE}${item.path}`}
+          sandbox="allow-scripts"
+          style={{ display: 'block', width: '100%', height: '100%', border: 0 }}
+        />
+      </div>
+    </div>
+  );
+}
 
 interface AnimMeta {
   grade: string;
@@ -68,6 +121,11 @@ export function KpAnimations() {
   }
   if (!manifest) return <div className="p-4 text-[13px] text-ink-2">正在读 manifest…</div>;
 
+  // 点开即整页进入,列表退场;返回后回列表
+  if (active) {
+    return <AnimPlayer item={active} onExit={() => setActivePath(null)} />;
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2 text-xs text-ink-3">
@@ -95,15 +153,12 @@ export function KpAnimations() {
       ) : (
         <div className="grid gap-2.5 sm:grid-cols-2">
           {items.map((i) => {
-            const selected = i.path === activePath;
             return (
               <button
                 key={i.path}
                 type="button"
-                onClick={() => setActivePath(selected ? null : i.path)}
-                className={`rounded-lg border-[1.5px] bg-card p-3.5 text-left shadow-card transition-all ${
-                  selected ? 'border-primary' : 'border-line hover:border-ink-3'
-                }`}
+                onClick={() => setActivePath(i.path)}
+                className="rounded-lg border-[1.5px] border-line bg-card p-3.5 text-left shadow-card transition-all hover:border-ink-3"
               >
                 <div className="flex items-center gap-2">
                   <b className="text-sm">{i.title}</b>
@@ -125,37 +180,10 @@ export function KpAnimations() {
                     {i.validation.issues.map((msg) => <li key={msg}>{msg}</li>)}
                   </ul>
                 )}
+                <div className="mt-1.5 text-xs text-primary">点击整页打开 →</div>
               </button>
             );
           })}
-        </div>
-      )}
-
-      {active && (
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-2 border-t border-line pt-3">
-            <b className="text-sm">{active.title}</b>
-            <span className="text-xs text-ink-3">iframe sandbox=&quot;allow-scripts&quot; 预览</span>
-            <a
-              className="ml-auto text-xs text-primary underline"
-              href={`${BASE}${active.path}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              单独打开
-            </a>
-            <Button onClick={() => setActivePath(null)}>收起预览</Button>
-          </div>
-          <iframe
-            key={active.path}
-            title={active.title}
-            src={`${BASE}${active.path}`}
-            sandbox="allow-scripts"
-            className="h-[720px] w-full rounded-lg border border-line bg-bg"
-          />
-          <p className="text-xs leading-5 text-ink-3">
-            人审重点:数学有没有错、首屏是不是只剩最小可理解单元、反馈文案有没有真的说出不变量。
-          </p>
         </div>
       )}
     </div>

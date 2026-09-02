@@ -16,6 +16,23 @@ export function App() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const active = EXPERIMENTS.find((e) => e.id === activeId) ?? null;
 
+  // 逐级进入、整页切换:选中实验后列表退场,实验占满整页;返回键回列表。
+  // (三级页面——如动态讲义的上课页——由实验自己再做整页接管。)
+  if (active) {
+    const status = STATUS_TAG[active.status];
+    return (
+      <div className="mx-auto flex min-h-screen max-w-[1400px] flex-col gap-4 px-6 py-5">
+        <header className="flex flex-wrap items-center gap-3">
+          <Button onClick={() => setActiveId(null)}>← 返回实验区</Button>
+          <h1 className="text-[17px] font-extrabold">{active.title}</h1>
+          <Tag tone={status.tone}>{status.label}</Tag>
+          <Tag tone="red">永不部署</Tag>
+        </header>
+        <div className="min-h-0 flex-1">{active.render()}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto flex min-h-screen max-w-[1080px] flex-col gap-5 p-8">
       <header>
@@ -38,41 +55,30 @@ export function App() {
           />
         </Card>
       ) : (
-        <div className="grid grid-cols-[300px_1fr] items-start gap-4">
-          <div className="flex flex-col gap-2.5">
-            {EXPERIMENTS.map((e) => {
-              const status = STATUS_TAG[e.status];
-              const selected = e.id === activeId;
-              return (
-                <button
-                  key={e.id}
-                  type="button"
-                  onClick={() => setActiveId(selected ? null : e.id)}
-                  className={`rounded-lg border-[1.5px] bg-card p-4 text-left shadow-card transition-all ${
-                    selected ? 'border-primary' : 'border-line hover:border-ink-3'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <b className="text-sm">{e.title}</b>
-                    <Tag tone={status.tone} className="ml-auto">{status.label}</Tag>
-                  </div>
-                  <div className="mt-1 text-xs leading-5 text-ink-2">{e.summary}</div>
-                  <div className="mt-1 text-xs text-ink-3">负责人 {e.owner}</div>
-                </button>
-              );
-            })}
-          </div>
-          <Card title={active ? active.title : '选一个实验'}>
-            {active
-              ? active.render()
-              : <EmptyState icon="←" text="从左侧选一个实验" hint="选中后在这里渲染它自己的界面" />}
-          </Card>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {EXPERIMENTS.map((e) => {
+            const status = STATUS_TAG[e.status];
+            return (
+              <button
+                key={e.id}
+                type="button"
+                onClick={() => setActiveId(e.id)}
+                className="rounded-lg border-[1.5px] border-line bg-card p-4 text-left shadow-card transition-all hover:border-ink-3"
+              >
+                <div className="flex items-center gap-2">
+                  <b className="text-sm">{e.title}</b>
+                  <Tag tone={status.tone} className="ml-auto">{status.label}</Tag>
+                </div>
+                <div className="mt-1 text-xs leading-5 text-ink-2">{e.summary}</div>
+                <div className="mt-1.5 text-xs text-ink-3">负责人 {e.owner} · 点击进入 →</div>
+              </button>
+            );
+          })}
         </div>
       )}
 
       <footer className="mt-auto flex flex-wrap items-center gap-3 border-t border-line pt-4 text-xs text-ink-3">
         <span>仓库外的脚本 / 模型实验(OCR 精度测试、FSRS 模拟等)放工作区根目录的 _lab/。</span>
-        <Button className="ml-auto" onClick={() => setActiveId(null)}>回到清单</Button>
       </footer>
     </div>
   );
