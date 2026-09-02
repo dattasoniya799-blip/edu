@@ -208,3 +208,23 @@ base 分支 `task/fix4-contract` 已为 `/student/courses/{id}/lessons` 项补 `
    (与 `enableTeacher` 一致),失败不再静默。
 
 > 不在本次范围(留待专项):在线课堂真实模式无讲义/随堂题、教师监控真实源空 —— 属契约/WS 缺口,本次未动。
+
+---
+
+# 2026-07 → 2026-09 波次一览(2026-09-02 自工作区 `项目状态与路线图.md` 第三节迁入)
+
+> 以下为 REV-front 之后各波次的一句话交付记录(含 merge commit),细节看对应 commit、
+> `packages/contracts/CHANGELOG.md`(契约口径)与 `docs/需求文档/`。
+
+| 日期 | 分支 / commit | 交付 |
+|---|---|---|
+| 07-06 | `task/subject-filter` | 题库/组卷学科筛选(契约 `GET /questions` +subject) |
+| 07-06 | `task/student-history` | 学生作业历史页 + 时间线直达成绩单(契约 `AssignmentDto.myAttempt`、`myHomework.attemptId`) |
+| 07-07~08 | `task/fix-flow-*`、`0587eca` | 真人式走查修复两波(attempt 幂等 advisory lock / 批改列表口径 / currentLesson 统一 / seed ossKey)+ 出分外观修复 |
+| 08-20~22 | `task/courseware` → `f66ac42` | **AI 生成课件全链路**:文字稿 → LLM 逐页大纲 → 逐页编辑 → 生图 → 落 Resource(type=ppt);任务态 Redis+BullMQ 24h;契约 4 端点 + 迁移 0003;生图 provider `openai_compatible_image` + mock;含 08-22 三份审查报告修复(P0 3/3、P1 7/8、P2 9/15) |
+| 08-27 | `task/beta-zone` → `8e1998f` | **E1 内测区与功能分级**:lab → beta(白名单)→ ga 三级流水线;契约 4 端点 + 迁移 0004 两表 + 4701 硬门禁 + 审计;三端实验室 UI;存量下线(课件入口迁实验室 / 预批 off / 删「回看课件」死按钮);新增 `apps/lab`;全量 e2e 332/332 |
+| 08-27 | `task/lab-kp-anim` → `4e35b79` | lab 知识点动画生产管线(skill EVAL→PRD→CODE + 17 项校验器 + 车间页)+ 5 个试点动画 |
+| 08-31 | `f28cc3e`…`e715827` | **结构性债务五波**:qiming/docs 建目录(架构总览 + 改动指南);删 StubAiGateway 死代码;README→CHANGELOG;**npm workspaces 迁移**(根统一 lockfile + 编排脚本 check:all,两 Dockerfile 装依赖层重写);**GitHub Actions CI**(checks + e2e);契约收口 3 个 uploads/storage 端点进 openapi(81→84 paths);owner 写校验 e2e 固化;多机构登录改造方案写好待命(`docs/03`) |
+| 08-31 | `2924a04`、`f9c5f05` | **假功能全部下线**(经用户决策):ai_courseware 置 off、课堂快照排除历史 AI 课件、narration 停发、AI 诊断默认关、三端假文案清理、管理端三开关改「已下线」;只保留真实闭环(AI 答疑 / 拍照人工批改 / 真实统计);留档 `docs/需求文档/2026-08-31-下线功能需求留档.md`;鲜库 e2e 30 套件/334 用例三轮全绿 |
+| 09-02 | `task/lab-anim-motion` → `14cab1d` | **动画课堂学生端 demo**:讲解剧本 zod 契约(kind/goal/≥5 拍/label/必有动手拍)+ 坐标系 Canvas 缓动播放器 + 五堂课 + check-scripts 质检门;经用户人审 |
+| 09-02 | `task/workspace-tidy` | **仓库结构整理**:`apps/lab` → `labs/playground`(退出 check:all,CI 非阻塞 labs job);宪法拆分进仓库(`docs/00-协作纪律.md` + `packages/contracts/CHANGELOG.md`);`AGENTS.md` 入口;`docs/02` 风格基线迁入修订;开工包归档 |

@@ -1,8 +1,10 @@
-# 启明智学 · CI 门禁(结构性债务 Wave 2,2026-08-31)
+# 启明智学 · CI 门禁(结构性债务 Wave 2,2026-08-31;labs 拆出 2026-09-02)
 # 与本地同源:CI 只调用根 package.json 的编排脚本(check:all / test:mock / e2e 同款命令),
-# 本地绿 = CI 绿。两个 job:
-#   checks —— 类型/单测/构建/契约/mock 冒烟(无外部服务)
+# 本地绿 = CI 绿。三个 job:
+#   checks —— 类型/单测/构建/契约/mock 冒烟(无外部服务);这是主线门禁
 #   e2e    —— 后端全量 e2e(真 Postgres + 真 Redis service 容器,E2E_LLM_ISOLATION=1 全 mock LLM)
+#   labs   —— 实验区自检(labs/*:剧本质检 + 动画校验 + build),continue-on-error,
+#             红了只提示不拦合并:实验区不进部署,不该拿主线门禁给它背书
 # Docker 镜像构建不进默认 CI(分钟数考虑);需要时本机跑:
 #   docker build -f apps/server/Dockerfile . && docker build -f deploy/web.Dockerfile .
 name: ci
@@ -32,10 +34,26 @@ jobs:
         run: npm ci
       - name: 生成 Prisma Client(server 的 nest build 依赖)
         run: npx -w @qiming/server prisma generate
-      - name: 全量门禁 check:all(契约/ui/三端/lab/server)
+      - name: 全量门禁 check:all(契约/ui/三端/server)
         run: npm run check:all
       - name: 三端 mock 冒烟
         run: npm run test:mock
+
+  labs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: 安装依赖(workspaces 根安装)
+        run: npm ci
+      - name: 实验区自检 check:labs(剧本质检 / 动画校验 / build)
+        run: npm run check:labs
 
   e2e:
     runs-on: ubuntu-latest

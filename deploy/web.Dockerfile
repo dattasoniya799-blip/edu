@@ -24,7 +24,7 @@ COPY apps/server/package.json apps/server/
 COPY apps/admin/package.json apps/admin/
 COPY apps/teacher/package.json apps/teacher/
 COPY apps/student/package.json apps/student/
-COPY apps/lab/package.json apps/lab/
+COPY labs/playground/package.json labs/playground/
 COPY packages/contracts/package.json packages/contracts/
 COPY packages/ui/package.json packages/ui/
 # ui 不带 --omit=dev:其 devDependencies 里的 @types/katex、@types/qrcode 是三端 tsc 编译

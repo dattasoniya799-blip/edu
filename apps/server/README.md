@@ -937,7 +937,7 @@ mock 预批规则与原 stub 完全一致(第 1 步恒 ok、其余看 `√{step}
 ## task/courseware-back(AI 生成课件 · 后端真实实现)
 
 契约基线:`packages/contracts` 的 4 个 `/courseware` 端点 + `Courseware*` DTO + `AiFeature` 加 `courseware`
-(见项目宪法 2026-08-22 记录)。负责目录 `apps/server`,不动 contracts / 三个前端。
+(见 packages/contracts/CHANGELOG.md 2026-08-22 记录)。负责目录 `apps/server`,不动 contracts / 三个前端。
 专属库 `qiming_cw`,`.env` 设 `BULLMQ_PREFIX=cw`(队列键 `cw:courseware:*`,随 globalTeardown 自清,禁 FLUSHALL)。
 
 ### 链路

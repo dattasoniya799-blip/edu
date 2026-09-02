@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-08-31",
-  "generator": "apps/lab/tools/validate-animations.mjs",
+  "generatedAt": "2026-09-02",
+  "generator": "labs/playground/tools/validate-animations.mjs",
   "rules": [
     {
       "id": "size",
