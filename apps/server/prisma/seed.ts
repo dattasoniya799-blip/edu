@@ -12,6 +12,70 @@
 import 'dotenv/config'; // 防止脚本误写默认库(波次1事故根因修复)
 import { Client } from 'pg';
 import { scryptSync, randomBytes } from 'crypto';
+import { copyFileSync, existsSync, mkdirSync, statSync, writeFileSync } from 'fs';
+import { dirname, resolve } from 'path';
+import { deflateSync } from 'zlib';
+
+// ---------------- 演示文件(2026-09-02 走查 G-3:此前 seed 资源 / 作答照片的 ossKey 没有实体文件,预览 404、批改破图)----------------
+/** 本地存储根(与 UploadService 同口径:UPLOAD_ROOT,缺省 ./storage 相对 apps/server) */
+const STORAGE_ROOT = resolve(process.env.UPLOAD_ROOT ?? './storage');
+function writeDemoFile(ossKey: string, data: Buffer): void {
+  const target = resolve(STORAGE_ROOT, ossKey);
+  mkdirSync(dirname(target), { recursive: true });
+  writeFileSync(target, data);
+}
+/** 生成一张纯色 + 边框的 PNG(无第三方依赖),给作答照片 / 板书图占位用 */
+function demoPng(width: number, height: number, rgb: [number, number, number]): Buffer {
+  const crcTable = Array.from({ length: 256 }, (_, n) => {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    return c >>> 0;
+  });
+  const crc32 = (buf: Buffer) => {
+    let c = 0xffffffff;
+    for (const b of buf) c = crcTable[(c ^ b) & 0xff] ^ (c >>> 8);
+    return (c ^ 0xffffffff) >>> 0;
+  };
+  const chunk = (type: string, data: Buffer) => {
+    const len = Buffer.alloc(4); len.writeUInt32BE(data.length);
+    const td = Buffer.concat([Buffer.from(type, 'ascii'), data]);
+    const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(td));
+    return Buffer.concat([len, td, crc]);
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0); ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8; ihdr[9] = 2; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0; // 8bit RGB
+  const raw = Buffer.alloc((width * 3 + 1) * height);
+  for (let y = 0; y < height; y++) {
+    raw[y * (width * 3 + 1)] = 0;
+    for (let x = 0; x < width; x++) {
+      const edge = x < 6 || y < 6 || x >= width - 6 || y >= height - 6;
+      const o = y * (width * 3 + 1) + 1 + x * 3;
+      raw[o] = edge ? 60 : rgb[0]; raw[o + 1] = edge ? 60 : rgb[1]; raw[o + 2] = edge ? 60 : rgb[2];
+    }
+  }
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw)), chunk('IEND', Buffer.alloc(0)),
+  ]);
+}
+/** 最小合法 PDF(一页,ASCII 文本),给「微课讲义」演示资源用 */
+function demoPdf(lines: string[]): Buffer {
+  const content = `BT /F1 20 Tf 60 720 Td ${lines.map((l, i) => `${i ? '0 -32 Td ' : ''}(${l.replace(/[()\\]/g, '')}) Tj`).join(' ')} ET`;
+  const objs = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
+    `<< /Length ${Buffer.byteLength(content)} >>\nstream\n${content}\nendstream`,
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+  ];
+  let out = '%PDF-1.4\n';
+  const offsets: number[] = [];
+  objs.forEach((o, i) => { offsets.push(Buffer.byteLength(out)); out += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+  const xref = Buffer.byteLength(out);
+  out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n${offsets.map((o) => `${String(o).padStart(10, '0')} 00000 n `).join('\n')}\ntrailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return Buffer.from(out, 'latin1');
+}
 
 const DB = process.env.DATABASE_URL ?? 'postgresql://qiming:qiming_dev@127.0.0.1:5432/qiming_dev';
 const phase = process.argv[process.argv.indexOf('--phase') + 1] ?? 'base';
@@ -87,16 +151,27 @@ async function business(c: Client) {
   const lessonAnchor = new Date();
   lessonAnchor.setUTCHours(6, 0, 0, 0);
   lessonAnchor.setUTCDate(lessonAnchor.getUTCDate() - 22);
-  for (let i = 0; i < 6; i++) {
+  // 提高班 total_lessons=15:前 6 讲有内容(1-3 finished / 4 ready / 5-6 draft),7-15 为空讲次(走查 G-3:此前只建 6 讲,
+  // 课程卡「第 4/15 讲」与讲次列表不符,教师也编排不到第 7 讲以后)
+  for (let i = 0; i < 15; i++) {
     const start = new Date(lessonAnchor);
     start.setUTCDate(start.getUTCDate() + i * 7);
     const end = new Date(start.getTime() + 2 * 3600e3);
     const status = i < 3 ? 'finished' : i === 3 ? 'ready' : 'draft';
     const r = await c.query(`INSERT INTO lessons(org_id,course_id,seq,title,scheduled_start,scheduled_end,status,prep_checklist)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
-      [orgId, course, i + 1, `第${i + 1}讲 · ${titles[i]}`, start, end, status,
+      [orgId, course, i + 1, i < titles.length ? `第${i + 1}讲 · ${titles[i]}` : `第${i + 1}讲`, start, end, status,
        JSON.stringify(i === 3 ? { warmup: true, lecture: true, practice: true, homework: false } : {})]);
     lessonIds.push(r.rows[0].id);
+  }
+  // 1v1 课程 total_lessons=16:同样生成空讲次(此前 0 条,教师端讲次列表为空、无法编排)
+  for (let i = 0; i < 16; i++) {
+    const start = new Date(lessonAnchor);
+    start.setUTCDate(start.getUTCDate() + 1 + i * 7);
+    start.setUTCHours(10, 0, 0, 0); // +08 18:00
+    await c.query(`INSERT INTO lessons(org_id,course_id,seq,title,scheduled_start,scheduled_end,status,prep_checklist)
+      VALUES ($1,$2,$3,$4,$5,$6,'draft','{}')`,
+      [orgId, course2, i + 1, `第${i + 1}讲`, start, new Date(start.getTime() + 1.5 * 3600e3)]);
   }
 
   // ---- 资源 ----
@@ -105,13 +180,22 @@ async function business(c: Client) {
   // 第二段是 'courseware' 而非 orgId,被 /uploads/view-url 与 assertOssKeyOwned 判为越权 → 403,
   // 连学生看被授权课件/含图题都 403。改为合法归属前缀 `resource/${orgId}/…`,授权路径不再 403;
   // 物理文件仍不在本地(演示无实体课件),下载端 readFile 缺失 → 404,前端可优雅降级。
-  const res1 = (await c.query(`INSERT INTO resources(org_id,owner_id,type,name,oss_key,meta)
-    VALUES ($1,$2,'interactive','函数图象平移 · 动画演示',$3,
+  // 2026-09-02 走查 G-3 起写实体文件:互动课件直接用实验区已人审的单文件动画(零依赖 HTML,课堂沙箱 iframe 可跑),
+  // 「微课视频」改为 PDF 讲义(最小合法 PDF),预览 / 下载 / 课堂下发都有真实内容。
+  const animSrc = resolve(__dirname, '../../../labs/playground/public/animations/初中/一次函数参数实验.html');
+  const res1Key = `resource/${orgId}/demo/translation.html`;
+  if (existsSync(animSrc)) { mkdirSync(dirname(resolve(STORAGE_ROOT, res1Key)), { recursive: true }); copyFileSync(animSrc, resolve(STORAGE_ROOT, res1Key)); }
+  else writeDemoFile(res1Key, Buffer.from('<!doctype html><meta charset="utf-8"><title>函数图象平移 · 动画演示</title><p style="font:16px sans-serif;padding:24px">演示课件占位(实验区动画文件缺失)。</p>', 'utf8'));
+  const res1 = (await c.query(`INSERT INTO resources(org_id,owner_id,type,name,oss_key,size,meta)
+    VALUES ($1,$2,'interactive','函数图象平移 · 动画演示',$3,$4,
             '{"pages":24,"checkpoints":[3,8,12,18,22]}') RETURNING id`,
-    [orgId, t1, `resource/${orgId}/demo/translation.html`])).rows[0].id;
-  await c.query(`INSERT INTO resources(org_id,owner_id,type,name,oss_key,meta)
-    VALUES ($1,$2,'video','待定系数法 · 微课视频',$3,'{"durationSec":756}')`,
-    [orgId, t1, `resource/${orgId}/demo/undetermined.mp4`]);
+    [orgId, t1, res1Key, existsSync(resolve(STORAGE_ROOT, res1Key)) ? statSync(resolve(STORAGE_ROOT, res1Key)).size : 0])).rows[0].id;
+  const res2Key = `resource/${orgId}/demo/undetermined.pdf`;
+  const pdf = demoPdf(['Undetermined Coefficients Method', 'y = kx + b: substitute two points,', 'solve k and b.', '(demo handout)']);
+  writeDemoFile(res2Key, pdf);
+  await c.query(`INSERT INTO resources(org_id,owner_id,type,name,oss_key,size,meta)
+    VALUES ($1,$2,'pdf','待定系数法 · 微课讲义',$3,$4,'{"pages":1}')`,
+    [orgId, t1, res2Key, pdf.length]);
 
   // ---- 30 道题(挂 知识点+能力+策略 三维标签) ----
   const qIds: number[] = [];
@@ -133,7 +217,12 @@ async function business(c: Client) {
         stem_latex,answer,rubric,analysis_latex,difficulty,status)
       VALUES ($1,$2,$3,'初中','数学','人教版','第十九章 一次函数',$4,$5,$6,$7,$8,'published') RETURNING id`,
       [orgId, t1, type, stem, JSON.stringify(answer), JSON.stringify(rubric),
-       `平移口诀:上加下减(改 $b$)。本题 $b$ 由 $${b}$ 变化 $${d}$ 个单位。`, 1 + (i % 3)])).rows[0].id;
+       type === 'single'
+         ? `平移口诀:上加下减(改 $b$)。本题 $b$ 由 $${b}$ 变化 $${d}$ 个单位。`
+         : type === 'blank'
+         ? `待定系数法:设 $y=kx+b$,把两点代入得方程组,解得 $k=${k},\\ b=${b}$。`
+         : `先用待定系数法求平移后直线 $y=${k}x${b >= 0 ? '+' + b : b}$,再按「下移 $${d}$ 个单位 = $b$ 减 $${d}$」反向还原,原直线 $b=${b}+${d}$。`,
+       1 + (i % 3)])).rows[0].id;
     qIds.push(q);
     if (type === 'single') {
       const opts = [`y=${k}x${b + d >= 0 ? '+' + (b + d) : b + d}`, `y=${k}x${b - d >= 0 ? '+' + (b - d) : b - d}`,
@@ -176,10 +265,13 @@ async function business(c: Client) {
     ['lecture', 35, { checkpoints: [3, 8, 12, 18, 22], pages: lecturePages }, res1, null],
     ['practice', 30, { ai_guide: true, stuck_alert_min: 3 }, null, practicePaper],
     ['summary', 25, { personal_consolidation: { min: 2, max: 4 } }, null, null]];
+  // lecture / practice / summary 归入单元 1 并挂知识点(走查 G-3:此前三段无知识点,编排页三处「建议补全:未选择知识点」)
+  const unitKp = pep.find((n: any) => /平移/.test(n.name)) ?? pep[0];
   for (let j = 0; j < segs.length; j++) await c.query(
-    `INSERT INTO lesson_segments(org_id,lesson_id,seq,type,duration_min,config,resource_id,paper_id)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-    [orgId, lessonIds[3], j + 1, segs[j][0], segs[j][1], JSON.stringify(segs[j][2]), segs[j][3], segs[j][4]]);
+    `INSERT INTO lesson_segments(org_id,lesson_id,seq,type,duration_min,config,resource_id,paper_id,kp_node_id,unit_seq)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+    [orgId, lessonIds[3], j + 1, segs[j][0], segs[j][1], JSON.stringify(segs[j][2]), segs[j][3], segs[j][4],
+     segs[j][0] === 'warmup' ? null : unitKp.id, segs[j][0] === 'warmup' ? null : 1]);
 
   // ---- 第 3 讲课后作业:发布 + 全班作答 + 批改 + 错题 + 掌握度 ----
   const hwPaper = (await c.query(`INSERT INTO papers(org_id,creator_id,name,type,total_score,status)
@@ -189,8 +281,8 @@ async function business(c: Client) {
     `INSERT INTO paper_questions(org_id,paper_id,question_id,seq,score) VALUES ($1,$2,$3,$4,$5)`,
     [orgId, hwPaper, hwQs[j], j + 1, j === 4 ? 10 : 5]);
   // teacher_id = 授课教师 t1(与迁移 0002 回填规则一致:lesson→course→teacher)
-  const assignment = (await c.query(`INSERT INTO assignments(org_id,paper_id,lesson_id,teacher_id,kind,target,due_at,grading_policy)
-    VALUES ($1,$2,$3,$4,'homework',$5, now() - interval '1 day', '{"objective":"instant","subjective":"ai_pre_review"}') RETURNING id`,
+  const assignment = (await c.query(`INSERT INTO assignments(org_id,paper_id,lesson_id,teacher_id,kind,target,publish_at,due_at,grading_policy)
+    VALUES ($1,$2,$3,$4,'homework',$5, now() - interval '3 day', now() - interval '1 day', '{"objective":"instant","subjective":"ai_pre_review"}') RETURNING id`,
     [orgId, hwPaper, lessonIds[2], t1, JSON.stringify({ courseId: Number(course) })])).rows[0].id;
 
   const qTypes = (await c.query(`SELECT id, type, answer FROM questions WHERE id = ANY($1)`, [hwQs])).rows;
@@ -208,7 +300,11 @@ async function business(c: Client) {
       if (meta.type === 'single') { response = { choice: correct ? 'B' : 'ACD'[Math.floor(rnd() * 3)] }; score = correct ? 5 : 0; obj += score; }
       else if (meta.type === 'blank') { response = { texts: correct ? meta.answer.texts : ['y=x+1'] }; score = correct ? 5 : 0; obj += score; }
       // S6:答题原稿 photoOssKey 同样遵循 `answer_photo/${orgId}/…` 归属约定(否则教师批改签名端软失败不出图)
-      else { response = { photoOssKey: `answer_photo/${orgId}/demo/${at}-${j}.jpg` }; isCorrect = null; score = 0; }
+      else {
+        const photoKey = `answer_photo/${orgId}/demo/${at}-${j}.png`;
+        writeDemoFile(photoKey, demoPng(480, 320, [246, 243, 236])); // 演示「手写原稿」:米白纸面 + 深框
+        response = { photoOssKey: photoKey }; isCorrect = null; score = 0;
+      }
       const ans = (await c.query(`INSERT INTO answers(org_id,attempt_id,question_id,response,is_correct,score,time_spent_sec)
         VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
         [orgId, at, hwQs[j], JSON.stringify(response), isCorrect, score, 60 + Math.floor(rnd() * 240)])).rows[0].id;
@@ -216,6 +312,9 @@ async function business(c: Client) {
       if (meta.type === 'solution') {
         const aiScore = 4 + Math.floor(rnd() * 7);
         const reviewed = rnd() < 0.3;
+        // 已复核的解答题:复核分落到 answers.score 并计入总分;未复核:0 分(走查 G-3:此前把未复核的 AI 预批分计入 attempt.score,
+        // 成绩单「24/35」与逐题之和 15 不一致)
+        if (reviewed) { await c.query(`UPDATE answers SET score=$2 WHERE id=$1`, [ans, aiScore]); subj += aiScore; }
         await c.query(`INSERT INTO grading_records(org_id,answer_id,ai_score,ai_steps,ai_error_tags,final_score,reviewer_id,comment,reviewed_at)
           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
           [orgId, ans, aiScore,
@@ -223,7 +322,6 @@ async function business(c: Client) {
            JSON.stringify(aiScore < 9 ? ['还原平移方向'] : []),
            reviewed ? aiScore : null, reviewed ? t1 : null,
            reviewed ? '前两步扎实,注意还原是反向操作。' : null, reviewed ? new Date() : null]);
-        subj += aiScore;
       }
       if (isCorrect === false) {
         totalWrong++;
@@ -258,7 +356,7 @@ async function business(c: Client) {
   await c.query(`INSERT INTO audit_logs(org_id,actor_id,action,target_type,detail)
     VALUES ($1,(SELECT id FROM users WHERE org_id=$1 AND role='admin' LIMIT 1),'seed.business','system','{"note":"演示数据生成"}')`, [orgId]);
 
-  console.log(`✓ business 完成:课程2 讲次6 题目30 作答${totalAnswers} 错题${totalWrong}`);
+  console.log(`✓ business 完成:课程2 讲次${lessonIds.length}+16 题目30 作答${totalAnswers} 错题${totalWrong} 演示文件已写入 ${STORAGE_ROOT}`);
 }
 
 (async () => {

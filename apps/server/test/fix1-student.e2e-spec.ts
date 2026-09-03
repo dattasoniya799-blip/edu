@@ -511,7 +511,8 @@ describe('学生端只读杂项(FIX1)', () => {
     const lessons = await get(`/student/courses/${seedCourse.id}/lessons`, token).expect(200);
     const expTimeline = await expectedTimeline(seedCourse.orgId, seedStudent.id, seedCourse.id);
     expect(lessons.body.data).toEqual(expTimeline);
-    expect(lessons.body.data.map((x: any) => x.lesson.seq)).toEqual([1, 2, 3, 4, 5, 6]);
+    // 2026-09-02 seed 起提高班 15 讲齐全(7-15 为空 draft),时间线按 seq 全量返回
+    expect(lessons.body.data.map((x: any) => x.lesson.seq)).toEqual(Array.from({ length: 15 }, (_, i) => i + 1));
     // seed 的课后作业挂第 3 讲且该生已 graded → myHomework 数字非平凡
     const seq3 = lessons.body.data.find((x: any) => x.lesson.seq === 3);
     expect(seq3.myHomework).not.toBeNull();
@@ -526,7 +527,7 @@ describe('学生端只读杂项(FIX1)', () => {
       where: { orgId: seedCourse.orgId, name: { contains: '动画演示' } },
     });
     const seedRes2 = await raw.resource.findFirstOrThrow({
-      where: { orgId: seedCourse.orgId, name: { contains: '微课视频' } },
+      where: { orgId: seedCourse.orgId, name: { contains: '微课讲义' } }, // 2026-09-02 seed:视频改为可实体落盘的 PDF 讲义
     });
     const view = await get(`/student/resources/${seedRes1.id}/view`, token).expect(200);
     await request(http).get(pathOf(view.body.data.url)).expect(404); // seed 文件未落盘 → 404(B4:token 有效但无字节)

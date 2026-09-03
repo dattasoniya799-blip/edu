@@ -473,7 +473,8 @@ describe('管理员域(A2)', () => {
       await put(`/admin/courses/${seedCourseId}`, adminAt).send({ ...seedDto, totalLessons: 3 }).expect(409);
       const seedCourse = await raw.course.findUnique({ where: { id: seedCourseId } });
       expect(seedCourse!.totalLessons).toBe(15);
-      expect(await raw.lesson.count({ where: { courseId: seedCourseId } })).toBe(6);
+      // 2026-09-02 seed 起讲次数与 total_lessons 对齐(15;此前只建 6 讲,课程卡「第 4/15 讲」与列表不符)
+      expect(await raw.lesson.count({ where: { courseId: seedCourseId } })).toBe(15);
     });
 
     it('roster:只返回在册 active 学生;到课/作业概览与 seed 对账;教师可读', async () => {
