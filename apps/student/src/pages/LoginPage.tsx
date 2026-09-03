@@ -47,13 +47,14 @@ export function LoginPage() {
         <div className="relative flex flex-[1.15] flex-col justify-center overflow-hidden bg-gradient-to-br from-primary-deep via-primary to-primary px-14 text-card">
           <div className="absolute -right-[100px] -top-[120px] h-[380px] w-[380px] rounded-pill bg-card/10" />
           <div className="absolute -bottom-20 -left-[60px] h-60 w-60 rounded-pill bg-card/[0.06]" />
+          {/* 2026-09-02 走查 C-4(用户拍板删掉):原「AI 帮学生学透每道题 / 由 AI 带着完成闭环」超出当前能力,改为如实描述 */}
           <h1 className="relative text-[32px] font-extrabold leading-[1.4]">
             老师精心出好每道题,
             <br />
-            AI 帮学生<em className="rounded-[10px] bg-card/20 px-2.5 not-italic">学透</em>每道题
+            学生在平板上<em className="rounded-[10px] bg-card/20 px-2.5 not-italic">学透</em>每道题
           </h1>
           <p className="relative mt-4 max-w-[420px] text-[14px] text-card/85">
-            学生在平板上由 AI 带着完成「学 → 练 → 错题 → 报告」闭环。
+            课堂练习即时判分,错题自动收进错题本,学习报告按知识点看掌握情况。
           </p>
         </div>
 
