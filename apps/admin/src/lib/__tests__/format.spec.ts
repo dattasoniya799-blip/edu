@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDateCn, formatDay, formatDayShort, formatDurationHM, formatMoney, formatWan, greeting } from '../format';
+import { formatDateCn, formatDay, formatDayShort, formatDurationHM, formatMoney, formatWan, greeting, formatRate } from '../format';
 
 describe('formatDurationHM', () => {
   it('0/负数 → —', () => {
@@ -46,5 +46,18 @@ describe('greeting', () => {
     expect(greeting(14)).toBe('下午好');
     expect(greeting(20)).toBe('晚上好');
     expect(greeting(3)).toBe('夜深了');
+  });
+});
+
+describe('formatRate(服务端 0–1 比率 → 百分数;走查 2026-09-02)', () => {
+  it('1 → 100%,0.75 → 75%,四舍五入', () => {
+    expect(formatRate(1)).toBe('100%');
+    expect(formatRate(0.75)).toBe('75%');
+    expect(formatRate(0.9449)).toBe('94%');
+  });
+  it('null / undefined / NaN → —', () => {
+    expect(formatRate(null)).toBe('—');
+    expect(formatRate(undefined)).toBe('—');
+    expect(formatRate(Number.NaN)).toBe('—');
   });
 });

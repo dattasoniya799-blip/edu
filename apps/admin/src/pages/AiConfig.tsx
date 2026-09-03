@@ -13,13 +13,18 @@ import { PageHead } from './Shell';
 /** 供应商配置表单态(apiKey 始终从空开始:留空=不改) */
 interface ConfigForm { baseUrl: string; model: string; apiKey: string; concurrency: number }
 
-/** 5 个功能的开关元信息(real=走真实供应商,mock=确定性假数据) */
-const FEATURES: { key: keyof AiFeatureRoutesDto; label: string; desc: string }[] = [
-  { key: 'qa', label: '答疑', desc: '学生做题时的 AI 引导式答疑' },
-  { key: 'pre_grading', label: '预批改', desc: '主观题先由 AI 预批,教师复核后出分' },
-  { key: 'class_companion', label: '课堂伴学', desc: '上课场景按编排带学生的 AI 伴学' },
-  { key: 'diagnosis', label: '学情诊断', desc: '错题自动归因到知识点的诊断' },
-  { key: 'courseware', label: '课件生成', desc: '教师端文字稿出大纲 + 逐页生图的 AI 课件' },
+/**
+ * 5 个功能的开关元信息(real=走真实供应商,mock=确定性假数据)。
+ * offline=true 的四项已于 2026-08-31 整体下线(留档见 docs/需求文档/2026-08-31-下线功能需求留档.md):
+ * 这里只登记、不可切换——此前它们显示「真实」且可保存,与平台设置「已下线」、实验室「未开放」口径打架(走查 C-3)。
+ * 重启某项时:先按留档验收,再把它的 offline 去掉(服务端默认路由亦已改为仅 qa 随 key 自动走真实)。
+ */
+const FEATURES: { key: keyof AiFeatureRoutesDto; label: string; desc: string; offline?: string }[] = [
+  { key: 'qa', label: '答疑', desc: '学生做题时的 AI 引导式答疑(课堂 AI 助教 / 作业答疑)' },
+  { key: 'pre_grading', label: '预批改', desc: '主观题先由 AI 预批,教师复核后出分', offline: '已下线:OCR 为 stub,等真实视觉模型接入(实验室 photo_pregrade 管控)' },
+  { key: 'class_companion', label: '课堂伴学', desc: '上课场景按编排带学生的 AI 伴学', offline: '已下线:曾为模板拼句,待真实 LLM 伴学落地后重启' },
+  { key: 'diagnosis', label: '学情诊断', desc: '错题自动归因到知识点的诊断', offline: '已下线:曾为模板文案,接真实 LLM 诊断并验收后重启' },
+  { key: 'courseware', label: '课件生成', desc: '教师端文字稿出大纲 + 逐页生图的 AI 课件', offline: '已下线:真实生图未经真机验证(实验室 ai_courseware 管控)' },
 ];
 
 function validateConfig(form: ConfigForm): Record<string, string> {
@@ -208,15 +213,21 @@ export function AiConfig() {
                     <div key={feat.key} className={`flex items-center gap-3 ${i === FEATURES.length - 1 ? '' : 'border-b border-line pb-4'}`}>
                       <div className="flex-1 text-sm">
                         <b className="text-ink">{feat.label}</b>
-                        <div className="mt-0.5 text-xs text-ink-3">{feat.desc}</div>
+                        <div className="mt-0.5 text-xs text-ink-3">{feat.offline ?? feat.desc}</div>
                       </div>
                       <span className="flex items-center gap-2.5">
-                        {real ? <Tag tone="green">真实</Tag> : <Tag tone="gray">Mock</Tag>}
-                        <Switch
-                          checked={real}
-                          label={`${feat.label}走真实供应商`}
-                          onChange={(v) => toggleRoute(feat.key, v)}
-                        />
+                        {feat.offline ? (
+                          <Tag tone="orange">已下线</Tag>
+                        ) : (
+                          <>
+                            {real ? <Tag tone="green">真实</Tag> : <Tag tone="gray">Mock</Tag>}
+                            <Switch
+                              checked={real}
+                              label={`${feat.label}走真实供应商`}
+                              onChange={(v) => toggleRoute(feat.key, v)}
+                            />
+                          </>
+                        )}
                       </span>
                     </div>
                   );

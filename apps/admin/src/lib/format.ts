@@ -49,3 +49,12 @@ export function greeting(hour: number): string {
   if (hour < 18) return '下午好';
   return '晚上好';
 }
+
+/**
+ * 比率(服务端 0–1,如 attendanceRate / homeworkRate / weekAttendanceRate)→ 百分数文案。
+ * 2026-09-02 走查:此前直接 `${x}%`,真实数据 1 会显示成「1%」(mock 数据恰好是 94.2 才没暴露;与学生端 C3 #2 同一家族)。
+ */
+export function formatRate(ratio: number | null | undefined): string {
+  if (ratio == null || Number.isNaN(ratio)) return '—';
+  return `${Math.round(ratio * 100)}%`;
+}

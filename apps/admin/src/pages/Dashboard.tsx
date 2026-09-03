@@ -5,7 +5,7 @@ import type { AiUsageSummaryDto } from '@qiming/contracts';
 import { Button, Card, EmptyState, Skeleton, StatCard } from '@qiming/ui';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthProvider';
-import { formatMoney, greeting } from '../lib/format';
+import { formatMoney, formatRate, greeting } from '../lib/format';
 import { PageHead } from './Shell';
 
 type Dash = {
@@ -61,8 +61,8 @@ export function Dashboard() {
             <StatCard
               ribbon="green"
               label="本周到课率"
-              value={data.weekAttendanceRate != null ? `${data.weekAttendanceRate}%` : '—'}
-              delta="按已结束讲次统计"
+              value={formatRate(data.weekAttendanceRate)}
+              delta={data.weekAttendanceRate != null ? '按近 7 天已结束的在线课堂统计' : '近 7 天暂无已结束的在线课堂'}
             />
             <StatCard
               ribbon="orange"
@@ -79,10 +79,10 @@ export function Dashboard() {
           <Card title="最近动态">
             {data.recentEvents.length ? (
               <div className="flex flex-col gap-3.5">
-                {data.recentEvents.map((e) => {
+                {data.recentEvents.map((e, idx) => {
                   const ic = eventIcon(e.text);
                   return (
-                    <div key={e.text} className="flex items-start gap-3 text-sm">
+                    <div key={`${e.time}|${e.text}|${idx}`} className="flex items-start gap-3 text-sm">
                       <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px] text-[13px] font-bold ${ic.cls}`}>{ic.ch}</div>
                       <div>
                         {e.text}
