@@ -283,6 +283,8 @@ export class AttemptService {
       questionNeedsReview(pq.question.type, pq.question.answer),
     );
     if (!needsReview) await this.grading.finalizeAttempt(at.id);
+    // 含需复核题:客观题错题即时入账,不等教师 finalize(走查 F-1 拍板);需复核题在 finalize 时补入账
+    else await this.grading.accountObjectiveOnSubmit(at.id);
     return this.toDto(at.id);
   }
 

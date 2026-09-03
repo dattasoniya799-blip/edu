@@ -116,6 +116,19 @@ export class UploadController {
  * - 通过后从本地 UPLOAD_ROOT 流式回文件;路径穿越(resolve 后越出 root)→ 403,文件缺失 → 404。
  * 独立控制器,避免落入任何角色门禁;OSS 驱动下生产端由对象存储直签,本端点仅 local 用。
  */
+const INLINE_MIME: Record<string, string> = {
+  png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp',
+  pdf: 'application/pdf', mp4: 'video/mp4', webm: 'video/webm', mp3: 'audio/mpeg',
+  ppt: 'application/vnd.ms-powerpoint', pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+};
+
+/** 扩展名 → Content-Type;html/svg/js 等可执行内容刻意不在表内(回退 octet-stream 走下载) */
+export function contentTypeByExt(ossKey: string): string {
+  const ext = ossKey.toLowerCase().split('?')[0].split('.').pop() ?? '';
+  return INLINE_MIME[ext] ?? 'application/octet-stream';
+}
+
 @Controller('storage')
 export class StorageDownloadController {
   private readonly root: string;
@@ -152,8 +165,11 @@ export class StorageDownloadController {
     } catch {
       throw new NotFoundException('文件不存在');
     }
-    res.setHeader('Content-Type', 'application/octet-stream');
+    // 按扩展名给出真实 MIME(走查 G-2:恒 octet-stream 会让「预览」变下载);未知类型才回退二进制。
+    // 不做内容嗅探、不提供 HTML 内联:html/svg 一类可执行内容仍按下载处理,避免同源脚本注入。
+    res.setHeader('Content-Type', contentTypeByExt(ossKey));
     res.setHeader('Content-Length', String(body.length));
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     res.end(body);
   }
 }

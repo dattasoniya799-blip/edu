@@ -8,6 +8,8 @@ module.exports = {
     '^@qiming/contracts$': '<rootDir>/../../packages/contracts/src/index.ts',
   },
   setupFiles: ['dotenv/config'],
+  // 2026-09-02:清上一轮残留的 access token 吊销键(uid 复用误杀),见文件头注释
+  globalSetup: '<rootDir>/test/auth-redis-setup.cjs',
   // 默认 no-op;仅当 E2E_LLM_ISOLATION=1(与演示并跑时)复位 LLM 环境,挡住 Prisma 从主 .env 回灌真实 key
   setupFilesAfterEnv: ['<rootDir>/test/llm-env-isolation.cjs'],
   // A7:套件结束先跑 A5 的队列清理(内部 require a5.queue-teardown),再清 a7:ai:* 计量残留

@@ -86,7 +86,9 @@ describe('FIX4-back · 代码审查修复六项', () => {
     expect(new URL(url).pathname).toBe(`/api/v1/storage/${PHOTO_OSS_KEY}`);
 
     const dl = await request(http).get(pathOf(url)).expect(200);
-    expect(dl.headers['content-type']).toContain('application/octet-stream');
+    // 2026-09-02(走查 G-2)起按扩展名给真实 MIME(.jpg → image/jpeg),浏览器可内联预览;此前恒 octet-stream
+    expect(dl.headers['content-type']).toContain('image/jpeg');
+    expect(dl.headers['x-content-type-options']).toBe('nosniff');
     expect(Buffer.from(dl.body).toString('utf8')).toBe(PHOTO_CONTENT);
 
     // 错签名 → 403

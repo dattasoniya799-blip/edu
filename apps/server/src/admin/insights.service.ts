@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import type { AiUsageBreakdownDto, AiUsageSummaryDto, MeDto, PageResp } from '@qiming/contracts';
+import { renderAuditText } from '../audit/audit-text';
 import { AuditService } from '../audit/audit.service';
 import type { JwtUser } from '../auth/auth.service';
 import { AuthService } from '../auth/auth.service';
@@ -73,14 +74,20 @@ export class InsightsService {
     }
 
     const actorNames = await this.actorNames(recent.map((r) => r.actorId));
+    const targetNames = await this.targetNames(recent);
     return {
       teacherCount,
       studentCount,
       weekAttendanceRate: dec(weekAttendanceRate),
       monthAiCost: round4(Number(monthCost._sum.cost ?? 0)),
       todayLessonCount,
+      // 可读文案(走查 E-3):动作码经 audit-text 模板渲染,目标名按 targetType 解析(user / course)
       recentEvents: recent.map((r) => ({
-        text: `${actorNames.get(String(r.actorId)) ?? '系统'} · ${r.action}`,
+        text: renderAuditText(
+          r.action,
+          actorNames.get(String(r.actorId)) ?? '系统',
+          r.targetId != null ? targetNames.get(`${r.targetType}:${r.targetId}`) ?? null : null,
+        ),
         time: iso(r.createdAt),
       })),
     };
@@ -243,6 +250,22 @@ export class InsightsService {
   }
 
   // ---------------- 内部 ----------------
+  /** 审计目标名:targetType=user → 姓名;course → 课程名;其余不解析 */
+  private async targetNames(
+    rows: { targetType: string | null; targetId: bigint | null }[],
+  ): Promise<Map<string, string>> {
+    const userIds = rows.filter((r) => r.targetType === 'user' && r.targetId != null).map((r) => r.targetId as bigint);
+    const courseIds = rows.filter((r) => r.targetType === 'course' && r.targetId != null).map((r) => r.targetId as bigint);
+    const [users, courses] = await Promise.all([
+      userIds.length ? this.prisma.client.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true } }) : [],
+      courseIds.length ? this.prisma.client.course.findMany({ where: { id: { in: courseIds } }, select: { id: true, name: true } }) : [],
+    ]);
+    return new Map([
+      ...users.map((u) => [`user:${u.id}`, u.name] as [string, string]),
+      ...courses.map((c) => [`course:${c.id}`, c.name] as [string, string]),
+    ]);
+  }
+
   private async actorNames(actorIds: bigint[]): Promise<Map<string, string>> {
     if (!actorIds.length) return new Map();
     const users = await this.prisma.client.user.findMany({

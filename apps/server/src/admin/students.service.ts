@@ -5,7 +5,7 @@ import type { MasteryItemDto, PageResp, StudentDto } from '@qiming/contracts';
 import { AuditService } from '../audit/audit.service';
 import type { JwtUser } from '../auth/auth.service';
 import { hashPassword, randomReadablePassword } from '../auth/password.util';
-import { markPasswordReset } from '../auth/pwd-reset';
+import { clearAccountDisabled, markAccountDisabled, markPasswordReset } from '../auth/pwd-reset';
 import { PrismaService } from '../prisma/prisma.service';
 import { REDIS } from '../redis/redis.module';
 import { StudentInputDto, StudentListQueryDto } from './admin.dto';
@@ -53,7 +53,8 @@ export class StudentsService {
 
   // ---------------- 创建(自动生成初始密码,active) ----------------
   async create(user: JwtUser, dto: StudentInputDto, ip?: string): Promise<StudentDto> {
-    const studentNo = dto.studentNo ?? (await this.nextNo());
+    // 自定义学号统一 trim + 大写落库,与登录时的归一口径一致(走查 H-1)
+    const studentNo = dto.studentNo?.trim().toUpperCase() || (await this.nextNo());
     await this.assertStudentNoFree(studentNo);
     const courseIds = await this.assertCoursesExist(dto.courseIds ?? []);
 
@@ -92,7 +93,7 @@ export class StudentsService {
   // ---------------- 编辑 ----------------
   async update(user: JwtUser, id: number, dto: StudentInputDto, ip?: string): Promise<null> {
     const s = await this.findStudentOr404(id);
-    const studentNo = dto.studentNo ?? s.studentNo ?? (await this.nextNo());
+    const studentNo = dto.studentNo?.trim().toUpperCase() || s.studentNo || (await this.nextNo());
     if (studentNo !== s.studentNo) await this.assertStudentNoFree(studentNo);
 
     await this.prisma.client.user.update({
@@ -166,6 +167,7 @@ export class StudentsService {
       data: { status: 'disabled' },
     });
     await this.revokeRefreshTokens(id); // 停用即作废其全部刷新令牌
+    await markAccountDisabled(this.redis, this.cfg, id); // 已签发的 access token 立即失效(走查 D-1)
     await this.audit.log({
       actorId: user.uid, orgId: user.orgId, action: 'admin.student.disable',
       targetType: 'user', targetId: id, ip,
@@ -180,6 +182,7 @@ export class StudentsService {
       where: { id: s.id },
       data: { status: 'active' },
     });
+    await clearAccountDisabled(this.redis, this.cfg, id); // 解除停用位 + 吊销启用前旧 token(需重新登录)
     await this.audit.log({
       actorId: user.uid, orgId: user.orgId, action: 'admin.student.enable',
       targetType: 'user', targetId: id, ip,

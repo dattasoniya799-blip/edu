@@ -78,9 +78,24 @@ export class WrongBookService {
         })
       : [];
     const qMap = new Map(questions.map((it) => [String(it.id), it]));
+    // 错因回退(走查 A-4):errorTags 原本来自 AI 预批的 aiErrorTags,预批下线后新错题恒为空,
+    // 错题本只剩「全部」一组;空时回退为该题的教材知识点名(题目录入时必填 ≥1 个),分组仍有意义。
+    const kpNamesByQ = new Map<string, string[]>();
+    if (qIds.length) {
+      const tags = await this.prisma.client.questionTag.findMany({
+        where: { questionId: { in: qIds }, node: { graph: { graphType: 'curriculum_knowledge' } } },
+        select: { questionId: true, node: { select: { name: true } } },
+      });
+      for (const t of tags) {
+        const k = String(t.questionId);
+        kpNamesByQ.set(k, [...(kpNamesByQ.get(k) ?? []), t.node.name]);
+      }
+    }
     return {
       items: rows.map((r) => {
         const question = qMap.get(String(r.questionId));
+        const aiTags = (r.errorTags as string[]) ?? [];
+        const errorTags = aiTags.length ? aiTags : (kpNamesByQ.get(String(r.questionId)) ?? []);
         return {
           id: num(r.id),
           questionId: num(r.questionId),
@@ -91,7 +106,7 @@ export class WrongBookService {
           analysisDetailLatex: question?.analysisDetailLatex ?? undefined,
           wrongCount: r.wrongCount,
           correctRedoCount: r.correctRedoCount,
-          errorTags: (r.errorTags as string[]) ?? [],
+          errorTags,
           status: r.status,
           sourceName: r.sourceAnswer.attempt.assignment.paper.name,
           createdAt: iso(r.createdAt),
@@ -171,6 +186,63 @@ export class WrongBookService {
         }
       }
     }
+  }
+
+  /**
+   * 课后作业出分后为该生自动生成「订正」作业(2026-09-02 走查 E-4 / F-5 拍板:保留 correction 并让它真的产生)。
+   * - 只对 kind=homework 且有讲次锚点的作业;只收本次答错的**客观题**(主观题无法在线判分);
+   * - 每 (讲次, 学生) 最多一份:已存在 open 的 correction 作业则跳过(重复 finalize / 多次出分幂等);
+   * - 卷:type=practice,名「订正 · 原卷名」,分值沿用来源卷面分;作业:kind=correction,target=本人,
+   *   teacherId 沿用来源作业(进教师作业总览),scoreCounted=false(订正不计分)。
+   * 学生端时间线据 pending 的 correction 作业按 lessonId 显示「订正错题」入口。
+   */
+  async createCorrectionForAttempt(
+    studentId: bigint,
+    source: { id: bigint; lessonId: bigint | null; paperId: bigint; teacherId: bigint | null },
+    wrongObjective: { questionId: bigint; answerId: bigint }[],
+  ): Promise<void> {
+    if (source.lessonId == null || !wrongObjective.length) return;
+    const sid = num(studentId);
+    const existing = await this.prisma.client.assignment.findFirst({
+      where: { kind: 'correction', lessonId: source.lessonId, target: { path: ['studentIds'], array_contains: [sid] } },
+      select: { id: true },
+    });
+    if (existing) return;
+    const [srcPaper, pqs] = await Promise.all([
+      this.prisma.client.paper.findFirst({ where: { id: source.paperId }, select: { name: true } }),
+      this.prisma.client.paperQuestion.findMany({
+        where: { paperId: source.paperId, questionId: { in: wrongObjective.map((w) => w.questionId) } },
+        select: { questionId: true, score: true },
+      }),
+    ]);
+    const scoreOf = new Map(pqs.map((p) => [String(p.questionId), dec(p.score) ?? 5]));
+    const scores = wrongObjective.map((w) => scoreOf.get(String(w.questionId)) ?? 5);
+    const creatorId = source.teacherId ?? studentId;
+    await this.prisma.client.$transaction(async (tx) => {
+      const paper = await tx.paper.create({
+        data: {
+          creatorId,
+          name: `订正 · ${srcPaper?.name ?? '课后作业'}`,
+          type: 'practice',
+          totalScore: scores.reduce((s, x) => s + x, 0),
+          status: 'published',
+        } as never,
+      });
+      await tx.paperQuestion.createMany({
+        data: wrongObjective.map((w, i) => ({ paperId: paper.id, questionId: w.questionId, seq: i + 1, score: scores[i] })) as never,
+      });
+      await tx.assignment.create({
+        data: {
+          paperId: paper.id,
+          lessonId: source.lessonId,
+          teacherId: source.teacherId,
+          kind: 'correction',
+          target: { studentIds: [sid] },
+          dueAt: null,
+          scoreCounted: false,
+        } as never,
+      });
+    });
   }
 
   // ---------------- 内部 ----------------

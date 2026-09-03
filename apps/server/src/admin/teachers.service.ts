@@ -5,7 +5,7 @@ import type { PageResp, TeacherDto } from '@qiming/contracts';
 import { AuditService } from '../audit/audit.service';
 import type { JwtUser } from '../auth/auth.service';
 import { hashPassword, randomReadablePassword } from '../auth/password.util';
-import { markPasswordReset } from '../auth/pwd-reset';
+import { clearAccountDisabled, markAccountDisabled, markPasswordReset } from '../auth/pwd-reset';
 import { PrismaService } from '../prisma/prisma.service';
 import { REDIS } from '../redis/redis.module';
 import { TeacherInputDto, TeacherListQueryDto } from './admin.dto';
@@ -115,6 +115,7 @@ export class TeachersService {
       data: { status: 'disabled' },
     });
     await this.revokeRefreshTokens(id); // 停用即作废其全部刷新令牌
+    await markAccountDisabled(this.redis, this.cfg, id); // 已签发的 access token 立即失效(走查 D-1)
     await this.audit.log({
       actorId: user.uid, orgId: user.orgId, action: 'admin.teacher.disable',
       targetType: 'user', targetId: id, ip,
@@ -129,6 +130,7 @@ export class TeachersService {
       where: { id: t.id },
       data: { status: 'active' },
     });
+    await clearAccountDisabled(this.redis, this.cfg, id); // 解除停用位 + 吊销启用前旧 token(需重新登录)
     await this.audit.log({
       actorId: user.uid, orgId: user.orgId, action: 'admin.teacher.enable',
       targetType: 'user', targetId: id, ip,

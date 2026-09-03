@@ -38,22 +38,33 @@ export class AuthService {
 
   // ---------------- 登录(admin/teacher) ----------------
   async login(phone: string, password: string, ip?: string) {
-    const user = await runWithoutTenant(() =>
-      this.prisma.client.user.findFirst({
+    // phone 无全局唯一约束(多机构串号红线,方案见 docs/03):取全部同号账号逐一验密码定位本人,
+    // 消除 findFirst 取到"别人的同号账号"就锁死的问题;不按 status 过滤——密码正确但已停用时要给出
+    // 「已停用」而不是「账号或密码错误」(走查 D-4),状态判定放在验密之后,不泄露停用账号的存在性。
+    const candidates = await runWithoutTenant(() =>
+      this.prisma.client.user.findMany({
         where: {
-          phone,
+          phone: phone.trim(),
           role: { in: ['admin', 'teacher'] },
-          status: 'active',
           deletedAt: null,
         },
         include: { org: true },
       }),
     );
-    if (!user?.passwordHash) throw new UnauthorizedException('账号或密码错误');
+    let user: (typeof candidates)[number] | null = null;
+    let needsUpgrade = false;
+    for (const c of candidates) {
+      if (!c.passwordHash) continue;
+      const r = await verifyPassword(password, c.passwordHash);
+      if (r.ok) {
+        user = c;
+        needsUpgrade = r.needsUpgrade;
+        break;
+      }
+    }
+    if (!user) throw new UnauthorizedException('账号或密码错误');
     if (user.org.status !== 'active') throw new ForbiddenException('机构已停用');
-
-    const { ok, needsUpgrade } = await verifyPassword(password, user.passwordHash);
-    if (!ok) throw new UnauthorizedException('账号或密码错误');
+    if (user.status !== 'active') throw new ForbiddenException('账号已停用,请联系机构管理员');
 
     // seed 的 scrypt 哈希 → 首次登录静默升级为 argon2
     if (needsUpgrade) {
@@ -77,8 +88,10 @@ export class AuthService {
     return runWithoutTenant(async () => {
       // studentNo 仅 org 内唯一(schema @@unique([orgId, studentNo]));登录请求不带 org,
       // 故取全部同号在读学生逐一用密码定位本人(跨 org 撞号时由密码区分)。
+      // 学号归一:平板输入常带空格 / 小写(「 s-0002 」),trim + 大写后再查(走查 H-1;学号生成即为大写 S-xxxx)。
+      const studentNoNorm = studentNo.trim().toUpperCase();
       const candidates = await this.prisma.client.user.findMany({
-        where: { studentNo, role: 'student', deletedAt: null },
+        where: { studentNo: studentNoNorm, role: 'student', deletedAt: null },
         include: { org: true },
       });
 

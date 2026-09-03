@@ -9,9 +9,14 @@ import type { Pricing, RouteEntry, RouteTable } from './types';
 /** 路由表热更新 Redis 键(a7: 前缀纪律;值为 RouteTable 的部分覆盖 JSON) */
 export const ROUTES_OVERRIDE_KEY = 'a7:ai:routes';
 
-/** 真实供应商标识(与 ai-admin.service 口径一致:env 有 key 时四功能默认走它) */
+/** 真实供应商标识(与 ai-admin.service 口径一致) */
 const REAL_PROVIDER = 'openai_compatible';
-const REAL_DEFAULT_FEATURES: AiFeature[] = ['qa', 'pre_grading', 'class_companion', 'diagnosis'];
+/**
+ * env 配了 LLM_API_KEY 时**默认**走真实供应商的功能。2026-09-02 走查 C-3 起只剩 qa:
+ * 预批 / 伴学 / 诊断已于 2026-08-31 下线,若仍随 key 自动切 real,管理端会显示它们「真实」可切,
+ * 重启功能时也会直接烧真钱。下线功能保持 mock 基线,重启时由管理端 PUT /admin/ai/routes 显式切 real。
+ */
+const REAL_DEFAULT_FEATURES: AiFeature[] = ['qa'];
 
 /**
  * [2026-08-22 courseware] 生图是独立供应商与独立 key:文本 key(LLM_API_KEY)配了不代表能出图,
@@ -59,8 +64,8 @@ export class RouteTableService {
   }
 
   /**
-   * 生效默认表:**永久修复**——env 配了真实 LLM key(LLM_API_KEY)时,四功能默认即走真实供应商
-   * (openai_compatible,model=env,fallback 回各自 mock);未配 key 才回 mock 基线。
+   * 生效默认表:env 配了真实 LLM key(LLM_API_KEY)时,REAL_DEFAULT_FEATURES(当前仅 qa)默认走真实供应商
+   * (openai_compatible,model=env,fallback 回各自 mock);其余功能与未配 key 时一样回 mock 基线。
    * 这样真实 AI 不再依赖 Redis 那份易失的运行态覆盖(Redis flush/重启后也不会静默退回 mock)。
    * 懒读 cfg(每次 resolve 时判定),与 OpenAiCompatibleProvider.envKey() 同口径 —— e2e 隔离
    * (E2E_LLM_ISOLATION=1 在每用例前置 LLM_API_KEY='')照旧落 mock,不破坏 a6/a7 既有断言。
@@ -68,19 +73,15 @@ export class RouteTableService {
    */
   private effectiveDefaults(): RouteTable {
     const hasRealKey = !!(this.cfg.get<string>('LLM_API_KEY', '') ?? '').trim();
-    const hasImageKey = !!(this.cfg.get<string>('IMAGE_API_KEY', '') ?? '').trim();
-    if (!hasRealKey && !hasImageKey) return this.mockDefaults;
+    if (!hasRealKey) return this.mockDefaults;
     const routes = { ...this.mockDefaults.routes };
-    if (hasRealKey) {
-      for (const f of REAL_DEFAULT_FEATURES) {
-        const def = this.mockDefaults.routes[f];
-        const mockModel = def?.provider === 'mock' ? def.model : (def?.fallback?.model ?? 'mock-chat-mini');
-        routes[f] = { provider: REAL_PROVIDER, model: 'env', fallback: { provider: 'mock', model: mockModel } };
-      }
+    for (const f of REAL_DEFAULT_FEATURES) {
+      const def = this.mockDefaults.routes[f];
+      const mockModel = def?.provider === 'mock' ? def.model : (def?.fallback?.model ?? 'mock-chat-mini');
+      routes[f] = { provider: REAL_PROVIDER, model: 'env', fallback: { provider: 'mock', model: mockModel } };
     }
-    if (hasImageKey) {
-      routes.courseware = imageRealEntry(this.cfg);
-    }
+    // courseware(功能已 off):配了 IMAGE_API_KEY 也不再自动切 real,由管理端显式开启;
+    // imageRealEntry 仍是 admin 切 real 时的条目来源(ai-admin.service)。
     return { routes, pricing: this.mockDefaults.pricing };
   }
 

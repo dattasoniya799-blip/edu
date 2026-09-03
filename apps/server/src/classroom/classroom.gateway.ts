@@ -10,6 +10,7 @@ import { createAdapter } from '@socket.io/redis-adapter';
 import Redis from 'ioredis';
 import type { Namespace, Socket } from 'socket.io';
 import type { JwtUser } from '../auth/auth.service';
+import { checkTokenRevoked, REVOKE_MESSAGE } from '../auth/pwd-reset';
 import { runAsUser } from '../common/tenant-context';
 import { REDIS } from '../redis/redis.module';
 import { ClassroomService } from './classroom.service';
@@ -66,6 +67,13 @@ export class ClassroomGateway
         if (!token) return next(new Error('未登录'));
         const payload = await this.jwt.verifyAsync(token);
         if (payload?.typ === 'refresh') return next(new Error('凭证类型错误'));
+        // 与 JwtAuthGuard 同口径的即时吊销(停用 / 改密);Redis 异常 fail-open,不因缓存故障拒绝上课
+        try {
+          const reason = await checkTokenRevoked(this.redis, payload);
+          if (reason) return next(new Error(REVOKE_MESSAGE[reason]));
+        } catch {
+          /* fail-open */
+        }
         socket.data.user = {
           uid: Number(payload.uid),
           orgId: Number(payload.orgId),
