@@ -29,6 +29,8 @@ export interface WalkFixture {
 }
 
 export async function createWalkOrg(): Promise<WalkFixture> {
+  // 上一轮被中断(kill)时 afterAll 没跑到,会留下同名机构;同号手机会让登录落到旧机构 → 全套 404。先清干净。
+  for (const stale of await raw.org.findMany({ where: { name: 'WALK 走查机构' }, select: { id: true } })) await dropWalkOrg(stale.id);
   const hash = await hashPassword(WALK_PASSWORD);
   const org = await raw.org.create({
     data: {
@@ -115,6 +117,8 @@ export async function dropWalkOrg(orgId: bigint): Promise<void> {
   await raw.kpNode.deleteMany({ where: { orgId } });
   await raw.kpGraph.deleteMany({ where: { orgId } });
   await raw.lessonSegment.deleteMany({ where: { orgId } });
+  await raw.sessionEvent.deleteMany({ where: { orgId } });
+  await raw.sessionParticipant.deleteMany({ where: { orgId } });
   await raw.classSession.deleteMany({ where: { orgId } });
   await raw.lesson.deleteMany({ where: { orgId } });
   await raw.courseStudent.deleteMany({ where: { orgId } });

@@ -43,9 +43,11 @@ export class AssignmentService {
   async create(user: JwtUser, dto: AssignmentInputDto): Promise<AssignmentDto> {
     const paper = await this.prisma.client.paper.findFirst({
       where: { id: BigInt(dto.paperId) },
-      select: { id: true },
+      select: { id: true, status: true },
     });
     if (!paper) throw new NotFoundException('试卷不存在');
+    // [2026-09-02 批准] 试卷可存草稿:草稿不可布置,先 POST /papers/:id/publish
+    if (paper.status !== 'published') throw new BadRequestException('试卷尚未发布,请先发布再布置作业');
 
     const target = await this.resolveTarget(dto);
 

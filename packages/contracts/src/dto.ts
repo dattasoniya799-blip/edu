@@ -123,7 +123,13 @@ export type QuestionAnswer =
   | { choice: string } | { choices: string[] }
   | { texts: string[] } | { referenceLatex: string };
 export interface PaperDto {
-  id: number; name: string; type: PaperType; totalScore: number; status: string;
+  id: number; name: string; type: PaperType; totalScore: number;
+  /** draft | published(2026-09-02 起试卷可存草稿,经 POST /papers/{id}/publish 转正) */
+  status: string;
+  /** [2026-09-02 批准] 卷内题目学科聚合(全一致取该学科,混合取众数;空卷 null),只读 */
+  subject: string | null;
+  /** [2026-09-02 批准] 卷内题目的教材知识点去重(供试卷库 / 选卷面板筛选与展示),只读 */
+  kpNodes: { id: number; name: string }[];
   questions: { seq: number; questionId: number; score: number; type: QuestionType; stemLatex: string }[];
 }
 export interface AssignmentDto {
@@ -188,6 +194,13 @@ export interface CoursewarePageView {
    * 有此字段时课堂整页渲染图片,缺省时按 title/body 文字渲染(向后兼容)。
    */
   imageUrl?: string;
+  /**
+   * [2026-09-02 批准·走查 B-2] 教师挂在讲解环节的非结构化课件(PDF / PPT / 视频 / 图片 / 互动 HTML)
+   * 以签名直链下发:url 有效期同 view-url,断线重连的新快照重签。学生端按 type 渲染
+   * (image → img;pdf / video → 内嵌;interactive → 沙箱 iframe;ppt → 下载提示)。
+   * 此前快照只组装结构化逐页对象,教师上传的课件在课堂里永远「暂不可用」。
+   */
+  resource?: { type: ResourceType; name: string; url: string };
 }
 export interface AnswerDto {
   questionId: number; response: AnswerResponse | null;

@@ -238,3 +238,18 @@
 - 仓库结构:`apps/lab` → `labs/playground`(根 workspaces 加 `labs/*`),退出根 `check:all`,CI 增非阻塞 `labs` job;
   两个 Dockerfile 仅同步 workspace `package.json` 的 COPY 路径。属协作纪律第 1 条(顶层目录)变更,记录见 `docs/00-协作纪律.md`。
 - 协作纪律(原宪法 8 条 + 安全待跟进)迁至 `docs/00-协作纪律.md`;契约变更记录迁至本文件。此后两处各自追加,不再回写开工包。
+
+## [2026-09-02,经用户批准,task/walk-contract] 走查修复:试卷分类 + 草稿态、课堂课件下发
+- 口径来源:`docs/需求文档/2026-09-02-系统全面走查-缺陷清单.md` A-2 / F-6 / B-2,用户拍板「试卷要草稿态」。
+- [契约·Paper] `PaperDto` 增**必填只读** `subject: string | null`(卷内题目学科聚合:全一致取该学科,混合取众数,空卷 null)
+  与 `kpNodes: {id,name}[]`(卷内题目的教材知识点去重)。服务端从 `paper_questions → questions / question_tags` 推导,**不落列、无迁移**。
+  `GET /papers` 增可选 query `subject?` / `kpNodeId?` / `status?: draft|published`(缺省不过滤)。
+- [契约·草稿] `PaperInput` 增可选 `status?: 'draft'|'published'`(缺省 published,现有调用不变);新端点
+  `POST /papers/{id}/publish`([teacher],draft → published,已 published 幂等 200,创建者本人或 admin)。
+  草稿卷不可挂讲次 practice/homework(发布检查 4201 照旧拦)、不可布置作业;`papers.status` 列已存在,无迁移。
+- [契约·WS] `CoursewarePageView` 增可选 `resource?: { type: ResourceType; name: string; url: string }`:
+  讲解环节挂的非结构化课件以签名直链下发(有效期同 view-url,重连新快照重签);学生端按 type 渲染。
+  此前快照只组装 `config.pages`/`meta.pages` 的结构化页,教师上传的课件在课堂里永远「暂不可用」(走查 B-2)。
+- 影响端:teacher(试卷库 / 编排三处选卷面板按学科筛,组卷页保存草稿 / 发布,mock 数据补 subject/kpNodes)、
+  student(LectureSegment 按 resource.type 渲染,mock 快照可选补)、admin 无。
+- 验证:gen:sdk + lint:openapi(85 paths / 105 operations)+ contracts check 三连;server 侧 paper/e2e 见 task/walk-contract 后续提交。

@@ -11,7 +11,7 @@ import {
 } from '../paperLibrary';
 
 const mk = (id: number, name: string, type: PaperDto['type'], status = 'published'): PaperDto => ({
-  id, name, type, totalScore: 30, status, questions: [],
+  id, name, type, totalScore: 30, status, subject: '数学', kpNodes: [], questions: [],
 });
 
 const papers: PaperDto[] = [

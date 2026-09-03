@@ -12,6 +12,7 @@ import type {
   ParticipantMonitor,
   ParticipantSelfState,
   ParticipantState,
+  ResourceType,
   SegmentType,
   SessionStatus,
 } from '@qiming/contracts';
@@ -20,11 +21,14 @@ import { QaService } from '../ai/features/qa.service';
 import { AssignmentService } from '../assignment/assignment.service';
 import { AttemptService } from '../attempt/attempt.service';
 import type { JwtUser } from '../auth/auth.service';
+import { getJwtSecret } from '../common/env-assert';
 import { runAsUser } from '../common/tenant-context';
 import { BizException } from '../course/business.exception';
 import { GradingService } from '../grading/grading.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { REDIS } from '../redis/redis.module';
+import { isOssKeyOwned } from '../upload/oss-key.util';
+import { signStorageUrl } from '../upload/storage/storage-sign.util';
 import {
   kEvents,
   kEventsCursor,
@@ -100,7 +104,7 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
     private readonly attempts: AttemptService,
     private readonly grading: GradingService,
     private readonly qa: QaService,
-    cfg: ConfigService,
+    private readonly cfg: ConfigService,
   ) {
     // 周期可注入(测试用短周期);roster 节流契约值 5s
     this.throttleMs = Number(cfg.get('CLS_ROSTER_THROTTLE_MS', '5000'));
@@ -649,7 +653,7 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
     const segments = await this.prisma.client.lessonSegment.findMany({
       where: { lessonId },
       orderBy: { seq: 'asc' },
-      include: { resource: { select: { meta: true } } },
+      include: { resource: { select: { meta: true, type: true, name: true, ossKey: true } } },
     });
     const out: { questions?: AttemptQuestionView[]; courseware?: CoursewarePageView[] } = {};
 
@@ -661,7 +665,7 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
     }
     if (questions.length) out.questions = questions;
 
-    const courseware = this.buildCourseware(segments);
+    const courseware = this.buildCourseware(segments, orgId);
     if (courseware.length) out.courseware = courseware;
     return out;
   }
@@ -673,7 +677,12 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
    * 否则返回空——既如实承载未来编排侧采集的逐页内容,又绝不为缺失内容编造 mock 文案。
    */
   private buildCourseware(
-    segments: { type: string; config: unknown; resource: { meta: unknown } | null }[],
+    segments: {
+      type: string;
+      config: unknown;
+      resource: { meta: unknown; type: ResourceType; name: string; ossKey: string } | null;
+    }[],
+    orgId: number,
   ): CoursewarePageView[] {
     const out: CoursewarePageView[] = [];
     for (const seg of segments) {
@@ -684,9 +693,30 @@ export class ClassroomService implements OnModuleInit, OnModuleDestroy {
       // ai_courseware 资源从课堂快照一并排除(课堂零残留;原 P1-8 的整页图签名随之移除)。
       // 教师手工的结构化逐页内容(config.pages / 非 AI 资源的 meta.pages)行为不变。
       if (meta.kind === 'ai_courseware') continue;
-      out.push(...this.coursewarePages(cfg.pages ?? meta.pages));
+      const pages = this.coursewarePages(cfg.pages ?? meta.pages);
+      if (pages.length) {
+        out.push(...pages);
+        continue;
+      }
+      // [2026-09-02 批准·走查 B-2] 无结构化逐页内容的普通课件(PDF / PPT / 视频 / 图片 / 互动 HTML):
+      // 以一页 + 签名直链下发(CoursewarePageView.resource),学生端按 type 渲染;此前这里返回空,
+      // 教师挂的课件在课堂里永远显示「暂不可用」。签名前校验 ossKey 属本机构(sec-back #6 同口径)。
+      const res = seg.resource;
+      if (!res || !isOssKeyOwned(res.ossKey, orgId, ['resource'])) continue;
+      out.push({
+        title: res.name,
+        body: '',
+        narration: '',
+        resource: { type: res.type, name: res.name, url: this.signResourceUrl(res.ossKey) },
+      });
     }
     return out;
+  }
+
+  /** 课件签名直链(与 view-url / 批改原稿同机制:HMAC + 10 分钟时效;重连新快照重签) */
+  private signResourceUrl(ossKey: string): string {
+    const base = this.cfg.get<string>('UPLOAD_PUBLIC_BASE', `http://127.0.0.1:${this.cfg.get('PORT', '3000')}`);
+    return signStorageUrl(base, getJwtSecret(this.cfg), ossKey);
   }
 
   /** 逐页内容数组(对象含 title/body 才视为可渲染逐页;数字总页数 / 整数 checkpoints 等非结构化值 → 跳过) */

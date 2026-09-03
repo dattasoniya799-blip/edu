@@ -329,13 +329,19 @@ components:
         tagNodeIds: { type: array, items: { type: integer }, description: 三维标注,至少 1 个教材知识点 }
     Paper:
       type: object
-      required: [id, name, type, totalScore, status, questions]
+      required: [id, name, type, totalScore, status, subject, kpNodes, questions]
       properties:
         id: { type: integer }
         name: { type: string }
         type: { $ref: '#/components/schemas/PaperType' }
         totalScore: { type: number }
-        status: { type: string }
+        status: { type: string, description: 'draft | published(2026-09-02 起可为草稿)' }
+        subject: { oneOf: [{ type: 'null' }, { type: string }], readOnly: true, description: '[2026-09-02 批准] 由卷内题目学科聚合(全一致取该学科,混合取众数);空卷为 null' }
+        kpNodes:
+          type: array
+          readOnly: true
+          description: '[2026-09-02 批准] 卷内题目的教材知识点(curriculum_knowledge 标注)去重,供筛选与展示'
+          items: { type: object, required: [id, name], properties: { id: { type: integer }, name: { type: string } } }
         questions:
           type: array
           items:
@@ -353,6 +359,7 @@ components:
       properties:
         name: { type: string }
         type: { $ref: '#/components/schemas/PaperType' }
+        status: { type: string, enum: [draft, published], description: '[2026-09-02 批准] 缺省 published(向后兼容);draft 可继续编辑,不可挂讲次/布置;经 POST /papers/{id}/publish 转正' }
         questions:
           type: array
           minItems: 1
@@ -1143,7 +1150,7 @@ paths:
   /papers:
     get:
       summary: 试卷列表 [teacher]
-      parameters: [{$ref: '#/components/parameters/page'}, {$ref: '#/components/parameters/size'}, {name: type, in: query, schema: {$ref: '#/components/schemas/PaperType'}}]
+      parameters: [{$ref: '#/components/parameters/page'}, {$ref: '#/components/parameters/size'}, {name: type, in: query, schema: {$ref: '#/components/schemas/PaperType'}}, {name: subject, in: query, schema: {type: string}, description: '[2026-09-02] 按聚合学科精确匹配;缺省/空串不过滤'}, {name: kpNodeId, in: query, schema: {type: integer}, description: '[2026-09-02] 卷内含该教材知识点的题'}, {name: status, in: query, schema: {type: string, enum: [draft, published]}, description: '[2026-09-02] 缺省全部'}]
       responses:
         '200': {description: ok, content: {application/json: {schema: {type: object, required: [code, message, data], properties: {code: {type: integer}, message: {type: string}, data: {type: object, required: [items, total], properties: {items: {type: array, items: {$ref: '#/components/schemas/Paper'}}, total: {type: integer}}}}}}}}
         default: {$ref: '#/components/responses/Err'}
@@ -1164,6 +1171,13 @@ paths:
       summary: 增删题/调分(已下发的禁止) [teacher]
       parameters: [{$ref: '#/components/parameters/idPath'}]
       requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/PaperInput'}}}}
+      responses:
+        '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
+        default: {$ref: '#/components/responses/Err'}
+  /papers/{id}/publish:
+    post:
+      summary: 草稿试卷转正(draft → published;已 published 幂等 200;须为创建者本人或 admin) [teacher]
+      parameters: [{$ref: '#/components/parameters/idPath'}]
       responses:
         '200': {description: ok, content: {application/json: {schema: {$ref: '#/components/schemas/OkVoid'}}}}
         default: {$ref: '#/components/responses/Err'}
