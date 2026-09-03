@@ -398,7 +398,18 @@ export const handlers = [
     const body = (await request.json()) as Record<string, unknown>;
     return ok({ ...D.resources[0], id: 500, ...body, usedByLessons: [], createdAt: new Date().toISOString() });
   })),
-  http.put(`${BASE}/resources/:id`, authed(() => okVoid())),
+  // [2026-09-02 A-3] 资源归档知识点:kpNodeId 有状态回写(kpNodeName 从 mock 图谱节点解析)
+  http.put(`${BASE}/resources/:id`, authed(async ({ request, params }) => {
+    const r = D.resources.find((x) => x.id === Number(params.id));
+    if (!r) return err(404, 4040, '资源不存在');
+    const body = (await request.json()) as { name?: string; kpNodeId?: number | null };
+    if (body.name) r.name = body.name;
+    if (body.kpNodeId !== undefined) {
+      r.kpNodeId = body.kpNodeId;
+      r.kpNodeName = body.kpNodeId == null ? null : (D.kpNodes.find((n) => n.id === body.kpNodeId)?.name ?? null);
+    }
+    return okVoid();
+  })),
   http.delete(`${BASE}/resources/:id`, authed(() => okVoid())),
 
   // ============ AI 生成课件(契约 /courseware/*,走查用有状态 mock) ============

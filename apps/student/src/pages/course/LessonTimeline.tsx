@@ -80,7 +80,8 @@ export function LessonTimeline({ items, correctionByLesson, onCorrect, onEnterCl
               </div>
               <div className="mt-1.5 flex gap-3 text-xs text-ink-2">
                 {finished && myHomework
-                  ? <span>{myHomework.wrongCount > 0 ? `${myHomework.wrongCount} 道错题待订正` : '作业全对,无需订正'}</span>
+                  // 有订正作业(出分后服务端自动生成)→ 「待订正」+ 按钮;没有(如只错了主观题)→ 指向错题本,不留死文案(走查 E-4)
+                  ? <span>{myHomework.wrongCount > 0 ? (correctionId != null ? `${myHomework.wrongCount} 道错题待订正` : `${myHomework.wrongCount} 道错题 · 可在错题本回顾`) : '作业全对,无需订正'}</span>
                   : finished
                     ? <span>本讲无作业</span>
                     : enterable

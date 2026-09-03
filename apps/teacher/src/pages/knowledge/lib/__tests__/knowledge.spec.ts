@@ -11,11 +11,11 @@ import { setupServer } from 'msw/node';
 import type { KpGraphDto, KpNodeDto } from '@qiming/contracts';
 import { createClient } from '@qiming/contracts';
 import { handlers } from '../../../../mocks/handlers';
-import { filterNodesByKeyword, pickKnowledgeGraph } from '../knowledge';
+import { curriculumSubjects, defaultKnowledgeSubject, filterNodesByKeyword, pickKnowledgeGraph } from '../knowledge';
 
 describe('pickKnowledgeGraph', () => {
-  const g = (id: number, graphType: KpGraphDto['graphType']): KpGraphDto =>
-    ({ id, code: `g${id}`, graphType, subject: '数学', nodeCount: 0 });
+  const g = (id: number, graphType: KpGraphDto['graphType'], subject = '数学'): KpGraphDto =>
+    ({ id, code: `g${id}`, graphType, subject, nodeCount: 0 });
 
   it('优先选 curriculum_knowledge 图谱(即使不在首位)', () => {
     const graphs = [g(1, 'problem_solving_ability'), g(2, 'curriculum_knowledge'), g(3, 'problem_solving_strategy')];
@@ -26,6 +26,29 @@ describe('pickKnowledgeGraph', () => {
   });
   it('空数组 → undefined', () => {
     expect(pickKnowledgeGraph([])).toBeUndefined();
+  });
+  // 走查 A-1:化学图谱恰好排第一时,数学老师此前只能看到化学
+  it('给了学科 → 选该学科的教材图谱,不受导入顺序影响;该学科无教材图谱 → 退回第一张教材图谱', () => {
+    const graphs = [g(1, 'curriculum_knowledge', '化学'), g(2, 'problem_solving_ability'), g(3, 'curriculum_knowledge', '数学')];
+    expect(pickKnowledgeGraph(graphs, '数学')?.id).toBe(3);
+    expect(pickKnowledgeGraph(graphs, '化学')?.id).toBe(1);
+    expect(pickKnowledgeGraph(graphs, '语文')?.id).toBe(1);
+  });
+});
+
+describe('curriculumSubjects / defaultKnowledgeSubject(走查 A-1)', () => {
+  const g = (id: number, graphType: KpGraphDto['graphType'], subject: string): KpGraphDto =>
+    ({ id, code: `g${id}`, graphType, subject, nodeCount: 0 });
+  const graphs = [g(1, 'curriculum_knowledge', '化学'), g(2, 'problem_solving_ability', '数学'), g(3, 'curriculum_knowledge', '数学'), g(5, 'curriculum_knowledge', '物理')];
+
+  it('学科切换项 = 有教材图谱的学科,按图谱顺序去重(能力/策略图谱不算)', () => {
+    expect(curriculumSubjects(graphs)).toEqual(['化学', '数学', '物理']);
+  });
+  it('默认学科:优先教师在带课程的学科,其次第一张教材图谱', () => {
+    expect(defaultKnowledgeSubject(graphs, [{ subject: '数学' }])).toBe('数学');
+    expect(defaultKnowledgeSubject(graphs, [{ subject: '语文' }, { subject: '物理' }])).toBe('物理');
+    expect(defaultKnowledgeSubject(graphs, [])).toBe('化学');
+    expect(defaultKnowledgeSubject([], [])).toBe('');
   });
 });
 

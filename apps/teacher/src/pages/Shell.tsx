@@ -43,8 +43,9 @@ export function Shell() {
   if (!me) return <Navigate to="/login" replace />;
   const items = navItems(labEntries.length > 0);
   const current = items.find((n) => (n.to === '/' ? location.pathname === '/' : location.pathname.startsWith(n.to)))?.label
-    // B4 子页面(讲次编排/组卷/监控/批改)归属「我的课程」面包屑
-    ?? (/^\/(lessons|grading)/.test(location.pathname) ? '我的课程'
+    // B4 子页面:讲次编排/组卷/监控归「我的课程」;批改复核归「作业」(走查 E-6:此前也归我的课程)
+    ?? (/^\/lessons/.test(location.pathname) ? '我的课程'
+      : /^\/grading/.test(location.pathname) ? '作业'
       // AI 生成课件向导(/courseware/new)是内测功能,入口在实验室分区,面包屑随之归属「实验室」
       : /^\/courseware/.test(location.pathname) ? '实验室' : '');
 

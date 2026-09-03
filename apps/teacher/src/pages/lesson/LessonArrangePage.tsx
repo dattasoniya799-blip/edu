@@ -33,8 +33,15 @@ const SLOT_ICON: Record<UnitSlotType, { glyph: string; cls: string }> = {
 };
 const CIRCLED = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨'];
 
-function AiChip() {
-  return <span className="rounded-[6px] bg-violet-soft px-1.5 py-px text-[11px] font-bold text-violet">AI</span>;
+/** 本课程学科的卷置顶(稳定排序,组内保持原序);subject 未知则原序 */
+function bySubjectFirst<T extends { subject: string | null }>(list: T[], subject?: string): T[] {
+  if (!subject) return list;
+  return [...list.filter((p) => p.subject === subject), ...list.filter((p) => p.subject !== subject)];
+}
+/** 选卷面板的学科前缀:本课程学科标「本学科」,其他学科标学科名,未标学科留空 */
+function subjectMeta(p: { subject: string | null }, subject?: string): string {
+  if (!p.subject) return '';
+  return `${p.subject === subject ? '本学科' : p.subject} · `;
 }
 
 export function LessonArrangePage() {
@@ -92,16 +99,46 @@ export function LessonArrangePage() {
   // 「选择知识点」弹窗的图谱按课程学科取(此前恒取第一张 curriculum 图谱 → 非数学课也列数学知识点);
   // 课程学科经 lesson.courseId ↔ GET /teacher/courses 解析(讲次本身不带 subject)。
   const courseId = lesson?.courseId ?? null;
+  /** 本讲所属课程(在 /teacher/courses 里 → 归属本人);不在 → 同机构他人的课,只读浏览(走查 D-3,用户拍板可读) */
+  const [myCourse, setMyCourse] = useState<{ id: number; subject: string } | null | undefined>(undefined);
   useEffect(() => {
     if (courseId == null) return;
     Promise.all([api.get('/kp/graphs'), api.get('/teacher/courses')])
       .then(([g, c]) => {
+        const mine = c.data.find((x) => x.id === courseId);
+        setMyCourse(mine ? { id: mine.id, subject: mine.subject } : null);
         const graphId = arrangeKpGraphId(g.data, c.data, courseId);
         if (graphId == null) return;
         return api.get('/kp/nodes', { query: { graphId } }).then((n) => setKpNodes(n.data));
       })
       .catch(() => undefined);
   }, [courseId]);
+  const readOnly = myCourse === null;
+
+  // [2026-09-02 F-2] 课后作业「立即布置」:此前「选择已有卷」只挂在环节上,要等下课才自动推送;
+  // 不开在线课堂(线下课)就永不推送。这里给一个直接 POST /assignments 的入口,与「去组卷」路径一致。
+  const [assigned, setAssigned] = useState<Set<number>>(new Set()); // 本讲已布置的 paperId
+  useEffect(() => {
+    api.get('/assignments', { query: { lessonId } })
+      .then((r) => setAssigned(new Set(r.data.filter((a) => a.kind === 'homework').map((a) => papers.find((p) => p.name === a.paperName)?.id).filter((x): x is number => x != null))))
+      .catch(() => undefined);
+  }, [lessonId, papers]);
+  const [assigning, setAssigning] = useState(false);
+  const assignNow = async () => {
+    const pid = homeworkSeg?.paperId;
+    if (pid == null || !lesson) return;
+    if (dirty && !(await save({ silent: true }))) return;
+    setAssigning(true);
+    try {
+      await api.post('/assignments', { body: { paperId: pid, lessonId, kind: 'homework', target: { courseId: lesson.courseId } } });
+      setAssigned((prev) => new Set(prev).add(pid));
+      toast('作业已布置,学生端立即可见;下课时不会重复推送', { variant: 'success' });
+    } catch (e) {
+      toast(e instanceof Error ? e.message : '布置失败', { variant: 'error' });
+    } finally {
+      setAssigning(false);
+    }
+  };
 
   const paperById = useMemo(() => new Map(papers.map((p) => [p.id, p])), [papers]);
   const resourceById = useMemo(() => new Map(resources.map((r) => [r.id, r])), [resources]);
@@ -157,7 +194,7 @@ export function LessonArrangePage() {
     update(next.map((u, i) => ({ ...u, unitSeq: i + 1 })));
   };
 
-  const save = async (): Promise<boolean> => {
+  const save = async (opts: { silent?: boolean } = {}): Promise<boolean> => {
     if (!units) return false;
     try {
       // 开场白经 PUT /lessons/{id} 持久化(契约 body 已含 openingConfig,2026-06-13 整合补齐)
@@ -170,6 +207,7 @@ export function LessonArrangePage() {
       setDirty(false);
       const l = await api.get('/lessons/{id}', { params: { id: lessonId } });
       setLesson(l.data);
+      if (!opts.silent) toast('编排已保存', { variant: 'success' }); // 走查 E-6:此前保存成功无任何提示
       return true;
     } catch (e) {
       toast(e instanceof Error ? e.message : '保存失败', { variant: 'error' });
@@ -180,7 +218,7 @@ export function LessonArrangePage() {
   const publish = async () => {
     setBusy(true);
     try {
-      if (!(await save())) return;
+      if (!(await save({ silent: true }))) return;
       await api.post('/lessons/{id}/publish', { params: { id: lessonId } });
       toast('课堂已发布,讲次已就绪', { variant: 'success' });
       const l = await api.get('/lessons/{id}', { params: { id: lessonId } });
@@ -251,13 +289,17 @@ export function LessonArrangePage() {
     mountSlot === 'lecture'
       ? lectureResources.map((r) => ({ id: r.id, name: r.name, meta: mountUnitKp != null && r.kpNodeId === mountUnitKp ? `${r.type} · 本知识点` : r.type }))
       : mountSlot === 'practice'
-        ? papers.filter((p) => p.type === 'practice').map((p) => ({ id: p.id, name: p.name, meta: `${p.questions.length} 题 · ${p.totalScore} 分` }))
+        // [2026-09-02 A-2] 本课程学科的卷置顶并标学科(PaperDto.subject 聚合值);其他学科的卷仍可选但排后
+        ? bySubjectFirst(papers.filter((p) => p.type === 'practice'), myCourse?.subject).map((p) => ({
+          id: p.id, name: p.name,
+          meta: `${subjectMeta(p, myCourse?.subject)}${p.questions.length} 题 · ${p.totalScore} 分${p.status !== 'published' ? ' · 未发布' : ''}`,
+        }))
         : mountSlot === 'homework'
           // 任意已发布卷都能布置为课后作业(此前只列 type=homework,练习卷被静默排除;2026-07 用户批准);
           // 选项带类型标注(随堂练/课后作业/考试),homework 优先。若服务端仍限制 homework 段挂卷类型,需另行放开。
-          ? homeworkPaperChoices(papers).map((p) => ({
+          ? bySubjectFirst(homeworkPaperChoices(papers), myCourse?.subject).map((p) => ({
             id: p.id, name: p.name,
-            meta: `${PAPER_TYPE_LABEL[p.type]} · ${p.questions.length} 题 · ${p.totalScore} 分${p.status !== 'published' ? ' · 未发布' : ''}`,
+            meta: `${subjectMeta(p, myCourse?.subject)}${PAPER_TYPE_LABEL[p.type]} · ${p.questions.length} 题 · ${p.totalScore} 分${p.status !== 'published' ? ' · 未发布' : ''}`,
           }))
           : [];
   const mountSelectedId = mountIsOpening
@@ -282,12 +324,13 @@ export function LessonArrangePage() {
             按「知识点单元」编排:开场白 + 若干单元(讲解 · 随堂练 · 小结)· 共 {units.length} 个单元 · 约 {unitsDuration(units)} 分钟
             {lesson.status === 'ready' && <Tag tone="green">已就绪</Tag>}
             {dirty && <Tag tone="orange">有未保存修改</Tag>}
+            {readOnly && <Tag tone="gray">他人课程 · 只读</Tag>}
           </span>
         )}
         actions={(
           <>
-            <Button onClick={save} disabled={busy || !dirty}>保存编排</Button>
-            <Button variant="primary" onClick={publish} disabled={busy}>发布课堂</Button>
+            <Button onClick={() => void save()} disabled={busy || !dirty || readOnly}>保存编排</Button>
+            <Button variant="primary" onClick={publish} disabled={busy || readOnly}>发布课堂</Button>
           </>
         )}
       />
@@ -395,7 +438,7 @@ export function LessonArrangePage() {
           <div className="rounded-lg border border-line bg-card shadow-card">
             <div className="flex items-center gap-3 border-b border-line px-4 py-3">
               <span className="flex h-7 w-7 items-center justify-center rounded-md bg-orange-soft text-[15px] text-orange">✦</span>
-              <b className="text-sm">课后作业 <span className="text-[12px] font-normal text-ink-3">(挂一份卷 · 独立于知识点单元 · 下课推送学生平板)</span></b>
+              <b className="text-sm">课后作业 <span className="text-[12px] font-normal text-ink-3">(挂一份卷 · 独立于知识点单元 · 可立即布置,或等在线课堂下课自动推送)</span></b>
               <div className="ml-auto flex items-center gap-3">
                 <button type="button" className={LINK_CLS} onClick={() => setMount('homework')}>
                   {homeworkSeg?.paperId != null ? '更换已有卷' : '选择已有卷'}
@@ -416,7 +459,22 @@ export function LessonArrangePage() {
                   <span className="text-ink-3">未布置课后作业 —— 「去组卷」从题库选题发布作业,或「选择已有卷」挂一份现成卷</span>
                 )}
               </div>
-              {homeworkSeg?.paperId != null && (
+              {homeworkSeg?.paperId != null && !readOnly && (
+                assigned.has(homeworkSeg.paperId) ? (
+                  <Tag tone="green">已布置给学生</Tag>
+                ) : (
+                  <Button
+                    variant="primary"
+                    className="!px-3 !py-[6px] !text-[12.5px]"
+                    disabled={assigning || paperStatus.get(homeworkSeg.paperId) !== 'published'}
+                    title={paperStatus.get(homeworkSeg.paperId) !== 'published' ? '草稿卷需先在试卷库发布' : '现在就推送给本课程全体学生(不必等下课)'}
+                    onClick={() => void assignNow()}
+                  >
+                    {assigning ? '布置中…' : '立即布置'}
+                  </Button>
+                )
+              )}
+              {homeworkSeg?.paperId != null && !readOnly && (
                 <button type="button" className="shrink-0 text-[13px] font-medium text-red hover:underline" onClick={() => setHomeworkPaper(null)}>移除作业</button>
               )}
             </div>
@@ -425,9 +483,9 @@ export function LessonArrangePage() {
 
         {/* 右:发布门槛 */}
         <div className="flex flex-col gap-3.5">
-          <Card title={<span className="inline-flex items-center gap-2">编排说明 <AiChip /></span>}>
+          <Card title="编排说明">
             <div className="text-[13px] leading-relaxed text-ink-2">
-              每个知识点单元产出「讲解 / 随堂练 / 小结」三段,带同一知识点;上课时 AI 按单元顺序带学生逐段完成。三段建议齐全,缺失会提示但不强制保存。
+              每个知识点单元产出「讲解 / 随堂练 / 小结」三段,带同一知识点;上课时学生按单元顺序逐段完成,随堂练即时判分,课中可向 AI 助教提问。三段建议齐全,缺失会提示但不强制保存。
             </div>
           </Card>
           <Card title="发布门槛">
@@ -574,7 +632,8 @@ function SlotRow({
       ? <>《{paper.name}》 · {paper.questions.length} 题 · 共 {paper.totalScore} 分{paper.status !== 'published' && <span className="text-red"> · 未发布</span>}</>
       : <span className="text-ink-3">未挂题目/卷 —— 点右侧「选择试卷」</span>;
   } else {
-    desc = <>AI 按每位学生本单元错题生成 2–4 道巩固题 <span className="rounded-[6px] bg-violet-soft px-1.5 py-px text-[11px] font-bold text-violet">AI</span></>;
+    // 2026-09-02 走查 C-1:此前写「AI 按每位学生本单元错题生成 2–4 道巩固题」,服务端并无该能力,改为如实描述
+    desc = <>课堂小结:回顾本单元随堂练的对错与错题(错题自动收进错题本)</>;
   }
   return (
     <div className={`flex items-center gap-3.5 px-4 py-3 ${missingPaper ? 'bg-red-soft/30' : ''}`}>

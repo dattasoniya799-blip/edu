@@ -38,6 +38,7 @@ export function AnalyticsPage() {
   const diagnosisEnabled = me?.orgSettings?.ai?.diagnosis === true;
 
   const [courses, setCourses] = useState<GetData<'/teacher/courses'>>([]);
+  const [coursesLoaded, setCoursesLoaded] = useState(false); // 无课教师给空态而不是空白(走查 E-2)
   const [heat, setHeat] = useState<GetData<'/analytics/courses/{id}/mastery'>>([]);
   const [attention, setAttention] = useState<AttentionItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +58,7 @@ export function AnalyticsPage() {
   const course = courses.find((c) => c.id === courseId);
 
   useEffect(() => {
-    api.get('/teacher/courses').then((r) => setCourses(r.data)).catch(() => undefined);
+    api.get('/teacher/courses').then((r) => setCourses(r.data)).catch(() => undefined).finally(() => setCoursesLoaded(true));
   }, []);
 
   useEffect(() => {
@@ -124,7 +125,11 @@ export function AnalyticsPage() {
         )}
       />
 
-      {loading ? (
+      {coursesLoaded && courses.length === 0 ? (
+        <div className="rounded-lg border border-line bg-card shadow-card">
+          <EmptyState icon="◔" text="还没有在带课程,暂无学情" hint="学情按课程统计;请联系管理员把课程分配给你,学生完成练习出分后这里按知识点显示掌握热力" />
+        </div>
+      ) : loading ? (
         <div className="grid gap-4">
           <Skeleton className="h-40 w-full" />
           <Skeleton lines={3} className="h-32 w-full" />

@@ -43,8 +43,9 @@ export function TagPickerModal({ open, graphs, subject, value, onClose, onConfir
     if (!open) return;
     setPicked(new Map(value.map((t) => [t.nodeId, t])));
     setKeyword('');
+    // 默认落在「教材知识点」页签:入库校验要求 ≥1 个教材知识点,首个可见图谱常是能力/策略(走查 A-5)
     if (shownGraphs.length > 0 && !shownGraphs.some((g) => g.id === activeGraphId))
-      setActiveGraphId(shownGraphs[0].id);
+      setActiveGraphId((shownGraphs.find((g) => g.graphType === 'curriculum_knowledge') ?? shownGraphs[0]).id);
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 懒加载当前 Tab 的节点

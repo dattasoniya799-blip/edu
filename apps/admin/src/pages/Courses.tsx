@@ -6,7 +6,7 @@ import { api } from '../api';
 import { CourseFormModal } from '../components/CourseFormModal';
 import { RosterModal } from '../components/RosterModal';
 import { StudentProfileModal } from '../components/StudentProfileModal';
-import { formatDateCn } from '../lib/format';
+import { formatDateCn, formatRate } from '../lib/format';
 import { CLASS_TYPE_LABEL, CLASS_TYPE_TONE } from '../lib/labels';
 import { PageHead } from './Shell';
 
@@ -75,8 +75,8 @@ export function Courses() {
                 {' · '}下次上课 <b className="font-extrabold">{c.nextLessonAt ? formatDateCn(c.nextLessonAt) : '待教师排课'}</b>
               </div>
               <div className="flex gap-3.5 text-xs tabular-nums text-ink-3">
-                <span>到课率 {c.attendanceRate != null ? `${c.attendanceRate}%` : '—'}</span>
-                <span>作业完成率 {c.homeworkRate != null ? `${c.homeworkRate}%` : '—'}</span>
+                <span>到课率 {formatRate(c.attendanceRate)}</span>
+                <span>作业完成率 {formatRate(c.homeworkRate)}</span>
               </div>
               <div className="mt-auto flex flex-col gap-2 pt-1">
                 <div className="flex gap-2">

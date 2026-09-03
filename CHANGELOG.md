@@ -38,6 +38,23 @@
 >
 > **A1 已交付**:后端骨架/认证/多租户/RBAC 见 `apps/server/README.md`(e2e 18/18)。
 
+## 2026-09-02 · 系统全面走查与修复(task/walk-*)
+
+四批串行走查(管理端 / 教师端 / 学生端 / 闭环链,Playwright 脚本在仓库外 `_lab/ui-walkthrough/`)→ 缺陷清单 P1 12 / P2 15 / P3 20 + 7 项拍板
+(`docs/需求文档/2026-09-02-系统全面走查-缺陷清单.md`)→ 五支修复合入 main:
+
+- **server**(`task/walk-server`):停用账号即时吊销(HTTP + WS)、教师同号登录逐一验密、学号归一、学习时段按机构时区(`ORG_TIMEZONE`)、
+  课程在册 ≤100、storage 按扩展名 Content-Type + nosniff、客观错题交卷即入账、出分自动生成订正作业、错题分组回退教材知识点、
+  审计动作码渲染中文、AI 默认路由仅 qa 随 key 走真实、`start:dev` 修复。
+- **契约**(`task/walk-contract`,经用户批准):`PaperDto.subject/kpNodes` 只读聚合、`GET /papers` 三项筛选、`PaperInput.status` 草稿、
+  `POST /papers/{id}/publish`、`CoursewarePageView.resource` 课件签名直链下发;服务端聚合 / publish / 课堂课件下发;三端 mock 同步。
+- **teacher**:知识点库学科切换、试卷库学科筛选与草稿发布、编排选卷按学科置顶、监控页控场栏(暂停 / 继续 / 切环节 / 下课)与结束态、
+  编排页「立即布置」与保存 toast、非归属教师只读、复核页空值 / 破图 / 错误文案、资源归档知识点、假 AI 文案清理、若干空态与文案。
+- **student**:课堂讲解按资源类型渲染课件;时间线「待订正」文案与订正按钮真实可用。
+- **admin**:AI 接口管理已下线四项不可切换;比率 0–1 统一 `formatRate`(修「100% 显示成 1%」);工作台动态 key / 到课率文案;新建课程教师必选。
+- **seed**:实体课件与作答照片文件、讲次与 total_lessons 对齐(15 + 16)、单元知识点、作业时间、分数一致、解析文案。
+- 回归:鲜库全量 e2e 32 套件 / 347 用例,`check:all`,三端 mock 冒烟全绿;`docs/01`、`docs/04` 同步。
+
 ## 内容
 ```
 apps/server/prisma/schema.prisma                  数据库唯一事实(29 张表,含三维知识图谱)

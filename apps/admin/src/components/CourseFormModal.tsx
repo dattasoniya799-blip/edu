@@ -34,7 +34,8 @@ export function CourseFormModal({ open, teachers, course, onClose, onSaved }: Co
     setErrors({});
     setForm(course
       ? { name: course.name, classType: course.classType, subject: course.subject, stage: course.stage, teacherId: course.teacherId, totalLessons: course.totalLessons }
-      : { name: '', classType: 'group', subject: '数学', stage: '初中', teacherId: activeTeachers[0]?.id ?? 0, totalLessons: 15 });
+      // 授课教师默认「请选择」并必填校验(走查 H-2:此前默认第一位在职教师,不留意就把课建到别人名下)
+      : { name: '', classType: 'group', subject: '数学', stage: '初中', teacherId: 0, totalLessons: 15 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, course]);
 

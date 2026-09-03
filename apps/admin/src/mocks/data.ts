@@ -75,7 +75,7 @@ export const courses: CourseDto[] = [
   {
     id: 1, name: '初二数学提高班', classType: 'group', subject: '数学', stage: '初中',
     teacherId: 2, teacherName: '张明', totalLessons: 15, currentLesson: 4, studentCount: 12,
-    status: 'ongoing', nextLessonAt: '2026-06-13T06:00:00.000Z', attendanceRate: 94.2, homeworkRate: 91,
+    status: 'ongoing', nextLessonAt: '2026-06-13T06:00:00.000Z', attendanceRate: 0.94, homeworkRate: 0.91, // 服务端口径 0–1
   },
   {
     id: 2, name: '李一诺 · 数学培优', classType: 'one_on_one', subject: '数学', stage: '初中',
@@ -316,7 +316,7 @@ export const auditLogs = [
 ];
 
 export const adminDashboard = {
-  teacherCount: 2, studentCount: 12, weekAttendanceRate: 94.2, monthAiCost: 1842, todayLessonCount: 2,
+  teacherCount: 2, studentCount: 12, weekAttendanceRate: 0.94, monthAiCost: 1842, todayLessonCount: 2,
   recentEvents: [
     { text: '新学员 吴佳怡 报名「初二数学提高班」', time: '2026-06-11T01:10:00.000Z' },
     { text: '「第3讲课后作业」已出分,平均 25.6 / 35', time: '2026-06-10T12:00:00.000Z' },

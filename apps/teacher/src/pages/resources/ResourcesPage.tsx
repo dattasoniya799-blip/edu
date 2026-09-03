@@ -12,6 +12,7 @@ import { Button, EmptyState, Skeleton, Tag, useToast } from '@qiming/ui';
 import { api, resolveFigureSrc } from '../../api';
 import { PageHead } from '../Shell';
 import { ACCEPT_RESOURCE, TYPE_META, formatResourceMeta, formatUsedBy } from './lib/resource';
+import { ResourceKpModal } from './ResourceKpModal';
 
 const PAGE_SIZE = 12;
 
@@ -66,16 +67,20 @@ export function ResourcesPage() {
       .finally(() => setLoading(false));
   }, [type, page, refresh]);
 
+  /** 正在归档知识点的资源(弹窗) */
+  const [kpTarget, setKpTarget] = useState<ResourceDto | null>(null);
+
   const onPickFile = async (file: File) => {
     setUploading(true);
     try {
       const { ossKey } = await uploadResource(file);
-      await api.post('/resources', {
+      const created = await api.post('/resources', {
         body: { type: guessType(file), name: file.name, ossKey, size: file.size, meta: {} },
       });
-      toast('资源已上传,可在「编排课堂」时挂载到讲次');
+      toast('资源已上传;归档到知识点后,编排该知识点单元时会置顶推荐');
       setPage(1);
       setRefresh((n) => n + 1);
+      setKpTarget(created.data); // 走查 A-3:上传即引导归档知识点(可跳过)
     } catch (e) {
       toast(e instanceof Error ? e.message : '上传失败');
     } finally {
@@ -193,6 +198,14 @@ export function ResourcesPage() {
                     <b className="truncate text-[14px]" title={r.name}>{r.name}</b>
                     <div className="text-[12px] tabular-nums text-ink-3">{formatResourceMeta(r)}</div>
                     <div className={`text-[12px] ${used.referenced ? 'text-ink-2' : 'text-orange'}`}>{used.text}</div>
+                    <button
+                      type="button"
+                      onClick={() => setKpTarget(r)}
+                      className="truncate text-left text-[12px] text-primary hover:underline"
+                      title="归档到教材知识点:编排该知识点单元时置顶推荐,知识点库可按知识点找到它"
+                    >
+                      {r.kpNodeId != null ? `📘 ${r.kpNodeName ?? `知识点 #${r.kpNodeId}`} · 更换` : '＋ 归档知识点'}
+                    </button>
                     <div className="mt-auto flex items-center gap-3.5 pt-1.5 text-[13px] font-semibold">
                       <Button
                         className="!border-0 !bg-transparent !px-0 !py-0 !text-primary hover:underline"
@@ -237,6 +250,11 @@ export function ResourcesPage() {
           )}
         </>
       )}
+      <ResourceKpModal
+        resource={kpTarget}
+        onClose={() => setKpTarget(null)}
+        onSaved={(id, kp) => setItems((list) => list.map((x) => (x.id === id ? { ...x, ...kp } : x)))}
+      />
     </div>
   );
 }

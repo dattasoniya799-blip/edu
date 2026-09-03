@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { AssignmentBriefDto, PaperDto, QuestionType } from '@qiming/contracts';
-import { Button, Card, EmptyState, Skeleton, Tag, TexText } from '@qiming/ui';
+import { Button, Card, EmptyState, Skeleton, Tag, TexText, useToast } from '@qiming/ui';
 import { api } from '../../api';
 import { PageHead } from '../Shell';
 import {
@@ -20,6 +20,7 @@ import {
   countByType,
   filterPapers,
   paperStatusLabel,
+  paperSubjects,
   type PaperTab,
 } from './lib/paperLibrary';
 
@@ -37,6 +38,10 @@ export function PaperLibraryPage() {
 
   const [tab, setTab] = useState<PaperTab>('all');
   const [keyword, setKeyword] = useState('');
+  /** [2026-09-02 A-2] 学科筛选:契约 PaperDto.subject(卷内题目学科聚合) */
+  const [subject, setSubject] = useState('');
+  const { toast } = useToast();
+  const [publishingId, setPublishingId] = useState<number | null>(null);
 
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [detailCache, setDetailCache] = useState<Record<number, PaperDto>>({});
@@ -62,8 +67,23 @@ export function PaperLibraryPage() {
       .finally(() => setLoading(false));
   }, [reload]);
 
-  const shown = useMemo(() => filterPapers(papers, tab, keyword), [papers, tab, keyword]);
+  const shown = useMemo(() => filterPapers(papers, tab, keyword, subject), [papers, tab, keyword, subject]);
   const counts = useMemo(() => countByType(papers), [papers]);
+  const subjects = useMemo(() => paperSubjects(papers), [papers]);
+
+  /** [2026-09-02 F-6] 草稿卷转正 */
+  const publish = async (p: PaperDto) => {
+    setPublishingId(p.id);
+    try {
+      await api.post('/papers/{id}/publish', { params: { id: p.id } });
+      setPapers((list) => list.map((x) => (x.id === p.id ? { ...x, status: 'published' } : x)));
+      toast(`《${p.name}》已发布,可挂到讲次或布置为作业`);
+    } catch (e) {
+      toast(e instanceof Error && e.message ? e.message : '发布失败,请重试');
+    } finally {
+      setPublishingId(null);
+    }
+  };
 
   const loadDetail = (id: number) => {
     setDetailLoadingId(id);
@@ -111,7 +131,18 @@ export function PaperLibraryPage() {
             <span className="ml-1.5 tabular-nums opacity-70">{counts[t.key]}</span>
           </button>
         ))}
-        <div className="ml-auto flex w-[260px] items-center gap-2 rounded-[10px] border-[1.5px] border-line bg-card px-3 py-1.5 text-[13px]">
+        {subjects.length > 0 && (
+          <select
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            aria-label="学科筛选"
+            className="ml-auto rounded-[10px] border-[1.5px] border-line bg-card px-3 py-1.5 text-[13px] font-medium text-ink outline-none focus:border-primary"
+          >
+            <option value="">全部学科</option>
+            {subjects.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        )}
+        <div className={`${subjects.length > 0 ? '' : 'ml-auto '}flex w-[260px] items-center gap-2 rounded-[10px] border-[1.5px] border-line bg-card px-3 py-1.5 text-[13px]`}>
           <span className="text-ink-3">⌕</span>
           <input
             className="w-full bg-transparent text-ink placeholder:text-ink-3 focus:outline-none"
@@ -161,12 +192,21 @@ export function PaperLibraryPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <b className="text-sm">{p.name}</b>
                       <Tag tone={p.status === 'published' ? 'green' : 'gray'}>{paperStatusLabel(p.status)}</Tag>
+                      {p.subject && <Tag tone="primary">{p.subject}</Tag>}
                     </div>
                     <div className="mt-0.5 text-[12.5px] text-ink-2 tabular-nums">
                       {p.questions.length} 题 · 共 {p.totalScore} 分
+                      {p.kpNodes.length > 0 && (
+                        <span className="ml-2 text-ink-3">· 知识点:{p.kpNodes.slice(0, 3).map((k) => k.name).join('、')}{p.kpNodes.length > 3 ? ` 等 ${p.kpNodes.length} 个` : ''}</span>
+                      )}
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
+                    {p.status !== 'published' && (
+                      <Button variant="primary" disabled={publishingId === p.id} onClick={() => void publish(p)} title="草稿转正:发布后才能挂到讲次或布置作业">
+                        {publishingId === p.id ? '发布中…' : '发布'}
+                      </Button>
+                    )}
                     {referenced ? (
                       <Button disabled title="该试卷已被作业引用,禁止修改(可在库内新建一份)">编辑</Button>
                     ) : (
@@ -177,7 +217,7 @@ export function PaperLibraryPage() {
                         编辑
                       </Button>
                     )}
-                    <Button variant="primary" onClick={() => toggleExpand(p.id)}>
+                    <Button variant={p.status === 'published' ? 'primary' : undefined} onClick={() => toggleExpand(p.id)}>
                       {expanded ? '收起' : '查看详情'}
                     </Button>
                   </div>
