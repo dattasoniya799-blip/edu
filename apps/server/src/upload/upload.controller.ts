@@ -123,10 +123,26 @@ const INLINE_MIME: Record<string, string> = {
   doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 };
 
-/** 扩展名 → Content-Type;html/svg/js 等可执行内容刻意不在表内(回退 octet-stream 走下载) */
+/**
+ * 可执行的文档类型(单文件互动课件 HTML / SVG):内联返回,但强制 `Content-Security-Policy: sandbox allow-scripts`
+ * ——文档在浮空源(opaque origin)里运行,拿不到本站 storage / 其它接口的同源身份,即使有人直接打开直链也一样。
+ * 学生端课堂本来就用 sandbox iframe 嵌它;这里再加一道,双保险。js 等其它可执行类型仍不内联。
+ */
+const SANDBOXED_INLINE_MIME: Record<string, string> = {
+  html: 'text/html; charset=utf-8', htm: 'text/html; charset=utf-8', svg: 'image/svg+xml',
+};
+
+/** 扩展名 → Content-Type;未知类型回退 octet-stream 走下载 */
 export function contentTypeByExt(ossKey: string): string {
-  const ext = ossKey.toLowerCase().split('?')[0].split('.').pop() ?? '';
-  return INLINE_MIME[ext] ?? 'application/octet-stream';
+  const ext = extOf(ossKey);
+  return INLINE_MIME[ext] ?? SANDBOXED_INLINE_MIME[ext] ?? 'application/octet-stream';
+}
+/** 该扩展名是否需要 CSP sandbox 才能内联(html / svg) */
+export function needsSandbox(ossKey: string): boolean {
+  return extOf(ossKey) in SANDBOXED_INLINE_MIME;
+}
+function extOf(ossKey: string): string {
+  return ossKey.toLowerCase().split('?')[0].split('.').pop() ?? '';
 }
 
 @Controller('storage')
@@ -166,8 +182,9 @@ export class StorageDownloadController {
       throw new NotFoundException('文件不存在');
     }
     // 按扩展名给出真实 MIME(走查 G-2:恒 octet-stream 会让「预览」变下载);未知类型才回退二进制。
-    // 不做内容嗅探、不提供 HTML 内联:html/svg 一类可执行内容仍按下载处理,避免同源脚本注入。
+    // 不做内容嗅探;html / svg 内联但带 CSP sandbox(互动课件要在课堂 iframe 里跑,走查 B-2 复查发现 octet-stream 时 iframe 只会弹下载)。
     res.setHeader('Content-Type', contentTypeByExt(ossKey));
+    if (needsSandbox(ossKey)) res.setHeader('Content-Security-Policy', 'sandbox allow-scripts');
     res.setHeader('Content-Length', String(body.length));
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.end(body);

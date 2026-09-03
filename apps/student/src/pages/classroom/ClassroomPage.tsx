@@ -113,7 +113,8 @@ function ClassroomInner({ sessionId }: { sessionId: number }) {
     );
   }
 
-  const segType = state.session.segments.find((s) => s.seq === state.seg)?.type ?? 'summary';
+  // 下课后一律进小结:不管最后一个环节是什么类型(讲次没编排小结段时,此前 end 会把学生停在随堂练上继续答题;2026-09-02 复查发现)
+  const segType = state.ended ? 'summary' : (state.session.segments.find((s) => s.seq === state.seg)?.type ?? 'summary');
 
   return (
     <Stage>

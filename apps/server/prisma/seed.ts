@@ -266,7 +266,7 @@ async function business(c: Client) {
     ['practice', 30, { ai_guide: true, stuck_alert_min: 3 }, null, practicePaper],
     ['summary', 25, { personal_consolidation: { min: 2, max: 4 } }, null, null]];
   // lecture / practice / summary 归入单元 1 并挂知识点(走查 G-3:此前三段无知识点,编排页三处「建议补全:未选择知识点」)
-  const unitKp = pep.find((n: any) => /平移/.test(n.name)) ?? pep[0];
+  const unitKp = pep.find((n: any) => /平移/.test(n.name)) ?? pep.find((n: any) => /图象与性质/.test(n.name)) ?? pep[0];
   for (let j = 0; j < segs.length; j++) await c.query(
     `INSERT INTO lesson_segments(org_id,lesson_id,seq,type,duration_min,config,resource_id,paper_id,kp_node_id,unit_seq)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
@@ -311,10 +311,11 @@ async function business(c: Client) {
       totalAnswers++;
       if (meta.type === 'solution') {
         const aiScore = 4 + Math.floor(rnd() * 7);
-        const reviewed = rnd() < 0.3;
-        // 已复核的解答题:复核分落到 answers.score 并计入总分;未复核:0 分(走查 G-3:此前把未复核的 AI 预批分计入 attempt.score,
-        // 成绩单「24/35」与逐题之和 15 不一致)
-        if (reviewed) { await c.query(`UPDATE answers SET score=$2 WHERE id=$1`, [ans, aiScore]); subj += aiScore; }
+        // attempt 已 graded ⇒ 解答题必已复核(真实流程 finalize 会被 4501 拦住);此前 70% 「已出分但未复核」是自相矛盾的数据,
+        // 复核页显示「未判分 · 已复核」。统一为已复核:复核分 = 预批分,落到 answers.score 并计入总分(走查 G-3)
+        const reviewed = true;
+        rnd(); // 保持随机序列与旧 seed 一致(下游到课/错题分布不变)
+        await c.query(`UPDATE answers SET score=$2 WHERE id=$1`, [ans, aiScore]); subj += aiScore;
         await c.query(`INSERT INTO grading_records(org_id,answer_id,ai_score,ai_steps,ai_error_tags,final_score,reviewer_id,comment,reviewed_at)
           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
           [orgId, ans, aiScore,

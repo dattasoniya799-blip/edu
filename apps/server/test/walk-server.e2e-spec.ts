@@ -139,6 +139,15 @@ describe('走查修复 · 服务端(停用即时吊销 / 登录文案 / 学号�
     const view2 = await get(`/uploads/view-url?ossKey=${encodeURIComponent(sts2.body.data.ossKey)}`, teacherAt).expect(200);
     const file2 = await request(http).get(String(view2.body.data.url).replace(/^https?:\/\/[^/]+/, '')).expect(200);
     expect(file2.headers['content-type']).toMatch(/^application\/octet-stream/);
+    // html(单文件互动课件)内联,但必须带 CSP sandbox(浮空源),防直链打开后拿同源身份
+    const html = Buffer.from('<!doctype html><title>walk</title><script>1</script>', 'utf8');
+    const sts3 = await post('/uploads/sts', teacherAt).send({ purpose: 'resource', fileName: 'walk.html', contentType: 'text/html', size: html.length }).expect(200);
+    await request(http).put(String(sts3.body.data.uploadUrl).replace(/^https?:\/\/[^/]+/, '')).set('Content-Type', 'text/html').send(html).expect(200);
+    const view3 = await get(`/uploads/view-url?ossKey=${encodeURIComponent(sts3.body.data.ossKey)}`, teacherAt).expect(200);
+    const file3 = await request(http).get(String(view3.body.data.url).replace(/^https?:\/\/[^/]+/, '')).expect(200);
+    expect(file3.headers['content-type']).toMatch(/^text\/html/);
+    expect(file3.headers['content-security-policy']).toBe('sandbox allow-scripts');
+    expect(file3.headers['x-content-type-options']).toBe('nosniff');
   });
 
   // ================= E-3:工作台最近动态可读 =================
