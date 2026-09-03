@@ -9,7 +9,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import type Redis from 'ioredis';
-import { PWD_RESET_KEY } from '../../auth/pwd-reset';
+import { checkTokenRevoked, REVOKE_MESSAGE } from '../../auth/pwd-reset';
 import { REDIS } from '../../redis/redis.module';
 import { IS_PUBLIC_KEY } from '../decorators';
 import { tenantAls } from '../tenant-context';
@@ -45,16 +45,13 @@ export class JwtAuthGuard implements CanActivate {
     }
     if (payload.typ === 'refresh') throw new UnauthorizedException('凭证类型错误');
 
-    // 密码重置吊销:重置时刻之前签发的 access token 一律 401(iat 严格小于,同秒新登录不误杀);
-    // Redis 不可用时 fail-open 放行并告警,不把全站打挂。
+    // 即时吊销:账号停用 / 密码重置(见 auth/pwd-reset.ts);Redis 不可用时 fail-open 放行并告警,不把全站打挂。
     try {
-      const resetAt = await this.redis.get(PWD_RESET_KEY(Number(payload.uid)));
-      if (resetAt !== null && Number(payload.iat) < Number(resetAt)) {
-        throw new UnauthorizedException('凭证无效或已过期');
-      }
+      const reason = await checkTokenRevoked(this.redis, payload);
+      if (reason) throw new UnauthorizedException(REVOKE_MESSAGE[reason]);
     } catch (e) {
       if (e instanceof UnauthorizedException) throw e;
-      this.logger.warn(`密码重置吊销检查跳过(Redis 不可用,fail-open):${(e as Error).message}`);
+      this.logger.warn(`吊销检查跳过(Redis 不可用,fail-open):${(e as Error).message}`);
     }
 
     const user = { uid: Number(payload.uid), orgId: Number(payload.orgId), role: payload.role };

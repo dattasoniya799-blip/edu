@@ -4,9 +4,11 @@
  * (a7:ai:cost:{orgId}:{yyyy-MM} 等),夹具 org 随用例销毁,这里兜底清掉全部测试残留。
  */
 const a5Teardown = require('./a5.queue-teardown.cjs');
+const authRedisSetup = require('./auth-redis-setup.cjs');
 
 module.exports = async () => {
   await a5Teardown();
+  await authRedisSetup(); // 吊销键随夹具 org 一起清,不留给演示环境
   const Redis = require('ioredis');
   const redis = new Redis(process.env.REDIS_URL ?? 'redis://127.0.0.1:6379', {
     maxRetriesPerRequest: 2,

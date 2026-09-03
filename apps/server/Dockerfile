@@ -84,11 +84,14 @@ FROM node:22-slim AS runtime
 ENV NODE_ENV=production \
     # start 脚本同款:tsconfig-paths 以 dist/apps/server 为 baseUrl 解析 @qiming/contracts
     TS_NODE_BASEURL=./dist/apps/server \
-    PORT=3000
+    PORT=3000 \
+    # 进程时区与机构时区一致(日志时间、Date 本地方法);业务判定(学习时段)另经 ORG_TIMEZONE 显式取值
+    TZ=Asia/Shanghai \
+    ORG_TIMEZONE=Asia/Shanghai
 WORKDIR /app
-# openssl:Prisma 引擎依赖;ca-certificates:出站 HTTPS(LLM 网关等)
+# openssl:Prisma 引擎依赖;ca-certificates:出站 HTTPS(LLM 网关等);tzdata:让 TZ=Asia/Shanghai 对 Date 本地方法生效
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates openssl \
+  && apt-get install -y --no-install-recommends ca-certificates openssl tzdata \
   && rm -rf /var/lib/apt/lists/*
 COPY --from=proddeps --chown=node:node /repo/node_modules ./node_modules
 COPY --from=build --chown=node:node /repo/apps/server/dist ./dist

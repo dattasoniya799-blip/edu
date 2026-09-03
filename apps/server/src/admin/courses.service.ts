@@ -4,6 +4,9 @@ import { AuditService } from '../audit/audit.service';
 import type { JwtUser } from '../auth/auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CourseInputDto, CourseListQueryDto } from './admin.dto';
+
+/** 单课程在册人数上限(2026-09-02 走查 D-6 拍板:不按班型限人,统一 ≤ 100) */
+export const COURSE_ROSTER_MAX = 100;
 import { dec, iso, num, round2, utcDayStart } from './helpers';
 
 export interface RosterItem {
@@ -55,6 +58,7 @@ export class CoursesService {
   async create(user: JwtUser, dto: CourseInputDto, ip?: string): Promise<CourseDto> {
     await this.assertTeacherExists(dto.teacherId);
     const studentIds = await this.assertStudentsExist(dto.studentIds ?? []);
+    this.assertRosterCapacity(studentIds.length);
 
     const orgId = BigInt(user.orgId);
     const created = await this.prisma.client.$transaction(async (tx) => {
@@ -221,6 +225,9 @@ export class CoursesService {
       where: { courseId: course.id, studentId: { in: ids } },
     });
     const existingMap = new Map(existing.map((e) => [String(e.studentId), e]));
+    const activeNow = await this.prisma.client.courseStudent.count({ where: { courseId: course.id, status: 'active' } });
+    const newlyActive = ids.filter((sid) => existingMap.get(String(sid))?.status !== 'active').length;
+    this.assertRosterCapacity(activeNow + newlyActive);
     for (const sid of ids) {
       const cur = existingMap.get(String(sid));
       if (!cur) {
@@ -278,8 +285,16 @@ export class CoursesService {
   }
 
   /** 全量同步课程名单:缺的补 active,多的置 quit */
+  /** 在册人数上限校验(D-6):超出 → 409,不落库 */
+  private assertRosterCapacity(activeAfter: number) {
+    if (activeAfter > COURSE_ROSTER_MAX) {
+      throw new ConflictException(`课程在册学生不能超过 ${COURSE_ROSTER_MAX} 人(本次操作后将达 ${activeAfter} 人)`);
+    }
+  }
+
   private async syncRoster(orgId: bigint, courseId: bigint, studentIds: number[]) {
     const target = await this.assertStudentsExist(studentIds);
+    this.assertRosterCapacity(target.length);
     const targetSet = new Set(target.map(String));
     const existing = await this.prisma.client.courseStudent.findMany({ where: { courseId } });
     const existingMap = new Map(existing.map((e) => [String(e.studentId), e]));

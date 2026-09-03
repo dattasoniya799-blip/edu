@@ -324,8 +324,9 @@ describe('作答/自动批改/复核/错题/掌握度(A5)', () => {
     const eQ4 = items.find((it) => it.questionId === qid(3))!;
     wrongQ4EntryId = eQ4.id;
     expect(eQ4.status).toBe('open');
-    // solution 不再走 AI 预批 → 无 AI 错因标签(错因由教师人工复核 comment 承载,不落错题 errorTags)
-    expect(eQ4.errorTags).toEqual([]);
+    // solution 不走 AI 预批 → 无 AI 错因标签;2026-09-02(走查 A-4)起错因为空时回退该题的教材知识点名,
+    // 错题本按知识点仍能分组(q4 标注 node1)
+    expect(eQ4.errorTags).toEqual(['A5·一次函数解析式']);
   });
 
   it('验收:掌握度 —— mastery 任务完成,数值=独立手算(N1/N2 各 50,样本 2)', async () => {

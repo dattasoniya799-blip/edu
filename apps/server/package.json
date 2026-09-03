@@ -4,7 +4,7 @@
   "scripts": {
     "build": "nest build",
     "start": "TS_NODE_BASEURL=./dist/apps/server node -r tsconfig-paths/register dist/apps/server/src/main.js",
-    "start:dev": "nest start --watch",
+    "start:dev": "TS_NODE_BASEURL=./dist/apps/server nest start --watch --exec \"node -r tsconfig-paths/register\"",
     "test": "jest --config test/jest-e2e.config.cjs --runInBand",
     "db:migrate": "prisma migrate dev",
     "db:apply-sql": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f prisma/migrations/0001_init/migration.sql",

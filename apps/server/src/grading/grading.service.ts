@@ -456,7 +456,7 @@ export class GradingService {
       });
 
     for (const at of attempts) {
-      await this.settleAttempt(at, assignment.kind, meta);
+      await this.settleAttempt(at, assignment.kind, meta, assignment);
     }
     return null;
   }
@@ -470,12 +470,37 @@ export class GradingService {
       where: { id: attemptId, status: 'submitted' },
       include: {
         answers: { include: { grading: true } },
-        assignment: { select: { kind: true, paperId: true } },
+        assignment: { select: { id: true, kind: true, paperId: true, lessonId: true, teacherId: true } },
       },
     });
     if (!at) return;
     const meta = await this.paperMeta(at.assignment.paperId);
-    await this.settleAttempt(at, at.assignment.kind, meta);
+    await this.settleAttempt(at, at.assignment.kind, meta, at.assignment);
+  }
+
+  /**
+   * 客观题错题在**交卷时**即时入账(2026-09-02 走查 F-1 拍板):含解答题 / 公式填空的卷要等教师复核才出分,
+   * 此前答错的客观题也要等到那时才进错题本,学生交卷后看不到刚错的题。
+   * 口径:AttemptService.submit 在「卷面含需复核题」时调用本方法只入账客观题;之后 settleAttempt 对同一
+   * attempt 只入账需复核题(见 hasReview 分支),二者互斥,不重复计数。纯客观卷仍走 finalizeAttempt 一次性入账。
+   */
+  async accountObjectiveOnSubmit(attemptId: bigint): Promise<void> {
+    const at = await this.prisma.client.attempt.findFirst({
+      where: { id: attemptId, status: 'submitted' },
+      include: { answers: true, assignment: { select: { kind: true, paperId: true } } },
+    });
+    if (!at) return;
+    const meta = await this.paperMeta(at.assignment.paperId);
+    const items: AccountItem[] = [];
+    for (const a of at.answers) {
+      const m = meta.get(String(a.questionId));
+      if (!m || m.needsReview) continue;
+      items.push({
+        answerId: a.id, questionId: a.questionId, isCorrect: a.isCorrect, finalScore: null,
+        fullScore: m.fullScore, type: m.type, needsReview: false, errorTags: [],
+      });
+    }
+    if (items.length) await this.wrongBook.accountAttempt(at.studentId, at.assignment.kind, items);
   }
 
   /**
@@ -509,7 +534,7 @@ export class GradingService {
           at.answers.reduce((s, a) => s + (a.isCorrect != null ? (dec(a.score) ?? 0) : 0), 0),
         );
         const now = new Date();
-        await this.prisma.client.attempt.updateMany({
+        const claimed = await this.prisma.client.attempt.updateMany({
           where: { id: at.id, status: 'in_progress' },
           data: {
             status: 'submitted',
@@ -518,6 +543,11 @@ export class GradingService {
             durationSec: Math.max(0, Math.round((now.getTime() - at.startedAt.getTime()) / 1000)),
           },
         });
+        // 凡是把 attempt 转成 submitted 的一方,都负责客观题即时入账(与 AttemptService.submit 同口径);
+        // 含需复核题时 settleAttempt 只再入账需复核题,故这里必须先补客观题,否则课堂随堂练的客观错题会漏账
+        if (claimed.count === 1 && (await this.paperNeedsReview(at.assignmentId))) {
+          await this.accountObjectiveOnSubmit(at.id);
+        }
       }
       // submitted→graded 由 finalizeAttempt 内的原子夺取保证错题入账/掌握度恰好一次
       await this.finalizeAttempt(at.id);
@@ -546,6 +576,7 @@ export class GradingService {
     at: { id: bigint; studentId: bigint; orgId: bigint; objectiveScore: unknown; answers: AnswerWithGrading[] },
     kind: AssignmentKind,
     meta: Map<string, PaperQMeta>,
+    source: { id: bigint; lessonId: bigint | null; paperId: bigint; teacherId: bigint | null } | null = null,
   ): Promise<void> {
     let subjective: number | null = null;
     const hasReview = [...meta.values()].some((m) => m.needsReview);
@@ -604,8 +635,25 @@ export class GradingService {
     });
     if (!won) return;
 
-    await this.wrongBook.accountAttempt(at.studentId, kind, items);
+    // 含需复核题的卷:客观题已在交卷时入账(accountObjectiveOnSubmit),这里只入账需复核题,避免重复计数;
+    // 纯客观卷(自动出分)一次性全部入账。
+    await this.wrongBook.accountAttempt(at.studentId, kind, hasReview ? items.filter((i) => i.needsReview) : items);
+    // 课后作业出分 → 按本次答错的客观题为该生生成「订正」作业(F-5;幂等,见 WrongBookService)
+    if (kind === 'homework' && source) {
+      const wrongObjective = items
+        .filter((i) => !i.needsReview && i.isCorrect === false)
+        .map((i) => ({ questionId: i.questionId, answerId: i.answerId }));
+      await this.wrongBook.createCorrectionForAttempt(at.studentId, source, wrongObjective);
+    }
     await this.masteryQueue.enqueue(num(at.orgId), num(at.studentId));
+  }
+
+  /** 该作业的卷面是否含需复核题(决定交卷时是否要先入账客观题) */
+  private async paperNeedsReview(assignmentId: bigint): Promise<boolean> {
+    const asg = await this.prisma.client.assignment.findFirst({ where: { id: assignmentId }, select: { paperId: true } });
+    if (!asg) return false;
+    const meta = await this.paperMeta(asg.paperId);
+    return [...meta.values()].some((m) => m.needsReview);
   }
 
   /** 卷面题型/满分/是否需复核表(needsReview = solution 或 公式填空) */
