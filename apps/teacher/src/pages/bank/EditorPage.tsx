@@ -514,7 +514,7 @@ export function EditorPage() {
                 label="插图" target="reference"
                 figures={form.figures} uploading={uploading} onUpload={uploadToAnchor} onRemove={removeFigure}
               />
-            )}>参考答案{form.type === 'solution' && '与评分要点'} · AI 预批将按要点逐步给分</PaneHead>
+            )}>参考答案{form.type === 'solution' && '与评分要点'}{form.type === 'solution' ? ' · 教师按要点逐步给分' : ''}</PaneHead>
             {form.type === 'blank' ? (
               <div className="flex flex-col gap-2 p-4">
                 {form.blankAnswers.map((t, i) => (

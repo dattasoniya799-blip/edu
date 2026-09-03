@@ -31,7 +31,10 @@ function RailDot({ lesson, isNext }: { lesson: LessonDto; isNext: boolean }) {
 
 function StatusTag({ lesson, isNext }: { lesson: LessonDto; isNext: boolean }) {
   if (lesson.status === 'finished') return <Tag tone="green">已上课</Tag>;
-  if (lesson.status === 'ready') return <Tag tone="green">已就绪 ✓</Tag>;
+  // 放宽规则下缺课后作业也能发布:标注出来,别让「已就绪 ✓」和红叉并列打架(走查 B-6)
+  if (lesson.status === 'ready') return lesson.prepChecklist?.homework === false
+    ? <Tag tone="green">已就绪 · 未布置作业</Tag>
+    : <Tag tone="green">已就绪 ✓</Tag>;
   if (lesson.status === 'in_progress') return <Tag tone="orange">上课中</Tag>;
   return isNext ? <Tag tone="primary">下次上课</Tag> : <Tag>未备课</Tag>;
 }
@@ -144,6 +147,8 @@ export function CourseLessonsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [courses, setCourses] = useState<CourseDto[]>([]);
+  /** 课程列表已返回(含失败):无课教师此前 courseId=0 → 讲次请求不发、loading 永真,只剩标题(走查 E-2) */
+  const [coursesLoaded, setCoursesLoaded] = useState(false);
   const [lessons, setLessons] = useState<LessonDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false); // REV-front #2:讲次加载失败(可重试)区别于空态
@@ -155,7 +160,7 @@ export function CourseLessonsPage() {
 
   useEffect(() => {
     // openapi Course.status 为宽松 string,收窄为 DTO 联合类型(同 Dashboard)
-    api.get('/teacher/courses').then((r) => setCourses(r.data as CourseDto[])).catch(() => undefined);
+    api.get('/teacher/courses').then((r) => setCourses(r.data as CourseDto[])).catch(() => undefined).finally(() => setCoursesLoaded(true));
   }, []);
 
   useEffect(() => {
@@ -206,7 +211,11 @@ export function CourseLessonsPage() {
         )}
       />
 
-      {loading ? (
+      {coursesLoaded && courses.length === 0 ? (
+        <div className="rounded-lg border border-line bg-card shadow-card">
+          <EmptyState icon="▢" text="还没有在带课程" hint="请联系管理员在「课程与班级」创建课程并把授课教师设为你;分配后在本页逐讲设置上课时间、编排课堂" />
+        </div>
+      ) : loading ? (
         <Skeleton lines={4} className="h-24 w-full" />
       ) : error ? (
         <div className="rounded-lg border border-line bg-card shadow-card">

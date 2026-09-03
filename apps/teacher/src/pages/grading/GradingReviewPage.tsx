@@ -8,7 +8,7 @@
  */
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ERROR_CODES } from '@qiming/contracts';
+import { ApiError, ERROR_CODES } from '@qiming/contracts';
 import type { GradingAnswerBriefDto, GradingItemDto } from '@qiming/contracts';
 import { Button, Card, EmptyState, Skeleton, Tag, TexText, useToast } from '@qiming/ui';
 import { api } from '../../api';
@@ -38,6 +38,9 @@ export function GradingReviewPage() {
   const [reload, setReload] = useState(0);
   const [detailReload, setDetailReload] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [loadErrorStatus, setLoadErrorStatus] = useState<number | null>(null);
+  /** 作答照片加载失败(seed 的 demo key 无文件 / 直链过期)→ 占位而不是破图 */
+  const [photoBroken, setPhotoBroken] = useState(false);
 
   /** 名单:GET /grading/assignments/{id}/answers(替换原 source.ts 适配层枚举) */
   const loadBriefs = async () => {
@@ -65,7 +68,7 @@ export function GradingReviewPage() {
     setLoading(true);
     setLoadError(false);
     init()
-      .catch(() => { setBriefs([]); setCurrentId(null); setLoadError(true); })
+      .catch((e) => { setBriefs([]); setCurrentId(null); setLoadError(true); setLoadErrorStatus(e instanceof ApiError ? (e.httpStatus ?? null) : null); })
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assignmentId, reload]);
@@ -86,6 +89,7 @@ export function GradingReviewPage() {
   // 解答题(人工判分)留空由老师填,公式填空回填 AI 建议分作参考
   useEffect(() => {
     if (!detail) return;
+    setPhotoBroken(false); // 切换学生后重新尝试加载原稿
     if (detail.finalScore != null) setScore(String(detail.finalScore));
     else setScore(detail.photoUrl != null ? '' : String(detail.aiScore ?? 0));
     setComment(detail.comment ?? '');
@@ -167,7 +171,9 @@ export function GradingReviewPage() {
     );
   }
   if (loadError) {
-    // 加载失败 ≠ 没有主观题:这里绝不能给「可直接出分」,只给重试
+    // 加载失败 ≠ 没有主观题:这里绝不能给「可直接出分」,只给重试。
+    // 404/403 是「不是你的作业 / 作业不存在」,不是网络波动(走查 D-3:此前一律说网络波动)
+    const notMine = loadErrorStatus === 404 || loadErrorStatus === 403;
     return (
       <div>
         <PageHead
@@ -177,13 +183,13 @@ export function GradingReviewPage() {
               <span className="text-ink-3"> / </span>{paperName || '课后作业'} · 主观题复核
             </span>
           )}
-          sub="待复核名单未能加载,暂时无法判断本次作业是否还有主观题待判分"
+          sub={notMine ? '这份作业不在你的批改范围内' : '待复核名单未能加载,暂时无法判断本次作业是否还有主观题待判分'}
         />
         <div className="rounded-lg border border-line bg-card shadow-card">
           <EmptyState
-            icon="⚠"
-            text="待复核名单加载失败"
-            hint="可能是网络波动。名单没拿到之前不要出分——未复核的主观题会被服务端拦下(4501)"
+            icon={notMine ? '⊘' : '⚠'}
+            text={notMine ? '无权批改或作业不存在' : '待复核名单加载失败'}
+            hint={notMine ? '只有布置该作业的教师(或课程授课教师)能批改;请从「作业批改」列表进入自己的作业' : '可能是网络波动。名单没拿到之前不要出分——未复核的主观题会被服务端拦下(4501)'}
             action={(
               <div className="flex gap-2.5">
                 <Button onClick={() => navigate('/grading')}>返回批改列表</Button>
@@ -235,7 +241,9 @@ export function GradingReviewPage() {
             <span className="text-ink-3"> / </span>{paperName || '课后作业'} · 主观题复核
           </span>
         )}
-        sub={`客观题已自动批改完成 · ${briefs.length} 份待判分:解答题人工判分、公式填空 AI 预批参考,逐份处理后出分(剩余 ${pendingCount} 份)`}
+        sub={pendingCount > 0
+          ? `客观题已自动批改完成 · 共 ${briefs.length} 份主观题作答,还有 ${pendingCount} 份待人工判分,逐份处理后出分`
+          : `客观题已自动批改完成 · ${briefs.length} 份主观题作答已全部复核,可出分`}
         actions={(
           <Button variant="primary" onClick={finalize} disabled={busy}>完成复核,出分</Button>
         )}
@@ -271,8 +279,8 @@ export function GradingReviewPage() {
               }`}
             >
               {reviewed
-                ? `✓ ${b.studentName} · ${b.finalScore} 分 已复核`
-                : `${b.studentName} · AI 预批 ${b.aiScore ?? '—'}`}
+                ? `✓ ${b.studentName} · ${b.finalScore != null ? `${b.finalScore} 分` : '未判分'} 已复核`
+                : `${b.studentName} · 待判分`}
             </button>
           );
         })}
@@ -291,7 +299,16 @@ export function GradingReviewPage() {
               <TexText src={`${detail.stemLatex}(${full} 分)`} />
             </div>
             {detail.photoUrl ? (
-              <img src={detail.photoUrl} alt={`${detail.studentName} 的作答照片`} className="w-full rounded-md border border-line bg-card" />
+              photoBroken ? (
+                <EmptyState icon="🖼" text="作答照片无法加载" hint="文件可能已不存在或直链已过期;刷新页面重取直链" className="py-6" />
+              ) : (
+                <img
+                  src={detail.photoUrl}
+                  alt={`${detail.studentName} 的作答照片`}
+                  className="w-full rounded-md border border-line bg-card"
+                  onError={() => setPhotoBroken(true)}
+                />
+              )
             ) : detail.textResponse ? (
               <div className="whitespace-pre-wrap rounded-md border border-line px-5 py-4 text-[14.5px] leading-[2.1] text-ink">
                 <TexText src={detail.textResponse} />

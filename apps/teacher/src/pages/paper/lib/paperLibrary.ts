@@ -59,11 +59,32 @@ export const PAPER_TABS: { key: PaperTab; label: string }[] = [
  * 按页签(type)+ 试卷名关键词过滤(纯客户端)。
  * 关键词忽略首尾空白、大小写不敏感;空关键词不过滤。
  */
-export function filterPapers(papers: PaperDto[], tab: PaperTab, keyword: string): PaperDto[] {
+export function filterPapers(
+  papers: PaperDto[],
+  tab: PaperTab,
+  keyword: string,
+  /** [2026-09-02 A-2] 学科筛选(PaperDto.subject 聚合值;'' = 全部);'__none' = 未标学科 */
+  subject = '',
+): PaperDto[] {
   const kw = keyword.trim().toLowerCase();
   return papers.filter(
-    (p) => (tab === 'all' || p.type === tab) && (kw === '' || p.name.toLowerCase().includes(kw)),
+    (p) =>
+      (tab === 'all' || p.type === tab) &&
+      (kw === '' || p.name.toLowerCase().includes(kw)) &&
+      (subject === '' || (subject === '__none' ? p.subject == null : p.subject === subject)),
   );
+}
+
+/** 出现过的学科(按首次出现顺序),供筛选下拉;含 null 时尾部附「未标学科」选项 */
+export function paperSubjects(papers: PaperDto[]): { value: string; label: string }[] {
+  const out: { value: string; label: string }[] = [];
+  let hasNone = false;
+  for (const p of papers) {
+    if (p.subject == null) { hasNone = true; continue; }
+    if (!out.some((o) => o.value === p.subject)) out.push({ value: p.subject, label: p.subject });
+  }
+  if (hasNone) out.push({ value: '__none', label: '未标学科' });
+  return out;
 }
 
 /** 各页签计数(页签角标用;all = 总数) */

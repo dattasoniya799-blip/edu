@@ -215,7 +215,7 @@ export function PaperBuilderPage() {
             <span className="text-ink-3"> / </span>{lesson.title} · 课后作业组卷
           </span>
         )}
-        sub="从题库挑题组成作业,发布后挂载到讲次,下课自动推送学生平板"
+        sub="从题库挑题组成作业,发布即布置给本课程全体学生(学生端立即可见),并挂到讲次课后作业环节"
         actions={(
           <>
             <Button onClick={() => setPickerOpen(true)}>+ 继续从题库选题</Button>
@@ -267,7 +267,7 @@ export function PaperBuilderPage() {
               <Tag tone="violet">教师批改出分</Tag>
             </div>
             <div className="rounded-md bg-bg px-3 py-2.5 text-xs leading-relaxed text-ink-3">
-              发布即生效:下课后推送学生平板,截止 {dueAt ? fmtDateTime(new Date(dueAt).toISOString()) : '未设置'};客观题提交后立即自动批改。
+              发布即布置:学生端立即可见,截止 {dueAt ? fmtDateTime(new Date(dueAt).toISOString()) : '未设置'};客观题提交后立即自动批改。
             </div>
           </div>
         </Card>

@@ -4,17 +4,17 @@
  * 不闪烁:mergeRoster 增量合并保引用 + memo 卡片,未变化的学生卡不重渲
  * 裁剪口径(MVP 手册 1.1):介入辅导(推语音)、回放时点切换延后
  */
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import type { LessonDto, ParticipantMonitor } from '@qiming/contracts';
-import { Button, Card, EmptyState, Skeleton, StatCard } from '@qiming/ui';
+import type { ClassControl, ClassSnapshot, LessonDto, ParticipantMonitor, SessionStatus } from '@qiming/contracts';
+import { Button, Card, EmptyState, Modal, Skeleton, StatCard, Tag, useToast } from '@qiming/ui';
 import { api } from '../../api';
 import { getToken } from '../../auth/token';
 import { PageHead } from '../Shell';
 import { fmtClock, fmtDateTime } from '../course/lib/format';
 import { SEGMENT_LABEL } from '../lesson/lib/segments';
 import { deriveStats, mergeRoster, pushAlerts, type AlertEntry } from './lib/roster';
-import { createMonitorSource } from './source';
+import { createMonitorSource, type MonitorSource } from './source';
 
 /** 随堂练题数兜底(实际取讲次 practice 卷题数) */
 const FALLBACK_QUESTION_TOTAL = 5;
@@ -82,6 +82,16 @@ export function MonitorPage() {
   /** 连上 WS 前的等待上限:超时给提示 + 重试,而不是无限骨架屏 */
   const [connectTimedOut, setConnectTimedOut] = useState(false);
   const [reload, setReload] = useState(0);
+  /**
+   * [2026-09-02 走查 B-1/B-4] 控场:会话状态(live / paused / ended)来自 join 快照,之后随 class:control 广播
+   * 与本地下发同步;环节表来自快照(force_segment 用)。ended 后停止按钮并提示。
+   */
+  const [sessionStatus, setSessionStatus] = useState<SessionStatus | null>(null);
+  const [segments, setSegments] = useState<ClassSnapshot['session']['segments']>([]);
+  const [currentSeg, setCurrentSeg] = useState<number | null>(null);
+  const [confirmEnd, setConfirmEnd] = useState(false);
+  const sourceRef = useRef<MonitorSource | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     setLessonError(false);
@@ -112,6 +122,7 @@ export function MonitorPage() {
     setConnectTimedOut(false);
     // 真实模式以本课教师身份 class:join 进监控房(sessionId=真实 ClassSession id)
     const source = createMonitorSource({ sessionId: sessionId ?? lessonId, token: getToken() });
+    sourceRef.current = source;
     const stop = source.connect({
       onRoster: (e) => {
         setConnected(true);
@@ -119,11 +130,41 @@ export function MonitorPage() {
         setParticipants((prev) => mergeRoster(prev, e.participants));
       },
       onAlert: (e) => setAlerts((prev) => pushAlerts(prev, [e], Date.now())),
+      // join 成功即视为已连上(此前只等首帧 roster:仅作业环节的会话不推 roster → 骨架屏永远转,走查 B-5)
+      onSnapshot: (snap) => {
+        setConnected(true);
+        setSessionStatus(snap.session.status);
+        setSegments(snap.session.segments);
+        setCurrentSeg(snap.session.currentSegmentSeq);
+      },
+      onControl: (c) => {
+        if (c.action === 'pause') setSessionStatus('paused');
+        else if (c.action === 'resume') setSessionStatus('live');
+        else if (c.action === 'end') setSessionStatus('ended');
+        else if (c.action === 'force_segment') setCurrentSeg(c.segmentSeq);
+      },
+      onException: (msg) => toast(msg, { variant: 'error' }),
     });
     // mock 流 5s 一帧、真实 WS 握手也是秒级;15s 还没首帧就是连不上,给提示别让骨架屏永远转
     const timer = setTimeout(() => setConnectTimedOut(true), CONNECT_TIMEOUT_MS);
-    return () => { clearTimeout(timer); stop(); };
+    return () => { clearTimeout(timer); stop(); sourceRef.current = null; };
   }, [lessonId, sessionId, useMock, lesson, reload]);
+
+  const control = (c: ClassControl) => {
+    sourceRef.current?.control(c);
+    // 乐观更新:服务端广播回来会再同步一次;mock 源直接回显
+    if (c.action === 'pause') setSessionStatus('paused');
+    if (c.action === 'resume') setSessionStatus('live');
+    if (c.action === 'force_segment') setCurrentSeg(c.segmentSeq);
+  };
+  const endClass = () => {
+    control({ action: 'end' });
+    setSessionStatus('ended');
+    setConfirmEnd(false);
+    toast('已下课:随堂练已入账,课后作业已推送给学生', { variant: 'success' });
+  };
+  const ended = sessionStatus === 'ended';
+  const paused = sessionStatus === 'paused';
 
   const stats = useMemo(() => deriveStats(participants), [participants]);
 
@@ -138,6 +179,54 @@ export function MonitorPage() {
         )}
         sub={`本页仅上课中实时可用,每 5 秒刷新;课后无回放${lesson?.scheduledStart ? ` · ${fmtDateTime(lesson.scheduledStart)}` : ''}`}
       />
+
+      {connected && !lessonError && !noSession && (
+        <div className={`mb-4 flex flex-wrap items-center gap-2.5 rounded-lg border px-4 py-3 shadow-card ${ended ? 'border-line bg-bg' : paused ? 'border-orange bg-orange-soft' : 'border-line bg-card'}`}>
+          <b className="text-[13.5px]">课堂控场</b>
+          {ended ? (
+            <Tag tone="gray">课堂已结束 · 学生端已收到小结</Tag>
+          ) : (
+            <Tag tone={paused ? 'orange' : 'green'}>{paused ? '已暂停(学生端遮罩中)' : '进行中'}</Tag>
+          )}
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            {segments.length > 0 && (
+              <label className="flex items-center gap-1.5 text-[12.5px] text-ink-2">
+                切环节
+                <select
+                  value={currentSeg ?? ''}
+                  disabled={ended}
+                  aria-label="强制切换全班环节"
+                  onChange={(e) => { const seq = Number(e.target.value); if (seq) control({ action: 'force_segment', segmentSeq: seq }); }}
+                  className="rounded-[10px] border-[1.5px] border-line bg-card px-2.5 py-[6px] text-[13px] text-ink outline-none focus:border-primary"
+                >
+                  <option value="">(不强制)</option>
+                  {segments.map((sg) => <option key={sg.seq} value={sg.seq}>{sg.seq} · {SEGMENT_LABEL[sg.type]}</option>)}
+                </select>
+              </label>
+            )}
+            {paused ? (
+              <Button variant="primary" disabled={ended} onClick={() => control({ action: 'resume' })}>继续上课</Button>
+            ) : (
+              <Button disabled={ended} onClick={() => control({ action: 'pause' })} title="学生端整屏遮罩「老师暂停了课堂」">暂停</Button>
+            )}
+            <Button variant="primary" disabled={ended} className={ended ? '' : '!bg-red !border-red hover:!bg-red'} onClick={() => setConfirmEnd(true)}>下课</Button>
+          </div>
+        </div>
+      )}
+
+      <Modal
+        open={confirmEnd}
+        title="确认下课?"
+        onClose={() => setConfirmEnd(false)}
+        footer={(
+          <>
+            <Button onClick={() => setConfirmEnd(false)}>再等等</Button>
+            <Button variant="primary" onClick={endClass}>确认下课</Button>
+          </>
+        )}
+      >
+        <p className="text-sm leading-7 text-ink-2">下课后:随堂练未交的自动交卷入账,挂在本讲的课后作业推送给全班,学生端进入课堂小结。课堂结束后不能再进入。</p>
+      </Modal>
 
       {lessonError ? (
         <div className="rounded-lg border border-line bg-card shadow-card">

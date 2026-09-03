@@ -39,6 +39,8 @@ export function PaperEditorPage() {
   const [tagNodeId, setTagNodeId] = useState<number | null>(null);
   const [name, setName] = useState('');
   const [type, setType] = useState<PaperType>('homework');
+  /** 编辑态:已加载卷的状态(draft / published),决定顶栏按钮组 */
+  const [loadedStatus, setLoadedStatus] = useState<string>('published');
   const [items, setItems] = useState<PaperItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -80,6 +82,7 @@ export function PaperEditorPage() {
           const paper = p.data;
           setName(paper.name);
           setType(paper.type);
+          setLoadedStatus(paper.status);
           setItems(paper.questions.map((pq) => ({ questionId: pq.questionId, score: pq.score })));
         }
       })
@@ -114,18 +117,22 @@ export function PaperEditorPage() {
   const remove = (questionId: number) => setItems((prev) => prev.filter((it) => it.questionId !== questionId));
   const toggle = (q: QuestionDto) => setItems((prev) => toggleQuestion(prev, q.id, q.type));
 
-  const onSave = async () => {
+  /**
+   * [2026-09-02 F-6] 试卷可存草稿:新建给「保存草稿 / 创建并发布」,草稿卷编辑给「保存草稿 / 发布」,
+   * 已发布卷只有「保存试卷」(状态不回退)。status 随 PaperInput 一起提交(缺省保持原状 / published)。
+   */
+  const onSave = async (nextStatus?: 'draft' | 'published') => {
     const errors = validatePaper(name, items, '试卷');
     if (errors.length) { toast(errors[0]); return; }
     setBusy(true);
-    const input = toPaperInput(name, type, items);
+    const input = { ...toPaperInput(name, type, items), ...(nextStatus ? { status: nextStatus } : {}) };
     try {
       if (isEdit) {
         await api.put('/papers/{id}', { params: { id: paperId }, body: input });
-        toast('试卷已保存');
+        toast(nextStatus === 'published' && loadedStatus !== 'published' ? '试卷已发布,可挂到讲次或布置为作业' : nextStatus === 'draft' ? '草稿已保存' : '试卷已保存');
       } else {
         await api.post('/papers', { body: input });
-        toast('试卷已创建');
+        toast(nextStatus === 'draft' ? '草稿已保存,发布后才能挂到讲次或布置作业' : '试卷已创建并发布');
       }
       navigate('/papers');
     } catch (e) {
@@ -161,7 +168,14 @@ export function PaperEditorPage() {
         actions={(
           <>
             <Button onClick={() => setPickerOpen(true)}>+ 从题库选题</Button>
-            <Button variant="primary" onClick={onSave} disabled={busy || loadError}>{isEdit ? '保存试卷' : '创建试卷'}</Button>
+            {isEdit && loadedStatus === 'published' ? (
+              <Button variant="primary" onClick={() => void onSave()} disabled={busy || loadError}>保存试卷</Button>
+            ) : (
+              <>
+                <Button onClick={() => void onSave('draft')} disabled={busy || loadError} title="保存为草稿:可继续编辑,发布前不能挂讲次 / 布置作业">保存草稿</Button>
+                <Button variant="primary" onClick={() => void onSave('published')} disabled={busy || loadError}>{isEdit ? '发布' : '创建并发布'}</Button>
+              </>
+            )}
           </>
         )}
       />

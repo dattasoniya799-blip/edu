@@ -8,11 +8,11 @@
  * 资源选择可按 kpNode 过滤(ResourceDto.kpNodeId)。
  */
 import { useEffect, useMemo, useState } from 'react';
-import type { KpContentPackDto, KpNodeDto, PaperDto, ResourceDto } from '@qiming/contracts';
+import type { KpContentPackDto, KpGraphDto, KpNodeDto, PaperDto, ResourceDto } from '@qiming/contracts';
 import { Button, Card, EmptyState, Modal, Skeleton, Tag, TexText, useToast } from '@qiming/ui';
 import { api } from '../../api';
 import { PageHead } from '../Shell';
-import { filterNodesByKeyword, pickKnowledgeGraph } from './lib/knowledge';
+import { curriculumSubjects, defaultKnowledgeSubject, filterNodesByKeyword, pickKnowledgeGraph } from './lib/knowledge';
 
 const LINK_CLS = 'text-[13px] font-semibold text-primary hover:underline';
 
@@ -28,7 +28,11 @@ function configFromTpl(t: SummaryTpl): Record<string, unknown> {
 
 export function KnowledgePage() {
   const { toast } = useToast();
+  const [graphs, setGraphs] = useState<KpGraphDto[]>([]);
+  /** 学科切换(走查 A-1):有教材图谱的学科;默认教师在带课程的学科 */
+  const [subject, setSubject] = useState<string>('');
   const [nodes, setNodes] = useState<KpNodeDto[]>([]);
+  const [treeError, setTreeError] = useState(false);
   const [packed, setPacked] = useState<Set<number>>(new Set()); // 已维护内容包的 kpNodeId
   const [resources, setResources] = useState<ResourceDto[]>([]);
   const [papers, setPapers] = useState<PaperDto[]>([]);
@@ -51,39 +55,49 @@ export function KnowledgePage() {
   const paperById = useMemo(() => new Map(papers.map((p) => [p.id, p])), [papers]);
   const selectedNode = useMemo(() => nodes.find((n) => n.id === selectedId) ?? null, [nodes, selectedId]);
 
-  // 初始:先独立加载教材知识点树(主数据);内容包/资源/卷为次要数据,各自容错,
-  // 任一失败都不再拖垮整棵树(此前同放一个 Promise.all,内容包 404 → 整页空)。
+  // 初始:图谱 + 教师课程(定默认学科);次要数据(资源 / 卷)各自容错
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    api.get('/kp/graphs')
-      .then(async (g) => {
-        const graph = pickKnowledgeGraph(g.data);
-        const n = graph
-          ? await api.get('/kp/nodes', { query: { graphId: graph.id } })
-          : { data: [] as KpNodeDto[] };
+    Promise.all([api.get('/kp/graphs'), api.get('/teacher/courses').catch(() => ({ data: [] as { subject: string }[] }))])
+      .then(([g, c]) => {
         if (!alive) return;
-        const list = n.data;
-        setNodes(list);
-        if (list[0]) setSelectedId(list[0].id);
-        setLoading(false); // 树就绪即渲染,不等次要数据
-
-        // 次要数据:并行、各自 catch,失败仅令对应区缺省,不影响知识点树/搜索
-        if (graph) {
-          api.get('/knowledge/content-packs', { query: { graphId: graph.id } })
-            .then((r) => { if (alive) setPacked(new Set(r.data.map((x) => x.kpNodeId))); })
-            .catch(() => undefined);
-        }
-        api.get('/resources', { query: { page: 1, size: 50 } })
-          .then((r) => { if (alive) setResources(r.data.items); })
-          .catch(() => undefined);
-        api.get('/papers', { query: { page: 1, size: 50 } })
-          .then((r) => { if (alive) setPapers(r.data.items); })
-          .catch(() => undefined);
+        setGraphs(g.data);
+        setSubject(defaultKnowledgeSubject(g.data, c.data));
+        if (!g.data.length) setLoading(false); // 一张图谱都没有:直接进空态,不留骨架
       })
-      .catch(() => { if (alive) setLoading(false); });
+      .catch(() => { if (alive) { setTreeError(true); setLoading(false); } });
+    api.get('/resources', { query: { page: 1, size: 50 } })
+      .then((r) => { if (alive) setResources(r.data.items); })
+      .catch(() => undefined);
+    api.get('/papers', { query: { page: 1, size: 50 } })
+      .then((r) => { if (alive) setPapers(r.data.items); })
+      .catch(() => undefined);
     return () => { alive = false; };
   }, []);
+
+  // 学科 → 该学科的教材图谱 → 节点树(主数据)+ 已建包标记(次要,单独 catch,失败不拖垮树)
+  useEffect(() => {
+    if (!graphs.length) return;
+    const graph = pickKnowledgeGraph(graphs, subject);
+    if (!graph) { setNodes([]); setLoading(false); return; }
+    let alive = true;
+    setLoading(true);
+    setTreeError(false);
+    api.get('/kp/nodes', { query: { graphId: graph.id } })
+      .then((n) => {
+        if (!alive) return;
+        setNodes(n.data);
+        setSelectedId(n.data[0]?.id ?? null);
+        setKeyword('');
+        setLoading(false);
+      })
+      .catch(() => { if (alive) { setTreeError(true); setLoading(false); } });
+    api.get('/knowledge/content-packs', { query: { graphId: graph.id } })
+      .then((r) => { if (alive) setPacked(new Set(r.data.map((x) => x.kpNodeId))); })
+      .catch(() => undefined);
+    return () => { alive = false; };
+  }, [graphs, subject]);
 
   // 选中知识点 → 拉内容包
   useEffect(() => {
@@ -156,12 +170,26 @@ export function KnowledgePage() {
   }
 
   const filtered = filterNodesByKeyword(nodes, keyword);
+  const subjects = curriculumSubjects(graphs);
 
   return (
     <div>
       <PageHead
         title="知识点内容库"
         sub="按教材知识点沉淀可复用内容:讲解课件 / 随堂练卷 / 小结模板。编排课堂选该知识点时自动预填(可覆盖)"
+        actions={subjects.length > 1 ? (
+          <label className="flex items-center gap-2 text-[12.5px] font-semibold text-ink-2">
+            学科
+            <select
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              aria-label="学科(切换教材知识图谱)"
+              className="rounded-[10px] border-[1.5px] border-line bg-card px-3 py-[7px] text-[13px] font-medium text-ink outline-none focus:border-primary"
+            >
+              {subjects.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </label>
+        ) : undefined}
       />
 
       <div className="grid items-start gap-4" style={{ gridTemplateColumns: '320px minmax(0,1fr)' }}>
@@ -176,8 +204,12 @@ export function KnowledgePage() {
               className="w-full rounded-[10px] border-[1.5px] border-line px-3 py-2 text-[13px] outline-none focus:border-primary"
             />
           </div>
-          {filtered.length === 0 ? (
-            <EmptyState icon="▦" text="暂无知识点" hint="教材知识图谱未加载或为空" />
+          {treeError ? (
+            <EmptyState icon="⚠" text="知识点加载失败" hint="可能是网络波动,请重试" action={<Button variant="primary" onClick={() => setSubject((v) => v)}>重新加载</Button>} />
+          ) : nodes.length === 0 ? (
+            <EmptyState icon="▦" text={subject ? `「${subject}」暂无教材知识图谱` : '暂无知识点'} hint="请联系管理员导入该学科的教材知识图谱" />
+          ) : filtered.length === 0 ? (
+            <EmptyState icon="◌" text={`没有匹配「${keyword.trim()}」的知识点`} hint={`当前是「${subject}」图谱;换个关键词,或切换学科再搜`} />
           ) : (
             <div className="flex max-h-[70vh] flex-col overflow-auto p-2">
               {filtered.map((n) => {
@@ -287,8 +319,8 @@ export function KnowledgePage() {
                 <div className="flex items-center gap-3.5 px-5 py-4">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-green-soft text-[15px] text-green">◎</div>
                   <div className="min-w-0 flex-1">
-                    <b className="text-[13.5px]">小结模板 <span className="rounded-[6px] bg-violet-soft px-1.5 py-px text-[11px] font-bold text-violet">AI</span></b>
-                    <div className="mt-0.5 text-[12.5px] text-ink-2">AI 按每位学生本单元错题生成个性化巩固题</div>
+                    <b className="text-[13.5px]">小结模板</b>
+                    <div className="mt-0.5 text-[12.5px] text-ink-2">课堂小结阶段的巩固题量区间(按本单元错题回顾;个性化生成能力未上线,此处仅作编排默认值)</div>
                   </div>
                   <label className="flex items-center gap-1.5 text-[12.5px] text-ink-2">
                     题量
