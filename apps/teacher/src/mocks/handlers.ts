@@ -531,25 +531,38 @@ export const handlers = [
     lesson.status = 'ready';
     return okVoid();
   })),
+  // [2026-09-02 契约] 列表支持 type / subject / kpNodeId / status 筛选(subject / kpNodes 为聚合只读字段)
   http.get(`${BASE}/papers`, authed(({ request }) => {
     const url = new URL(request.url);
     const type = url.searchParams.get('type');
+    const subject = url.searchParams.get('subject');
+    const kpNodeId = url.searchParams.get('kpNodeId');
+    const status = url.searchParams.get('status');
     let list = D.papers;
     if (type) list = list.filter((p) => p.type === type);
+    if (subject) list = list.filter((p) => p.subject === subject);
+    if (kpNodeId) list = list.filter((p) => p.kpNodes.some((k) => k.id === Number(kpNodeId)));
+    if (status) list = list.filter((p) => p.status === status);
     return ok(paginate(list, url));
   })),
-  // 创建即 published(A4 口径:契约无 /papers/:id/publish);totalScore 服务端重算
+  // [2026-09-02 契约] status 缺省 published;可存 draft,经 POST /papers/:id/publish 转正;totalScore 服务端重算
   http.post(`${BASE}/papers`, authed(async ({ request }) => {
-    const body = (await request.json()) as { name: string; type: PaperType; questions: { questionId: number; score: number }[] };
+    const body = (await request.json()) as { name: string; type: PaperType; status?: 'draft' | 'published'; questions: { questionId: number; score: number }[] };
     const questions = resolvePaperQuestions(body.questions);
     if (!questions) return err(404, 4040, '引用的题目不存在');
-    const paper: PaperDto = {
+    const paper: PaperDto = D.withPaperMeta({
       id: Math.max(0, ...D.papers.map((p) => p.id)) + 1,
-      name: body.name, type: body.type, status: 'published',
+      name: body.name, type: body.type, status: body.status ?? 'published',
       totalScore: questions.reduce((s, q) => s + q.score, 0), questions,
-    };
+    });
     D.papers.push(paper);
     return ok(paper);
+  })),
+  http.post(`${BASE}/papers/:id/publish`, authed(({ params }) => {
+    const paper = D.papers.find((x) => x.id === Number(params.id));
+    if (!paper) return err(404, 4040, '试卷不存在');
+    paper.status = 'published';
+    return okVoid();
   })),
   http.get(`${BASE}/papers/:id`, authed(({ params }) => {
     const p = D.papers.find((x) => x.id === Number(params.id));
@@ -560,10 +573,10 @@ export const handlers = [
     const paper = D.papers.find((x) => x.id === Number(params.id));
     if (!paper) return err(404, 4040, '试卷不存在');
     if (D.assignments.some((a) => a.paperId === paper.id)) return err(409, 4302, '试卷已被作业引用,禁止修改');
-    const body = (await request.json()) as { name: string; type: PaperType; questions: { questionId: number; score: number }[] };
+    const body = (await request.json()) as { name: string; type: PaperType; status?: 'draft' | 'published'; questions: { questionId: number; score: number }[] };
     const questions = resolvePaperQuestions(body.questions);
     if (!questions) return err(404, 4040, '引用的题目不存在');
-    Object.assign(paper, { name: body.name, type: body.type, questions, totalScore: questions.reduce((s, q) => s + q.score, 0) });
+    Object.assign(paper, D.withPaperMeta({ ...paper, name: body.name, type: body.type, status: body.status ?? paper.status, questions, totalScore: questions.reduce((s, q) => s + q.score, 0) }));
     return okVoid();
   })),
   // 作业总览(C3 #4:教师布置过的全部作业 → AssignmentBrief[];支持 courseId/lessonId/status 过滤)

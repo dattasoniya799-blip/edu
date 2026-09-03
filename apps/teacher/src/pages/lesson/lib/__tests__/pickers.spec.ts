@@ -45,7 +45,7 @@ describe('arrangeKpGraphId(编排「选择知识点」弹窗按课程学科取�
 
 describe('homeworkPaperChoices(课后作业「选择已有卷」候选)', () => {
   const p = (id: number, type: PaperDto['type'], status: string): PaperDto =>
-    ({ id, name: `卷${id}`, type, totalScore: 100, status, questions: [] });
+    ({ id, name: `卷${id}`, type, totalScore: 100, status, subject: '数学', kpNodes: [], questions: [] });
   const PAPERS: PaperDto[] = [
     p(1, 'practice', 'published'),
     p(2, 'homework', 'draft'),

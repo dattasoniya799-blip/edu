@@ -213,7 +213,24 @@ const draftQuestions = [14, 15, 16].map((qid, j) => {
   return { seq: j + 1, questionId: q.id, score: q.type === 'solution' ? 10 : 5, type: q.type, stemLatex: q.stemLatex };
 });
 
-export const papers: PaperDto[] = [
+
+/**
+ * [2026-09-02 契约] PaperDto.subject / kpNodes 是服务端从卷内题目聚合的只读字段;
+ * mock 侧同口径推导:学科取题目学科众数(空卷 null),知识点取教材(curriculum_knowledge)标注去重。
+ */
+export function withPaperMeta(p: Omit<PaperDto, 'subject' | 'kpNodes'>): PaperDto {
+  const qs = p.questions.map((it) => questions.find((q) => q.id === it.questionId)).filter((q): q is QuestionDto => !!q);
+  const count = new Map<string, number>();
+  for (const q of qs) count.set(q.subject, (count.get(q.subject) ?? 0) + 1);
+  let subject: string | null = null;
+  let best = 0;
+  for (const [s, n] of count) if (n > best) { subject = s; best = n; }
+  const kp = new Map<number, string>();
+  for (const q of qs) for (const t of q.tags) if (t.graphType === 'curriculum_knowledge') kp.set(t.nodeId, t.name);
+  return { ...p, subject, kpNodes: [...kp.entries()].map(([id, name]) => ({ id, name })) };
+}
+
+export const papers: PaperDto[] = ([
   {
     id: 1, name: '第4讲 · 随堂练', type: 'practice', totalScore: 30, status: 'published',
     questions: questions.slice(0, 5).map((q, j) => ({ seq: j + 1, questionId: q.id, score: j === 4 ? 10 : 5, type: q.type, stemLatex: q.stemLatex })),
@@ -233,7 +250,7 @@ export const papers: PaperDto[] = [
     id: 4, name: '第5讲课后作业(草稿) · 一次函数应用', type: 'homework', status: 'draft',
     totalScore: draftQuestions.reduce((s, q) => s + q.score, 0), questions: draftQuestions,
   },
-];
+] satisfies Omit<PaperDto, 'subject' | 'kpNodes'>[]).map(withPaperMeta);
 
 export const assignments: AssignmentDto[] = [
   {

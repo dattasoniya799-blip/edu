@@ -2652,6 +2652,12 @@ export interface paths {
                     page?: components["parameters"]["page"];
                     size?: components["parameters"]["size"];
                     type?: components["schemas"]["PaperType"];
+                    /** @description [2026-09-02] 按聚合学科精确匹配;缺省/空串不过滤 */
+                    subject?: string;
+                    /** @description [2026-09-02] 卷内含该教材知识点的题 */
+                    kpNodeId?: number;
+                    /** @description [2026-09-02] 缺省全部 */
+                    status?: "draft" | "published";
                 };
                 header?: never;
                 path?: never;
@@ -2779,6 +2785,45 @@ export interface paths {
             };
         };
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/papers/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 草稿试卷转正(draft → published;已 published 幂等 200;须为创建者本人或 admin) [teacher] */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["idPath"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OkVoid"];
+                    };
+                };
+                default: components["responses"]["Err"];
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -4697,7 +4742,15 @@ export interface components {
             name: string;
             type: components["schemas"]["PaperType"];
             totalScore: number;
+            /** @description draft | published(2026-09-02 起可为草稿) */
             status: string;
+            /** @description [2026-09-02 批准] 由卷内题目学科聚合(全一致取该学科,混合取众数);空卷为 null */
+            readonly subject: null | string;
+            /** @description [2026-09-02 批准] 卷内题目的教材知识点(curriculum_knowledge 标注)去重,供筛选与展示 */
+            readonly kpNodes: {
+                id: number;
+                name: string;
+            }[];
             questions: {
                 seq: number;
                 questionId: number;
@@ -4709,6 +4762,11 @@ export interface components {
         PaperInput: {
             name: string;
             type: components["schemas"]["PaperType"];
+            /**
+             * @description [2026-09-02 批准] 缺省 published(向后兼容);draft 可继续编辑,不可挂讲次/布置;经 POST /papers/{id}/publish 转正
+             * @enum {string}
+             */
+            status?: "draft" | "published";
             questions: {
                 questionId: number;
                 score: number;

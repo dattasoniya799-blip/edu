@@ -46,4 +46,12 @@ export class PaperController {
   update(@CurrentUser() user: JwtUser, @Param('id', ParseIntPipe) id: number, @Body() dto: PaperInputDto) {
     return this.papers.update(user, id, dto);
   }
+
+  /** [2026-09-02 批准] 草稿转正:draft → published(已 published 幂等) */
+  @Post(':id/publish')
+  @HttpCode(200)
+  @Roles('teacher')
+  publish(@CurrentUser() user: JwtUser, @Param('id', ParseIntPipe) id: number) {
+    return this.papers.publish(user, id);
+  }
 }

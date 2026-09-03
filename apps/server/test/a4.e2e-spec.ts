@@ -26,7 +26,8 @@ const exactKeys = (obj: object, keys: string[]) =>
 const COURSE_KEYS = ['id', 'name', 'classType', 'subject', 'stage', 'teacherId', 'teacherName', 'totalLessons', 'currentLesson', 'studentCount', 'status', 'nextLessonAt', 'attendanceRate', 'homeworkRate'];
 const LESSON_KEYS = ['id', 'courseId', 'seq', 'title', 'scheduledStart', 'scheduledEnd', 'status', 'prepChecklist', 'openingConfig', 'sessionId'];
 const SEGMENT_KEYS = ['id', 'seq', 'type', 'durationMin', 'config', 'resourceId', 'paperId', 'kpNodeId', 'kpNodeName', 'unitSeq'];
-const PAPER_KEYS = ['id', 'name', 'type', 'totalScore', 'status', 'questions'];
+// [2026-09-02 契约] Paper 增只读聚合 subject / kpNodes
+const PAPER_KEYS = ['id', 'name', 'type', 'totalScore', 'status', 'subject', 'kpNodes', 'questions'];
 const PAPER_QUESTION_KEYS = ['seq', 'questionId', 'score', 'type', 'stemLatex'];
 const ASSIGNMENT_KEYS = ['id', 'paperId', 'paperName', 'lessonId', 'kind', 'target', 'publishAt', 'dueAt', 'scoreCounted', 'questionCount', 'totalScore'];
 // [2026-07-06 契约] 学生视角(listForStudent)额外带 myAttempt;教师创建出参不带
