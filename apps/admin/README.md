@@ -34,6 +34,7 @@ npm run test:mock    # msw/node 冒烟:登录→/me→列表接口(与浏览器�
 | `/teachers` | 教师管理 | 关键词/状态筛选 · 列表(学段学科胶囊、题库贡献、状态)· 添加/编辑弹窗 · **重置密码弹窗(明文临时密码,可复制)** · 停用确认 · **已停用项「恢复启用」** · 分页 |
 | `/students` | 学生管理 | 关键词/**状态**/课程/绑定状态筛选 · 列表(在读课程胶囊、设备、近 7 日时长)· 添加弹窗(创建后设置初始密码)· 学生档案弹窗(mini-stats + 课程 + 设备解绑)· **重置密码弹窗(明文临时密码,可复制)** · **已停用项「恢复启用」** · 分页 |
 | `/courses` | 课程与班级 | 课程卡片(班型徽标/进度/下次上课/到课·作业率)· 新建课程弹窗(班型三选,讲次数;排课规则按裁剪表延后)· 名单弹窗(添加学生 / 移出 → 学生档案)· 一对一直达学生档案 |
+| `/lab` | 实验室 | 讲解件展台(圆 / 浮力 / 平行四边形三道单文件 HTML);点「打开」新页播放;静态文件在 `public/lab/` |
 | `/ai-usage` | AI 用量与开销 | 摘要四卡(Token/费用+额度条/课均成本/告警)· 近 14 日柱状图 · 按功能拆分 · 额度与告警设置弹窗;**按课程拆分按裁剪表砍掉** |
 | `/settings` | 平台设置 | AI 能力卡(引导模式 Switch,可改;其余固定默认值)· 账号与安全卡(使用时段弹窗,HH:MM 校验) |
 
@@ -41,7 +42,7 @@ npm run test:mock    # msw/node 冒烟:登录→/me→列表接口(与浏览器�
 
 - `src/auth/`:AuthProvider(token 内存+localStorage,401 统一跳登录)+ token 存取
 - `src/api.ts`:contracts `createClient()` 唯一出口(禁止手写 fetch)
-- `src/pages/`:六个页面 + 登录页 + Shell(浅色侧栏 + 58px topbar)
+- `src/pages/`:总览 / 师生课 / 实验室(讲解件展台) / AI / 实验室管理 / 设置 + 登录页 + Shell(浅色侧栏 + 58px topbar)
 - `src/components/`:业务弹窗(教师/学生/课程表单、档案、重置密码、名单+入班、额度)+ 基础控件(Toolbar/Field/Pager/BarChart/ConfirmModal)
 - `src/lib/`:纯逻辑(`format`/`validate`/`paging`/`labels`),vitest 覆盖
 - 颜色只来自 design-tokens 派生的 Tailwind 类(tailwind preset 整表替换,裸色值无法通过类名出现)
@@ -73,3 +74,17 @@ npm run test:mock    # msw/node 冒烟:登录→/me→列表接口(与浏览器�
 - mock 见 `src/mocks/features.ts`(服务端功能目录的只读镜像 + 运行态 stage/白名单,有状态,刷新复位)。
 - 测试 `src/pages/__tests__/FeatureLab.spec.tsx`:jsdom 页面级 —— 渲染、详情展开、改阶段、白名单增删与清空、
   学生向功能改列学生名单。本端首个页面级用例,故 `vitest.config.ts` 补齐 `@qiming/ui` 与 react 别名(口径同学生端)。
+
+## 讲解件实验室(2026-09-06)
+
+侧栏独立「实验室」(`/lab`,分组「实 验」),与上面「实验室管理」(`/features` 功能开关)分开。
+三道讲解件是自包含单文件 HTML,跟管理端静态资源一起部署,不打后端、不进 `labs/playground`。
+
+| 验收 | 怎么跑 |
+| --- | --- |
+| 侧栏有「实验室」→ `/lab`;页上三道件(圆 / 浮力 / 平行四边形);「打开」新页;`base=/admin/` 时 href 带前缀;三份 HTML 已入库 | `npm test -- src/pages/__tests__/Lab.spec.tsx` |
+
+- 目录:`src/pages/lab-exhibits.ts`(`LAB_EXHIBITS` + `exhibitHref`)
+- 页面:`src/pages/Lab.tsx`
+- 静态件:`public/lab/{circle-angle,buoyancy,parallelogram-angle}.html`
+- 再加一道:把单文件 HTML 放进 `public/lab/`,在 `LAB_EXHIBITS` 登记一行,补测试断言即可。
