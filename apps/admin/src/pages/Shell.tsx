@@ -18,6 +18,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/teachers', label: '教师管理', icon: '◉', group: '组织与账号' },
   { to: '/students', label: '学生管理', icon: '◎' },
   { to: '/courses', label: '课程与班级', icon: '▦' },
+  { to: '/lab', label: '实验室', icon: '⚗', group: '实 验' },
   { to: '/ai-usage', label: 'AI 用量与开销', icon: '✦', group: '运 维' },
   { to: '/ai/config', label: 'AI 接口管理', icon: '⚡' },
   { to: '/features', label: '实验室管理', icon: '🧪' },

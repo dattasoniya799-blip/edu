@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>潜艇模型的浮沉与做功</title>
+<style>/* LectureScene 播放器样式:板书配色(纸白 / 墨黑 / 板书蓝 / 红笔 / 石墨灰 / 深字幕条) */
+.ls-player {
+  --ls-paper: #fbfaf7;
+  --ls-ink: #1f2328;
+  --ls-blue: #1d4ed8;
+  --ls-red: #c8102e;
+  --ls-grey: #6b7280;
+  --ls-line: #e5e7eb;
+  --ls-bar: #2b2f36;
+  --ls-bar-text: #f5f5f4;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 560px;
+  background: var(--ls-paper);
+  color: var(--ls-ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+.ls-head { flex: none; display: flex; align-items: center; gap: 14px; padding: 12px 18px; border-bottom: 1px solid var(--ls-line); }
+.ls-title { font-weight: 800; font-size: 16px; }
+.ls-step-label { color: var(--ls-grey); font-size: 13px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ls-dots { display: flex; gap: 6px; }
+.ls-dot { width: 26px; height: 26px; border-radius: 999px; border: 1.5px solid var(--ls-line); background: #fff; color: var(--ls-grey); font-size: 12px; font-weight: 700; cursor: pointer; }
+.ls-dot.is-done { border-color: var(--ls-blue); color: var(--ls-blue); }
+.ls-dot.is-current { background: var(--ls-blue); border-color: var(--ls-blue); color: #fff; }
+.ls-stage { position: relative; flex: 1 1 auto; min-height: 0; }
+.ls-stage svg { width: 100%; height: 100%; display: block; touch-action: none; user-select: none; }
+.ls-hint { flex: none; min-height: 0; max-height: 0; overflow: hidden; padding: 0 18px; font-size: 13.5px; color: var(--ls-ink); transition: max-height 0.25s ease, padding 0.25s ease; }
+.ls-hint.is-visible { max-height: 60px; padding: 8px 18px; }
+.ls-hint.is-play { background: #eef2ff; color: #1e3a8a; }
+.ls-hint.is-info { background: #f3f4f6; color: var(--ls-grey); }
+.ls-hint.is-done { background: #ecfdf5; color: #065f46; }
+.ls-subtitle { flex: none; position: relative; background: var(--ls-bar); color: var(--ls-bar-text); padding: 12px 18px 14px; min-height: 56px; }
+.ls-subtitle-text { font-size: 16px; line-height: 1.6; }
+.ls-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255, 255, 255, 0.12); }
+.ls-progress-fill { height: 100%; width: 0; background: #93c5fd; transition: width 0.12s linear; }
+.ls-controls { flex: none; display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #fff; border-top: 1px solid var(--ls-line); }
+.ls-controls-right { margin-left: auto; display: flex; gap: 8px; }
+.ls-btn { border: 1.5px solid var(--ls-line); background: #fff; color: var(--ls-ink); border-radius: 10px; padding: 8px 14px; font-size: 13.5px; font-weight: 600; cursor: pointer; min-height: 38px; }
+.ls-btn:hover:not(:disabled) { border-color: var(--ls-grey); }
+.ls-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.ls-btn-play { background: var(--ls-blue); border-color: var(--ls-blue); color: #fff; min-width: 120px; }
+.ls-btn-play:hover:not(:disabled) { background: #1e40af; }
+.ls-btn-next { border-color: var(--ls-blue); color: var(--ls-blue); }
+.ls-player[data-state='waiting'] .ls-btn-next { background: var(--ls-blue); color: #fff; animation: ls-glow 1.8s ease-in-out infinite; }
+@keyframes ls-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(29, 78, 216, 0); } 50% { box-shadow: 0 0 0 6px rgba(29, 78, 216, 0.25); } }
+.ls-btn-primary { background: var(--ls-blue); border-color: var(--ls-blue); color: #fff; }
+
+/* 动手环节:探索任务条(hint 下方一条,不遮场景;点一条划一条) */
+.ls-tasks { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 18px; background: #fffbeb; border-top: 1px solid #fde68a; }
+.ls-tasks-title { font-size: 12px; font-weight: 800; letter-spacing: 0.06em; color: #92400e; margin-right: 2px; }
+.ls-task { display: inline-flex; align-items: center; gap: 6px; border: 1px solid #fde68a; background: #fff; padding: 4px 10px; font-size: 12.5px; line-height: 1.4; color: var(--ls-ink); cursor: pointer; border-radius: 999px; }
+.ls-task:hover { border-color: #f59e0b; }
+.ls-task-mark { flex: none; font-weight: 800; color: var(--ls-grey); }
+.ls-task.is-done { color: var(--ls-grey); text-decoration: line-through; }
+.ls-task.is-done .ls-task-mark { color: #059669; }
+
+/* 手柄:锁定时隐藏,开放时亮起并轻微呼吸 */
+.ls-handle { cursor: grab; opacity: 0; transition: opacity 0.25s ease; pointer-events: none; }
+.ls-handle.ls-handle-active, .ls-slider.ls-handle-active .ls-handle { opacity: 1; pointer-events: auto; }
+.ls-handle.ls-handle-active > circle:first-child { animation: ls-breathe 1.8s ease-in-out infinite; }
+@keyframes ls-breathe { 0%, 100% { r: 16; } 50% { r: 20; } }
+.ls-handle.ls-dragging { cursor: grabbing; }
+.ls-slider { opacity: 0.35; transition: opacity 0.25s ease; }
+.ls-slider.ls-handle-active { opacity: 1; }
+
+/* 审题页:一页 PPT 式(占满舞台,全静默):题干(三色高亮)+ 题图 + 已知/隐含/求/思路 四块 */
+.ls-analysis-page { position: absolute; inset: 0; z-index: 5; background: var(--ls-paper); padding: 18px 26px 22px; overflow: auto; }
+.ls-analysis-head { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+.ls-analysis-eyebrow { font-size: 13px; font-weight: 800; letter-spacing: 0.14em; color: var(--ls-blue); }
+.ls-analysis-legend { display: inline-flex; gap: 10px; font-size: 11.5px; margin-left: auto; }
+.ls-analysis-body { display: flex; gap: 22px; align-items: flex-start; padding-bottom: 12px; border-bottom: 1px dashed var(--ls-line); }
+.ls-analysis-stem { flex: 1 1 auto; min-width: 0; }
+.ls-problem-line { font-size: 16px; line-height: 1.85; color: var(--ls-ink); margin-top: 5px; }
+.ls-problem-line.is-stem { font-weight: 600; }
+.ls-analysis-figs { flex: 0 0 auto; display: flex; flex-direction: column; gap: 8px; max-width: 42%; }
+.ls-analysis-fig { max-width: 100%; max-height: 190px; object-fit: contain; background: #fff; border: 1px solid var(--ls-line); border-radius: 10px; padding: 6px; }
+.ls-mark-red { color: #b91c1c; background: #fef2f2; border-bottom: 2px solid #dc2626; padding: 0 2px; border-radius: 3px; font-weight: 600; }
+.ls-mark-blue { color: #1d4ed8; background: #eff6ff; border-bottom: 2px solid #3b82f6; padding: 0 2px; border-radius: 3px; font-weight: 600; }
+.ls-mark-green { color: #047857; background: #ecfdf5; border-bottom: 2px solid #10b981; padding: 0 2px; border-radius: 3px; font-weight: 600; }
+.ls-analysis-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-top: 14px; }
+.ls-analysis-block { background: #fff; border: 1px solid var(--ls-line); border-radius: 12px; padding: 10px 14px; }
+.ls-analysis-block-title { font-size: 12.5px; font-weight: 800; color: var(--ls-blue); border-left: 3px solid var(--ls-blue); padding-left: 8px; margin-bottom: 6px; }
+.ls-analysis-block.is-hidden .ls-analysis-block-title { color: #047857; border-color: #10b981; }
+.ls-analysis-block.is-find .ls-analysis-block-title { color: #b91c1c; border-color: #dc2626; }
+.ls-analysis-block.is-ideas .ls-analysis-block-title { color: #92400e; border-color: #f59e0b; }
+.ls-analysis-item { display: flex; gap: 7px; font-size: 13.5px; line-height: 1.65; color: var(--ls-ink); margin-top: 4px; }
+.ls-analysis-item-mark { flex: none; color: var(--ls-grey); font-weight: 800; }
+.ls-analysis-return, .ls-summary-return { position: sticky; bottom: 0; float: right; margin-top: 12px; box-shadow: 0 6px 18px rgba(29, 78, 216, 0.35); }
+.ls-problem-pill { position: absolute; left: 10px; top: 10px; z-index: 6; border: 1px solid var(--ls-line); background: rgba(255, 255, 255, 0.95); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; font-weight: 700; color: var(--ls-ink); cursor: pointer; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); }
+.ls-problem-pill:hover { border-color: var(--ls-blue); color: var(--ls-blue); }
+
+/* 总结页:一页 PPT 式(占满舞台),四色块分区(板书规范:红=易错警示,色不过三系),
+   条目内【重点词】渲染为该组重点色胶囊 */
+.ls-summary-page { position: absolute; inset: 0; z-index: 5; background: var(--ls-paper); padding: 18px 26px 22px; overflow: auto; }
+/* 「题目」标签悬在左上,页眉让开它 */
+.ls-summary-page .ls-analysis-head, .ls-analysis-page .ls-analysis-head { margin-left: 72px; min-height: 26px; }
+.ls-summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 12px; }
+.ls-summary-block { --sum-color: var(--ls-blue); --sum-bg: #eff6ff; border: 1.5px solid var(--sum-color); border-left-width: 6px; background: var(--sum-bg); border-radius: 14px; padding: 12px 16px 14px; transition: opacity 0.2s; }
+.ls-summary-block.is-keypoints { --sum-color: #dc2626; --sum-bg: #fef2f2; }
+.ls-summary-block.is-methods { --sum-color: #d97706; --sum-bg: #fffbeb; }
+.ls-summary-block.is-variants { --sum-color: #059669; --sum-bg: #ecfdf5; }
+.ls-summary-block-title { display: flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 800; color: var(--sum-color); }
+.ls-summary-icon { font-size: 16px; }
+.ls-summary-item { display: flex; gap: 8px; margin-top: 9px; font-size: 15px; line-height: 1.7; color: var(--ls-ink); }
+.ls-summary-item-mark { flex: none; font-weight: 800; color: var(--sum-color); }
+.ls-sum-accent { color: var(--sum-color); background: #fff; border: 1px solid var(--sum-color); border-radius: 6px; padding: 0 5px; margin: 0 1px; font-weight: 800; }
+
+/* 读数面板(模板在 SVG 里画,这里只给字体) */
+.ls-readout { font-family: 'SF Mono', Menlo, Consolas, monospace; }
+
+html,body{margin:0;height:100%;background:#eceae4}body{display:grid;place-items:center;padding:12px;box-sizing:border-box}#lecture-app{width:100%;height:100%;max-width:1280px}</style>
+</head>
+<body>
+<div id="lecture-app"></div>
+<script>/*
+ * LectureScene · 场景运行时基础库(纯浏览器脚本,无依赖)
+ * - 时钟/补间(可整体暂停,供播放器「随时暂停」)
+ * - SVG 助手、坐标映射
+ * - 拖拽手柄与画布内滑杆(学生「玩」的入口)
+ * 挂到 window.LectureScene 命名空间,模板与播放器共用。
+ */
+(function (global) {
+  'use strict';
+  var LS = (global.LectureScene = global.LectureScene || {});
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+
+  // ---------------- 时钟与补间 ----------------
+  // 所有动画都走这个时钟;paused 时 now() 不前进,rAF 回调照常但不推进,于是「暂停」对所有动画一致有效。
+  var Clock = {
+    _paused: false,
+    _offset: 0,
+    _pausedAt: 0,
+    now: function () {
+      if (this._paused) return this._pausedAt - this._offset;
+      return performance.now() - this._offset;
+    },
+    pause: function () {
+      if (this._paused) return;
+      this._pausedAt = performance.now();
+      this._paused = true;
+    },
+    resume: function () {
+      if (!this._paused) return;
+      this._offset += performance.now() - this._pausedAt;
+      this._paused = false;
+    },
+    isPaused: function () {
+      return this._paused;
+    }
+  };
+
+  var easings = {
+    linear: function (t) { return t; },
+    easeOut: function (t) { return 1 - Math.pow(1 - t, 3); },
+    easeInOut: function (t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+  };
+
+  var activeTweens = [];
+  var rafId = 0;
+  function pump() {
+    rafId = 0;
+    var t = Clock.now();
+    for (var i = activeTweens.length - 1; i >= 0; i--) {
+      var tw = activeTweens[i];
+      if (tw.cancelled) { activeTweens.splice(i, 1); continue; }
+      var p = Math.min(1, Math.max(0, (t - tw.start) / tw.duration));
+      tw.onUpdate(tw.ease(p), p);
+      if (p >= 1) {
+        activeTweens.splice(i, 1);
+        tw.resolve();
+      }
+    }
+    if (activeTweens.length) rafId = requestAnimationFrame(pump);
+  }
+  /** 补间:返回 Promise,带 cancel;duration 0 立即完成 */
+  function tween(opts) {
+    var duration = Math.max(0, opts.duration || 0);
+    var handle = { cancelled: false };
+    var p = new Promise(function (resolve) {
+      var tw = {
+        start: Clock.now(),
+        duration: duration || 1,
+        ease: easings[opts.easing || 'easeInOut'] || easings.easeInOut,
+        onUpdate: opts.onUpdate || function () {},
+        resolve: resolve,
+        cancelled: false
+      };
+      handle.cancel = function () { tw.cancelled = true; handle.cancelled = true; resolve(); };
+      if (duration === 0) { tw.onUpdate(1, 1); resolve(); return; }
+      activeTweens.push(tw);
+      if (!rafId) rafId = requestAnimationFrame(pump);
+    });
+    p.cancel = function () { if (handle.cancel) handle.cancel(); };
+    return p;
+  }
+  /** 受时钟控制的等待(暂停时不计时) */
+  function wait(ms) {
+    return tween({ duration: ms, onUpdate: function () {} });
+  }
+  function cancelAllTweens() {
+    activeTweens.forEach(function (tw) { tw.cancelled = true; tw.resolve(); });
+    activeTweens.length = 0;
+  }
+
+  // ---------------- SVG 助手 ----------------
+  function el(name, attrs, parent) {
+    var node = document.createElementNS(SVG_NS, name);
+    if (attrs) for (var k in attrs) if (attrs[k] != null) node.setAttribute(k, String(attrs[k]));
+    if (parent) parent.appendChild(node);
+    return node;
+  }
+  function attr(node, attrs) {
+    for (var k in attrs) if (attrs[k] != null) node.setAttribute(k, String(attrs[k]));
+    return node;
+  }
+  function text(parent, x, y, str, attrs) {
+    var t = el('text', Object.assign({ x: x, y: y }, attrs || {}), parent);
+    t.textContent = str;
+    return t;
+  }
+  function fmt(v, digits) {
+    var d = digits == null ? 2 : digits;
+    var s = Number(v).toFixed(d);
+    if (s.indexOf('.') >= 0) s = s.replace(/0+$/, '').replace(/\.$/, '');
+    if (s === '-0') s = '0';
+    return s;
+  }
+  var clamp = function (v, lo, hi) { return Math.min(hi, Math.max(lo, v)); };
+  function snap(v, step) {
+    if (!step) return v;
+    return Math.round(v / step) * step;
+  }
+
+  // ---------------- 坐标映射(数学场景) ----------------
+  /** 数学坐标 ↔ 像素;view = {xMin,xMax,yMin,yMax}, box = {x,y,w,h} */
+  function Mapper(view, box) {
+    this.view = view; this.box = box;
+  }
+  Mapper.prototype.px = function (x) { return this.box.x + ((x - this.view.xMin) / (this.view.xMax - this.view.xMin)) * this.box.w; };
+  Mapper.prototype.py = function (y) { return this.box.y + this.box.h - ((y - this.view.yMin) / (this.view.yMax - this.view.yMin)) * this.box.h; };
+  Mapper.prototype.mx = function (px) { return this.view.xMin + ((px - this.box.x) / this.box.w) * (this.view.xMax - this.view.xMin); };
+  Mapper.prototype.my = function (py) { return this.view.yMin + ((this.box.y + this.box.h - py) / this.box.h) * (this.view.yMax - this.view.yMin); };
+
+  /** 画网格 + 坐标轴 + 刻度(返回 <g>) */
+  function drawAxes(parent, mapper, opts) {
+    opts = opts || {};
+    var g = el('g', { class: 'ls-axes' }, parent);
+    var v = mapper.view;
+    var grid = el('g', { stroke: opts.gridColor || '#E5E7EB', 'stroke-width': 1 }, g);
+    for (var x = Math.ceil(v.xMin); x <= v.xMax; x++) el('line', { x1: mapper.px(x), y1: mapper.py(v.yMin), x2: mapper.px(x), y2: mapper.py(v.yMax) }, grid);
+    for (var y = Math.ceil(v.yMin); y <= v.yMax; y++) el('line', { x1: mapper.px(v.xMin), y1: mapper.py(y), x2: mapper.px(v.xMax), y2: mapper.py(y) }, grid);
+    var axes = el('g', { stroke: opts.axisColor || '#1F2328', 'stroke-width': 1.6 }, g);
+    var y0 = clamp(0, v.yMin, v.yMax), x0 = clamp(0, v.xMin, v.xMax);
+    el('line', { x1: mapper.px(v.xMin), y1: mapper.py(y0), x2: mapper.px(v.xMax), y2: mapper.py(y0) }, axes);
+    el('line', { x1: mapper.px(x0), y1: mapper.py(v.yMin), x2: mapper.px(x0), y2: mapper.py(v.yMax) }, axes);
+    // 箭头
+    el('path', { d: 'M' + (mapper.px(v.xMax)) + ' ' + mapper.py(y0) + ' l-10 -5 v10 z', fill: opts.axisColor || '#1F2328', stroke: 'none' }, axes);
+    el('path', { d: 'M' + mapper.px(x0) + ' ' + mapper.py(v.yMax) + ' l-5 10 h10 z', fill: opts.axisColor || '#1F2328', stroke: 'none' }, axes);
+    var labels = el('g', { fill: '#6B7280', 'font-size': 12, 'font-family': 'system-ui, sans-serif' }, g);
+    for (var xi = Math.ceil(v.xMin); xi <= v.xMax; xi++) if (xi !== 0 && xi < v.xMax) text(labels, mapper.px(xi), mapper.py(y0) + 16, String(xi), { 'text-anchor': 'middle' });
+    for (var yi = Math.ceil(v.yMin); yi <= v.yMax; yi++) if (yi !== 0 && yi < v.yMax) text(labels, mapper.px(x0) - 8, mapper.py(yi) + 4, String(yi), { 'text-anchor': 'end' });
+    text(labels, mapper.px(x0) - 8, mapper.py(y0) + 16, 'O', { 'text-anchor': 'end' });
+    text(labels, mapper.px(v.xMax) - 4, mapper.py(y0) - 8, 'x', { 'text-anchor': 'end', 'font-style': 'italic', fill: '#1F2328' });
+    text(labels, mapper.px(x0) + 8, mapper.py(v.yMax) + 12, 'y', { 'font-style': 'italic', fill: '#1F2328' });
+    return g;
+  }
+
+  /** 函数图象路径:采样 fn 于 [xMin, xMax],progress∈[0,1] 控制画出比例(从左往右) */
+  function functionPath(mapper, fn, progress, samples) {
+    var v = mapper.view, n = samples || 160;
+    var upto = Math.max(1, Math.round(n * (progress == null ? 1 : progress)));
+    var d = '';
+    for (var i = 0; i <= upto; i++) {
+      var x = v.xMin + ((v.xMax - v.xMin) * i) / n;
+      var y = fn(x);
+      if (!isFinite(y)) continue;
+      // 裁剪到视窗上下 2 格,避免超长路径
+      var yc = clamp(y, v.yMin - 2, v.yMax + 2);
+      d += (d ? ' L' : 'M') + mapper.px(x).toFixed(1) + ' ' + mapper.py(yc).toFixed(1);
+    }
+    return d;
+  }
+
+  /**
+   * 在视窗内给函数图象挑一个放手柄的横坐标:优先 prefer,若该处 y 出界则在可见区间里找离 prefer 最近的点。
+   * 手柄跑到画布外会被页头/字幕条盖住,拖不到(2026-09-03 无头测试发现)。
+   */
+  function pickVisibleX(mapper, fn, prefer) {
+    var v = mapper.view, margin = 0.4;
+    var inside = function (x) { var y = fn(x); return isFinite(y) && y > v.yMin + margin && y < v.yMax - margin; };
+    if (prefer > v.xMin + margin && prefer < v.xMax - margin && inside(prefer)) return prefer;
+    var best = null, bestD = Infinity;
+    for (var i = 0; i <= 120; i++) {
+      var x = v.xMin + margin + ((v.xMax - v.xMin - 2 * margin) * i) / 120;
+      if (!inside(x)) continue;
+      var d = Math.abs(x - prefer);
+      if (d < bestD) { bestD = d; best = x; }
+    }
+    return best == null ? clamp(prefer, v.xMin + margin, v.xMax - margin) : best;
+  }
+
+  // ---------------- 拖拽 ----------------
+  /**
+   * 让 node 可拖:onDrag(dx, dy, ev, start) 以像素增量回调;返回销毁函数。
+   * 用 pointer 事件,兼容鼠标/触屏;拖动时给 node 加 .ls-dragging。
+   */
+  function draggable(node, handlers) {
+    var start = null;
+    function down(ev) {
+      if (node.getAttribute('data-locked') === '1') return;
+      ev.preventDefault();
+      node.setPointerCapture && node.setPointerCapture(ev.pointerId);
+      start = { x: ev.clientX, y: ev.clientY };
+      node.classList.add('ls-dragging');
+      handlers.onStart && handlers.onStart(ev);
+    }
+    function move(ev) {
+      if (!start) return;
+      handlers.onDrag(ev.clientX - start.x, ev.clientY - start.y, ev, start);
+    }
+    function up(ev) {
+      if (!start) return;
+      start = null;
+      node.classList.remove('ls-dragging');
+      handlers.onEnd && handlers.onEnd(ev);
+    }
+    node.addEventListener('pointerdown', down);
+    node.addEventListener('pointermove', move);
+    node.addEventListener('pointerup', up);
+    node.addEventListener('pointercancel', up);
+    return function () {
+      node.removeEventListener('pointerdown', down);
+      node.removeEventListener('pointermove', move);
+      node.removeEventListener('pointerup', up);
+      node.removeEventListener('pointercancel', up);
+    };
+  }
+
+  /** 像素比例(SVG viewBox 缩放后,1 个 viewBox 单位 = 多少 client 像素) */
+  function svgScale(svg) {
+    var vb = svg.viewBox && svg.viewBox.baseVal;
+    var rect = svg.getBoundingClientRect();
+    if (!vb || !vb.width) return 1;
+    return rect.width / vb.width;
+  }
+
+  /**
+   * 圆形手柄:把「参数」映射到画布上一个可拖的点。
+   * spec: { id, get:()=>{x,y}(viewBox 像素), onDrag:(px,py)=>void, color, label }
+   */
+  function Handle(svg, layer, spec) {
+    this.svg = svg; this.spec = spec;
+    this.g = el('g', { class: 'ls-handle', 'data-param': spec.id, 'data-locked': '1' }, layer);
+    this.ring = el('circle', { r: 16, fill: spec.color || '#1D4ED8', 'fill-opacity': 0.12, stroke: 'none' }, this.g);
+    this.dot = el('circle', { r: 7, fill: spec.color || '#1D4ED8', stroke: '#fff', 'stroke-width': 2 }, this.g);
+    this.label = text(this.g, 0, -14, spec.label || spec.id, { 'text-anchor': 'middle', 'font-size': 12, fill: spec.color || '#1D4ED8', 'font-weight': 700, 'font-family': 'system-ui, sans-serif' });
+    var self = this, startPos = null;
+    draggable(this.g, {
+      onStart: function () { spec.onStart && spec.onStart(); startPos = spec.get(); },
+      onDrag: function (dx, dy) {
+        var s = svgScale(svg);
+        spec.onDrag(startPos.x + dx / s, startPos.y + dy / s);
+      },
+      onEnd: function () { spec.onEnd && spec.onEnd(); }
+    });
+    this.update();
+  }
+  Handle.prototype.update = function () {
+    var p = this.spec.get();
+    attr(this.g, { transform: 'translate(' + p.x.toFixed(1) + ',' + p.y.toFixed(1) + ')' });
+  };
+  Handle.prototype.setLocked = function (locked) {
+    attr(this.g, { 'data-locked': locked ? '1' : '0' });
+    this.g.classList.toggle('ls-handle-active', !locked);
+  };
+
+  /**
+   * 画布内滑杆(给没有几何手柄的参数,如质量、弹性系数):
+   * spec: { id, label, min, max, step, get:()=>value, set:(v)=>void, x, y, width, color, format }
+   */
+  function Slider(svg, layer, spec) {
+    this.svg = svg; this.spec = spec;
+    var w = spec.width || 160;
+    this.g = el('g', { class: 'ls-slider', 'data-param': spec.id, 'data-locked': '1', transform: 'translate(' + spec.x + ',' + spec.y + ')' }, layer);
+    text(this.g, 0, -10, spec.label, { 'font-size': 12, fill: '#6B7280', 'font-family': 'system-ui, sans-serif' });
+    el('rect', { x: 0, y: -3, width: w, height: 6, rx: 3, fill: '#E5E7EB' }, this.g);
+    this.fill = el('rect', { x: 0, y: -3, width: 0, height: 6, rx: 3, fill: spec.color || '#1D4ED8' }, this.g);
+    this.knob = el('g', { class: 'ls-handle', 'data-locked': '1' }, this.g);
+    el('circle', { r: 14, fill: spec.color || '#1D4ED8', 'fill-opacity': 0.12 }, this.knob);
+    el('circle', { r: 7, fill: spec.color || '#1D4ED8', stroke: '#fff', 'stroke-width': 2 }, this.knob);
+    this.value = text(this.g, w + 12, 4, '', { 'font-size': 13, fill: '#1F2328', 'font-weight': 700, 'font-family': 'system-ui, sans-serif' });
+    var self = this, startX = 0;
+    draggable(this.knob, {
+      onStart: function () { startX = self._knobX(); },
+      onDrag: function (dx) {
+        var s = svgScale(svg);
+        var x = clamp(startX + dx / s, 0, w);
+        var v = spec.min + (x / w) * (spec.max - spec.min);
+        spec.set(snap(v, spec.step));
+        self.update();
+      },
+      onEnd: function () { spec.onEnd && spec.onEnd(); }
+    });
+    this.update();
+  }
+  Slider.prototype._knobX = function () {
+    var s = this.spec;
+    return ((s.get() - s.min) / (s.max - s.min)) * (s.width || 160);
+  };
+  Slider.prototype.update = function () {
+    var x = this._knobX();
+    attr(this.knob, { transform: 'translate(' + x.toFixed(1) + ',0)' });
+    attr(this.fill, { width: x.toFixed(1) });
+    this.value.textContent = (this.spec.format || fmt)(this.spec.get());
+  };
+  Slider.prototype.setLocked = function (locked) {
+    attr(this.g, { 'data-locked': locked ? '1' : '0' });
+    attr(this.knob, { 'data-locked': locked ? '1' : '0' });
+    this.g.classList.toggle('ls-handle-active', !locked);
+    this.knob.classList.toggle('ls-handle-active', !locked);
+  };
+
+  // ---------------- 一维物理 ----------------
+  /** 一维碰撞(恢复系数 e):返回碰后速度 */
+  function collide1D(m1, v1, m2, v2, e) {
+    var v1p = (m1 * v1 + m2 * v2 - m2 * e * (v1 - v2)) / (m1 + m2);
+    var v2p = (m1 * v1 + m2 * v2 + m1 * e * (v1 - v2)) / (m1 + m2);
+    return { v1: v1p, v2: v2p };
+  }
+
+  // ---------------- 通用效果(label / focus / pulse) ----------------
+  /**
+   * 所有模板共用的画面效果。锚点由模板的 getAnchor(id) 提供(viewBox 坐标 {x,y,r?}),
+   * 几何运行时算(剧本只写目标 id)。效果画在场景 SVG 最上层的 ls-fx-layer,换步时清空。
+   * 模板没实现 getAnchor 或找不到锚点时效果安全跳过。
+   */
+  function fxLayer(scene) {
+    var svg = scene && scene.svg;
+    if (!svg) return null;
+    var layer = svg.querySelector(':scope > g.ls-fx-layer');
+    if (!layer) layer = el('g', { class: 'ls-fx-layer' }, svg);
+    svg.appendChild(layer); // 保持在最上层
+    return layer;
+  }
+  function fxAnchor(scene, target) {
+    if (!scene || typeof scene.getAnchor !== 'function' || !target) return null;
+    var a = scene.getAnchor(String(target));
+    return a && isFinite(a.x) && isFinite(a.y) ? a : null;
+  }
+  var effects = {
+    clear: function (scene) {
+      var svg = scene && scene.svg;
+      var layer = svg && svg.querySelector(':scope > g.ls-fx-layer');
+      if (layer) layer.innerHTML = '';
+    },
+    /** {type:'label', target, text}:锚点旁贴一条短标注(同锚点重复 label 会替换) */
+    label: function (scene, act) {
+      var layer = fxLayer(scene), a = fxAnchor(scene, act.target);
+      if (!layer || !a || !act.text) return wait(0);
+      var old = layer.querySelector('g[data-label="' + act.target + '"]');
+      if (old) old.remove();
+      var vb = scene.svg.viewBox.baseVal;
+      var g = el('g', { class: 'ls-fx-label', 'data-label': act.target, opacity: 0 }, layer);
+      var t = text(g, 0, 0, String(act.text), { 'font-size': 13, 'font-weight': 700, fill: '#7C2D12', 'font-family': 'system-ui, sans-serif' });
+      var bb = t.getBBox();
+      // 默认贴在锚点上方,出画布则翻到下方/内侧
+      var x = clamp(a.x - bb.width / 2, 8, (vb.width || 960) - bb.width - 8);
+      var y = a.y - (a.r || 14) - 10;
+      if (y - bb.height < 4) y = a.y + (a.r || 14) + bb.height + 6;
+      el('rect', { x: x - 6, y: y - bb.height - 3, width: bb.width + 12, height: bb.height + 8, rx: 6, fill: '#FEF3C7', stroke: '#F59E0B', 'stroke-width': 1 }, g);
+      attr(t, { x: x, y: y });
+      g.appendChild(t);
+      return tween({ duration: act.durationMs == null ? 350 : act.durationMs, onUpdate: function (k) { attr(g, { opacity: k }); } });
+    },
+    /** {type:'focus', target}:聚光——压暗其余,亮出锚点周围;约 4 秒自动散场 */
+    focus: function (scene, act) {
+      var layer = fxLayer(scene), a = fxAnchor(scene, act.target);
+      if (!layer || !a) return wait(0);
+      var old = layer.querySelector('g.ls-fx-focus');
+      if (old) old.remove();
+      var vb = scene.svg.viewBox.baseVal, W = vb.width || 960, H = vb.height || 540;
+      var g = el('g', { class: 'ls-fx-focus' }, layer);
+      var maskId = 'lsfocus' + Math.floor(Math.random() * 1e9);
+      var mask = el('mask', { id: maskId }, g);
+      el('rect', { x: 0, y: 0, width: W, height: H, fill: '#fff' }, mask);
+      var r = Math.max(a.r || 0, 46);
+      el('circle', { cx: a.x, cy: a.y, r: r, fill: '#000' }, mask);
+      var dim = el('rect', { x: 0, y: 0, width: W, height: H, fill: '#111827', 'fill-opacity': 0, mask: 'url(#' + maskId + ')', 'pointer-events': 'none' }, g);
+      var ring = el('circle', { cx: a.x, cy: a.y, r: r, fill: 'none', stroke: '#F59E0B', 'stroke-width': 2.5, opacity: 0 }, g);
+      var hold = act.durationMs == null ? 3200 : act.durationMs;
+      return tween({ duration: 350, onUpdate: function (k) { attr(dim, { 'fill-opacity': 0.32 * k }); attr(ring, { opacity: k }); } })
+        .then(function () { return wait(hold); })
+        .then(function () {
+          return tween({ duration: 400, onUpdate: function (k) { attr(dim, { 'fill-opacity': 0.32 * (1 - k) }); attr(ring, { opacity: 1 - k }); } });
+        })
+        .then(function () { g.remove(); });
+    },
+    /** {type:'pulse', target}:锚点处扩散一圈脉冲强调 */
+    pulse: function (scene, act) {
+      var layer = fxLayer(scene), a = fxAnchor(scene, act.target);
+      if (!layer || !a) return wait(0);
+      var ring = el('circle', { cx: a.x, cy: a.y, r: a.r || 10, fill: 'none', stroke: '#DC2626', 'stroke-width': 3 }, layer);
+      return tween({ duration: act.durationMs == null ? 900 : act.durationMs, onUpdate: function (k) {
+        attr(ring, { r: (a.r || 10) + 34 * k, opacity: 1 - k, 'stroke-width': 3 * (1 - k) + 0.5 });
+      } }).then(function () { ring.remove(); });
+    },
+    /** 播放器统一入口:通用类型走这里,返回 Promise */
+    apply: function (scene, act) {
+      if (act.type === 'label') return effects.label(scene, act);
+      if (act.type === 'focus') return effects.focus(scene, act);
+      if (act.type === 'pulse') return effects.pulse(scene, act);
+      return wait(0);
+    },
+    types: ['label', 'focus', 'pulse']
+  };
+
+  LS.Clock = Clock;
+  LS.tween = tween;
+  LS.wait = wait;
+  LS.cancelAllTweens = cancelAllTweens;
+  LS.svg = { el: el, attr: attr, text: text, NS: SVG_NS };
+  LS.fmt = fmt;
+  LS.clamp = clamp;
+  LS.snap = snap;
+  LS.Mapper = Mapper;
+  LS.drawAxes = drawAxes;
+  LS.functionPath = functionPath;
+  LS.pickVisibleX = pickVisibleX;
+  LS.draggable = draggable;
+  LS.svgScale = svgScale;
+  LS.Handle = Handle;
+  LS.Slider = Slider;
+  LS.collide1D = collide1D;
+  LS.effects = effects;
+  LS.templates = LS.templates || {};
+  LS.registerTemplate = function (tpl) { LS.templates[tpl.id] = tpl; };
+})(window);
+
+/*
+ * LectureScene · 语音适配层
+ * 第一版:浏览器 Web Speech API(免 key,macOS / iPad / Windows 自带中文音色)。
+ * 预留 provider 接口,拿到云端 key(阿里云百炼 CosyVoice / Azure)后新增 provider 即可,播放器不改。
+ * 没有可用语音(如无头浏览器、无中文音色)时回退为「按字数计时」,保证节拍照常。
+ */
+(function (global) {
+  'use strict';
+  var LS = (global.LectureScene = global.LectureScene || {});
+
+  /** 估算朗读时长:中文约 4.2 字/秒,再加句子停顿 */
+  function estimateMs(text) {
+    var chars = (text || '').replace(/\s+/g, '').length;
+    var pauses = ((text || '').match(/[,。;!?:,;!?]/g) || []).length;
+    return Math.max(900, chars * 240 + pauses * 220);
+  }
+
+  function BrowserProvider() {
+    this.available = typeof global.speechSynthesis !== 'undefined' && typeof global.SpeechSynthesisUtterance !== 'undefined';
+    this.voice = null;
+    this.rate = 1;
+    this._utter = null;
+    var self = this;
+    if (this.available) {
+      var pick = function () { self.voice = self._pickVoice(); };
+      pick();
+      global.speechSynthesis.addEventListener && global.speechSynthesis.addEventListener('voiceschanged', pick);
+    }
+  }
+  BrowserProvider.prototype._pickVoice = function () {
+    var voices = global.speechSynthesis.getVoices ? global.speechSynthesis.getVoices() : [];
+    var zh = voices.filter(function (v) { return /^zh([-_]|$)/i.test(v.lang); });
+    // 偏好:普通话女声(Tingting / Xiaoxiao 等),其次任一 zh
+    var preferred = zh.find(function (v) { return /Ting|Xiaoxiao|Meijia|Sinji|Lili|Yaoyao|Huihui/i.test(v.name); });
+    return preferred || zh[0] || null;
+  };
+  /**
+   * 念一段;返回 { done: Promise, cancel } ;onBoundary(charIndex) 用于字幕逐字同步(浏览器支持时)。
+   * 1.2 秒内没收到 onstart 视为语音不可用 → 回退计时。
+   */
+  BrowserProvider.prototype.speak = function (text, opts) {
+    opts = opts || {};
+    var self = this;
+    var fallbackTimer = null, startTimer = null, settled = false, cancelled = false, fallbackCancel = null;
+    var resolveDone;
+    var done = new Promise(function (resolve) { resolveDone = resolve; });
+    function finish() {
+      if (settled) return;
+      settled = true;
+      clearTimeout(fallbackTimer); clearTimeout(startTimer);
+      if (fallbackCancel) { fallbackCancel(); fallbackCancel = null; }
+      resolveDone();
+    }
+    function fallback() {
+      // 语音起不来:按估算时长走字幕节拍。
+      // 计时走场景时钟(LS.Clock 驱动的 tween):播放器「暂停」时字幕与节拍一起停(2026-09-04 修复)。
+      opts.onFallback && opts.onFallback();
+      var ms = estimateMs(text) / (self.rate || 1);
+      var LSC = global.LectureScene;
+      if (LSC && LSC.tween) {
+        var tw = LSC.tween({ duration: ms, easing: 'linear', onUpdate: function (p) {
+          if (settled || cancelled) return;
+          opts.onBoundary && opts.onBoundary(Math.floor(p * text.length));
+          if (p >= 1) finish();
+        } });
+        fallbackCancel = function () { tw.cancel && tw.cancel(); };
+        return;
+      }
+      var startAt = performance.now();
+      var tick = function () {
+        if (settled || cancelled) return;
+        var p = Math.min(1, (performance.now() - startAt) / ms);
+        opts.onBoundary && opts.onBoundary(Math.floor(p * text.length));
+        if (p >= 1) finish(); else fallbackTimer = setTimeout(tick, 60);
+      };
+      tick();
+    }
+    if (!this.available || !text) { fallback(); return { done: done, cancel: function () { cancelled = true; finish(); } }; }
+    try {
+      global.speechSynthesis.cancel();
+      var u = new global.SpeechSynthesisUtterance(text);
+      if (this.voice) u.voice = this.voice;
+      u.lang = (this.voice && this.voice.lang) || 'zh-CN';
+      u.rate = this.rate || 1;
+      var started = false;
+      u.onstart = function () { started = true; clearTimeout(startTimer); };
+      u.onboundary = function (ev) { opts.onBoundary && opts.onBoundary(ev.charIndex || 0); };
+      u.onend = function () { opts.onBoundary && opts.onBoundary(text.length); finish(); };
+      u.onerror = function () { if (!started) fallback(); else finish(); };
+      this._utter = u;
+      global.speechSynthesis.speak(u);
+      startTimer = setTimeout(function () { if (!started && !settled) { try { global.speechSynthesis.cancel(); } catch (e) {} fallback(); } }, 1200);
+    } catch (e) {
+      fallback();
+    }
+    return {
+      done: done,
+      cancel: function () {
+        cancelled = true;
+        try { global.speechSynthesis.cancel(); } catch (e) {}
+        finish();
+      }
+    };
+  };
+  BrowserProvider.prototype.pause = function () { try { this.available && global.speechSynthesis.pause(); } catch (e) {} };
+  BrowserProvider.prototype.resume = function () { try { this.available && global.speechSynthesis.resume(); } catch (e) {} };
+  BrowserProvider.prototype.stop = function () { try { this.available && global.speechSynthesis.cancel(); } catch (e) {} };
+
+  /** 静音 provider:只走字幕计时(老师关掉声音时用) */
+  function SilentProvider() { this.available = false; this.rate = 1; }
+  SilentProvider.prototype.speak = BrowserProvider.prototype.speak;
+  SilentProvider.prototype.pause = function () {};
+  SilentProvider.prototype.resume = function () {};
+  SilentProvider.prototype.stop = function () {};
+
+  LS.tts = {
+    estimateMs: estimateMs,
+    BrowserProvider: BrowserProvider,
+    SilentProvider: SilentProvider,
+    create: function (kind) {
+      return kind === 'silent' ? new SilentProvider() : new BrowserProvider();
+    }
+  };
+})(window);
+
+/*
+ * LectureScene · 播放器
+ * 节拍(2026-09-05 按用户讲题习惯定稿):
+ *   审题 —— 开场是一页 PPT 式审题页(全静默,无语音无计时,学生自读):题干(三色高亮:
+ *          红=限制词 / 蓝=数据 / 绿=隐含条件来源)+ 题图 + 已知 / 隐含条件 / 求什么 / 思路切入
+ *          四块(对应一线「三色笔法 + 黄金四步」);读完手动点「开始讲解」。
+ *   讲解 —— 一步步连续上课:步内 say/do/fx 交错,步间自动连播(advance:'manual' 可改每步停);
+ *          全程不开放拖拽;左上「题目」标签随时可点:自动暂停并整页切回审题页,「返回讲解」继续。
+ *   总结 —— 最后一步讲完,全页 PPT 式总结页(四色块:知识点/易错/技巧/举一反三)逐条念+浮现;念完进动手环节。
+ *   动手 —— explore:亮手柄 + 探索任务条 + 恢复标准参数;「📋 总结」可回看。
+ *
+ * 状态机:idle(审题页) → playing ⇄ paused → (waiting) → … → summary → explore
+ */
+(function (global) {
+  'use strict';
+  var LS = (global.LectureScene = global.LectureScene || {});
+  var Clock = LS.Clock;
+
+  function h(tag, cls, parent, txt) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (txt != null) n.textContent = txt;
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+
+  function Player(root, script, options) {
+    options = options || {};
+    this.root = root;
+    this.script = script;
+    this.options = options;
+    this.tpl = LS.templates[script.template];
+    if (!this.tpl) throw new Error('未知模板:' + script.template);
+    this.stepIndex = -1;
+    this.state = 'idle';
+    this.tts = LS.tts.create(script.tts === false || options.tts === false ? 'silent' : 'browser');
+    this.tts.rate = script.ttsRate || 1;
+    this._speech = null;
+    this._stepToken = 0;
+    this._pausedFrom = 'playing';
+    this._reviewResume = false;
+    this.listeners = {};
+    this._buildUI();
+    this.scene = this.tpl.mount(this.stage, this._canonicalParams(0), { player: this });
+    this.scene.setUnlocked([]);
+    this._renderDots();
+    // 开场即审题页(题目全貌 + 审题板),全静默
+    if (script.problem) this._showAnalysisPage(false);
+    this._setSubtitle(script.problem ? '自己把题读一遍,读完点「开始讲解」。' : (script.title || ''), 1);
+    this._updateControls();
+  }
+
+  // ---------------- 事件 ----------------
+  Player.prototype.on = function (evt, fn) { (this.listeners[evt] = this.listeners[evt] || []).push(fn); return this; };
+  Player.prototype._emit = function (evt, payload) { (this.listeners[evt] || []).forEach(function (fn) { fn(payload); }); };
+
+  // ---------------- UI ----------------
+  Player.prototype._buildUI = function () {
+    var self = this;
+    var root = this.root;
+    root.classList.add('ls-player');
+    root.innerHTML = '';
+    var head = h('div', 'ls-head', root);
+    h('div', 'ls-title', head, this.script.title || '讲解');
+    this.stepLabel = h('div', 'ls-step-label', head, '');
+    this.dots = h('div', 'ls-dots', head);
+    this.stage = h('div', 'ls-stage', root);
+    // 审题页(整页,开场显示;讲解中点「题目」标签整页回看)
+    this.analysisPage = h('div', 'ls-analysis-page', this.stage);
+    this.analysisPage.style.display = 'none';
+    // 题目标签(讲解开始后常驻左上角)
+    this.problemPill = h('button', 'ls-problem-pill', this.stage, '题目 ▾');
+    this.problemPill.type = 'button';
+    this.problemPill.style.display = 'none';
+    this.problemPill.addEventListener('click', function () { self._onPillClick(); });
+    // 总结页(整页,与审题页同版式;讲完逐条念+浮现,动手环节可整页回看)
+    this.summaryPage = h('div', 'ls-summary-page', this.stage);
+    this.summaryPage.style.display = 'none';
+    this.hintBar = h('div', 'ls-hint', root, '');
+    this.tasksBox = h('div', 'ls-tasks', root);
+    this.tasksBox.style.display = 'none';
+    var sub = h('div', 'ls-subtitle', root);
+    this.subtitleText = h('div', 'ls-subtitle-text', sub, '');
+    this.progress = h('div', 'ls-progress', sub);
+    this.progressFill = h('div', 'ls-progress-fill', this.progress);
+    var ctl = h('div', 'ls-controls', root);
+    this.btnPrev = this._button(ctl, '上一步', 'prev');
+    this.btnPlay = this._button(ctl, '▶ 开始讲解', 'play');
+    this.btnReplay = this._button(ctl, '重听本步', 'replay');
+    this.btnNext = this._button(ctl, '继续 →', 'next');
+    var right = h('div', 'ls-controls-right', ctl);
+    this.btnTakeaways = this._button(right, '📋 总结', 'takeaways');
+    this.btnTts = this._button(right, this.tts.available ? '🔊 语音开' : '🔇 仅字幕', 'tts');
+    this.btnReset = this._button(right, '↺ 恢复标准参数', 'reset');
+  };
+  Player.prototype._button = function (parent, label, action) {
+    var b = h('button', 'ls-btn ls-btn-' + action, parent, label);
+    b.type = 'button';
+    var self = this;
+    b.addEventListener('click', function () { self._onAction(action); });
+    return b;
+  };
+  Player.prototype._renderDots = function () {
+    var self = this;
+    this.dots.innerHTML = '';
+    this.script.steps.forEach(function (st, i) {
+      var d = h('button', 'ls-dot', self.dots, String(i + 1));
+      d.type = 'button';
+      d.title = st.title || '';
+      d.addEventListener('click', function () { self.goto(i); });
+    });
+    this._updateDots();
+  };
+  Player.prototype._updateDots = function () {
+    var self = this;
+    var terminal = this.state === 'explore' || this.state === 'summary';
+    Array.prototype.forEach.call(this.dots.children, function (d, i) {
+      d.classList.toggle('is-current', i === self.stepIndex && !terminal && self.state !== 'idle');
+      d.classList.toggle('is-done', (i < self.stepIndex && self.state !== 'idle') || terminal);
+    });
+    var st = this.script.steps[this.stepIndex];
+    this.stepLabel.textContent =
+      this.state === 'idle' ? '审题 · 已知 · 求什么 · 思路'
+      : this.state === 'summary' ? '总结 · 知识点 · 考点 · 技巧 · 举一反三'
+      : this.state === 'explore' ? '动手环节 · 拖一拖,验证刚才的结论'
+      : st ? '第 ' + (this.stepIndex + 1) + ' / ' + this.script.steps.length + ' 步 · ' + (st.title || '') : '';
+  };
+  Player.prototype._setSubtitle = function (text, progress) {
+    this.subtitleText.textContent = text || '';
+    this.progressFill.style.width = Math.round((progress || 0) * 100) + '%';
+  };
+  Player.prototype._setHint = function (text, tone) {
+    this.hintBar.textContent = text || '';
+    this.hintBar.className = 'ls-hint' + (text ? ' is-visible' : '') + (tone ? ' is-' + tone : '');
+  };
+  Player.prototype._updateControls = function () {
+    var s = this.state, i = this.stepIndex, n = this.script.steps.length;
+    this.btnPrev.disabled = i <= 0 || s === 'idle';
+    this.btnReplay.disabled = i < 0 || s === 'idle' || s === 'summary';
+    this.btnNext.disabled = s === 'idle' || s === 'explore';
+    this.btnPlay.textContent =
+      s === 'idle' ? '▶ 开始讲解'
+      : s === 'playing' || s === 'summary' ? '⏸ 暂停'
+      : s === 'paused' ? '▶ 继续播放'
+      : s === 'waiting' ? '▶ 继续'
+      : '↻ 从头再看';
+    this.btnNext.textContent =
+      s === 'summary' ? '进入动手环节 →'
+      : i >= n - 1 ? '进入总结 →'
+      : '继续 →';
+    this.btnReset.disabled = s !== 'explore';
+    var hasTakeaways = this._hasTakeaways();
+    this.btnTakeaways.style.display = hasTakeaways ? '' : 'none';
+    this.btnTakeaways.disabled = s !== 'explore';
+    this.root.setAttribute('data-state', s);
+  };
+  Player.prototype._setState = function (s) {
+    this.state = s;
+    this._updateControls();
+    this._updateDots();
+    this._emit('state', { state: s, step: this.stepIndex });
+  };
+  Player.prototype._hasTakeaways = function () {
+    var t = this.script.takeaways || {};
+    return Boolean((t.knowledge && t.knowledge.length) || (t.keyPoints && t.keyPoints.length) || (t.methods && t.methods.length) || (t.variants && t.variants.length));
+  };
+
+  // ---------------- 审题页 ----------------
+  /** 题干高亮:按 analysis.marks(三色笔法)把命中的词包成着色片段 */
+  Player.prototype._highlightInto = function (parent, text) {
+    var marks = (this.script.analysis && this.script.analysis.marks) || [];
+    var valid = marks.filter(function (m) { return m && m.text && ['red', 'blue', 'green'].indexOf(m.color) >= 0; });
+    var rest = text;
+    while (rest.length) {
+      var best = null;
+      for (var i = 0; i < valid.length; i++) {
+        var idx = rest.indexOf(valid[i].text);
+        if (idx < 0) continue;
+        if (!best || idx < best.idx || (idx === best.idx && valid[i].text.length > best.m.text.length)) best = { idx: idx, m: valid[i] };
+      }
+      if (!best) { parent.appendChild(document.createTextNode(rest)); break; }
+      if (best.idx > 0) parent.appendChild(document.createTextNode(rest.slice(0, best.idx)));
+      h('span', 'ls-mark-' + best.m.color, parent, best.m.text);
+      rest = rest.slice(best.idx + best.m.text.length);
+    }
+  };
+  /** 构建审题页;review=讲解中回看(带「返回讲解」按钮) */
+  Player.prototype._buildAnalysisPage = function (review) {
+    var self = this;
+    var page = this.analysisPage;
+    page.innerHTML = '';
+    var head = h('div', 'ls-analysis-head', page);
+    h('span', 'ls-analysis-eyebrow', head, '审题');
+    var legend = h('span', 'ls-analysis-legend', head);
+    h('span', 'ls-mark-red', legend, '限制条件');
+    h('span', 'ls-mark-blue', legend, '数据');
+    h('span', 'ls-mark-green', legend, '隐含线索');
+    var body = h('div', 'ls-analysis-body', page);
+    var stem = h('div', 'ls-analysis-stem', body);
+    var text = this.script.problem || this.script.title || '';
+    // 分行:(1)(2) 处断行;①② 只在句末标点后断(句中引用「① 的条件下」不切)
+    var parts = text
+      .split(/(?=\(\d\))/)
+      .reduce(function (acc, seg) { return acc.concat(seg.split(/(?<=[。;;!?])\s*(?=[①②③④⑤])/)); }, [])
+      .map(function (s) { return s.trim(); })
+      .filter(Boolean);
+    (parts.length ? parts : [text]).forEach(function (line, i) {
+      var div = h('div', 'ls-problem-line' + (i === 0 ? ' is-stem' : ''), stem);
+      self._highlightInto(div, line);
+    });
+    var images = this.script.problemImages || [];
+    if (images.length) {
+      var figs = h('div', 'ls-analysis-figs', body);
+      images.forEach(function (src) {
+        var img = document.createElement('img');
+        img.className = 'ls-analysis-fig';
+        img.src = src;
+        figs.appendChild(img);
+      });
+    }
+    var a = this.script.analysis || {};
+    var blocks = [
+      { title: '已知', items: a.given || [], cls: 'given' },
+      { title: '隐含条件', items: a.hidden || [], cls: 'hidden' },
+      { title: '求什么', items: a.find || [], cls: 'find' },
+      { title: '思路切入', items: a.ideas || [], cls: 'ideas' }
+    ].filter(function (b) { return b.items.length; });
+    if (blocks.length) {
+      var grid = h('div', 'ls-analysis-grid', page);
+      blocks.forEach(function (b) {
+        var box = h('div', 'ls-analysis-block is-' + b.cls, grid);
+        h('div', 'ls-analysis-block-title', box, b.title);
+        b.items.forEach(function (item) {
+          var li = h('div', 'ls-analysis-item', box);
+          h('span', 'ls-analysis-item-mark', li, '·');
+          h('span', null, li, item);
+        });
+      });
+    }
+    if (review) {
+      var back = h('button', 'ls-btn ls-btn-primary ls-analysis-return', page, '▶ 返回讲解');
+      back.type = 'button';
+      back.addEventListener('click', function () { self._closeAnalysisReview(); });
+    }
+  };
+  Player.prototype._showAnalysisPage = function (review) {
+    this._buildAnalysisPage(review);
+    this.analysisPage.style.display = 'block';
+  };
+  /** 讲解中点「题目」标签:自动暂停 + 整页审题页;「返回讲解」恢复 */
+  Player.prototype._onPillClick = function () {
+    if (this.analysisPage.style.display !== 'none') { this._closeAnalysisReview(); return; }
+    this._reviewResume = false;
+    if (this.state === 'playing' || this.state === 'summary') {
+      this.pause();
+      this._reviewResume = true;
+    }
+    this._showAnalysisPage(true);
+  };
+  Player.prototype._closeAnalysisReview = function () {
+    this.analysisPage.style.display = 'none';
+    if (this._reviewResume && this.state === 'paused') this.resume();
+    this._reviewResume = false;
+  };
+  Player.prototype._showPill = function () {
+    if (this.script.problem) this.problemPill.style.display = '';
+  };
+
+  // ---------------- 参数 ----------------
+  /** 第 i 步的标准参数 = 剧本 params 叠加该步 params;i < 0 时为纯标准参数(动手环节用) */
+  Player.prototype._canonicalParams = function (i) {
+    var base = Object.assign({}, this.tpl.defaults(), this.script.params || {});
+    var st = i >= 0 ? this.script.steps[i] : null;
+    if (st && st.params) Object.assign(base, st.params);
+    return base;
+  };
+
+  /** 动手环节配置:explore 字段缺省时,由各步 unlock 并集兜底;并集为空 → 开放全部 */
+  Player.prototype._exploreConfig = function () {
+    var ex = this.script.explore || {};
+    var unlock = Array.isArray(ex.unlock) ? ex.unlock.slice() : [];
+    if (!unlock.length) {
+      var union = [];
+      this.script.steps.forEach(function (st) {
+        (st.unlock || []).forEach(function (u) { if (union.indexOf(u) < 0) union.push(u); });
+      });
+      unlock = union;
+    }
+    if (!unlock.length) unlock = Object.keys(this.tpl.params || {});
+    return {
+      unlock: unlock,
+      tasks: Array.isArray(ex.tasks) ? ex.tasks.filter(Boolean) : [],
+      hint: ex.hint || '到你动手了:拖动画面上亮起的手柄,验证刚才讲的结论。'
+    };
+  };
+
+  // ---------------- 控制 ----------------
+  Player.prototype._onAction = function (action) {
+    switch (action) {
+      case 'play':
+        if (this.state === 'idle') return this.goto(0);
+        if (this.state === 'playing' || this.state === 'summary') return this.pause();
+        if (this.state === 'paused') return this.resume();
+        if (this.state === 'waiting') return this._advance();
+        if (this.state === 'explore') return this.goto(0);
+        break;
+      case 'replay': return this.goto(this.stepIndex);
+      case 'next':
+        if (this.state === 'summary') { this._abortCurrent(); this._enterExplore(); return; }
+        if (this.state === 'playing' || this.state === 'paused' || this.state === 'waiting') return this._advance();
+        break;
+      case 'prev': return this.goto(Math.max(0, this.stepIndex - 1));
+      case 'takeaways':
+        if (this.state === 'explore') this._toggleTakeawaysCard();
+        break;
+      case 'tts':
+        this.tts.stop();
+        this.tts = LS.tts.create(this.tts instanceof LS.tts.SilentProvider ? 'browser' : 'silent');
+        this.tts.rate = this.script.ttsRate || 1;
+        this.btnTts.textContent = this.tts.available ? '🔊 语音开' : '🔇 仅字幕';
+        break;
+      case 'reset':
+        this.scene.setParams(this._canonicalParams(-1));
+        break;
+    }
+  };
+
+  /** 进下一步;已是最后一步则进总结 */
+  Player.prototype._advance = function () {
+    if (this.stepIndex >= this.script.steps.length - 1) return this._startSummary();
+    return this.goto(this.stepIndex + 1);
+  };
+
+  Player.prototype.pause = function () {
+    if (this.state !== 'playing' && this.state !== 'summary') return;
+    this._pausedFrom = this.state;
+    Clock.pause();
+    this.tts.pause();
+    this._setState('paused');
+  };
+  Player.prototype.resume = function () {
+    if (this.state !== 'paused') return;
+    Clock.resume();
+    this.tts.resume();
+    this._setState(this._pausedFrom || 'playing');
+  };
+
+  Player.prototype._abortCurrent = function () {
+    this._stepToken++;
+    if (this._speech) { this._speech.cancel(); this._speech = null; }
+    LS.cancelAllTweens();
+    if (Clock.isPaused()) Clock.resume();
+    this._reviewResume = false;
+    this.tasksBox.style.display = 'none';
+    this.analysisPage.style.display = 'none';
+    this.summaryPage.style.display = 'none';
+    if (LS.effects && this.scene) LS.effects.clear(this.scene); // 残留的 focus/label 效果一并清场
+  };
+
+  /** 跳到第 i 步并播放(点编号/上一步/重听都走这里) */
+  Player.prototype.goto = function (i) {
+    var st = this.script.steps[i];
+    if (!st) return;
+    this._playStep(i);
+  };
+
+  Player.prototype._playStep = function (i) {
+    var self = this;
+    var st = this.script.steps[i];
+    if (!st) return;
+    this._abortCurrent();
+    this._showPill();
+    var token = this._stepToken;
+    this.stepIndex = i;
+    this._updateDots();
+    this._setHint('');
+    this.scene.setUnlocked([]);
+    this.scene.setParams(this._canonicalParams(i));
+    this._fastForward(i);
+    if (typeof this.scene.beginStep === 'function') this.scene.beginStep(st, i);
+    this._setState('playing');
+    this._emit('step', { index: i, step: st });
+    this._setSubtitle('', 0);
+
+    var run = (st.flow && st.flow.length)
+      ? this._runFlow(st, token)
+      : this._runLegacy(st, token);
+
+    run.then(function () {
+      if (token !== self._stepToken) return;
+      self._speech = null;
+      self.progressFill.style.width = '100%';
+      return LS.wait(st.dwellMs == null ? 1200 : st.dwellMs);
+    }).then(function () {
+      if (token !== self._stepToken) return;
+      if (i >= self.script.steps.length - 1) return self._startSummary();
+      if (self.script.advance === 'manual') {
+        self._setHint('这一步讲完了,点「继续」进入下一步。', 'info');
+        self._setState('waiting');
+        return;
+      }
+      self._advance();
+    });
+  };
+
+  /** 执行一个动作:模板声明支持的交给模板,通用效果(label/focus/pulse)走运行时 */
+  Player.prototype._runAction = function (act, st) {
+    var supported = (this.tpl.actions || []).indexOf(act.type) >= 0;
+    if (!supported && LS.effects && LS.effects.types.indexOf(act.type) >= 0) {
+      return LS.effects.apply(this.scene, act);
+    }
+    return this.scene.applyAction(act, { player: this, step: st });
+  };
+
+  /** 新形态:flow 交错。say 定界;do 挡进度;fx 不挡(与后续 say 并行) */
+  Player.prototype._runFlow = function (st, token) {
+    var self = this;
+    var items = st.flow.slice();
+    var fullText = items.map(function (it) { return it.say || ''; }).filter(Boolean).join('');
+    var spoken = 0;
+    return items.reduce(function (p, it) {
+      return p.then(function () {
+        if (token !== self._stepToken) return;
+        if (it.say) {
+          var text = String(it.say);
+          self._setSubtitle(text, fullText ? spoken / fullText.length : 0);
+          var speech = self.tts.speak(text, {
+            onBoundary: function (idx) {
+              if (token !== self._stepToken) return;
+              var done = spoken + Math.min(idx, text.length);
+              self.progressFill.style.width = Math.round((done / Math.max(1, fullText.length)) * 100) + '%';
+            }
+          });
+          self._speech = speech;
+          return speech.done.then(function () { spoken += text.length; });
+        }
+        if (it.do) return self._runAction(it.do, st);
+        if (it.fx) {
+          var fx = self._runAction(it.fx, st);
+          if (fx && fx.catch) fx.catch(function () {});
+          return; // 不等
+        }
+      });
+    }, Promise.resolve());
+  };
+
+  /** 旧形态:整段讲解词 ∥ 动作链(兼容存量剧本) */
+  Player.prototype._runLegacy = function (st, token) {
+    var self = this;
+    var narration = st.narration || '';
+    this._setSubtitle(narration, 0);
+    var speech = this.tts.speak(narration, {
+      onBoundary: function (idx) {
+        if (token !== self._stepToken) return;
+        self.progressFill.style.width = Math.round((idx / Math.max(1, narration.length)) * 100) + '%';
+      }
+    });
+    this._speech = speech;
+    var actions = (st.actions || []).slice();
+    var runActions = actions.reduce(function (p, act) {
+      return p.then(function () {
+        if (token !== self._stepToken) return;
+        return self._runAction(act, st);
+      });
+    }, Promise.resolve());
+    return Promise.all([speech.done, runActions]);
+  };
+
+  Player.prototype._fastForward = function (upto) {
+    var self = this;
+    var SKIP = { run: 1, highlight: 1, reset: 1, label: 1, focus: 1, pulse: 1 };
+    for (var k = 0; k < upto; k++) {
+      var prev = this.script.steps[k];
+      var acts = (prev.actions || []).slice();
+      (prev.flow || []).forEach(function (it) { if (it.do) acts.push(it.do); });
+      acts.forEach(function (act) {
+        if (SKIP[act.type]) return;
+        var instant = Object.assign({}, act, { durationMs: 0 });
+        if (act.type === 'move') { instant.from = act.to; }
+        try { self._runAction(instant, prev); } catch (e) {}
+      });
+    }
+    this.scene.setParams(this._canonicalParams(upto));
+  };
+
+  // ---------------- 总结 ----------------
+  /** 条目文本里的【重点词】渲染为该组重点色;返回念的纯文本 */
+  function fillAccented(parent, text) {
+    var rest = String(text);
+    for (;;) {
+      var a = rest.indexOf('【');
+      var b = a >= 0 ? rest.indexOf('】', a + 1) : -1;
+      if (a < 0 || b < 0) { if (rest) parent.appendChild(document.createTextNode(rest)); break; }
+      if (a > 0) parent.appendChild(document.createTextNode(rest.slice(0, a)));
+      h('span', 'ls-sum-accent', parent, rest.slice(a + 1, b));
+      rest = rest.slice(b + 1);
+    }
+    return String(text).replace(/[【】]/g, '');
+  }
+
+  /**
+   * 构建全页总结页(板书规范:四色块分区、红色专用于易错警示、条目内重点词标色)。
+   * review=动手环节回看(全部显示 + 「返回」按钮);否则条目初始隐藏,逐条念+浮现。
+   */
+  Player.prototype._buildSummaryPage = function (review) {
+    var self = this;
+    var page = this.summaryPage;
+    page.innerHTML = '';
+    var head = h('div', 'ls-analysis-head', page);
+    h('span', 'ls-analysis-eyebrow', head, '总结 · 这道题带走什么');
+    var t = this.script.takeaways || {};
+    var groups = [
+      { key: 'knowledge', icon: '📘', title: '核心知识点', items: t.knowledge || [], cls: 'knowledge' },
+      { key: 'keyPoints', icon: '⚠️', title: '考点与易错', items: t.keyPoints || [], cls: 'keypoints' },
+      { key: 'methods', icon: '💡', title: '方法与技巧', items: t.methods || [], cls: 'methods' },
+      { key: 'variants', icon: '🔁', title: '举一反三', items: t.variants || [], cls: 'variants' }
+    ].filter(function (gr) { return gr.items.length; });
+    var grid = h('div', 'ls-summary-grid', page);
+    var units = [];
+    groups.forEach(function (gr) {
+      var box = h('div', 'ls-summary-block is-' + gr.cls, grid);
+      var title = h('div', 'ls-summary-block-title', box);
+      h('span', 'ls-summary-icon', title, gr.icon);
+      h('span', null, title, gr.title);
+      if (!review) { title.style.opacity = '0'; box.style.opacity = '0'; } // 整块随本组第一条浮现,不留空框
+      gr.items.forEach(function (item, idx) {
+        var li = h('div', 'ls-summary-item', box);
+        h('span', 'ls-summary-item-mark', li, idx + 1 + '.');
+        var span = h('span', 'ls-summary-item-text', li);
+        var speakText = fillAccented(span, item);
+        if (!review) li.style.opacity = '0';
+        units.push({ el: li, boxEl: box, text: speakText, group: gr.title, titleEl: idx === 0 ? title : null });
+      });
+    });
+    if (review) {
+      var back = h('button', 'ls-btn ls-btn-primary ls-summary-return', page, '返回');
+      back.type = 'button';
+      back.addEventListener('click', function () { self.summaryPage.style.display = 'none'; });
+    }
+    return units;
+  };
+  Player.prototype._startSummary = function () {
+    var self = this;
+    if (!this._hasTakeaways()) return this._enterExplore();
+    this._abortCurrent();
+    var token = this._stepToken;
+    this.stepIndex = this.script.steps.length - 1;
+    // 场景推到讲完的样子(总结页收起后就是动手环节)
+    this._fastForward(this.script.steps.length);
+    this.scene.setParams(this._canonicalParams(-1));
+    this._showPill();
+    var units = this._buildSummaryPage(false);
+    this.summaryPage.style.display = 'block';
+    this._setState('summary');
+    var lastGroup = null;
+    var chain = units.reduce(function (p, u) {
+      return p.then(function () {
+        if (token !== self._stepToken) return;
+        var text = (u.group !== lastGroup ? u.group + ':' : '') + u.text;
+        lastGroup = u.group;
+        self._setSubtitle(text, 0);
+        var reveal = LS.tween({ duration: 320, onUpdate: function (t2) {
+          u.el.style.opacity = String(t2);
+          if (u.titleEl) { u.titleEl.style.opacity = String(t2); u.boxEl.style.opacity = String(t2); }
+        } });
+        var speech = self.tts.speak(text, {
+          onBoundary: function (idx) {
+            if (token !== self._stepToken) return;
+            self.progressFill.style.width = Math.round((idx / Math.max(1, text.length)) * 100) + '%';
+          }
+        });
+        self._speech = speech;
+        return Promise.all([speech.done, reveal]);
+      });
+    }, Promise.resolve());
+    chain.then(function () {
+      if (token !== self._stepToken) return;
+      self._speech = null;
+      return LS.wait(1000);
+    }).then(function () {
+      if (token !== self._stepToken) return;
+      self._enterExplore();
+    });
+  };
+  /** 动手环节「📋 总结」:整页回看(全部显示,无语音) */
+  Player.prototype._toggleTakeawaysCard = function () {
+    if (this.summaryPage.style.display === 'none') {
+      this._buildSummaryPage(true);
+      this.summaryPage.style.display = 'block';
+    } else {
+      this.summaryPage.style.display = 'none';
+    }
+  };
+
+  // ---------------- 动手环节 ----------------
+  Player.prototype._enterExplore = function () {
+    var self = this;
+    this._abortCurrent();
+    this.stepIndex = this.script.steps.length - 1;
+    this._fastForward(this.script.steps.length);
+    this.scene.setParams(this._canonicalParams(-1));
+    this._showPill();
+    var cfg = this._exploreConfig();
+    this.scene.setUnlocked(cfg.unlock);
+    this._setHint(cfg.hint, 'play');
+    this._setSubtitle(this.script.summary || '讲解结束,现在自己动手试一试。', 1);
+    this._renderTasks(cfg.tasks);
+    this._setState('explore');
+    this._emit('explore', { unlock: cfg.unlock, tasks: cfg.tasks });
+  };
+
+  Player.prototype._renderTasks = function (tasks) {
+    var box = this.tasksBox;
+    box.innerHTML = '';
+    if (!tasks.length) { box.style.display = 'none'; return; }
+    h('span', 'ls-tasks-title', box, '动手试试');
+    tasks.forEach(function (t) {
+      var item = h('button', 'ls-task', box);
+      item.type = 'button';
+      h('span', 'ls-task-mark', item, '○');
+      h('span', 'ls-task-text', item, t);
+      item.addEventListener('click', function () {
+        var done = item.classList.toggle('is-done');
+        item.querySelector('.ls-task-mark').textContent = done ? '✓' : '○';
+      });
+    });
+    box.style.display = 'flex';
+  };
+
+  Player.prototype.destroy = function () {
+    this._abortCurrent();
+    this.tts.stop();
+    this.scene.destroy && this.scene.destroy();
+    this.root.innerHTML = '';
+  };
+
+  LS.Player = Player;
+  /** 便捷入口:LectureScene.mount(rootEl, script, options) */
+  LS.mount = function (root, script, options) { return new Player(root, script, options); };
+})(window);
+</script>
+<script>/*
+ * 模板 · 浮力与浮沉(buoyancy)
+ * 案例题型:注水/排水的潜艇模型——桌面压强、浸没浮力、浮沉判据、上浮时浮力做功(2026-09-04,题 2)
+ * 参数:V(体积,×10⁻⁴ m³)m0(模型质量 kg)mw(水舱注水 kg)S(底面积,×10⁻³ m²)h(上浮高度 m)
+ * 元素:desk 桌面场景 / tank 水槽 / model 模型 / forces 力箭头 / bars 力条(F浮 vs G)/ readout 读数
+ * 动作:show/hide/move/readout + run(phase:'towater' 入水并按判据落位 | 'rise' 竖直上浮 h | 'settle' 按判据落位)
+ * 手柄:mw m0 V S 滑杆;h 拖模型(水中竖直拖)
+ * 物理:ρ水=1000,g=10;浸没 F浮=ρgV;G总=(m0+mw)g;沉底 G总>F浮,漂浮时 V排=G总/(ρg);上浮未露出水面 W=F浮·h
+ */
+(function (global) {
+  'use strict';
+  var LS = global.LectureScene;
+  var S = LS.svg, fmt = LS.fmt, clamp = LS.clamp;
+
+  var RHO_G = 10000; // ρ·g = 1000 × 10(每 m³ 的浮力,N)
+  var G = 10;
+
+  var PARAMS = {
+    V: { label: '体积(×10⁻⁴ m³)', min: 2, max: 10, step: 0.5, def: 6 },
+    m0: { label: '模型质量(kg)', min: 0.1, max: 1.5, step: 0.01, def: 0.48 },
+    mw: { label: '注水(kg)', min: 0, max: 1.2, step: 0.02, def: 0.6 },
+    S: { label: '底面积(×10⁻³ m²)', min: 2, max: 20, step: 0.5, def: 8 },
+    h: { label: '上浮高度(m)', min: 0, max: 0.4, step: 0.05, def: 0.2 }
+  };
+  var W = 960, H = 540;
+  var DESK = { x: 80, w: 200, topY: 320 };            // 桌面
+  var TANK = { x: 340, w: 300, topY: 110, botY: 440 }; // 水槽
+  var WATER_Y = 160;                                    // 水面
+  var MODEL = { w: 76, h: 40 };
+  var DEPTH_M = 1.0; // 水面到水底名义深度 1 m(上浮 h 按此比例映射像素)
+  var PXPM = (TANK.botY - 8 - WATER_Y - MODEL.h) / DEPTH_M; // 每米像素
+
+  function mount(container, params, ctx) {
+    var svg = S.el('svg', { viewBox: '0 0 ' + W + ' ' + H, preserveAspectRatio: 'xMidYMid meet' });
+    container.appendChild(svg);
+    var p = Object.assign({}, defaults(), params || {});
+    var onChange = ctx && ctx.onParamChange;
+    var visible = { desk: false, tank: false, model: false, forces: false, bars: false, readout: false };
+    // 位置状态:desk 桌上 | bottom 水底 | risen 水底上方 h | float 漂浮 | suspend 悬浮
+    var st = { loc: 'desk', y: 0 };
+
+    var layers = {
+      desk: S.el('g', { opacity: 0 }, svg),
+      tank: S.el('g', { opacity: 0 }, svg),
+      model: S.el('g', { opacity: 0 }, svg),
+      forces: S.el('g', { opacity: 0 }, svg),
+      bars: S.el('g', { opacity: 0 }, svg),
+      readout: S.el('g', { opacity: 0 }, svg),
+      handles: S.el('g', null, svg)
+    };
+
+    // 桌面
+    S.el('rect', { x: DESK.x, y: DESK.topY, width: DESK.w, height: 12, rx: 3, fill: '#A16207' }, layers.desk);
+    S.el('rect', { x: DESK.x + 18, y: DESK.topY + 12, width: 14, height: 90, fill: '#A16207' }, layers.desk);
+    S.el('rect', { x: DESK.x + DESK.w - 32, y: DESK.topY + 12, width: 14, height: 90, fill: '#A16207' }, layers.desk);
+    S.text(layers.desk, DESK.x + DESK.w / 2, DESK.topY + 126, '桌面', { 'text-anchor': 'middle', 'font-size': 12, fill: '#6B7280', 'font-family': 'system-ui, sans-serif' });
+
+    // 水槽与水
+    S.el('path', { d: 'M' + TANK.x + ' ' + TANK.topY + ' V' + TANK.botY + ' H' + (TANK.x + TANK.w) + ' V' + TANK.topY, fill: 'none', stroke: '#6B7280', 'stroke-width': 3 }, layers.tank);
+    S.el('rect', { x: TANK.x + 2, y: WATER_Y, width: TANK.w - 4, height: TANK.botY - WATER_Y - 2, fill: '#BFDBFE', 'fill-opacity': 0.55 }, layers.tank);
+    S.el('line', { x1: TANK.x + 2, y1: WATER_Y, x2: TANK.x + TANK.w - 2, y2: WATER_Y, stroke: '#3B82F6', 'stroke-width': 2, 'stroke-dasharray': '6 4' }, layers.tank);
+    S.text(layers.tank, TANK.x + TANK.w - 8, WATER_Y - 8, '水面', { 'text-anchor': 'end', 'font-size': 11.5, fill: '#3B82F6', 'font-family': 'system-ui, sans-serif' });
+    S.text(layers.tank, TANK.x + TANK.w / 2, TANK.botY + 20, '水槽(ρ水 = 1.0×10³ kg/m³,g = 10 N/kg)', { 'text-anchor': 'middle', 'font-size': 11.5, fill: '#6B7280', 'font-family': 'system-ui, sans-serif' });
+
+    // 模型(潜艇:壳 + 指挥塔 + 水舱水位)
+    var modelG = layers.model;
+    var hull = S.el('rect', { x: 0, y: 0, width: MODEL.w, height: MODEL.h, rx: 18, fill: '#334155', stroke: '#0F172A', 'stroke-width': 1.5 }, modelG);
+    var tower = S.el('rect', { x: MODEL.w / 2 - 9, y: -12, width: 18, height: 14, rx: 3, fill: '#334155' }, modelG);
+    var tankFill = S.el('rect', { x: 6, y: MODEL.h - 8, width: 0, height: 8, rx: 4, fill: '#60A5FA' }, modelG);
+    S.text(modelG, MODEL.w / 2, MODEL.h / 2 + 4, '模型', { 'text-anchor': 'middle', 'font-size': 11.5, fill: '#fff', 'font-weight': 700, 'font-family': 'system-ui, sans-serif' });
+
+    // 力箭头(G 向下 / F浮 向上 / N 支持力向上)
+    function arrow(color, label) {
+      var g = S.el('g', null, layers.forces);
+      var line = S.el('line', { stroke: color, 'stroke-width': 3.5 }, g);
+      var head = S.el('path', { fill: color }, g);
+      var text = S.text(g, 0, 0, label, { 'font-size': 12.5, fill: color, 'font-weight': 700, 'font-family': 'system-ui, sans-serif' });
+      return { g: g, line: line, head: head, text: text };
+    }
+    var fG = arrow('#DC2626', 'G'), fB = arrow('#2563EB', 'F浮'), fN = arrow('#059669', 'N');
+
+    // 力条(F浮 vs G总)
+    var barsX = 700, barsY = 70;
+    S.text(layers.bars, barsX, barsY - 14, '浮沉判据:比较 F浮 与 G总(N)', { 'font-size': 12, fill: '#6B7280', 'font-family': 'system-ui, sans-serif' });
+    function bar(y, color, label) {
+      S.text(layers.bars, barsX, y + 12, label, { 'font-size': 12, fill: '#1F2328', 'font-family': 'system-ui, sans-serif' });
+      var r = S.el('rect', { x: barsX + 44, y: y, width: 0, height: 14, rx: 3, fill: color }, layers.bars);
+      var t = S.text(layers.bars, barsX + 44, y + 30, '', { 'font-size': 11.5, fill: '#6B7280', 'font-family': 'system-ui, sans-serif' });
+      return { r: r, t: t };
+    }
+    var barB = bar(barsY, '#2563EB', 'F浮'), barG = bar(barsY + 44, '#DC2626', 'G总');
+    var barVerdict = S.text(layers.bars, barsX, barsY + 96, '', { 'font-size': 13, fill: '#1F2328', 'font-weight': 700, 'font-family': 'system-ui, sans-serif' });
+
+    // 读数面板
+    var ro = layers.readout;
+    S.el('rect', { x: 688, y: 210, width: 252, height: 168, rx: 12, fill: '#fff', stroke: '#E5E7EB' }, ro);
+    var roL1 = S.text(ro, 704, 238, '', { 'font-size': 13, fill: '#1F2328', 'font-family': 'system-ui, sans-serif' });
+    var roL2 = S.text(ro, 704, 264, '', { 'font-size': 13, fill: '#1F2328', 'font-family': 'system-ui, sans-serif' });
+    var roL3 = S.text(ro, 704, 290, '', { 'font-size': 13, fill: '#1F2328', 'font-weight': 700, 'font-family': 'system-ui, sans-serif' });
+    var roL4 = S.text(ro, 704, 316, '', { 'font-size': 13, fill: '#1F2328', 'font-family': 'system-ui, sans-serif' });
+    var roL5 = S.text(ro, 704, 342, '', { 'font-size': 13, fill: '#6B7280', 'font-family': 'system-ui, sans-serif' });
+    var roL6 = S.text(ro, 704, 366, '', { 'font-size': 13, fill: '#6B7280', 'font-family': 'system-ui, sans-serif' });
+
+    // ---------- 物理量 ----------
+    function forceB() { return RHO_G * p.V * 1e-4; }        // 浸没浮力
+    function weight() { return (p.m0 + p.mw) * G; }          // 总重
+    function pressure() { return (p.m0 + p.mw) * G / (p.S * 1e-3); } // 桌面压强
+    function verdict() {
+      var d = weight() - forceB();
+      if (d > 0.05) return 'sink';
+      if (d < -0.05) return 'float';
+      return 'suspend';
+    }
+
+    // ---------- 位置 ----------
+    function deskPos() { return { x: DESK.x + DESK.w / 2 - MODEL.w / 2, y: DESK.topY - MODEL.h }; }
+    function bottomY() { return TANK.botY - 8 - MODEL.h; }
+    function floatY() {
+      // 漂浮:V排 = G总/(ρg),露出体积比例 = 1 − V排/V,按模型高度直观化
+      var frac = clamp(1 - (weight() / RHO_G) / (p.V * 1e-4), 0, 0.8);
+      return WATER_Y - MODEL.h * frac;
+    }
+    function waterX() { return TANK.x + TANK.w / 2 - MODEL.w / 2; }
+    function modelPos() {
+      if (st.loc === 'desk') return deskPos();
+      if (st.loc === 'bottom') return { x: waterX(), y: bottomY() };
+      if (st.loc === 'risen') return { x: waterX(), y: clamp(bottomY() - p.h * PXPM, WATER_Y + 4, bottomY()) };
+      if (st.loc === 'float') return { x: waterX(), y: floatY() };
+      return { x: waterX(), y: (WATER_Y + bottomY()) / 2 }; // suspend:中部
+    }
+
+    function placeArrow(a, x, yFrom, yTo, labelDy) {
+      var dir = yTo > yFrom ? 1 : -1;
+      S.attr(a.line, { x1: x, y1: yFrom, x2: x, y2: yTo });
+      S.attr(a.head, { d: 'M' + x + ' ' + yTo + ' l-6 ' + (-dir * 10) + ' h12 z' });
+      S.attr(a.text, { x: x + 10, y: yTo + (labelDy || 0) });
+    }
+
+    function render() {
+      var pos = modelPos();
+      S.attr(modelG, { transform: 'translate(' + pos.x.toFixed(1) + ',' + pos.y.toFixed(1) + ')' });
+      S.attr(tankFill, { width: (MODEL.w - 12) * (p.mw / PARAMS.mw.max) });
+      // 力箭头:作用在模型中心;比例自适应防过长,N 标签放左侧防与 F浮 重叠
+      var cx = pos.x + MODEL.w / 2, cy = pos.y + MODEL.h / 2;
+      var wN = weight(), bN = st.loc === 'desk' ? 0 : (st.loc === 'float' ? wN : forceB());
+      var k = Math.min(4.2, 68 / Math.max(wN, bN, 1)); // N → px,箭头最长约 82px
+      placeArrow(fG, cx, cy, cy + 14 + wN * k, 14);
+      fG.text.textContent = 'G = ' + fmt(wN, 1) + ' N';
+      if (st.loc === 'desk') {
+        placeArrow(fN, cx - 26, cy, cy - 14 - wN * k, -6);
+        fN.text.textContent = 'N = ' + fmt(wN, 1) + ' N';
+        S.attr(fN.text, { 'text-anchor': 'end', x: cx - 36 });
+        S.attr(fN.g, { opacity: 1 }); S.attr(fB.g, { opacity: 0 });
+      } else {
+        placeArrow(fB, cx, cy, cy - 14 - bN * k, -6);
+        fB.text.textContent = 'F浮 = ' + fmt(bN, 1) + ' N';
+        S.attr(fB.g, { opacity: 1 });
+        var nBot = wN - forceB();
+        if (st.loc === 'bottom' && nBot > 0.05) {
+          placeArrow(fN, cx - 30, cy, cy - 14 - nBot * k, -6);
+          fN.text.textContent = 'N = ' + fmt(nBot, 1) + ' N';
+          S.attr(fN.text, { 'text-anchor': 'end', x: cx - 40 });
+          S.attr(fN.g, { opacity: 1 });
+        } else S.attr(fN.g, { opacity: 0 });
+      }
+      // 力条
+      var maxN = Math.max(forceB(), weight(), 1e-6);
+      var bScale = Math.min(16, 190 / maxN);
+      S.attr(barB.r, { width: forceB() * bScale }); barB.t.textContent = 'F浮(浸没) = ρgV = ' + fmt(forceB(), 1) + ' N';
+      S.attr(barG.r, { width: weight() * bScale }); barG.t.textContent = 'G总 = (m0 + m水)g = ' + fmt(weight(), 1) + ' N';
+      var v = verdict();
+      barVerdict.textContent = v === 'sink' ? 'G总 > F浮 → 下沉(沉底)' : v === 'float' ? 'G总 < F浮 → 上浮(漂浮)' : 'G总 = F浮 → 悬浮';
+      barVerdict.setAttribute('fill', v === 'sink' ? '#DC2626' : v === 'float' ? '#2563EB' : '#059669');
+      // 读数
+      if (st.loc === 'desk') {
+        roL1.textContent = '注水前:G = m g = ' + fmt(p.m0 * G, 2) + ' N';
+        roL2.textContent = '受力面积 S = ' + fmt(p.S, 1) + '×10⁻³ m²';
+        roL3.textContent = '压强 p = G/S = ' + fmt(p.m0 * G / (p.S * 1e-3), 0) + ' Pa';
+        roL4.textContent = ''; roL5.textContent = ''; roL6.textContent = '';
+      } else {
+        roL1.textContent = 'V = ' + fmt(p.V, 1) + '×10⁻⁴ m³,浸没';
+        roL2.textContent = 'F浮 = ρgV = ' + fmt(forceB(), 1) + ' N';
+        roL3.textContent = 'G总 = ' + fmt(weight(), 1) + ' N → ' + (v === 'sink' ? '沉底' : v === 'float' ? '漂浮' : '悬浮');
+        roL4.textContent = st.loc === 'bottom' && weight() - forceB() > 0.05 ? '水底支持力 N = ' + fmt(weight() - forceB(), 1) + ' N' : '';
+        roL5.textContent = st.loc === 'risen' ? '上浮 h = ' + fmt(p.h, 2) + ' m(未露出水面)' : '';
+        roL6.textContent = st.loc === 'risen' ? '浮力做功 W = F浮·h = ' + fmt(forceB() * p.h, 2) + ' J' : '';
+      }
+      // 注:层的显隐(opacity)只由 show/hide 动作管理,render 不碰,避免打断淡入动画
+      allHandles.forEach(function (hd) { hd.update(); });
+    }
+
+    // ---------- 手柄 ----------
+    var allHandles = [];
+    function setParam(id, v) {
+      var spec = PARAMS[id];
+      p[id] = LS.snap(clamp(v, spec.min, spec.max), spec.step);
+      if (id !== 'h' && st.loc !== 'desk') {
+        // 水中改参数 → 按判据即时落位
+        var vd = verdict();
+        st.loc = vd === 'sink' ? 'bottom' : vd === 'float' ? 'float' : 'suspend';
+      }
+      render();
+      onChange && onChange(id, p[id], Object.assign({}, p));
+    }
+    allHandles.push(new LS.Handle(svg, layers.handles, {
+      id: 'h', label: '上浮', color: '#2563EB',
+      get: function () { var pos = modelPos(); return { x: pos.x + MODEL.w / 2, y: pos.y - 6 }; },
+      onDrag: function (x, y) {
+        if (st.loc === 'desk') return;
+        st.loc = 'risen';
+        setParam('h', (bottomY() - (y + 6)) / PXPM);
+      }
+    }));
+    var sliderSpecs = [
+      { id: 'mw', x: 80, w: 150, color: '#2563EB' },
+      { id: 'm0', x: 310, w: 130, color: '#DC2626' },
+      { id: 'V', x: 520, w: 130, color: '#059669' },
+      { id: 'S', x: 730, w: 130, color: '#6B7280' }
+    ];
+    sliderSpecs.forEach(function (sp) {
+      var spec = PARAMS[sp.id];
+      allHandles.push(new LS.Slider(svg, layers.handles, {
+        id: sp.id, label: spec.label, min: spec.min, max: spec.max, step: spec.step,
+        x: sp.x, y: 505, width: sp.w, color: sp.color,
+        get: function () { return p[sp.id]; }, set: function (v) { setParam(sp.id, v); }
+      }));
+    });
+
+    st.loc = 'desk';
+    render();
+
+    // ---------- 过程 ----------
+    function settleLoc() { var v = verdict(); return v === 'sink' ? 'bottom' : v === 'float' ? 'float' : 'suspend'; }
+    function simulate(phase) {
+      if (phase === 'towater') {
+        visible.tank = true; visible.model = true; render();
+        // 提起 → 移到槽口上方 → 入水 → 按判据落位
+        var lift = { x: waterX(), y: TANK.topY - MODEL.h - 16 };
+        var from = modelPos();
+        return LS.tween({ duration: 900, easing: 'easeInOut', onUpdate: function (t) {
+          S.attr(modelG, { transform: 'translate(' + (from.x + (lift.x - from.x) * t).toFixed(1) + ',' + (from.y + (lift.y - from.y) * t).toFixed(1) + ')' });
+        } }).then(function () {
+          var target = settleLoc();
+          var y2 = target === 'bottom' ? bottomY() : target === 'float' ? floatY() : (WATER_Y + bottomY()) / 2;
+          return LS.tween({ duration: 1100, easing: 'easeInOut', onUpdate: function (t) {
+            S.attr(modelG, { transform: 'translate(' + lift.x.toFixed(1) + ',' + (lift.y + (y2 - lift.y) * t).toFixed(1) + ')' });
+          } }).then(function () { st.loc = target; render(); });
+        });
+      }
+      if (phase === 'rise') {
+        if (st.loc === 'desk') { st.loc = settleLoc(); render(); }
+        if (verdict() === 'sink') return LS.wait(300); // 重仍大于浮力,浮不起来(语义校验会拦)
+        st.loc = 'bottom';
+        var y0 = bottomY(), y1 = clamp(bottomY() - p.h * PXPM, WATER_Y + 4, bottomY());
+        var x0 = waterX();
+        S.attr(modelG, { transform: 'translate(' + x0 + ',' + y0 + ')' });
+        return LS.tween({ duration: 1400, easing: 'easeOut', onUpdate: function (t) {
+          S.attr(modelG, { transform: 'translate(' + x0 + ',' + (y0 + (y1 - y0) * t).toFixed(1) + ')' });
+        } }).then(function () { st.loc = 'risen'; render(); });
+      }
+      if (phase === 'settle') { st.loc = settleLoc(); render(); return LS.wait(300); }
+      return LS.wait(0);
+    }
+
+    return {
+      svg: svg,
+      getParams: function () { return Object.assign({}, p); },
+      setParams: function (np) {
+        Object.assign(p, np);
+        // 位置随场景可见性同步:水槽已显示则按判据落位(动手环节/恢复标准参数时模型应在水中)
+        st.loc = visible.tank ? settleLoc() : 'desk';
+        render();
+      },
+      setUnlocked: function (ids) { allHandles.forEach(function (hd) { hd.setLocked(ids.indexOf(hd.spec.id) < 0); }); },
+      getAnchor: function (id) {
+        var pos = modelPos();
+        var map = {
+          model: { x: pos.x + MODEL.w / 2, y: pos.y + MODEL.h / 2, r: 52 },
+          forces: { x: pos.x + MODEL.w / 2, y: pos.y - 30, r: 60 },
+          bars: { x: barsX + 100, y: barsY + 50, r: 96 },
+          readout: { x: 814, y: 294, r: 96 },
+          desk: { x: DESK.x + DESK.w / 2, y: DESK.topY - 20, r: 70 },
+          tank: { x: TANK.x + TANK.w / 2, y: (WATER_Y + TANK.botY) / 2, r: 110 },
+          waterline: { x: TANK.x + TANK.w / 2, y: WATER_Y, r: 40 }
+        };
+        return map[id] || null;
+      },
+      beginStep: function () {
+        // 每步开始:回桌面/水中初始位(有 tank 显示则回水底判据位,否则桌面)
+        st.loc = visible.tank ? settleLoc() : 'desk';
+        render();
+      },
+      applyAction: function (act) {
+        var dur = act.durationMs == null ? 700 : act.durationMs;
+        switch (act.type) {
+          case 'show': {
+            visible[act.target] = true;
+            if (act.target === 'model' && st.loc === 'desk') render();
+            var node = layers[act.target];
+            if (!node) { render(); return LS.wait(0); }
+            render();
+            return LS.tween({ duration: dur, onUpdate: function (t) { S.attr(node, { opacity: t }); } });
+          }
+          case 'hide': visible[act.target] = false; render(); return LS.wait(200);
+          case 'move': {
+            // 注:move 期间不自动按判据挪模型(排水演示要「先排水、后上浮」两拍),
+            // 位置变化交给随后的 run rise/settle;学生拖滑杆(setParam)才即时落位
+            var id = act.param, to = Number(act.to), from = act.from == null ? p[id] : Number(act.from);
+            p[id] = from; render();
+            return LS.tween({ duration: act.durationMs == null ? 1200 : act.durationMs, onUpdate: function (t) {
+              p[id] = from + (to - from) * t;
+              render();
+            } });
+          }
+          case 'run': return simulate(act.phase || 'towater');
+          case 'reset': st.loc = visible.tank ? settleLoc() : 'desk'; render(); return LS.wait(300);
+          case 'readout': visible.readout = act.on !== false; render(); return LS.wait(300);
+          default: return LS.wait(0);
+        }
+      },
+      destroy: function () { svg.remove(); }
+    };
+  }
+  function defaults() { var d = {}; Object.keys(PARAMS).forEach(function (k) { d[k] = PARAMS[k].def; }); return d; }
+
+  LS.registerTemplate({
+    id: 'buoyancy',
+    name: '浮力与浮沉',
+    subject: '物理',
+    params: PARAMS,
+    targets: ['desk', 'tank', 'model', 'forces', 'bars', 'readout'],
+    actions: ['show', 'hide', 'move', 'run', 'reset', 'readout'],
+    defaults: defaults,
+    mount: mount,
+    describe: '注水/排水的潜艇模型:桌面压强 p=G/S、浸没浮力 F浮=ρgV、浮沉判据(G总 vs F浮)、上浮 h 时浮力做功 W=F浮·h;可拖注水量/质量/体积/底面积滑杆与上浮高度。run 分 towater(入水按判据落位)/ rise(上浮 h)/ settle。'
+  });
+})(window);
+</script>
+<script id="lecture-script" type="application/json">{"version":1,"template":"buoyancy","title":"潜艇模型的浮沉与做功","problem":"物理小组研究遥控潜艇模型的浮沉情况。模型体积为 6×10⁻⁴ m³,注水前模型质量是 0.48 kg,放在水平桌面上,与桌面接触面积为 8×10⁻³ m²。模型放在水足够深的水槽中,吸水后沉入水底。ρ水 = 1.0×10³ kg/m³,g 取 10 N/kg。求:(1) 注水前模型对水平桌面的压强;(2) 模型沉在水底受到的浮力;(3) 控制水舱向外排水,模型竖直上浮 0.2 m,浮力所做的功(顶部始终未露出水面)。","params":{"V":6,"m0":0.48,"mw":0.6,"S":8,"h":0.2},"analysis":{"given":["体积 V = 6×10⁻⁴ m³","注水前质量 m = 0.48 kg","接触面积 S = 8×10⁻³ m²","ρ水 = 1.0×10³ kg/m³,g = 10 N/kg"],"hidden":["沉入水底 → 完全浸没,V排 = V物","顶部未露出水面 → 上浮过程浮力不变"],"find":["(1) 注水前对桌面的压强","(2) 沉底时受到的浮力","(3) 上浮 0.2 m 浮力做的功"],"ideas":["(1) 压力等于重力,p = G/S","(2) F浮 = ρgV,V排取模型体积","(3) W = F浮·h,浮力是定值"],"marks":[{"text":"6×10⁻⁴ m³","color":"blue"},{"text":"0.48 kg","color":"blue"},{"text":"8×10⁻³ m²","color":"blue"},{"text":"沉入水底","color":"green"},{"text":"0.2 m","color":"blue"},{"text":"顶部始终未露出水面","color":"red"}]},"problemImages":["data:image/png;base64,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Z1wKgnAimfzyl7/00EMPqdSabJVscDqdTsTjCqdgmOa2rdsOHjx47L335ubmh4dH5ucXMEKffvrpz995J2Lsueef7+vtKxaLTz/11P59+6embn9w/HgURZ988ollWV//+teXlpdfe+21t9566+mnn/7tr/22vG8ek6HrqiynVqq7s+ull14OwkAKyTlfXll+443X33jzTQB49itfefaZZwqFwi9Oj+ScG4bxyCOPMMa+973v/cWf//m1G9efeeaZ555/Xtc0TAjBBGFkGIZpmHING2FZ1p49e7Zu24YxFlxMTd2OwpAzvnH5B9WTLS0v37hxwzDNtm0ABMXOzrgbU1w4nu8tLy9P370jOJdrG5/L5YQQ165d7SgWfd975513ms3m4tLSAw884Lou1agQYmJi4ty58+VyuVQqra6uriwv64aRTKWqtdrs7OyNGzeklF959tmhoeFWjAHAGavX67VaTSlwJrhhmJlMWtP0paWl48ePv/nmm53Fzueef27/3n25bPaXehZKlyQSiaeeeqqrq+tHr7566vQpkPDN3/3myPCwpul4DWy+tLTY7qtCCGlUy+WyajZMpVIxdCOQwQbGT0g5Ozv7dz/4wRuvv6648g3d8LxmNpf72gsv7Nq12zSMiLG7d2d+8pOfzM7OrHHiCmXebty40ajXXde9evWq68Z27dr58ksvHTx4qFAoYIRqtdr1GzfOXzivaLM4Y5yLmbt3r169evPmzWaz2dXZVa1WL1+5kslkc9ms+nDf98+ePXvy5Ml6va4Q8AODA0888UTMjb3/wfuvv/56b2/fSy+/tH/fftuy0OehefA5iupYLLZ///5CoWBa1pkzZ06fOl3Id+RyOYwRSLm0svSz116buHmzPTs9n88//vjjoyMjmFCEWzXLXxx8v2H4JwDpml7s7BwaGjJ0XXF1NpteJpPJ5/MEY0WK48bcwaHBVCrZfgfG+ezMLGesq6vbtMxqrdbd3f3888/v2rU7kUjgNQpHx7YL+XyhUCiXy7qu67q+sLAwOTk5Pze3dcvWr3z1K4pr1HGctYKExBinUqnh4WFVAJEIOjo6dE27fv36W2+9hRB6+gtP79q50zD0f3yPXHdPz2OPPTY1PfXe++91dnY9+MADtmMLIUzTGhgY0NfITKSUiWQymUy2ujwYV4j9DVp/VwzD2Wzm0KFDjz76qOu4hGCEseCCUGIaJqFUAmCE1RhNoTpacCvm++jDjyqV1cMPHB4fG+8odJw5e2ZycnJwcCjmOrDWQdn0vCAMwzAMo0jTtEQiblpWs9lsNr2+/r6B/oHunm4pRDvqULOmNm/ePDg4iBHGFAPCEuStiYm///u/u3jx4m/91m/t2bPHdWP/yAVVj2Ho+tatW/bt3fv973//Rz96NZ1Ob9u2zTKNeCx28MDBcFfY5n5TZSSVC23Tgq9z/X3dgMAACo8Zc91EPO44LiZYSrlaXp2ZnVFNSYxzSmgsFstms4ZlrA0pFrNzs2fOnPY8r5DPJxLxbdu3TU1N/fjHP14plb7whS8MDQ7putZoNFnEYq7LOS+XSozzQqGQyWSazebi4kIs5pZXy2EULswvJJOJ7u7uRDKJACFCKKV0zafnnE3fufP973//pz/9abFY3LN7dyGbo7/CoZDoV2whgOvGtm7dbts/OXbsmGEY3/jG727ZslnXqabput6OeYQUolKtVmvVKIwmJibK5bKqUW/Q+nu7UK4ESwW5x08cf/XVV1VKjDGGER7dNPrMM890d6khmHJ1dfXdn//84qVLDx05UuzsfPudd6Zu3965cych5NixY9NTU88+++z+/fvLq2XLMh955JEgCGfn5hRduud5MzMz8Xi82WyeO3uOMXbhwoVqtTq+Y/zQoUPDw8PZTLbNuy2lnJqe/s53vvPaa6/VGw3LtlOpFKHkn3FSCcamaWQymYWFhQ8+OI4Q/vrXX9q+batpGPw+OHt5tfzaa6/dnJjwPX/m7t1rV6/u3bt3HZNn692/iUAIDmu7p4Lonu7uA/sPJJOJRCLhB0GtVkun0u20rxBydbU8Ozu7bdu2ow8/XKtWf/rTn2bS6S9+8YuHDh38+c9//u6xY2+9/XZPT08QBKZlDQ4NLS8vq991Y24YBMVi8ZFHHnn/vfcXFhYee+zRLVs2v/nmW2+9+ebP33ln3/79jzz88I4dOxOJOEK42Wz+8JVXXv3Rj0ZHR7t7en4dBDsmRPWFP/bY49VK9d1337VtK5/Pd3d23l9RCMMoCMPu7u7+/v4709O+5ylcxYbETyCghHDOpRBSCmXeCCFjY+M7duz8XJiheJaEAIxxV1fXiy++aBhGIh7/Hz/8H6XllQcfeLBY7HRd93d++3cOHDi4vLyUyWbLq6vpdBqknLw1CVIO9Pdv37Z9796928fGUqmUmsMQjyeGhobGxsYvX7707rFjH544cenSpS88/YUnnngim8see+/Ya6+9Pjg49I1vfPPs2bOTtyf/qaHYfZ0oSBUTBgeHhodHlpZXPvjgxI4dO5566qm1uRYCIZTP5//Vt76lPNlLly6dOX1GHZp1q7mua/5FQdDCW5OTFy9dMk1TcCEEB4Curm4VF6uHZixaWFxsNhqKC87zmtVaLZ/LGbqRy+W+/KUvHT58SDf0W7cmpu/cYRErdBSWl5dVy1k8Hh/fMZ5Op3bs3Nnb0zMyPHL+3LnTp07duH69r6/v6rWrUor+/v7Dhw5v3bZt7969P/nxT9566y3TNHp6er73ve+FYfDcc18dHx+7cPECxhgT8mt0oSMpgHM+PDz87DPP/Nmf/dlPf/qzLVu2FIvFqampxcUF27FHhodzuSzGBACCMAgCX9e0jao/AYQQyysr77777tWrV0FKxTDvuO4Lzz+fXivZIIAgDC+cv3D6zOlGo8EZi6KIatrRo0c7O4r79+/ftWuXG4v5QXD5ypVjx47VqrU9e/fE4/FTp05t37Y9k8mMjo5GETMtU6Pa0PDwex+8v7KykslmpYQ3Xn/9zvT0V597rqe7J51KH3nwSC6bPXfuvGmap8+cuXLlygMPPLB///5YPN7m+v31EVuOYz909KEzZ8+e+uSTc2fPVyu1N9968/btyaGhQcdx0uk0xgSkjMIwCIJ4LH4vrbHR4gcpgRKSTqWGh4ZMy1Im0Las7u5uqrWG3inwuW1byXgiFU/E43HXdV3XHR0djcVi7Y4WQsn42JhpmkKIjo4OTdOKHR39/f35fIFSahqAMZYAmzaNvvTii1EU5XI5heXN5rLxWAwQAALHccbHx3t6emZnZ989diwKwz27d+dyOUqoovdC+J+5ipyJMAw5F1LiKOSZdPbwoQc+/vjjCxcu5AuFrVu3DQ4OdXd39XT3EqIJAQhhKRGXEjDCGpUYifYR2Dj1d0pJJpN96KGjjz/+WCwWU2eMEGJZNiW0xRgMyDTNXTt3bRoZVR0tqnFLVcNV5lsCIIT7+/q7urtxa5IRGx0e0Qy9dXgBqVa8bDZ75MhDCCFMMGd8+5inUWpZdmvALAJN07PZ3J27d2dnZrp7ejZv2eK6sdD3CcFRFIl/KpRItsGCUghGCJEgrl27ijAudhYHBwYnJyellA8/fFSRpRmGvtZHJn3fBwnG/YCdDeZ/AsaEajSZTKTTaTcWU3VLxpjve/4abieKQi4EJVR1UqmXYYw1m00FXFOgd0VToesaRhgjxDGOWOQ1vfudN0KJaZpqUo1qCWSMcc6q1Ypcy5UoLEy1Uq1Wqzt37uwqdmKMuZRcCN/zgiCQ/+RTCgDgB+Hy8jIXUTzmnjt/7ubNmy+88MLI6Mh7773XaDQsy7JtEwGslFYqlVq9XqtWqxcvXiqXywMD/eTX1dv/Yv5LxCI19gi1+EOAcXby5Mmfv/vzKIoUVCIMQwSwe/fuo0ceSiQSABAEweXLlz/66KNyudzeHk3Tdu/evf/gwVQiIQCqtdrHH5+8fPmyYkBSUJfe3t6jR4/m8y1OnUaj/t77758/dz5ikRJly7IOHjy4Z/duRSyfy+XMVpJTCkUIwsU/zZtfS4kGQbCwsCCESGeSHcW8puGOYj6TSVYq5VJpSYgIpBEx9uGHH508ebJUKlUqlTt37i4szO3cuRMhrIhP1wUCs87zqxQ28p5xRohzTgnNZrKu60opIxYZuj48NOS6rmoho5Rm0plNmza1O5LUhNuuri5d14QUCLCmaV1d3QBIsTuoPrRkKqlg+codME2zr7eXRSwIAwWPMUwzl8thjCklhOBKpRJFkZpLHYVRrVqN7qMh/Sdm6rnnNRGSbswdHx/fuWun41gIS4wFpUiCRBghjIaHhzSNcsa5EBcuXHzrrTdaBJMbM//ZIiP4LCrk8KFD+/btI4RQQtQ9CCFKSPs2TdMGBgcGBgfaWZIWHwhCTAjOGSHIdZxtW7cq+JcqSKlezVazqwQppaEbY2NjW7duuz/XpYa75QuFbDZ7+cqV+YX5jo4CACjR45zDPyuaDnx/ZWWJc2boGkhRLpU8z1heXorFY+l0xtB0NWJ3dNPo5k2bAJCQUtf1U6c/bnHFruGAN1r/O47CcGZ2dnJy0tCNwPdVx5Su68ViMakSkjptNJs3J27WqjWMMSEYSbBtO5FIqBhD7VwYhsvLy+26nQAZhlEqlSwWi7qmq5Ic42zmzkylUkGACCGCM8FFsVjMZrOapilayvnlZdM0c+lMf1//j3/yk5m7M9u3bxcIMCFhGDYaDS6EQCAVi9M/+qSuVlZn5+Z0Xbdse3Fx6bvf/U42mz350SeFfAdC6IPjH9Trdcu2ix0dvX19MTdGMBaCARcEYRASScByg8XviuR7aWn5lb//+9OnT1NKozACITDGsVjshRdeOLD/gKZrIOXyyvLrr79++/btlixikkwkdu3a9eADD6YzaaU/K6uVc+fOTU1NKacmCMMgDMbGx91YLJ1OKyIe3/PPnD5z49MbUkiCMYsixti+ffsefPBBxSPj+/6VK1dc1x0ZGRkdHdXfenNiYqLRaOiGUegoIICp6al6o66bxj+JCF5wPj+/sLy8vHPnzkQ87jiObduvv/769PT0t779bcMwfv7uuxMTE5lMZt/efZlM1nVcIVsWd7269f6l6u+aRl031tHRkYgnNE2jGCsy/VwuRyjBmAiQiURi3959o6OjaggAJUSjWkdHh2mZ7alcjuts2rSpWCwq+ZMIOBfZXDbmuiq8AASmZe7avaunt0cKgTGOwkhw3tXZZVmWgixQSkdGRkzTdF13566dg4ODH3988ugjR7du2TYyNBKPJyYmJqq1WjqTac3E+cddjPPZ2ZkgCFLJlGGaCl5248aNzZs3P/jggyPDI8lkanW17LhuNptNJNYKDor2R8qNG78zFqVSqa9+9SuPPf54Jp3WdF2yFr1GmzlMgozHYocOHWrjLbBUc4skQmpekQQECuN778PbpA73OfGapg0MDPT396uwjNy3IkIIhJHjOI7dquVu3bLliSee+Jvvf/+1n/4snUz19vYODPTfvn37zu2pzkLHP3IsmLLNURhO37lDMM7mstVq9eTJk2+88Yam6088+eTw8HAqndqb2at8VSHvu9ZoAdZXBOl6su8ipBtGPJ5IpVK27UiQmGqB73uep2DwCGMhW3lty7KgNQFIMsZaXUsSuODt2Tv3UuNShlEUhSFaS5kIKSmhLS73tWp7GIbNZlMdixaEUNd0TSeUGIb59FNP37h+48c//jFC6MknnxwbG5+enr579+7uXbs/h6X/h+P3+YWFiZsTyVTKtqzXX3/97//u70rl8le/8pUvf+lLqWSyvTcNr7m0uBhGEUjgnE9NTfu+r9jzNqb+bPPJyhbiQSIpxMWLF9944w3P89REK8AIIdTd0/PII48UCwUhwfe8q1euXrl6RcX4nPMoitTUue7ubkIISNloNC5cunjhwoXAD9R3EEJ27dy1Z++eNkaURWxiYuK9996rVCoqp6Np2uDg4N69e7PZLEKou7vr619/eXZu9pVX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"],"tts":true,"summary":"记住三件事:桌面压强用 p 等于 G 比 S,浸没浮力用 F浮等于 ρgV,浮沉看 G总和 F浮谁大;上浮时浮力做功就是 F浮乘距离。","steps":[{"id":"s1","title":"注水前:桌面压强","narration":"","actions":[],"params":{"mw":0},"flow":[{"do":{"type":"show","target":"desk"}},{"do":{"type":"show","target":"model"}},{"say":"注水前,模型放在水平桌面上,质量 0.48 千克。"},{"do":{"type":"show","target":"forces"}},{"fx":{"type":"focus","target":"forces"}},{"say":"对桌面的压力就等于重力,4.8 牛。"},{"do":{"type":"readout"}},{"say":"接触面积是 8 乘 10 的负 3 次方平方米。"},{"fx":{"type":"focus","target":"readout"}},{"say":"压强等于压力除以受力面积,算出来是 600 帕。"}]},{"id":"s2","title":"沉底:求浮力","narration":"","actions":[],"flow":[{"say":"给水舱吸水后,把模型放入水槽,它沉入水底。"},{"do":{"type":"show","target":"tank"}},{"do":{"type":"run","phase":"towater"}},{"say":"完全浸没,排开水的体积就等于模型体积。"},{"fx":{"type":"focus","target":"readout"}},{"say":"浮力等于 ρ 乘 g 乘 V,算出来是 6 牛。"},{"do":{"type":"show","target":"bars"}},{"fx":{"type":"label","target":"bars","text":"G总 > F浮 → 沉底"}},{"say":"注水后总重 10.8 牛,大于浮力 6 牛,所以沉在水底。"}]},{"id":"s3","title":"排水上浮:浮力做功","narration":"","actions":[],"flow":[{"say":"现在控制水舱向外排水,让模型变轻。"},{"do":{"type":"move","param":"mw","from":0.6,"to":0.1,"durationMs":1600}},{"fx":{"type":"focus","target":"bars"}},{"say":"总重降到 5.8 牛,小于浮力 6 牛,模型开始上浮。"},{"do":{"type":"run","phase":"rise"}},{"say":"顶部始终没露出水面,排开体积不变,浮力一直是 6 牛。"},{"fx":{"type":"focus","target":"readout"}},{"say":"浮力做的功等于 6 牛乘 0.2 米,是 1.2 焦。"}]},{"id":"s4","title":"小结","narration":"","actions":[],"flow":[{"fx":{"type":"pulse","target":"bars"}},{"say":"浮沉的关键就是比较总重和浮力:重了沉,轻了浮,相等就悬浮。"},{"say":"潜艇就是靠注水排水改变自重来控制浮沉的。"}]}],"takeaways":{"knowledge":["浸没时浮力等于【ρ水gV】","浮沉看【总重和浮力】谁大","压强等于压力比【受力面积】"],"keyPoints":["考浮力公式与浮沉条件;易错:【V排和V物】没分清"],"methods":["未露出水面排开体积不变,做功直接【F乘h】"],"variants":["继续排水到【G总小于F浮】,模型会停在哪"]},"explore":{"unlock":["mw","m0","V","h"],"tasks":["拖注水滑杆,找到模型恰好悬浮的注水量","把注水调到最少,拖模型往上,看做功读数怎么变","把体积 V 调大,看浮力和浮沉状态的变化"],"hint":"拖注水滑杆控制浮沉,水中可以直接拖模型改上浮高度。"}}</script>
+<script>
+(function(){
+  var script = JSON.parse(document.getElementById('lecture-script').textContent);
+  var params = new URLSearchParams(location.search);
+  window.player = window.LectureScene.mount(document.getElementById('lecture-app'), script, { tts: params.get('tts') !== '0' });
+})();
+</script>
+</body>
+</html>
