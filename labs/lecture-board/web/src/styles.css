@@ -1,0 +1,970 @@
+/* 讲题白板 · 视觉系统
+ * 照搬 OpenHyperKnow/frontend/src/components/board/theme.tsx 的口径:
+ * Virgil(拉丁)+ Xiaolai(中文)手写体、米白卡纸 #fffdf5、feTurbulence 抖动边框、
+ * 紫色手写列标题 + 黄马克笔、点阵网格底 #fcfcfc。 */
+
+@import 'katex/dist/katex.min.css';
+
+@font-face {
+  font-family: 'Virgil';
+  src: url('/fonts/Virgil.woff2') format('woff2');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Xiaolai';
+  src: url('/fonts/Xiaolai.woff2') format('woff2');
+  font-display: swap;
+}
+
+:root {
+  --board-bg: #fcfcfc;
+  --paper: #fffdf5;
+  --ink: #3d3d3d;
+  --purple: #6741d9;
+  --marker: linear-gradient(rgba(0, 0, 0, 0) 55%, rgba(254, 243, 199, 0.78) 55%);
+  --mark-key: #dc2626;
+  --mark-data: #2563eb;
+  --mark-hidden: #059669;
+  --font-hand: Virgil, Xiaolai, 'Segoe UI Emoji', 'Apple Color Emoji', 'PingFang SC', 'Microsoft YaHei',
+    ui-sans-serif, sans-serif;
+  --font-ui: 'Inter', system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --col-w: 445px;
+  --col-gap: 60px;
+  --card-gap: 24px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-ui);
+  color: #1f2328;
+  background: var(--board-bg);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ------------------------------ 布局 ------------------------------ */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ------------------------------ 顶栏 ------------------------------ */
+
+.topbar {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+}
+
+.tb-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 999px;
+  background: #18181b;
+  color: #fff;
+  font-size: 15px;
+}
+
+.tb-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  outline: 1px solid #e5e5e5;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.tb-center {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 auto;
+}
+
+.tb-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #fff;
+  outline: 1px solid #e5e5e5;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  font-size: 13px;
+}
+
+.tb-group button {
+  border: none;
+  background: none;
+  color: #525252;
+  font-size: 15px;
+  line-height: 1;
+  padding: 3px 7px;
+  border-radius: 999px;
+}
+
+.tb-group button:hover:not(:disabled) {
+  background: #f4f4f5;
+}
+
+.tb-group button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.tb-group .tb-readout {
+  min-width: 48px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: #525252;
+}
+
+.tb-play {
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 999px;
+  background: #fff;
+  outline: 1px solid #e5e5e5;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  font-size: 15px;
+  color: #16a34a;
+}
+
+.tb-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tb-menu {
+  position: relative;
+}
+
+.tb-menu-panel {
+  position: absolute;
+  right: 0;
+  top: 44px;
+  z-index: 40;
+  min-width: 132px;
+  padding: 6px;
+  border-radius: 12px;
+  background: #fff;
+  outline: 1px solid #e5e5e5;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.tb-menu-panel button {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  text-align: left;
+  font-size: 13px;
+  color: #3f3f46;
+}
+
+.tb-menu-panel button.is-on {
+  background: #ede9fe;
+  color: var(--purple);
+  font-weight: 600;
+}
+
+.tb-status {
+  font-size: 12px;
+  font-weight: 500;
+  color: #3b82f6;
+}
+
+/* --------------------------- 白板视口 --------------------------- */
+
+/* Excalidraw 作底(viewModeEnabled):画布本身透明,点阵网格由容器铺。 */
+.stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  background-color: var(--board-bg);
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.12) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.stage .excalidraw-wrapper,
+.stage .excalidraw,
+.stage > div {
+  width: 100%;
+  height: 100%;
+}
+
+/* 隐掉 Excalidraw 自带 UI:顶栏 / 右栏 / 控件都是我们自己的 */
+.stage .excalidraw .layer-ui__wrapper__top-right,
+.stage .excalidraw .layer-ui__wrapper__footer-left,
+.stage .excalidraw .layer-ui__wrapper__footer-center,
+.stage .excalidraw .layer-ui__wrapper__footer-right,
+.stage .excalidraw .footer-center,
+.stage .excalidraw .App-menu,
+.stage .excalidraw .App-toolbar,
+.stage .excalidraw .disable-zen-mode,
+.stage .excalidraw .scroll-back-to-content,
+.stage .excalidraw .help-icon,
+.stage .excalidraw .zoom-actions,
+.stage .excalidraw .undo-redo-buttons,
+.stage .excalidraw .welcome-screen-center {
+  display: none !important;
+}
+
+/* embeddable 容器:我们自己画边框,不要 excalidraw 的白底与阴影 */
+.stage .excalidraw__embeddable-container__inner,
+.stage .excalidraw__embeddable__outer {
+  background: transparent;
+}
+
+.stage .excalidraw__embeddable-hint {
+  font-family: var(--font-ui);
+  font-size: 11px;
+}
+
+/* ------------------------------ 卡片 ------------------------------ */
+
+/* 卡纸是画布上的 embeddable 元素画的,这层 DOM 必须透明,红圈才压得住 */
+.card-host {
+  position: relative;
+  width: 100%;
+  font-family: var(--font-hand);
+  animation: cardIn 150ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.card-body {
+  position: relative;
+  padding: 12px 16px 12px;
+  font-size: 20px;
+  line-height: 1.5;
+  color: #1f2328;
+}
+
+.card-title {
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 0 3px;
+  color: var(--purple);
+  background-image: var(--marker);
+  font-size: 23px;
+  line-height: 1.3;
+}
+
+/* heading 卡:小节标题 */
+.card-body.card-heading {
+  font-size: 23px;
+  color: #292524;
+  padding: 4px 8px;
+}
+
+.card-body.card-heading span {
+  background-image: var(--marker);
+  padding: 0 3px;
+}
+
+/* points 卡:无框要点 */
+.points-line {
+  display: flex;
+  gap: 8px;
+  margin: 3px 0;
+}
+
+.points-line .bullet {
+  color: var(--purple);
+}
+
+/* 板书行 */
+.board-line {
+  margin: 6px 0;
+}
+
+.board-line.kind-text {
+  color: #292524;
+}
+
+.board-line.kind-formula {
+  padding: 2px 0;
+  font-size: 19px;
+}
+
+.board-line.kind-conclusion {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 5px 14px;
+  border: 2px solid #dc2626;
+  border-radius: 8px;
+  color: #b91c1c;
+  font-size: 21px;
+  background: rgba(254, 226, 226, 0.35);
+}
+
+.line-in {
+  animation: lineIn 150ms ease-out both;
+}
+
+@keyframes lineIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 表格卡 */
+.board-md p {
+  margin: 6px 0;
+}
+
+.board-md ul,
+.board-md ol {
+  margin: 4px 0;
+  padding-left: 22px;
+}
+
+.board-md table.board-table {
+  width: 100%;
+  margin: 8px 0;
+  border-collapse: collapse;
+}
+
+.board-md table.board-table th,
+.board-md table.board-table td {
+  padding: 5px 12px;
+  border: 1.3px solid #525252;
+  font-size: 0.92em;
+}
+
+.board-md table.board-table th {
+  background: #f5f5f4;
+}
+
+/* 图卡 */
+.figure-skeleton {
+  border-radius: 8px;
+  background: linear-gradient(90deg, #eee 25%, #f5f5f5 50%, #eee 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.figure-caption {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 17px;
+  color: #78716c;
+}
+
+.figure-failed {
+  padding: 18px;
+  text-align: center;
+  color: #b45309;
+  font-size: 16px;
+}
+
+/* 动画卡 */
+.anim-host {
+  width: 100%;
+  background: #fcfcfc;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.anim-host svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.anim-iframe {
+  display: block;
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  background: #fcfcfc;
+}
+
+.anim-purpose {
+  margin-top: 6px;
+  font-size: 16px;
+  color: #78716c;
+}
+
+.anim-badge {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  z-index: 2;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(103, 65, 217, 0.1);
+  color: var(--purple);
+  font-family: var(--font-ui);
+  font-size: 11px;
+}
+
+.explore-box {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(236, 253, 245, 0.8);
+  outline: 1.5px dashed #34d399;
+}
+
+.explore-box .explore-title {
+  color: #047857;
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+.explore-box .explore-task {
+  display: flex;
+  gap: 8px;
+  font-size: 17px;
+  color: #065f46;
+  margin: 3px 0;
+}
+
+/* 题干卡(三色高亮) */
+.problem-legend {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-bottom: 4px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+}
+
+.problem-legend span {
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
+.legend-key {
+  color: var(--mark-key);
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.legend-data {
+  color: var(--mark-data);
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.legend-hidden {
+  color: var(--mark-hidden);
+  background: rgba(5, 150, 105, 0.1);
+}
+
+.problem-line {
+  margin: 4px 0;
+  font-size: 19px;
+  line-height: 1.6;
+}
+
+.mark-key {
+  color: var(--mark-key);
+  border-bottom: 2.5px solid var(--mark-key);
+}
+
+.mark-data {
+  color: var(--mark-data);
+  border-bottom: 2.5px solid var(--mark-data);
+}
+
+.mark-hidden {
+  color: var(--mark-hidden);
+  border-bottom: 2.5px solid var(--mark-hidden);
+}
+
+.problem-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.problem-images img {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #e7e5e4;
+}
+
+/* 审题四块 */
+.analysis-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.analysis-block {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border-left: 4px solid currentColor;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.analysis-block.is-given {
+  color: var(--mark-data);
+}
+.analysis-block.is-hidden {
+  color: var(--mark-hidden);
+}
+.analysis-block.is-find {
+  color: var(--mark-key);
+}
+.analysis-block.is-ideas {
+  color: #b45309;
+}
+
+.analysis-block .ab-title {
+  font-size: 18px;
+  margin-bottom: 3px;
+}
+
+.analysis-block .ab-item {
+  display: flex;
+  gap: 6px;
+  color: #292524;
+  font-size: 17px;
+  line-height: 1.45;
+  margin: 2px 0;
+}
+
+/* 总结四色块 */
+.takeaway-block {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border-left: 5px solid currentColor;
+}
+
+.takeaway-block.is-knowledge {
+  --accent: #2563eb;
+  color: var(--accent);
+  background: rgba(37, 99, 235, 0.06);
+}
+.takeaway-block.is-pitfalls {
+  --accent: #dc2626;
+  color: var(--accent);
+  background: rgba(220, 38, 38, 0.06);
+}
+.takeaway-block.is-methods {
+  --accent: #ea580c;
+  color: var(--accent);
+  background: rgba(234, 88, 12, 0.06);
+}
+.takeaway-block.is-variants {
+  --accent: #059669;
+  color: var(--accent);
+  background: rgba(5, 150, 105, 0.06);
+}
+
+.takeaway-block .tb-title {
+  font-size: 19px;
+  margin-bottom: 4px;
+}
+
+.takeaway-item {
+  display: flex;
+  gap: 7px;
+  margin: 4px 0;
+  color: #292524;
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.takeaway-item .idx {
+  color: inherit;
+  opacity: 0.7;
+}
+
+/* 【关键词】→ 该组主色胶囊(底色取所在色块的 --accent,不能用 currentColor:
+   胶囊自己的 color 是白的,currentColor 会连底一起变白) */
+.accent-pill {
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--accent, #6741d9);
+  color: #fff;
+  font-size: 0.95em;
+}
+
+/* --------------------- 讲到哪、亮到哪(protocol.md 播放器时序 §2) --------------------- */
+
+/* 板书行 / 审题条目 / 题干片段:黄色马克笔底,与列标题马克笔同质感;kept 是 emph:'mark' 念完后的持续版 */
+.board-line,
+.ab-item,
+.mark-key,
+.mark-data,
+.mark-hidden,
+.takeaway-item {
+  transition: background-color 300ms ease;
+  border-radius: 3px;
+}
+
+.hl-mark-speaking {
+  background-color: rgba(253, 224, 71, 0.6);
+}
+
+.hl-mark-kept {
+  background-color: rgba(253, 224, 71, 0.4);
+}
+
+.analysis-block.hl-mark-speaking,
+.analysis-block.hl-mark-kept {
+  outline: 2px solid rgba(253, 224, 71, 0.8);
+  outline-offset: 2px;
+}
+
+/* 整卡:左侧 3px 本色竖条 + 卡纸微提亮(卡片 DOM 仍是透明的,提亮用很淡的白) */
+.hl-card-speaking,
+.hl-card-kept {
+  display: block;
+  margin: -4px -8px -4px -16px;
+  padding: 4px 8px 4px 13px;
+  border-left: 3px solid var(--purple);
+  border-radius: 6px;
+  transition: background-color 300ms ease;
+}
+
+.hl-card-speaking {
+  background-color: rgba(103, 65, 217, 0.06);
+}
+
+.hl-card-kept {
+  border-left-color: rgba(103, 65, 217, 0.4);
+}
+
+/* ------------------------------ 右栏旁白流 ------------------------------ */
+
+.narration {
+  display: flex;
+  flex-direction: column;
+  width: 420px;
+  flex: 0 0 420px;
+  border-left: 1px solid #e5e5e5;
+  background: #fff;
+}
+
+.narration-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.narration-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 18px 20px;
+}
+
+.nr-seg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 16px 0 6px;
+  color: #a1a1aa;
+  font-size: 12px;
+}
+
+.nr-say {
+  margin: 0 0 10px;
+  font-size: 15px;
+  line-height: 1.75;
+  color: #27272a;
+}
+
+.nr-say.is-current {
+  color: #111;
+  background: linear-gradient(rgba(0, 0, 0, 0) 60%, rgba(254, 243, 199, 0.8) 60%);
+}
+
+.nr-note {
+  margin: 4px 0 10px;
+  font-size: 12px;
+  color: #a1a1aa;
+}
+
+.nr-error {
+  margin: 6px 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 13px;
+}
+
+.narration-foot {
+  border-top: 1px solid #e5e5e5;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #a1a1aa;
+}
+
+/* ------------------------------ 进度 / 上传 ------------------------------ */
+
+.centerbox {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.panel {
+  width: 560px;
+  max-width: 100%;
+  padding: 28px 30px;
+  border-radius: 18px;
+  background: #fff;
+  outline: 1px solid #e5e5e5;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
+}
+
+.panel h1 {
+  margin: 0 0 4px;
+  font-family: var(--font-hand);
+  font-size: 30px;
+  color: var(--purple);
+}
+
+.panel .sub {
+  margin: 0 0 20px;
+  color: #71717a;
+  font-size: 14px;
+}
+
+.field {
+  margin-bottom: 16px;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3f3f46;
+}
+
+.field input[type='file'] {
+  font-size: 13px;
+}
+
+.field textarea,
+.field input[type='text'] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d4d4d8;
+  border-radius: 10px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  resize: vertical;
+}
+
+.field textarea:focus,
+.field input:focus {
+  outline: none;
+  border-color: var(--purple);
+}
+
+.thumbs {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.thumbs img {
+  width: 92px;
+  height: 92px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e4e4e7;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 11px;
+  border: none;
+  border-radius: 10px;
+  background: #18181b;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.btn-link {
+  margin-top: 12px;
+  border: none;
+  background: none;
+  color: var(--purple);
+  font-size: 13px;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.alert {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.stage-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stage-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px dashed #e4e4e7;
+  font-size: 14px;
+}
+
+.stage-row .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #d4d4d8;
+  flex: 0 0 10px;
+}
+
+.stage-row.is-running .dot {
+  background: var(--purple);
+  animation: blink 1.1s infinite;
+}
+
+.stage-row.is-done .dot {
+  background: #16a34a;
+}
+
+.stage-row.is-error .dot {
+  background: #dc2626;
+}
+
+.stage-row .ms {
+  margin-left: auto;
+  color: #a1a1aa;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* lecture-scene 手柄(自 runtime/player.css 摘出,动手环节用) */
+.ls-handle {
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+.ls-handle.ls-handle-active,
+.ls-slider.ls-handle-active .ls-handle {
+  opacity: 1;
+  pointer-events: auto;
+}
+.ls-handle.ls-handle-active > circle:first-child {
+  animation: ls-breathe 1.8s ease-in-out infinite;
+}
+@keyframes ls-breathe {
+  0%,
+  100% {
+    r: 16;
+  }
+  50% {
+    r: 20;
+  }
+}
+.ls-handle.ls-dragging {
+  cursor: grabbing;
+}
+.ls-slider {
+  opacity: 0.35;
+  transition: opacity 0.25s ease;
+}
+.ls-slider.ls-handle-active {
+  opacity: 1;
+}

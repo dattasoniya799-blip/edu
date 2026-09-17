@@ -34,3 +34,38 @@ export function exhibitHref(file: string, baseUrl = import.meta.env.BASE_URL): s
   const base = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
   return `${base}lab/${file}`;
 }
+
+/**
+ * [2026-09-17 task/lab-kg-lecture] 实验服务:不是单文件 HTML,而是要单独起的本地/内网服务
+ * (代码在仓库 `labs/<dir>/`,不进主线门禁、不部署)。管理端只放入口卡片,地址可用 VITE_LAB_* 覆盖。
+ */
+export interface LabService {
+  id: string;
+  title: string;
+  subject: '数学' | '物理' | '化学' | '数理化';
+  summary: string;
+  /** 仓库内代码位置与起法(卡片上直接展示,免翻文档) */
+  howToRun: string;
+  url: string;
+}
+
+const env = import.meta.env as Record<string, string | undefined>;
+
+export const LAB_SERVICES: LabService[] = [
+  {
+    id: 'knowledge-graph',
+    title: '初中数理化知识图谱(动态)',
+    subject: '数理化',
+    summary: '995 个知识点、1956 条前置关系焊成一张图;点任一节点追到真正卡住的那一步。读 data/knowledge-graphs/v2 实时构图,改数据即见。',
+    howToRun: 'labs/knowledge-graph · node server.mjs(:8787)',
+    url: env.VITE_LAB_KG_URL ?? 'http://127.0.0.1:8787',
+  },
+  {
+    id: 'lecture-board',
+    title: '讲题白板(AI 自动讲题)',
+    subject: '数理化',
+    summary: '上传题目截图 + 答案,Qwen 自动审题、规划、出剧本,在 HyperKnow 式白板上边讲边写:公式、配图、动画、语音。',
+    howToRun: 'labs/lecture-board · npm run dev(server :4310 + web :4311)',
+    url: env.VITE_LAB_LECTURE_URL ?? 'http://localhost:4311',
+  },
+];

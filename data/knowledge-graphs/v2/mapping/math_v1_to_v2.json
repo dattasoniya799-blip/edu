@@ -1,0 +1,2868 @@
+{
+ "note": "v1 code → v2 code；kind=point 为知识点一一对应，kind=section 表示 v1 粗粒度节点已删除、归入该节",
+ "map": {
+  "MATH-JH-NUM-001-CP01": {
+   "v2_code": "MATH-7A-01-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-001-CP02": {
+   "v2_code": "MATH-7A-01-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-001-CP03": {
+   "v2_code": "MATH-7A-01-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-001-CP04": {
+   "v2_code": "MATH-7A-01-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-002-CP01": {
+   "v2_code": "MATH-7A-01-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-002-CP02": {
+   "v2_code": "MATH-7A-01-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-002-CP03": {
+   "v2_code": "MATH-7A-01-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-003-CP01": {
+   "v2_code": "MATH-7A-01-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-003-CP02": {
+   "v2_code": "MATH-7A-01-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-003-CP03": {
+   "v2_code": "MATH-7A-01-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-003-CP04": {
+   "v2_code": "MATH-7A-01-02-07",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-003-CP05": {
+   "v2_code": "MATH-7A-01-02-08",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-003-CP06": {
+   "v2_code": "MATH-7A-01-02-09",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-003-CP07": {
+   "v2_code": "MATH-7A-01-02-10",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-003-CP08": {
+   "v2_code": "MATH-7A-01-02-11",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-003-CP09": {
+   "v2_code": "MATH-7A-01-02-12",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-003-CP10": {
+   "v2_code": "MATH-7A-01-02-13",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-004-CP01": {
+   "v2_code": "MATH-7A-02-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-004-CP02": {
+   "v2_code": "MATH-7A-02-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-004-CP03": {
+   "v2_code": "MATH-7A-02-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-004-CP04": {
+   "v2_code": "MATH-7A-02-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-004-CP05": {
+   "v2_code": "MATH-7A-02-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-004-CP06": {
+   "v2_code": "MATH-7A-02-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-004-CP07": {
+   "v2_code": "MATH-7A-02-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-004-CP08": {
+   "v2_code": "MATH-7A-02-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-004-CP09": {
+   "v2_code": "MATH-7A-02-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-004-CP10": {
+   "v2_code": "MATH-7A-02-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-005-CP01": {
+   "v2_code": "MATH-7A-02-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-005-CP02": {
+   "v2_code": "MATH-7A-02-03-02",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-005-CP03": {
+   "v2_code": "MATH-7A-02-03-03",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-005-CP04": {
+   "v2_code": "MATH-7A-02-03-04",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-005-CP05": {
+   "v2_code": "MATH-7A-02-03-05",
+   "kind": "point"
+  },
+  "MATH-JH-ALG-001-CP01": {
+   "v2_code": "MATH-7A-03-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-ALG-001-CP02": {
+   "v2_code": "MATH-7A-03-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-ALG-001-CP03": {
+   "v2_code": "MATH-7A-03-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-ALG-001-CP04": {
+   "v2_code": "MATH-7A-03-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-ALG-001-CP05": {
+   "v2_code": "MATH-7A-03-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-ALG-002-CP01": {
+   "v2_code": "MATH-7A-04-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-ALG-002-CP02": {
+   "v2_code": "MATH-7A-04-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-ALG-002-CP03": {
+   "v2_code": "MATH-7A-04-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-ALG-002-CP04": {
+   "v2_code": "MATH-7A-04-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-ALG-002-CP05": {
+   "v2_code": "MATH-7A-04-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-ALG-003-CP01": {
+   "v2_code": "MATH-7A-04-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-ALG-003-CP02": {
+   "v2_code": "MATH-7A-04-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-ALG-003-CP03": {
+   "v2_code": "MATH-7A-04-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-ALG-003-CP04": {
+   "v2_code": "MATH-7A-04-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-ALG-003-CP05": {
+   "v2_code": "MATH-7A-04-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-ALG-004-CP01": {
+   "v2_code": "MATH-7A-04-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-ALG-004-CP02": {
+   "v2_code": "MATH-7A-04-02-07",
+   "kind": "point"
+  },
+  "MATH-JH-ALG-004-CP03": {
+   "v2_code": "MATH-7A-04-02-08",
+   "kind": "point"
+  },
+  "MATH-JH-ALG-004-CP04": {
+   "v2_code": "MATH-7A-04-02-09",
+   "kind": "point"
+  },
+  "MATH-JH-ALG-004-CP05": {
+   "v2_code": "MATH-7A-04-02-10",
+   "kind": "point"
+  },
+  "MATH-JH-EQ-001-CP01": {
+   "v2_code": "MATH-7A-05-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-EQ-001-CP02": {
+   "v2_code": "MATH-7A-05-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-EQ-001-CP03": {
+   "v2_code": "MATH-7A-05-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-EQ-001-CP04": {
+   "v2_code": "MATH-7A-05-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-EQ-001-CP05": {
+   "v2_code": "MATH-7A-05-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-EQ-001-CP06": {
+   "v2_code": "MATH-7A-05-01-06",
+   "kind": "point"
+  },
+  "MATH-JH-EQ-002-CP01": {
+   "v2_code": "MATH-7A-05-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-EQ-002-CP02": {
+   "v2_code": "MATH-7A-05-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-EQ-002-CP03": {
+   "v2_code": "MATH-7A-05-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-EQ-002-CP04": {
+   "v2_code": "MATH-7A-05-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-EQ-002-CP05": {
+   "v2_code": "MATH-7A-05-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-EQ-002-CP06": {
+   "v2_code": "MATH-7A-05-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-EQ-002-CP07": {
+   "v2_code": "MATH-7A-05-02-07",
+   "kind": "point"
+  },
+  "MATH-JH-EQ-002-CP08": {
+   "v2_code": "MATH-7A-05-02-08",
+   "kind": "point"
+  },
+  "MATH-JH-EQ-002-CP09": {
+   "v2_code": "MATH-7A-05-02-09",
+   "kind": "point"
+  },
+  "MATH-JH-EQ-003-CP01": {
+   "v2_code": "MATH-7A-05-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-EQ-003-CP02": {
+   "v2_code": "MATH-7A-05-03-02",
+   "kind": "point"
+  },
+  "MATH-JH-EQ-003-CP03": {
+   "v2_code": "MATH-7A-05-03-03",
+   "kind": "point"
+  },
+  "MATH-JH-EQ-003-CP04": {
+   "v2_code": "MATH-7A-05-03-04",
+   "kind": "point"
+  },
+  "MATH-JH-EQ-003-CP05": {
+   "v2_code": "MATH-7A-05-03-05",
+   "kind": "point"
+  },
+  "MATH-JH-EQ-003-CP06": {
+   "v2_code": "MATH-7A-05-03-06",
+   "kind": "point"
+  },
+  "MATH-JH-EQ-003-CP07": {
+   "v2_code": "MATH-7A-05-03-07",
+   "kind": "point"
+  },
+  "MATH-JH-GEO-001-CP01": {
+   "v2_code": "MATH-7A-06-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-GEO-001-CP02": {
+   "v2_code": "MATH-7A-06-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-GEO-001-CP03": {
+   "v2_code": "MATH-7A-06-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-GEO-001-CP04": {
+   "v2_code": "MATH-7A-06-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-GEO-001-CP05": {
+   "v2_code": "MATH-7A-06-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-GEO-002-CP01": {
+   "v2_code": "MATH-7A-06-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-GEO-002-CP02": {
+   "v2_code": "MATH-7A-06-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-GEO-002-CP03": {
+   "v2_code": "MATH-7A-06-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-GEO-002-CP04": {
+   "v2_code": "MATH-7A-06-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-GEO-002-CP05": {
+   "v2_code": "MATH-7A-06-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-GEO-002-CP06": {
+   "v2_code": "MATH-7A-06-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-GEO-003-CP01": {
+   "v2_code": "MATH-7A-06-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-GEO-003-CP02": {
+   "v2_code": "MATH-7A-06-03-02",
+   "kind": "point"
+  },
+  "MATH-JH-GEO-003-CP03": {
+   "v2_code": "MATH-7A-06-03-03",
+   "kind": "point"
+  },
+  "MATH-JH-GEO-003-CP04": {
+   "v2_code": "MATH-7A-06-03-04",
+   "kind": "point"
+  },
+  "MATH-JH-GEO-003-CP05": {
+   "v2_code": "MATH-7A-06-03-05",
+   "kind": "point"
+  },
+  "MATH-JH-GEO-003-CP06": {
+   "v2_code": "MATH-7A-06-03-06",
+   "kind": "point"
+  },
+  "MATH-JH-GEO-004-CP01": {
+   "v2_code": "MATH-7A-06-03-07",
+   "kind": "point"
+  },
+  "MATH-JH-GEO-004-CP02": {
+   "v2_code": "MATH-7A-06-03-08",
+   "kind": "point"
+  },
+  "MATH-JH-GEO-004-CP03": {
+   "v2_code": "MATH-7A-06-03-09",
+   "kind": "point"
+  },
+  "MATH-JH-GEO-004-CP04": {
+   "v2_code": "MATH-7A-06-03-10",
+   "kind": "point"
+  },
+  "MATH-JH-GEO-004-CP05": {
+   "v2_code": "MATH-7A-06-03-11",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C05-CP001": {
+   "v2_code": "MATH-7B-07-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C05-CP002": {
+   "v2_code": "MATH-7B-07-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C05-CP003": {
+   "v2_code": "MATH-7B-07-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C05-CP004": {
+   "v2_code": "MATH-7B-07-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C05-CP005": {
+   "v2_code": "MATH-7B-07-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C05-CP006": {
+   "v2_code": "MATH-7B-07-01-06",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C05-CP007": {
+   "v2_code": "MATH-7B-07-01-07",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C05-CP008": {
+   "v2_code": "MATH-7B-07-01-08",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C05-CP009": {
+   "v2_code": "MATH-7B-07-01-09",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C05-CP010": {
+   "v2_code": "MATH-7B-07-01-10",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C05-CP011": {
+   "v2_code": "MATH-7B-07-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C05-CP012": {
+   "v2_code": "MATH-7B-07-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C05-CP013": {
+   "v2_code": "MATH-7B-07-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C05-CP014": {
+   "v2_code": "MATH-7B-07-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C05-CP015": {
+   "v2_code": "MATH-7B-07-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C05-CP016": {
+   "v2_code": "MATH-7B-07-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C05-CP017": {
+   "v2_code": "MATH-7B-07-02-07",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C05-CP018": {
+   "v2_code": "MATH-7B-07-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C05-CP019": {
+   "v2_code": "MATH-7B-07-04-01",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C05-CP020": {
+   "v2_code": "MATH-7B-07-04-02",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C06-CP001": {
+   "v2_code": "MATH-7B-08-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C06-CP002": {
+   "v2_code": "MATH-7B-08-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C06-CP003": {
+   "v2_code": "MATH-7B-08-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C06-CP004": {
+   "v2_code": "MATH-7B-08-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C06-CP005": {
+   "v2_code": "MATH-7B-08-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C06-CP006": {
+   "v2_code": "MATH-7B-08-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C06-CP007": {
+   "v2_code": "MATH-7B-08-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C06-CP008": {
+   "v2_code": "MATH-7B-08-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C06-CP009": {
+   "v2_code": "MATH-7B-08-03-02",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C06-CP010": {
+   "v2_code": "MATH-7B-08-03-03",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C06-CP011": {
+   "v2_code": "MATH-7B-08-03-04",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C06-CP012": {
+   "v2_code": "MATH-7B-08-03-05",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C06-CP013": {
+   "v2_code": "MATH-7B-08-03-06",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C06-CP014": {
+   "v2_code": "MATH-7B-08-03-07",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C06-CP015": {
+   "v2_code": "MATH-7B-08-03-08",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C07-CP001": {
+   "v2_code": "MATH-7B-09-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C07-CP002": {
+   "v2_code": "MATH-7B-09-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C07-CP003": {
+   "v2_code": "MATH-7B-09-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C07-CP004": {
+   "v2_code": "MATH-7B-09-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C07-CP005": {
+   "v2_code": "MATH-7B-09-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C07-CP006": {
+   "v2_code": "MATH-7B-09-01-06",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C07-CP007": {
+   "v2_code": "MATH-7B-09-01-07",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C07-CP008": {
+   "v2_code": "MATH-7B-09-01-08",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C07-CP009": {
+   "v2_code": "MATH-7B-09-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C07-CP010": {
+   "v2_code": "MATH-7B-09-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C07-CP011": {
+   "v2_code": "MATH-7B-09-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C07-CP012": {
+   "v2_code": "MATH-7B-09-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C07-CP013": {
+   "v2_code": "MATH-7B-09-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C07-CP014": {
+   "v2_code": "MATH-7B-09-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C07-CP015": {
+   "v2_code": "MATH-7B-09-02-07",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C08-CP001": {
+   "v2_code": "MATH-7B-10-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C08-CP002": {
+   "v2_code": "MATH-7B-10-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C08-CP003": {
+   "v2_code": "MATH-7B-10-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C08-CP004": {
+   "v2_code": "MATH-7B-10-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C08-CP005": {
+   "v2_code": "MATH-7B-10-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C08-CP006": {
+   "v2_code": "MATH-7B-10-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C08-CP007": {
+   "v2_code": "MATH-7B-10-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C08-CP008": {
+   "v2_code": "MATH-7B-10-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C08-CP009": {
+   "v2_code": "MATH-7B-10-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C08-CP010": {
+   "v2_code": "MATH-7B-10-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C08-CP011": {
+   "v2_code": "MATH-7B-10-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C08-CP012": {
+   "v2_code": "MATH-7B-10-03-02",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C08-CP013": {
+   "v2_code": "MATH-7B-10-03-03",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C08-CP014": {
+   "v2_code": "MATH-7B-10-03-04",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C08-CP015": {
+   "v2_code": "MATH-7B-10-03-05",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C08-CP016": {
+   "v2_code": "MATH-7B-10-04-01",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C08-CP017": {
+   "v2_code": "MATH-7B-10-04-02",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C08-CP018": {
+   "v2_code": "MATH-7B-10-04-03",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C09-CP001": {
+   "v2_code": "MATH-7B-11-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C09-CP002": {
+   "v2_code": "MATH-7B-11-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C09-CP003": {
+   "v2_code": "MATH-7B-11-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C09-CP004": {
+   "v2_code": "MATH-7B-11-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C09-CP005": {
+   "v2_code": "MATH-7B-11-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C09-CP006": {
+   "v2_code": "MATH-7B-11-01-06",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C09-CP007": {
+   "v2_code": "MATH-7B-11-01-07",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C09-CP008": {
+   "v2_code": "MATH-7B-11-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C09-CP009": {
+   "v2_code": "MATH-7B-11-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C09-CP010": {
+   "v2_code": "MATH-7B-11-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C09-CP011": {
+   "v2_code": "MATH-7B-11-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C09-CP012": {
+   "v2_code": "MATH-7B-11-03-02",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C09-CP013": {
+   "v2_code": "MATH-7B-11-03-03",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C09-CP014": {
+   "v2_code": "MATH-7B-11-03-04",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C09-CP015": {
+   "v2_code": "MATH-7B-11-03-05",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C09-CP016": {
+   "v2_code": "MATH-7B-11-03-06",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C09-CP017": {
+   "v2_code": "MATH-7B-11-03-07",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C10-CP001": {
+   "v2_code": "MATH-7B-12-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C10-CP002": {
+   "v2_code": "MATH-7B-12-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C10-CP003": {
+   "v2_code": "MATH-7B-12-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C10-CP004": {
+   "v2_code": "MATH-7B-12-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C10-CP005": {
+   "v2_code": "MATH-7B-12-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C10-CP006": {
+   "v2_code": "MATH-7B-12-01-06",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C10-CP007": {
+   "v2_code": "MATH-7B-12-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C10-CP008": {
+   "v2_code": "MATH-7B-12-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C10-CP009": {
+   "v2_code": "MATH-7B-12-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C10-CP010": {
+   "v2_code": "MATH-7B-12-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C10-CP011": {
+   "v2_code": "MATH-7B-12-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-7B-C10-CP012": {
+   "v2_code": "MATH-7B-12-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C11-CP001": {
+   "v2_code": "MATH-8A-13-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C11-CP002": {
+   "v2_code": "MATH-8A-13-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C11-CP003": {
+   "v2_code": "MATH-8A-13-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C11-CP004": {
+   "v2_code": "MATH-8A-13-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C11-CP005": {
+   "v2_code": "MATH-8A-13-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C11-CP006": {
+   "v2_code": "MATH-8A-13-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C11-CP007": {
+   "v2_code": "MATH-8A-13-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C11-CP008": {
+   "v2_code": "MATH-8A-13-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C11-CP009": {
+   "v2_code": "MATH-8A-13-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C11-CP010": {
+   "v2_code": "MATH-8A-13-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C11-CP011": {
+   "v2_code": "MATH-8A-13-02-07",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C11-CP012": {
+   "v2_code": "MATH-8A-13-02-08",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C11-CP013": {
+   "v2_code": "MATH-8A-13-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C11-CP014": {
+   "v2_code": "MATH-8A-13-03-02",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C11-CP015": {
+   "v2_code": "MATH-8A-13-03-03",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C11-CP016": {
+   "v2_code": "MATH-8A-13-03-04",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C11-CP017": {
+   "v2_code": "MATH-8A-13-03-05",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C11-CP018": {
+   "v2_code": "MATH-8A-13-03-06",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C11-CP019": {
+   "v2_code": "MATH-8B-21-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C11-CP020": {
+   "v2_code": "MATH-8B-21-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C11-CP021": {
+   "v2_code": "MATH-8B-21-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C11-CP022": {
+   "v2_code": "MATH-8B-21-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP001": {
+   "v2_code": "MATH-8A-14-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP002": {
+   "v2_code": "MATH-8A-14-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP003": {
+   "v2_code": "MATH-8A-14-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP004": {
+   "v2_code": "MATH-8A-14-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP005": {
+   "v2_code": "MATH-8A-14-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP006": {
+   "v2_code": "MATH-8A-14-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP007": {
+   "v2_code": "MATH-8A-14-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP008": {
+   "v2_code": "MATH-8A-14-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP009": {
+   "v2_code": "MATH-8A-14-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP010": {
+   "v2_code": "MATH-8A-14-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP011": {
+   "v2_code": "MATH-8A-14-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP012": {
+   "v2_code": "MATH-8A-14-02-07",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP013": {
+   "v2_code": "MATH-8A-14-02-08",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP014": {
+   "v2_code": "MATH-8A-14-02-09",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP015": {
+   "v2_code": "MATH-8A-14-02-10",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP016": {
+   "v2_code": "MATH-8A-14-02-11",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP017": {
+   "v2_code": "MATH-8A-14-02-12",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP018": {
+   "v2_code": "MATH-8A-14-02-13",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP019": {
+   "v2_code": "MATH-8A-14-02-14",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP020": {
+   "v2_code": "MATH-8A-14-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP021": {
+   "v2_code": "MATH-8A-14-03-02",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP022": {
+   "v2_code": "MATH-8A-14-03-03",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP023": {
+   "v2_code": "MATH-8A-14-03-04",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C12-CP024": {
+   "v2_code": "MATH-8A-14-03-05",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP001": {
+   "v2_code": "MATH-8A-15-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP002": {
+   "v2_code": "MATH-8A-15-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP003": {
+   "v2_code": "MATH-8A-15-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP004": {
+   "v2_code": "MATH-8A-15-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP005": {
+   "v2_code": "MATH-8A-15-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP006": {
+   "v2_code": "MATH-8A-15-01-06",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP007": {
+   "v2_code": "MATH-8A-15-01-07",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP008": {
+   "v2_code": "MATH-8A-15-01-08",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP009": {
+   "v2_code": "MATH-8A-15-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP010": {
+   "v2_code": "MATH-8A-15-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP011": {
+   "v2_code": "MATH-8A-15-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP012": {
+   "v2_code": "MATH-8A-15-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP013": {
+   "v2_code": "MATH-8A-15-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP014": {
+   "v2_code": "MATH-8A-15-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP015": {
+   "v2_code": "MATH-8A-15-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP016": {
+   "v2_code": "MATH-8A-15-03-02",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP017": {
+   "v2_code": "MATH-8A-15-03-03",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP018": {
+   "v2_code": "MATH-8A-15-03-04",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP019": {
+   "v2_code": "MATH-8A-15-03-05",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP020": {
+   "v2_code": "MATH-8A-15-03-06",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP021": {
+   "v2_code": "MATH-8A-15-03-07",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP022": {
+   "v2_code": "MATH-8A-15-03-08",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP023": {
+   "v2_code": "MATH-8A-15-04-01",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C13-CP024": {
+   "v2_code": "MATH-8A-15-04-02",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP001": {
+   "v2_code": "MATH-8A-16-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP002": {
+   "v2_code": "MATH-8A-16-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP003": {
+   "v2_code": "MATH-8A-16-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP004": {
+   "v2_code": "MATH-8A-16-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP005": {
+   "v2_code": "MATH-8A-18-04-01",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP006": {
+   "v2_code": "MATH-8A-18-04-02",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP007": {
+   "v2_code": "MATH-8A-16-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP008": {
+   "v2_code": "MATH-8A-16-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP009": {
+   "v2_code": "MATH-8A-16-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP010": {
+   "v2_code": "MATH-8A-16-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP011": {
+   "v2_code": "MATH-8A-16-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP012": {
+   "v2_code": "MATH-8A-16-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP013": {
+   "v2_code": "MATH-8A-16-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP014": {
+   "v2_code": "MATH-8A-16-03-02",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP015": {
+   "v2_code": "MATH-8A-16-03-03",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP016": {
+   "v2_code": "MATH-8A-16-03-04",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP017": {
+   "v2_code": "MATH-8A-16-03-05",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP018": {
+   "v2_code": "MATH-8A-16-03-06",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP019": {
+   "v2_code": "MATH-8A-17-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP020": {
+   "v2_code": "MATH-8A-17-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP021": {
+   "v2_code": "MATH-8A-17-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP022": {
+   "v2_code": "MATH-8A-17-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP023": {
+   "v2_code": "MATH-8A-17-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP024": {
+   "v2_code": "MATH-8A-17-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP025": {
+   "v2_code": "MATH-8A-17-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C14-CP026": {
+   "v2_code": "MATH-8A-17-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP001": {
+   "v2_code": "MATH-8A-18-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP002": {
+   "v2_code": "MATH-8A-18-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP003": {
+   "v2_code": "MATH-8A-18-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP004": {
+   "v2_code": "MATH-8A-18-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP005": {
+   "v2_code": "MATH-8A-18-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP006": {
+   "v2_code": "MATH-8A-18-01-06",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP007": {
+   "v2_code": "MATH-8A-18-01-07",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP008": {
+   "v2_code": "MATH-8A-18-01-08",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP009": {
+   "v2_code": "MATH-8A-18-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP010": {
+   "v2_code": "MATH-8A-18-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP011": {
+   "v2_code": "MATH-8A-18-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP012": {
+   "v2_code": "MATH-8A-18-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP013": {
+   "v2_code": "MATH-8A-18-03-02",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP014": {
+   "v2_code": "MATH-8A-18-03-03",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP015": {
+   "v2_code": "MATH-8A-18-03-04",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP016": {
+   "v2_code": "MATH-8A-18-03-05",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP017": {
+   "v2_code": "MATH-8A-18-03-06",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP018": {
+   "v2_code": "MATH-8A-18-05-01",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP019": {
+   "v2_code": "MATH-8A-18-05-02",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP020": {
+   "v2_code": "MATH-8A-18-05-03",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP021": {
+   "v2_code": "MATH-8A-18-05-04",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP022": {
+   "v2_code": "MATH-8A-18-05-05",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP023": {
+   "v2_code": "MATH-8A-18-05-06",
+   "kind": "point"
+  },
+  "MATH-JH-8A-C15-CP024": {
+   "v2_code": "MATH-8A-18-05-07",
+   "kind": "point"
+  },
+  "MATH-JH-8B-16-CP01": {
+   "v2_code": "MATH-8B-19-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-8B-16-CP02": {
+   "v2_code": "MATH-8B-19-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-8B-16-CP03": {
+   "v2_code": "MATH-8B-19-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-8B-16-CP04": {
+   "v2_code": "MATH-8B-19-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-8B-16-CP05": {
+   "v2_code": "MATH-8B-19-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-8B-16-CP06": {
+   "v2_code": "MATH-8B-19-01-06",
+   "kind": "point"
+  },
+  "MATH-JH-8B-16-CP07": {
+   "v2_code": "MATH-8B-19-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-8B-16-CP08": {
+   "v2_code": "MATH-8B-19-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-8B-16-CP09": {
+   "v2_code": "MATH-8B-19-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-8B-16-CP10": {
+   "v2_code": "MATH-8B-19-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-8B-16-CP11": {
+   "v2_code": "MATH-8B-19-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-8B-16-CP12": {
+   "v2_code": "MATH-8B-19-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-8B-16-CP13": {
+   "v2_code": "MATH-8B-19-02-07",
+   "kind": "point"
+  },
+  "MATH-JH-8B-16-CP14": {
+   "v2_code": "MATH-8B-19-02-08",
+   "kind": "point"
+  },
+  "MATH-JH-8B-16-CP15": {
+   "v2_code": "MATH-8B-19-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-8B-16-CP16": {
+   "v2_code": "MATH-8B-19-03-02",
+   "kind": "point"
+  },
+  "MATH-JH-8B-16-CP17": {
+   "v2_code": "MATH-8B-19-03-03",
+   "kind": "point"
+  },
+  "MATH-JH-8B-16-CP18": {
+   "v2_code": "MATH-8B-19-03-04",
+   "kind": "point"
+  },
+  "MATH-JH-8B-17-CP01": {
+   "v2_code": "MATH-8B-20-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-8B-17-CP02": {
+   "v2_code": "MATH-8B-20-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-8B-17-CP03": {
+   "v2_code": "MATH-8B-20-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-8B-17-CP04": {
+   "v2_code": "MATH-8B-20-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-8B-17-CP05": {
+   "v2_code": "MATH-8B-20-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-8B-17-CP06": {
+   "v2_code": "MATH-8B-20-01-06",
+   "kind": "point"
+  },
+  "MATH-JH-8B-17-CP07": {
+   "v2_code": "MATH-8B-20-01-07",
+   "kind": "point"
+  },
+  "MATH-JH-8B-17-CP08": {
+   "v2_code": "MATH-8B-20-01-08",
+   "kind": "point"
+  },
+  "MATH-JH-8B-17-CP09": {
+   "v2_code": "MATH-8B-20-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-8B-17-CP10": {
+   "v2_code": "MATH-8B-20-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-8B-17-CP11": {
+   "v2_code": "MATH-8B-20-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-8B-17-CP12": {
+   "v2_code": "MATH-8B-20-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-8B-17-CP13": {
+   "v2_code": "MATH-8B-20-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-8B-17-CP14": {
+   "v2_code": "MATH-8B-20-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-8B-17-CP15": {
+   "v2_code": "MATH-8B-20-02-07",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP01": {
+   "v2_code": "MATH-8B-21-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP02": {
+   "v2_code": "MATH-8B-21-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP03": {
+   "v2_code": "MATH-8B-21-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP04": {
+   "v2_code": "MATH-8B-21-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP05": {
+   "v2_code": "MATH-8B-21-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP06": {
+   "v2_code": "MATH-8B-21-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP07": {
+   "v2_code": "MATH-8B-21-02-07",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP08": {
+   "v2_code": "MATH-8B-21-02-08",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP09": {
+   "v2_code": "MATH-8B-21-02-09",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP10": {
+   "v2_code": "MATH-8B-21-02-10",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP11": {
+   "v2_code": "MATH-8B-21-02-11",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP12": {
+   "v2_code": "MATH-8B-21-02-12",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP13": {
+   "v2_code": "MATH-8B-21-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP14": {
+   "v2_code": "MATH-8B-21-03-02",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP15": {
+   "v2_code": "MATH-8B-21-03-03",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP16": {
+   "v2_code": "MATH-8B-21-03-04",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP17": {
+   "v2_code": "MATH-8B-21-03-05",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP18": {
+   "v2_code": "MATH-8B-21-03-06",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP19": {
+   "v2_code": "MATH-8B-21-03-07",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP20": {
+   "v2_code": "MATH-8B-21-03-08",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP21": {
+   "v2_code": "MATH-8B-21-03-09",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP22": {
+   "v2_code": "MATH-8B-21-03-10",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP23": {
+   "v2_code": "MATH-8B-21-03-11",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP24": {
+   "v2_code": "MATH-8B-21-03-12",
+   "kind": "point"
+  },
+  "MATH-JH-8B-18-CP25": {
+   "v2_code": "MATH-8B-21-03-13",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP01": {
+   "v2_code": "MATH-8B-22-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP02": {
+   "v2_code": "MATH-8B-22-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP03": {
+   "v2_code": "MATH-8B-22-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP04": {
+   "v2_code": "MATH-8B-22-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP05": {
+   "v2_code": "MATH-8B-22-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP06": {
+   "v2_code": "MATH-8B-22-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP07": {
+   "v2_code": "MATH-8B-23-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP08": {
+   "v2_code": "MATH-8B-23-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP09": {
+   "v2_code": "MATH-8B-23-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP10": {
+   "v2_code": "MATH-8B-23-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP11": {
+   "v2_code": "MATH-8B-23-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP12": {
+   "v2_code": "MATH-8B-23-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP13": {
+   "v2_code": "MATH-8B-23-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP14": {
+   "v2_code": "MATH-8B-23-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP15": {
+   "v2_code": "MATH-8B-23-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP16": {
+   "v2_code": "MATH-8B-23-03-02",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP17": {
+   "v2_code": "MATH-8B-23-03-03",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP18": {
+   "v2_code": "MATH-8B-23-04-01",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP19": {
+   "v2_code": "MATH-8B-23-04-02",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP20": {
+   "v2_code": "MATH-8B-23-04-03",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP21": {
+   "v2_code": "MATH-8B-23-04-04",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP22": {
+   "v2_code": "MATH-8B-23-04-05",
+   "kind": "point"
+  },
+  "MATH-JH-8B-19-CP23": {
+   "v2_code": "MATH-8B-23-04-06",
+   "kind": "point"
+  },
+  "MATH-JH-8B-20-CP01": {
+   "v2_code": "MATH-8B-24-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-8B-20-CP02": {
+   "v2_code": "MATH-8B-24-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-8B-20-CP03": {
+   "v2_code": "MATH-8B-24-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-8B-20-CP04": {
+   "v2_code": "MATH-8B-24-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-8B-20-CP05": {
+   "v2_code": "MATH-8B-24-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-8B-20-CP06": {
+   "v2_code": "MATH-8B-24-01-06",
+   "kind": "point"
+  },
+  "MATH-JH-8B-20-CP07": {
+   "v2_code": "MATH-8B-24-01-07",
+   "kind": "point"
+  },
+  "MATH-JH-8B-20-CP08": {
+   "v2_code": "MATH-8B-24-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-8B-20-CP09": {
+   "v2_code": "MATH-8B-24-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-8B-20-CP10": {
+   "v2_code": "MATH-8B-24-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-8B-20-CP11": {
+   "v2_code": "MATH-8B-24-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-8B-20-CP12": {
+   "v2_code": "MATH-8B-24-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-8B-20-CP13": {
+   "v2_code": "MATH-8B-24-05-01",
+   "kind": "point"
+  },
+  "MATH-JH-8B-20-CP14": {
+   "v2_code": "MATH-8B-24-05-02",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21A-CP01": {
+   "v2_code": "MATH-9A-25-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21A-CP02": {
+   "v2_code": "MATH-9A-25-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21A-CP03": {
+   "v2_code": "MATH-9A-25-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21A-CP04": {
+   "v2_code": "MATH-9A-25-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21A-CP05": {
+   "v2_code": "MATH-9A-25-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21B-CP01": {
+   "v2_code": "MATH-9A-25-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21B-CP02": {
+   "v2_code": "MATH-9A-25-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21B-CP03": {
+   "v2_code": "MATH-9A-25-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21B-CP04": {
+   "v2_code": "MATH-9A-25-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21B-CP05": {
+   "v2_code": "MATH-9A-25-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21C-CP01": {
+   "v2_code": "MATH-9A-25-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21C-CP02": {
+   "v2_code": "MATH-9A-25-02-07",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21C-CP03": {
+   "v2_code": "MATH-9A-25-02-08",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21C-CP04": {
+   "v2_code": "MATH-9A-25-02-09",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21C-CP05": {
+   "v2_code": "MATH-9A-25-02-10",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21D-CP01": {
+   "v2_code": "MATH-9A-25-02-11",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21D-CP02": {
+   "v2_code": "MATH-9A-25-02-12",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21D-CP03": {
+   "v2_code": "MATH-9A-25-02-13",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21D-CP04": {
+   "v2_code": "MATH-9A-25-02-14",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21E-CP01": {
+   "v2_code": "MATH-9A-25-02-15",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21E-CP02": {
+   "v2_code": "MATH-9A-25-02-16",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21E-CP03": {
+   "v2_code": "MATH-9A-25-02-17",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21E-CP04": {
+   "v2_code": "MATH-9A-25-02-18",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21F-CP01": {
+   "v2_code": "MATH-9A-25-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21F-CP02": {
+   "v2_code": "MATH-9A-25-03-02",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21F-CP03": {
+   "v2_code": "MATH-9A-25-03-03",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21F-CP04": {
+   "v2_code": "MATH-9A-25-03-04",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21F-CP05": {
+   "v2_code": "MATH-9A-25-03-05",
+   "kind": "point"
+  },
+  "MATH-JH-EQ21F-CP06": {
+   "v2_code": "MATH-9A-25-03-06",
+   "kind": "point"
+  },
+  "MATH-JH-FN22A-CP01": {
+   "v2_code": "MATH-9A-26-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-FN22A-CP02": {
+   "v2_code": "MATH-9A-26-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-FN22A-CP03": {
+   "v2_code": "MATH-9A-26-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-FN22A-CP04": {
+   "v2_code": "MATH-9A-26-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-FN22A-CP05": {
+   "v2_code": "MATH-9A-26-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-FN22B-CP01": {
+   "v2_code": "MATH-9A-26-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-FN22B-CP02": {
+   "v2_code": "MATH-9A-26-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-FN22B-CP03": {
+   "v2_code": "MATH-9A-26-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-FN22B-CP04": {
+   "v2_code": "MATH-9A-26-02-07",
+   "kind": "point"
+  },
+  "MATH-JH-FN22B-CP05": {
+   "v2_code": "MATH-9A-26-02-08",
+   "kind": "point"
+  },
+  "MATH-JH-FN22C-CP01": {
+   "v2_code": "MATH-9A-26-02-09",
+   "kind": "point"
+  },
+  "MATH-JH-FN22C-CP02": {
+   "v2_code": "MATH-9A-26-02-10",
+   "kind": "point"
+  },
+  "MATH-JH-FN22C-CP03": {
+   "v2_code": "MATH-9A-26-02-11",
+   "kind": "point"
+  },
+  "MATH-JH-FN22C-CP04": {
+   "v2_code": "MATH-9A-26-02-12",
+   "kind": "point"
+  },
+  "MATH-JH-FN22C-CP05": {
+   "v2_code": "MATH-9A-26-02-13",
+   "kind": "point"
+  },
+  "MATH-JH-FN22C-CP06": {
+   "v2_code": "MATH-9A-26-02-14",
+   "kind": "point"
+  },
+  "MATH-JH-FN22C-CP07": {
+   "v2_code": "MATH-9A-26-02-15",
+   "kind": "point"
+  },
+  "MATH-JH-FN22D-CP01": {
+   "v2_code": "MATH-9A-26-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-FN22D-CP02": {
+   "v2_code": "MATH-9A-26-03-02",
+   "kind": "point"
+  },
+  "MATH-JH-FN22D-CP03": {
+   "v2_code": "MATH-9A-26-03-03",
+   "kind": "point"
+  },
+  "MATH-JH-FN22D-CP04": {
+   "v2_code": "MATH-9A-26-03-04",
+   "kind": "point"
+  },
+  "MATH-JH-FN22D-CP05": {
+   "v2_code": "MATH-9A-26-03-05",
+   "kind": "point"
+  },
+  "MATH-JH-FN22E-CP01": {
+   "v2_code": "MATH-9A-26-04-01",
+   "kind": "point"
+  },
+  "MATH-JH-FN22E-CP02": {
+   "v2_code": "MATH-9A-26-04-02",
+   "kind": "point"
+  },
+  "MATH-JH-FN22E-CP03": {
+   "v2_code": "MATH-9A-26-04-03",
+   "kind": "point"
+  },
+  "MATH-JH-FN22E-CP04": {
+   "v2_code": "MATH-9A-26-04-04",
+   "kind": "point"
+  },
+  "MATH-JH-FN22E-CP05": {
+   "v2_code": "MATH-9A-26-04-05",
+   "kind": "point"
+  },
+  "MATH-JH-GE23A-CP01": {
+   "v2_code": "MATH-9A-28-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-GE23A-CP02": {
+   "v2_code": "MATH-9A-28-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-GE23A-CP03": {
+   "v2_code": "MATH-9A-28-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-GE23A-CP04": {
+   "v2_code": "MATH-9A-28-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-GE23A-CP05": {
+   "v2_code": "MATH-9A-28-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-GE23A-CP06": {
+   "v2_code": "MATH-9A-28-01-06",
+   "kind": "point"
+  },
+  "MATH-JH-GE23A-CP07": {
+   "v2_code": "MATH-9A-28-01-07",
+   "kind": "point"
+  },
+  "MATH-JH-GE23B-CP01": {
+   "v2_code": "MATH-9A-28-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-GE23B-CP02": {
+   "v2_code": "MATH-9A-28-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-GE23B-CP03": {
+   "v2_code": "MATH-9A-28-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-GE23B-CP04": {
+   "v2_code": "MATH-9A-28-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-GE23B-CP05": {
+   "v2_code": "MATH-9A-28-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-GE23C-CP01": {
+   "v2_code": "MATH-9A-28-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-GE23C-CP02": {
+   "v2_code": "MATH-9A-28-02-07",
+   "kind": "point"
+  },
+  "MATH-JH-GE23C-CP03": {
+   "v2_code": "MATH-9A-28-02-08",
+   "kind": "point"
+  },
+  "MATH-JH-GE23C-CP04": {
+   "v2_code": "MATH-9A-28-02-09",
+   "kind": "point"
+  },
+  "MATH-JH-GE24A-CP01": {
+   "v2_code": "MATH-9A-29-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-GE24A-CP02": {
+   "v2_code": "MATH-9A-29-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-GE24A-CP03": {
+   "v2_code": "MATH-9A-29-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-GE24A-CP04": {
+   "v2_code": "MATH-9A-29-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-GE24B-CP01": {
+   "v2_code": "MATH-9A-29-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-GE24B-CP02": {
+   "v2_code": "MATH-9A-29-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-GE24B-CP03": {
+   "v2_code": "MATH-9A-29-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-GE24B-CP04": {
+   "v2_code": "MATH-9A-29-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-GE24C-CP01": {
+   "v2_code": "MATH-9A-29-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-GE24C-CP02": {
+   "v2_code": "MATH-9A-29-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-GE24C-CP03": {
+   "v2_code": "MATH-9A-29-02-07",
+   "kind": "point"
+  },
+  "MATH-JH-GE24C-CP04": {
+   "v2_code": "MATH-9A-29-02-08",
+   "kind": "point"
+  },
+  "MATH-JH-GE24C-CP05": {
+   "v2_code": "MATH-9A-29-02-09",
+   "kind": "point"
+  },
+  "MATH-JH-GE24D-CP01": {
+   "v2_code": "MATH-9A-29-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-GE24D-CP02": {
+   "v2_code": "MATH-9A-30-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-GE24D-CP03": {
+   "v2_code": "MATH-9A-30-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-GE24D-CP04": {
+   "v2_code": "MATH-9A-30-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-GE24D-CP05": {
+   "v2_code": "MATH-9A-30-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-GE24D-CP06": {
+   "v2_code": "MATH-9A-30-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-GE24D-CP07": {
+   "v2_code": "MATH-9A-30-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-GE24E-CP01": {
+   "v2_code": "MATH-9A-30-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-GE24E-CP02": {
+   "v2_code": "MATH-9A-30-03-02",
+   "kind": "point"
+  },
+  "MATH-JH-GE24E-CP03": {
+   "v2_code": "MATH-9A-30-03-03",
+   "kind": "point"
+  },
+  "MATH-JH-GE24E-CP04": {
+   "v2_code": "MATH-9A-30-03-04",
+   "kind": "point"
+  },
+  "MATH-JH-GE24F-CP01": {
+   "v2_code": "MATH-9A-29-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-GE24F-CP02": {
+   "v2_code": "MATH-9A-29-03-02",
+   "kind": "point"
+  },
+  "MATH-JH-GE24F-CP03": {
+   "v2_code": "MATH-9A-29-03-03",
+   "kind": "point"
+  },
+  "MATH-JH-GE24F-CP04": {
+   "v2_code": "MATH-9A-29-03-04",
+   "kind": "point"
+  },
+  "MATH-JH-PR25A-CP01": {
+   "v2_code": "MATH-9B-31-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-PR25A-CP02": {
+   "v2_code": "MATH-9B-31-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-PR25A-CP03": {
+   "v2_code": "MATH-9B-31-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-PR25A-CP04": {
+   "v2_code": "MATH-9B-31-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-PR25A-CP05": {
+   "v2_code": "MATH-9B-31-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-PR25A-CP06": {
+   "v2_code": "MATH-9B-31-01-06",
+   "kind": "point"
+  },
+  "MATH-JH-PR25A-CP07": {
+   "v2_code": "MATH-9B-31-01-07",
+   "kind": "point"
+  },
+  "MATH-JH-PR25B-CP01": {
+   "v2_code": "MATH-9B-31-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-PR25B-CP02": {
+   "v2_code": "MATH-9B-31-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-PR25B-CP03": {
+   "v2_code": "MATH-9B-31-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-PR25B-CP04": {
+   "v2_code": "MATH-9B-31-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-PR25B-CP05": {
+   "v2_code": "MATH-9B-31-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-PR25C-CP01": {
+   "v2_code": "MATH-9B-31-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-PR25C-CP02": {
+   "v2_code": "MATH-9B-31-03-02",
+   "kind": "point"
+  },
+  "MATH-JH-PR25C-CP03": {
+   "v2_code": "MATH-9B-31-03-03",
+   "kind": "point"
+  },
+  "MATH-JH-PR25C-CP04": {
+   "v2_code": "MATH-9B-31-03-04",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-FUNC-026-CP01": {
+   "v2_code": "MATH-9A-27-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-FUNC-026-CP02": {
+   "v2_code": "MATH-9A-27-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-FUNC-026-CP03": {
+   "v2_code": "MATH-9A-27-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-FUNC-026-CP04": {
+   "v2_code": "MATH-9A-27-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-FUNC-026-CP05": {
+   "v2_code": "MATH-9A-27-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-FUNC-026-CP06": {
+   "v2_code": "MATH-9A-27-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-FUNC-026-CP07": {
+   "v2_code": "MATH-9A-27-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-FUNC-026-CP08": {
+   "v2_code": "MATH-9A-27-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-FUNC-026-CP09": {
+   "v2_code": "MATH-9A-27-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-FUNC-026-CP10": {
+   "v2_code": "MATH-9A-27-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-FUNC-026-CP11": {
+   "v2_code": "MATH-9A-27-02-07",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-FUNC-026-CP12": {
+   "v2_code": "MATH-9A-27-02-08",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-FUNC-026-CP13": {
+   "v2_code": "MATH-9A-27-02-09",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-FUNC-026-CP14": {
+   "v2_code": "MATH-9A-27-02-10",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-FUNC-026-CP15": {
+   "v2_code": "MATH-9A-27-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-FUNC-026-CP16": {
+   "v2_code": "MATH-9A-27-03-02",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-FUNC-026-CP17": {
+   "v2_code": "MATH-9A-27-03-03",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-FUNC-026-CP18": {
+   "v2_code": "MATH-9A-27-03-04",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP01": {
+   "v2_code": "MATH-9B-32-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP02": {
+   "v2_code": "MATH-9B-32-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP03": {
+   "v2_code": "MATH-9B-32-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP04": {
+   "v2_code": "MATH-9B-32-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP05": {
+   "v2_code": "MATH-9B-32-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP06": {
+   "v2_code": "MATH-9B-32-01-06",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP07": {
+   "v2_code": "MATH-9B-32-01-07",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP08": {
+   "v2_code": "MATH-9B-32-01-08",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP09": {
+   "v2_code": "MATH-9B-32-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP10": {
+   "v2_code": "MATH-9B-32-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP11": {
+   "v2_code": "MATH-9B-32-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP12": {
+   "v2_code": "MATH-9B-32-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP13": {
+   "v2_code": "MATH-9B-32-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP14": {
+   "v2_code": "MATH-9B-32-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP15": {
+   "v2_code": "MATH-9B-32-02-07",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP16": {
+   "v2_code": "MATH-9B-32-02-08",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP17": {
+   "v2_code": "MATH-9B-32-02-09",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP18": {
+   "v2_code": "MATH-9B-32-02-10",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP19": {
+   "v2_code": "MATH-9B-32-02-11",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP20": {
+   "v2_code": "MATH-9B-32-02-12",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP21": {
+   "v2_code": "MATH-9B-32-02-13",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP22": {
+   "v2_code": "MATH-9B-32-02-14",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP23": {
+   "v2_code": "MATH-9B-32-02-15",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP24": {
+   "v2_code": "MATH-9B-32-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP25": {
+   "v2_code": "MATH-9B-32-03-02",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP26": {
+   "v2_code": "MATH-9B-32-03-03",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP27": {
+   "v2_code": "MATH-9B-32-03-04",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP28": {
+   "v2_code": "MATH-9B-32-03-05",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP29": {
+   "v2_code": "MATH-9B-32-03-06",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-027-CP30": {
+   "v2_code": "MATH-9B-32-03-07",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-TRIG-028-CP01": {
+   "v2_code": "MATH-9B-33-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-TRIG-028-CP02": {
+   "v2_code": "MATH-9B-33-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-TRIG-028-CP03": {
+   "v2_code": "MATH-9B-33-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-TRIG-028-CP04": {
+   "v2_code": "MATH-9B-33-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-TRIG-028-CP05": {
+   "v2_code": "MATH-9B-33-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-TRIG-028-CP06": {
+   "v2_code": "MATH-9B-33-01-06",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-TRIG-028-CP07": {
+   "v2_code": "MATH-9B-33-01-07",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-TRIG-028-CP08": {
+   "v2_code": "MATH-9B-33-01-08",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-TRIG-028-CP09": {
+   "v2_code": "MATH-9B-33-01-09",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-TRIG-028-CP10": {
+   "v2_code": "MATH-9B-33-01-10",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-TRIG-028-CP11": {
+   "v2_code": "MATH-9B-33-01-11",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-TRIG-028-CP12": {
+   "v2_code": "MATH-9B-33-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-TRIG-028-CP13": {
+   "v2_code": "MATH-9B-33-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-TRIG-028-CP14": {
+   "v2_code": "MATH-9B-33-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-TRIG-028-CP15": {
+   "v2_code": "MATH-9B-33-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-TRIG-028-CP16": {
+   "v2_code": "MATH-9B-33-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-TRIG-028-CP17": {
+   "v2_code": "MATH-9B-33-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-TRIG-028-CP18": {
+   "v2_code": "MATH-9B-33-02-07",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-TRIG-028-CP19": {
+   "v2_code": "MATH-9B-33-02-08",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-TRIG-028-CP20": {
+   "v2_code": "MATH-9B-33-02-09",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-TRIG-028-CP21": {
+   "v2_code": "MATH-9B-33-02-10",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-TRIG-028-CP22": {
+   "v2_code": "MATH-9B-33-02-11",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-029-CP01": {
+   "v2_code": "MATH-9B-34-01-01",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-029-CP02": {
+   "v2_code": "MATH-9B-34-01-02",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-029-CP03": {
+   "v2_code": "MATH-9B-34-01-03",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-029-CP04": {
+   "v2_code": "MATH-9B-34-01-04",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-029-CP05": {
+   "v2_code": "MATH-9B-34-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-029-CP06": {
+   "v2_code": "MATH-9B-34-01-06",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-029-CP07": {
+   "v2_code": "MATH-9B-34-02-01",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-029-CP08": {
+   "v2_code": "MATH-9B-34-02-02",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-029-CP09": {
+   "v2_code": "MATH-9B-34-02-03",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-029-CP10": {
+   "v2_code": "MATH-9B-34-02-04",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-029-CP11": {
+   "v2_code": "MATH-9B-34-02-05",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-029-CP12": {
+   "v2_code": "MATH-9B-34-02-06",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-029-CP13": {
+   "v2_code": "MATH-9B-34-02-07",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-029-CP14": {
+   "v2_code": "MATH-9B-34-02-08",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-029-CP15": {
+   "v2_code": "MATH-9B-34-03-01",
+   "kind": "point"
+  },
+  "MATH-JH-G9B-GEO-029-CP16": {
+   "v2_code": "MATH-9B-34-03-02",
+   "kind": "point"
+  },
+  "MATH-JH-GE24F-CP05": {
+   "v2_code": "MATH-9A-29-03-05",
+   "kind": "point"
+  },
+  "MATH-JH-GE24D-CP08": {
+   "v2_code": "MATH-9A-30-01-05",
+   "kind": "point"
+  },
+  "MATH-JH-NUM-001": {
+   "v2_code": "MATH-7A-01-01",
+   "kind": "section",
+   "v1_name": "正数和负数"
+  },
+  "MATH-JH-NUM-002": {
+   "v2_code": "MATH-7A-01-02",
+   "kind": "section",
+   "v1_name": "有理数"
+  },
+  "MATH-JH-NUM-003": {
+   "v2_code": "MATH-7A-01-02",
+   "kind": "section",
+   "v1_name": "数轴、相反数与绝对值"
+  },
+  "MATH-JH-NUM-004": {
+   "v2_code": "MATH-7A-02-01",
+   "kind": "section",
+   "v1_name": "有理数四则运算"
+  },
+  "MATH-JH-NUM-005": {
+   "v2_code": "MATH-7A-02-03",
+   "kind": "section",
+   "v1_name": "有理数乘方与科学记数法"
+  },
+  "MATH-JH-ALG-001": {
+   "v2_code": "MATH-7A-04-01",
+   "kind": "section",
+   "v1_name": "代数式"
+  },
+  "MATH-JH-ALG-002": {
+   "v2_code": "MATH-7A-04-01",
+   "kind": "section",
+   "v1_name": "整式"
+  },
+  "MATH-JH-ALG-003": {
+   "v2_code": "MATH-7A-04-02",
+   "kind": "section",
+   "v1_name": "合并同类项"
+  },
+  "MATH-JH-ALG-004": {
+   "v2_code": "MATH-7A-04-02",
+   "kind": "section",
+   "v1_name": "去括号与整式加减"
+  },
+  "MATH-JH-EQ-001": {
+   "v2_code": "MATH-7A-05-01",
+   "kind": "section",
+   "v1_name": "方程与等式性质"
+  },
+  "MATH-JH-EQ-002": {
+   "v2_code": "MATH-7A-05-02",
+   "kind": "section",
+   "v1_name": "解一元一次方程"
+  },
+  "MATH-JH-EQ-003": {
+   "v2_code": "MATH-7A-05-03",
+   "kind": "section",
+   "v1_name": "一元一次方程应用"
+  },
+  "MATH-JH-GEO-001": {
+   "v2_code": "MATH-7A-06-01",
+   "kind": "section",
+   "v1_name": "几何图形"
+  },
+  "MATH-JH-GEO-002": {
+   "v2_code": "MATH-7A-06-02",
+   "kind": "section",
+   "v1_name": "直线、射线与线段"
+  },
+  "MATH-JH-GEO-003": {
+   "v2_code": "MATH-7A-06-03",
+   "kind": "section",
+   "v1_name": "角的度量与比较"
+  },
+  "MATH-JH-GEO-004": {
+   "v2_code": "MATH-7A-06-03",
+   "kind": "section",
+   "v1_name": "余角与补角"
+  },
+  "MATH-JH-GEO-005": {
+   "v2_code": "MATH-7B-07-01",
+   "kind": "section",
+   "v1_name": "相交线与垂线"
+  },
+  "MATH-JH-GEO-006": {
+   "v2_code": "MATH-7B-07-02",
+   "kind": "section",
+   "v1_name": "平行线判定主题"
+  },
+  "MATH-JH-GEO-007": {
+   "v2_code": "MATH-7B-07-02",
+   "kind": "section",
+   "v1_name": "平行线性质主题"
+  },
+  "MATH-JH-GEO-008": {
+   "v2_code": "MATH-7B-07-04",
+   "kind": "section",
+   "v1_name": "平移"
+  },
+  "MATH-JH-NUM-006": {
+   "v2_code": "MATH-7B-08-01",
+   "kind": "section",
+   "v1_name": "平方根主题"
+  },
+  "MATH-JH-NUM-007": {
+   "v2_code": "MATH-7B-08-02",
+   "kind": "section",
+   "v1_name": "立方根主题"
+  },
+  "MATH-JH-NUM-008": {
+   "v2_code": "MATH-7B-08-03",
+   "kind": "section",
+   "v1_name": "实数"
+  },
+  "MATH-JH-COORD-001": {
+   "v2_code": "MATH-7B-09-01",
+   "kind": "section",
+   "v1_name": "平面直角坐标系"
+  },
+  "MATH-JH-COORD-002": {
+   "v2_code": "MATH-7B-09-02",
+   "kind": "section",
+   "v1_name": "坐标方法应用"
+  },
+  "MATH-JH-EQ-004": {
+   "v2_code": "MATH-7B-10-01",
+   "kind": "section",
+   "v1_name": "二元一次方程组主题"
+  },
+  "MATH-JH-EQ-005": {
+   "v2_code": "MATH-7B-10-02",
+   "kind": "section",
+   "v1_name": "消元解方程组"
+  },
+  "MATH-JH-EQ-006": {
+   "v2_code": "MATH-7B-10-04",
+   "kind": "section",
+   "v1_name": "二元一次方程组应用"
+  },
+  "MATH-JH-INEQ-001": {
+   "v2_code": "MATH-7B-11-01",
+   "kind": "section",
+   "v1_name": "不等式及其性质"
+  },
+  "MATH-JH-INEQ-002": {
+   "v2_code": "MATH-7B-11-02",
+   "kind": "section",
+   "v1_name": "一元一次不等式主题"
+  },
+  "MATH-JH-INEQ-003": {
+   "v2_code": "MATH-7B-11-03",
+   "kind": "section",
+   "v1_name": "一元一次不等式组主题"
+  },
+  "MATH-JH-STAT-001": {
+   "v2_code": "MATH-7B-12-01",
+   "kind": "section",
+   "v1_name": "统计调查主题"
+  },
+  "MATH-JH-STAT-002": {
+   "v2_code": "MATH-7B-12-02",
+   "kind": "section",
+   "v1_name": "频数分布"
+  },
+  "MATH-JH-STAT-003": {
+   "v2_code": "MATH-7B-12-02",
+   "kind": "section",
+   "v1_name": "数据整理与描述"
+  },
+  "MATH-JH-GEO-009": {
+   "v2_code": "MATH-8A-13-02",
+   "kind": "section",
+   "v1_name": "三角形边角关系"
+  },
+  "MATH-JH-GEO-010": {
+   "v2_code": "MATH-8B-21-01",
+   "kind": "section",
+   "v1_name": "多边形内角和"
+  },
+  "MATH-JH-GEO-011": {
+   "v2_code": "MATH-8A-14-01",
+   "kind": "section",
+   "v1_name": "全等三角形"
+  },
+  "MATH-JH-GEO-012": {
+   "v2_code": "MATH-8A-14-02",
+   "kind": "section",
+   "v1_name": "三角形全等判定"
+  },
+  "MATH-JH-GEO-013": {
+   "v2_code": "MATH-8A-14-03",
+   "kind": "section",
+   "v1_name": "角平分线性质主题"
+  },
+  "MATH-JH-GEO-014": {
+   "v2_code": "MATH-8A-15-01",
+   "kind": "section",
+   "v1_name": "轴对称"
+  },
+  "MATH-JH-GEO-015": {
+   "v2_code": "MATH-8A-15-02",
+   "kind": "section",
+   "v1_name": "等腰三角形"
+  },
+  "MATH-JH-GEO-016": {
+   "v2_code": "MATH-8A-15-03",
+   "kind": "section",
+   "v1_name": "等边三角形"
+  },
+  "MATH-JH-ALG-005": {
+   "v2_code": "MATH-8A-16-02",
+   "kind": "section",
+   "v1_name": "幂的运算"
+  },
+  "MATH-JH-ALG-006": {
+   "v2_code": "MATH-8A-16-02",
+   "kind": "section",
+   "v1_name": "整式乘法"
+  },
+  "MATH-JH-ALG-007": {
+   "v2_code": "MATH-8A-16-03",
+   "kind": "section",
+   "v1_name": "乘法公式"
+  },
+  "MATH-JH-ALG-008": {
+   "v2_code": "MATH-8A-17-02",
+   "kind": "section",
+   "v1_name": "因式分解"
+  },
+  "MATH-JH-ALG-009": {
+   "v2_code": "MATH-8A-18-01",
+   "kind": "section",
+   "v1_name": "分式"
+  },
+  "MATH-JH-ALG-010": {
+   "v2_code": "MATH-8A-18-03",
+   "kind": "section",
+   "v1_name": "分式运算"
+  },
+  "MATH-JH-EQ-007": {
+   "v2_code": "MATH-8A-18-05",
+   "kind": "section",
+   "v1_name": "分式方程"
+  },
+  "MATH-JH-NUM-009": {
+   "v2_code": "MATH-8B-19-01",
+   "kind": "section",
+   "v1_name": "二次根式"
+  },
+  "MATH-JH-NUM-010": {
+   "v2_code": "MATH-8B-19-02",
+   "kind": "section",
+   "v1_name": "二次根式运算"
+  },
+  "MATH-JH-GEO-017": {
+   "v2_code": "MATH-8B-20-01",
+   "kind": "section",
+   "v1_name": "勾股定理主题"
+  },
+  "MATH-JH-GEO-018": {
+   "v2_code": "MATH-8B-20-02",
+   "kind": "section",
+   "v1_name": "勾股定理逆定理主题"
+  },
+  "MATH-JH-GEO-019": {
+   "v2_code": "MATH-8B-21-02",
+   "kind": "section",
+   "v1_name": "平行四边形"
+  },
+  "MATH-JH-GEO-020": {
+   "v2_code": "MATH-8B-21-03",
+   "kind": "section",
+   "v1_name": "矩形、菱形与正方形"
+  },
+  "MATH-JH-FUNC-001": {
+   "v2_code": "MATH-8B-22-01",
+   "kind": "section",
+   "v1_name": "函数概念主题"
+  },
+  "MATH-JH-FUNC-002": {
+   "v2_code": "MATH-8B-23-02",
+   "kind": "section",
+   "v1_name": "一次函数主题"
+  },
+  "MATH-JH-FUNC-003": {
+   "v2_code": "MATH-8B-23-02",
+   "kind": "section",
+   "v1_name": "一次函数图象与性质主题"
+  },
+  "MATH-JH-FUNC-004": {
+   "v2_code": "MATH-8B-23-04",
+   "kind": "section",
+   "v1_name": "一次函数应用"
+  },
+  "MATH-JH-STAT-004": {
+   "v2_code": "MATH-8B-24-01",
+   "kind": "section",
+   "v1_name": "平均数、中位数与众数"
+  },
+  "MATH-JH-STAT-005": {
+   "v2_code": "MATH-8B-24-02",
+   "kind": "section",
+   "v1_name": "方差主题"
+  },
+  "MATH-JH-EQ-008": {
+   "v2_code": "MATH-9A-25-01",
+   "kind": "section",
+   "v1_name": "一元二次方程"
+  },
+  "MATH-JH-EQ-009": {
+   "v2_code": "MATH-9A-25-02",
+   "kind": "section",
+   "v1_name": "一元二次方程解法"
+  },
+  "MATH-JH-EQ-010": {
+   "v2_code": "MATH-9A-25-03",
+   "kind": "section",
+   "v1_name": "一元二次方程应用"
+  },
+  "MATH-JH-FUNC-005": {
+   "v2_code": "MATH-9A-26-02",
+   "kind": "section",
+   "v1_name": "二次函数"
+  },
+  "MATH-JH-FUNC-006": {
+   "v2_code": "MATH-9A-26-02",
+   "kind": "section",
+   "v1_name": "二次函数图象与性质"
+  },
+  "MATH-JH-FUNC-007": {
+   "v2_code": "MATH-9A-26-03",
+   "kind": "section",
+   "v1_name": "二次函数与方程、不等式"
+  },
+  "MATH-JH-GEO-021": {
+   "v2_code": "MATH-9A-28-01",
+   "kind": "section",
+   "v1_name": "旋转"
+  },
+  "MATH-JH-GEO-022": {
+   "v2_code": "MATH-9A-28-02",
+   "kind": "section",
+   "v1_name": "中心对称"
+  },
+  "MATH-JH-GEO-023": {
+   "v2_code": "MATH-9A-29-02",
+   "kind": "section",
+   "v1_name": "圆的基本性质"
+  },
+  "MATH-JH-GEO-024": {
+   "v2_code": "MATH-9A-30-01",
+   "kind": "section",
+   "v1_name": "点、直线与圆的位置关系"
+  },
+  "MATH-JH-GEO-025": {
+   "v2_code": "MATH-9A-30-03",
+   "kind": "section",
+   "v1_name": "正多边形与圆主题"
+  },
+  "MATH-JH-PROB-001": {
+   "v2_code": "MATH-9B-31-01",
+   "kind": "section",
+   "v1_name": "随机事件与概率"
+  },
+  "MATH-JH-PROB-002": {
+   "v2_code": "MATH-9B-31-03",
+   "kind": "section",
+   "v1_name": "用频率估计概率"
+  },
+  "MATH-JH-FUNC-008": {
+   "v2_code": "MATH-9A-27-02",
+   "kind": "section",
+   "v1_name": "反比例函数"
+  },
+  "MATH-JH-FUNC-009": {
+   "v2_code": "MATH-9A-27-03",
+   "kind": "section",
+   "v1_name": "反比例函数应用"
+  },
+  "MATH-JH-GEO-026": {
+   "v2_code": "MATH-9B-32-01",
+   "kind": "section",
+   "v1_name": "图形相似"
+  },
+  "MATH-JH-GEO-027": {
+   "v2_code": "MATH-9B-32-02",
+   "kind": "section",
+   "v1_name": "相似三角形判定主题"
+  },
+  "MATH-JH-GEO-028": {
+   "v2_code": "MATH-9B-32-02",
+   "kind": "section",
+   "v1_name": "相似三角形性质与应用"
+  },
+  "MATH-JH-TRIG-001": {
+   "v2_code": "MATH-9B-33-01",
+   "kind": "section",
+   "v1_name": "锐角三角函数"
+  },
+  "MATH-JH-TRIG-002": {
+   "v2_code": "MATH-9B-33-02",
+   "kind": "section",
+   "v1_name": "解直角三角形"
+  },
+  "MATH-JH-GEO-029": {
+   "v2_code": "MATH-9B-34-01",
+   "kind": "section",
+   "v1_name": "投影"
+  },
+  "MATH-JH-GEO-030": {
+   "v2_code": "MATH-9B-34-02",
+   "kind": "section",
+   "v1_name": "三视图主题"
+  }
+ }
+}

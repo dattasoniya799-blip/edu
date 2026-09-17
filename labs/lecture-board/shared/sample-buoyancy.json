@@ -1,0 +1,137 @@
+{
+  "version": 2,
+  "title": "潜艇模型的浮沉:压强·浮力·做功",
+  "subject": "physics",
+  "summary": "由注水/排水的潜艇模型串起固体压强、浸没浮力与浮力做功三个计算。",
+  "problem": {
+    "text": "13.(7 分)物理小组研究遥控潜艇模型的浮沉情况。模型体积为 6×10⁻⁴ m³,注水前模型质量为 0.48 kg,放在水平桌面上,与桌面接触面积为 8×10⁻³ m²。模型放在水足够深的水槽中,吸水后沉入水底,如图所示。ρ水=1.0×10³ kg/m³,g 取 10 N/kg,求\n(1)注水前模型对水平桌面的压强;\n(2)模型沉在水底受到的浮力;\n(3)控制水舱向外排水,模型竖直上浮 0.2 m,浮力所做的功(顶部始终未露出水面)。",
+    "images": ["/assets/sample/input/1.jpg"],
+    "answer": "(1)600 Pa;(2)6 N;(3)1.2 J"
+  },
+  "analysis": {
+    "given": ["V = 6×10⁻⁴ m³", "m = 0.48 kg(注水前)", "S = 8×10⁻³ m²", "ρ水 = 1.0×10³ kg/m³,g = 10 N/kg", "上浮高度 h = 0.2 m"],
+    "hidden": ["「沉入水底」→ 模型完全浸没,V排 = V", "「顶部始终未露出水面」→ 上浮过程中 V排 不变,F浮 恒定"],
+    "find": ["(1)注水前对桌面的压强 p", "(2)沉底时的浮力 F浮", "(3)上浮 0.2 m 浮力做的功 W"],
+    "ideas": ["(1)p = F/S,F = G = mg", "(2)F浮 = ρ水 g V排,浸没时 V排 = V", "(3)W = F浮·h,F浮 沿用第(2)问"],
+    "marks": [
+      { "text": "6×10⁻⁴ m³", "kind": "data" },
+      { "text": "0.48 kg", "kind": "data" },
+      { "text": "8×10⁻³ m²", "kind": "data" },
+      { "text": "放在水平桌面上", "kind": "key" },
+      { "text": "沉入水底", "kind": "hidden" },
+      { "text": "竖直上浮 0.2 m", "kind": "key" },
+      { "text": "顶部始终未露出水面", "kind": "hidden" }
+    ]
+  },
+  "columns": [
+    { "id": "c0", "title": "审题", "phase": "analysis" },
+    { "id": "c1", "title": "第(1)问 · 压强", "phase": "solve", "subq": 1 },
+    { "id": "c2", "title": "第(2)问 · 浮力", "phase": "solve", "subq": 2 },
+    { "id": "c3", "title": "第(3)问 · 做功", "phase": "solve", "subq": 3 },
+    { "id": "c4", "title": "总结", "phase": "summary" },
+    { "id": "c5", "title": "动手", "phase": "explore" }
+  ],
+  "cards": [
+    { "id": "k_problem", "col": "c0", "kind": "problem" },
+    { "id": "k_analysis", "col": "c0", "kind": "analysis" },
+
+    { "id": "k1_fig", "col": "c1", "kind": "figure", "figureId": "f_scene" },
+    { "id": "k1_board", "col": "c1", "kind": "board", "title": "注水前:放在桌面上", "lines": [
+      { "id": "l1a", "kind": "text", "text": "水平桌面上,压力等于重力" },
+      { "id": "l1b", "kind": "formula", "tex": "F = G = mg = 0.48\\,\\text{kg} \\times 10\\,\\text{N/kg} = 4.8\\,\\text{N}", "speech": "压力等于重力,等于 m g,0.48 千克乘 10 牛每千克,等于 4.8 牛" },
+      { "id": "l1c", "kind": "formula", "tex": "p = \\frac{F}{S} = \\frac{4.8\\,\\text{N}}{8\\times10^{-3}\\,\\text{m}^2} = 600\\,\\text{Pa}", "speech": "压强等于压力除以受力面积,4.8 牛除以 8 乘 10 的负 3 次方平方米,等于 600 帕" },
+      { "id": "l1d", "kind": "conclusion", "text": "p = 600 Pa" }
+    ] },
+
+    { "id": "k2_anim", "col": "c2", "kind": "animation", "animationId": "a_buoy" },
+    { "id": "k2_board", "col": "c2", "kind": "board", "title": "沉在水底:完全浸没", "lines": [
+      { "id": "l2a", "kind": "text", "text": "沉入水底 → 完全浸没,V排 = V" },
+      { "id": "l2b", "kind": "formula", "tex": "F_{浮} = \\rho_{水} g V_{排} = 1.0\\times10^{3}\\,\\text{kg/m}^3 \\times 10\\,\\text{N/kg} \\times 6\\times10^{-4}\\,\\text{m}^3", "speech": "浮力等于水的密度乘 g 乘排开液体的体积,1.0 乘 10 的 3 次方千克每立方米,乘 10 牛每千克,乘 6 乘 10 的负 4 次方立方米" },
+      { "id": "l2c", "kind": "conclusion", "text": "F浮 = 6 N" }
+    ] },
+    { "id": "k2_table", "col": "c2", "kind": "table", "title": "浮沉判据", "markdown": "| 状态 | 比较 |\n|---|---|\n| 下沉 / 沉底 | G > F浮 |\n| 悬浮 | G = F浮 |\n| 上浮 / 漂浮 | G < F浮 |", "speech": "浮沉看重力和浮力谁大:重力大就下沉,相等就悬浮,浮力大就上浮。" },
+
+    { "id": "k3_board", "col": "c3", "kind": "board", "title": "排水上浮 0.2 m", "lines": [
+      { "id": "l3a", "kind": "text", "text": "顶部未露出水面 → V排 不变 → F浮 不变 = 6 N" },
+      { "id": "l3b", "kind": "formula", "tex": "W = F_{浮} h = 6\\,\\text{N} \\times 0.2\\,\\text{m} = 1.2\\,\\text{J}", "speech": "功等于浮力乘上浮的距离,6 牛乘 0.2 米,等于 1.2 焦" },
+      { "id": "l3c", "kind": "conclusion", "text": "W = 1.2 J" }
+    ] },
+
+    { "id": "k_take", "col": "c4", "kind": "takeaways" }
+  ],
+  "figures": [
+    { "id": "f_scene", "kind": "scene", "prompt": "一个透明水槽,里面有一艘小潜艇模型沉在水底,旁边桌面上放着同一艘潜艇模型,水面画波浪线", "caption": "桌面上 → 水底", "status": "pending" }
+  ],
+  "animations": [
+    { "id": "a_buoy", "kind": "template", "purpose": "演示模型入水沉底、排水后竖直上浮 0.2 m,并显示力箭头与判据力条", "template": "buoyancy", "params": { "V": 6, "m0": 0.48, "mw": 0.6, "S": 8, "h": 0.2 }, "status": "ready" }
+  ],
+  "steps": [
+    { "id": "s0", "title": "审题", "col": "c0", "flow": [
+      { "do": "focus", "target": "c0" },
+      { "say": "这道题围着一个潜艇模型问三件事:放在桌上的压强、沉在水底的浮力、上浮时浮力做的功。先把题目里的数据一个个找出来。", "ref": "k_problem" },
+      { "do": "reveal", "target": "mark:6×10⁻⁴ m³" },
+      { "say": "第一个数,模型的体积,6 乘 10 的负 4 次方立方米。", "ref": "mark:6×10⁻⁴ m³", "emph": "mark" },
+      { "do": "reveal", "target": "mark:0.48 kg" },
+      { "say": "第二个,注水前的质量,0.48 千克。注意是注水前。", "ref": "mark:0.48 kg", "emph": "mark" },
+      { "do": "reveal", "target": "mark:8×10⁻³ m²" },
+      { "say": "第三个,和桌面的接触面积,8 乘 10 的负 3 次方平方米,单位已经是平方米,不用换。", "ref": "mark:8×10⁻³ m²", "emph": "mark" },
+      { "do": "reveal", "target": "analysis:given" },
+      { "do": "reveal", "target": "mark:沉入水底" },
+      { "say": "再看两个藏在字里的条件。沉入水底,说明模型整个泡在水里,排开的水等于它自己的体积。", "ref": "mark:沉入水底", "emph": "circle" },
+      { "do": "reveal", "target": "analysis:hidden:0" },
+      { "do": "reveal", "target": "mark:顶部始终未露出水面" },
+      { "say": "顶部始终没露出水面,意思是上浮过程里排开体积不变,浮力就是个定值。", "ref": "mark:顶部始终未露出水面", "emph": "circle" },
+      { "do": "reveal", "target": "analysis:hidden:1" },
+      { "do": "reveal", "target": "analysis:find" },
+      { "say": "要求的三个量:压强、浮力、功。", "ref": "analysis:find" },
+      { "do": "reveal", "target": "analysis:ideas" },
+      { "say": "思路也就出来了:压强用 p 等于 F 比 S,浮力用阿基米德原理,功用 W 等于 F 乘 h,三问一条线。", "ref": "analysis:ideas" }
+    ] },
+    { "id": "s1", "title": "压强", "col": "c1", "flow": [
+      { "do": "focus", "target": "c1" },
+      { "say": "先看第(1)问。注水前模型放在水平桌面上,对桌面的压力就等于它的重力。", "ref": "mark:放在水平桌面上" },
+      { "do": "reveal", "target": "k1_fig" },
+      { "do": "reveal", "target": "l1a" },
+      { "do": "reveal", "target": "l1b" },
+      { "say": "压力 4.8 牛,受力面积是题目给的 8 乘 10 的负 3 次方平方米,套压强公式。", "ref": ["l1b", "mark:8×10⁻³ m²"] },
+      { "do": "reveal", "target": "l1c" },
+      { "do": "reveal", "target": "l1d" },
+      { "say": "600 帕,第一问完成。", "ref": "l1d", "emph": "circle" }
+    ] },
+    { "id": "s2", "title": "浮力", "col": "c2", "flow": [
+      { "do": "focus", "target": "c2" },
+      { "say": "第(2)问。题目说吸水后沉入水底,这四个字是关键:沉到底说明它完全泡在水里,排开的水的体积就等于模型自身的体积。" },
+      { "do": "reveal", "target": "k2_anim" },
+      { "do": "anim", "target": "a_buoy", "action": { "type": "show", "target": "tank" } },
+      { "do": "anim", "target": "a_buoy", "action": { "type": "show", "target": "model" } },
+      { "do": "anim", "target": "a_buoy", "action": { "type": "run", "phase": "towater" } },
+      { "do": "reveal", "target": "l2a" },
+      { "do": "anim", "target": "a_buoy", "action": { "type": "show", "target": "forces" } },
+      { "say": "浮力用阿基米德原理算。" },
+      { "do": "reveal", "target": "l2b" },
+      { "do": "reveal", "target": "l2c" },
+      { "fx": "circle", "target": "l2c" },
+      { "do": "anim", "target": "a_buoy", "action": { "type": "show", "target": "bars" } },
+      { "say": "顺便看一眼判据:此时总重大于浮力,所以它沉在底上。" },
+      { "do": "reveal", "target": "k2_table" }
+    ] },
+    { "id": "s3", "title": "做功", "col": "c3", "flow": [
+      { "do": "focus", "target": "c3" },
+      { "say": "第(3)问。排水以后模型变轻,浮力大于重力,开始上浮。注意括号里那句:顶部始终没露出水面,所以排开的体积不变,浮力还是 6 牛。" },
+      { "do": "anim", "target": "a_buoy", "action": { "type": "move", "param": "mw", "to": 0.05, "durationMs": 1200 } },
+      { "do": "anim", "target": "a_buoy", "action": { "type": "run", "phase": "rise" } },
+      { "do": "reveal", "target": "l3a" },
+      { "say": "功等于力乘距离。" },
+      { "do": "reveal", "target": "l3b" },
+      { "do": "reveal", "target": "l3c" },
+      { "fx": "circle", "target": "l3c" }
+    ] }
+  ],
+  "takeaways": {
+    "knowledge": ["固体压强 p=F/S,水平面上【压力等于重力】", "浸没时【V排等于V】,F浮=ρ液gV排", "浮沉看【G与F浮】谁大"],
+    "pitfalls": ["面积单位【10⁻³ m²】别抄成 cm²", "上浮但【未露出水面】时浮力不变,别按变力做功算"],
+    "methods": ["三问共用一组数据,先把【已知量列全】再逐问套公式"],
+    "variants": ["若改为「上浮到漂浮」,露出水面后【V排变小】,问漂浮时的浮力"]
+  },
+  "explore": { "animationId": "a_buoy", "unlock": ["mw", "h"], "tasks": ["把注水量拖到 0.1 kg 以下,看模型什么时候开始上浮", "改上浮高度 h,看读数面板里的做功怎么变"] }
+}

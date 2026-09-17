@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "templates": [
+    {
+      "id": "quadratic-line",
+      "name": "二次函数与直线相交",
+      "subject": "数学",
+      "fits": ["抛物线与直线交点个数", "判别式与图象的关系", "二次函数图象性质(开口、对称轴、顶点)", "含参直线与抛物线的位置关系"],
+      "params": { "a": "抛物线二次项系数,范围 -3..3,不为 0", "b": "一次项系数,-6..6", "c": "常数项,-6..6", "k": "直线斜率,-4..4", "m": "直线截距,-8..8" },
+      "targets": { "axes": "坐标系", "parabola": "抛物线", "vertex": "顶点标注", "line": "直线", "points": "交点及坐标", "readout": "读数面板(联立方程、判别式、交点个数)" },
+      "actions": {
+        "show": "{type:'show', target}",
+        "hide": "{type:'hide', target}",
+        "draw": "{type:'draw', target:'parabola'|'line', durationMs} 逐渐画出",
+        "move": "{type:'move', param, from?, to, durationMs} 参数动画(如让直线从上方平移进来 m: 8→1)",
+        "highlight": "{type:'highlight', target}",
+        "readout": "{type:'readout', on?:true} 显示读数面板"
+      },
+      "handles": { "a": "拖顶点右侧的点改开口", "b": "拖顶点横向改对称轴", "c": "拖 y 轴上的点改 c", "k": "拖直线上的点改斜率", "m": "拖直线截距" },
+      "anchors": { "vertex": "顶点", "points": "第一个交点", "line": "直线上", "parabola": "抛物线上", "readout": "读数面板", "yintercept": "抛物线与 y 轴交点" }
+    },
+    {
+      "id": "linear-shift",
+      "name": "一次函数图象与平移",
+      "subject": "数学",
+      "fits": ["一次函数图象的上下平移", "待定系数法求解析式(两点确定直线)", "k、b 对图象的影响"],
+      "params": { "k": "斜率,-4..4", "b": "截距,-8..8", "d": "平移量,正上负下,-8..8", "points": "可选:题目给的点 [{x,y,label}],会画出并自动判断是否落在平移后的直线上" },
+      "targets": { "axes": "坐标系", "line": "原直线(蓝)", "shifted": "平移后直线(红)", "arrows": "平移箭头", "points": "给定点", "readout": "读数面板(平移规律、k 不变、给定点是否在线上)" },
+      "actions": {
+        "show": "{type:'show', target}",
+        "hide": "{type:'hide', target}",
+        "draw": "{type:'draw', target:'line'|'shifted', durationMs}",
+        "move": "{type:'move', param:'d', from:0, to:目标, durationMs} 演示平移过程(也可 move k/b)",
+        "highlight": "{type:'highlight', target}",
+        "readout": "{type:'readout'}"
+      },
+      "handles": { "k": "拖原直线上的点改斜率", "b": "拖截距", "d": "拖红线改平移量" },
+      "anchors": { "line": "原直线上", "shifted": "平移后直线上", "points": "第一个给定点", "bIntercept": "原直线截距", "arrows": "平移箭头", "readout": "读数面板" }
+    },
+    {
+      "id": "cart-collision",
+      "name": "一维小车碰撞",
+      "subject": "物理",
+      "fits": ["动量守恒", "弹性/非弹性碰撞", "碰后速度计算", "质量与速度对碰撞结果的影响"],
+      "params": { "m1": "A 车质量 kg,0.5..5", "m2": "B 车质量 kg,0.5..5", "v1": "A 初速度 m/s,-4..4(右正)", "v2": "B 初速度 m/s,-4..4,常为 0", "x1": "A 起点 m,0.5..5(B 固定在 7 m)", "e": "恢复系数 0..1,1 完全弹性,0 完全非弹性" },
+      "targets": { "track": "轨道", "carts": "两辆小车", "arrows": "速度箭头", "bars": "动量条(A、B、总动量)", "readout": "读数面板(碰前后速度、总动量、动能)" },
+      "actions": {
+        "show": "{type:'show', target}",
+        "hide": "{type:'hide', target}",
+        "run": "{type:'run', phase:'approach'|'collide'|'rebound'|'all'} 滑行到接触 / 碰撞定格 / 碰后运动 / 全过程(每步开始时自动回到初始位置,所以 collide 前要先 approach)",
+        "reset": "{type:'reset'}",
+        "readout": "{type:'readout'}"
+      },
+      "handles": { "x1": "拖 A 车改起点", "v1": "拖 A 车箭头尖改初速度", "m1": "滑杆", "m2": "滑杆", "e": "滑杆", "v2": "滑杆" },
+      "anchors": { "cartA": "小车 A", "cartB": "小车 B", "bars": "动量条", "readout": "读数面板", "track": "轨道中段" }
+    },
+    {
+      "id": "buoyancy",
+      "name": "浮力与浮沉",
+      "subject": "物理",
+      "fits": ["浮力 F浮=ρgV 与浮沉判据(比较 G 与 F浮)", "固体压强 p=G/S(放在桌面)", "注水/排水改变重力的浮沉控制(潜艇模型)", "上浮/下沉过程中浮力做功 W=F浮·h"],
+      "params": { "V": "模型体积,单位 ×10⁻⁴ m³,范围 2..10(题目 6×10⁻⁴ m³ 就写 6)", "m0": "模型质量 kg,0.1..1.5", "mw": "水舱注水质量 kg,0..1.2(注水前的步骤用步 params 覆盖为 0)", "S": "与桌面接触面积,单位 ×10⁻³ m²,范围 2..20", "h": "上浮高度 m,0..0.4" },
+      "targets": { "desk": "桌面场景(压强)", "tank": "水槽与水面", "model": "潜艇模型(水舱水位可见)", "forces": "力箭头(G、F浮、支持力 N)", "bars": "浮沉判据力条(F浮 vs G总)", "readout": "读数面板(压强/浮力/总重/状态/做功)" },
+      "actions": {
+        "show": "{type:'show', target}",
+        "hide": "{type:'hide', target}",
+        "move": "{type:'move', param, from?, to, durationMs} 参数动画(排水演示:move mw 从 0.6 到 0.1)",
+        "run": "{type:'run', phase:'towater'|'rise'|'settle'} 入水并按判据落位 / 竖直上浮 h(须先排水使 G总<F浮)/ 按判据落位",
+        "reset": "{type:'reset'}",
+        "readout": "{type:'readout'}"
+      },
+      "handles": { "mw": "滑杆(注水/排水)", "m0": "滑杆", "V": "滑杆", "S": "滑杆", "h": "水中竖直拖模型改上浮高度" },
+      "anchors": { "model": "模型", "forces": "力箭头", "bars": "判据力条", "readout": "读数面板", "desk": "桌面", "tank": "水槽", "waterline": "水面" }
+    },
+    {
+      "id": "circle-angle",
+      "name": "圆与圆周角",
+      "subject": "数学",
+      "fits": ["圆周角与圆心角(同弧 2 倍关系)", "内接三角形 + 半径构造的求角(等腰、外角)", "∠CDB=∠OBC 一类条件探索", "BE=BA 时的垂直/切线判定"],
+      "params": { "thetaA": "A 在圆上的位置(屏幕角度,顺时针,度)95..175,左下", "thetaB": "B 位置 5..85,右下", "thetaC": "C 位置 270..360,右上", "tE": "E 在 AC 延长线的比例 1.15..2.2(>1 表示 C 外侧)" },
+      "targets": { "circle": "圆与圆心 O", "triangle": "△ABC(带顶点字母)", "radiusOA": "半径 OA(虚线)", "radiusOB": "半径 OB", "pointD": "交点 D(OB∩AC,不相交时自动提示)", "segBE": "E 点与线段 BE(带 AC 延长虚线)", "arcAB": "弧 AB 高亮(不含 C)", "readout": "读数面板(各角实时值+关系检验)", "angACB": "角标注 ∠ACB", "angAOB": "∠AOB", "angOAC": "∠OAC", "angOAB": "∠OAB", "angOBA": "∠OBA", "angADB": "∠ADB", "angCDB": "∠CDB", "angOBC": "∠OBC", "angCAB": "∠CAB", "angOBE": "∠OBE" },
+      "actions": {
+        "show": "{type:'show', target}(角标注也用 show,如 {type:'show', target:'angACB'})",
+        "hide": "{type:'hide', target}",
+        "draw": "{type:'draw', target:'circle'|'triangle'|'radiusOA'|'radiusOB'|'segBE', durationMs} 逐渐画出",
+        "move": "{type:'move', param:'thetaC', from, to, durationMs} 点沿圆滑动(演示圆周角不变/找条件位置)",
+        "highlight": "{type:'highlight', target:'arcAB'|'triangle'|'radiusOB'|'segBE'|'circle'}",
+        "readout": "{type:'readout'}"
+      },
+      "handles": { "thetaA": "拖 A 沿圆", "thetaB": "拖 B 沿圆", "thetaC": "拖 C 沿圆", "tE": "拖 E 沿 AC 延长线" },
+      "anchors": { "A": "点 A", "B": "点 B", "C": "点 C", "O": "圆心", "D": "交点 D", "E": "点 E", "arcAB": "弧 AB 中点", "readout": "读数面板" }
+    },
+    {
+      "id": "parallelogram-angle",
+      "name": "平行四边形与对角线",
+      "subject": "数学",
+      "fits": ["平行四边形+对角线已知两角求边(作高)", "解三角形(30/45/60 特殊角分割)", "角平分线+垂线构造的证明可视化(结论随条件实时验证)", "线段数量关系探索(比值)"],
+      "params": { "beta": "∠DBC(度)30..60,题目 45", "gamma": "∠DCB(度)40..75,题目 60", "AB": "AB=CD 长度 4..9" },
+      "targets": { "para": "▱ABCD(带顶点字母)", "diagBD": "对角线 BD", "angB": "∠DBC 角标注(实时值)", "angC": "∠DCB 角标注", "heightDM": "作高 DM(垂足 M 直角记号)", "cevaCE": "角平分线 CE(双弧记号,E 在 BD 上)", "perpDF": "垂线 DF(垂足 G,交 BC 于 F)", "segAF": "线段 AF(交 BD 于 H,90° 时带直角记号)", "angAHB": "∠AHB 角标注(结论角)", "readout": "读数面板(DM/CM/BM/BC 计算链、DE/BF 比值、∠AHB)" },
+      "actions": {
+        "show": "{type:'show', target}",
+        "hide": "{type:'hide', target}",
+        "draw": "{type:'draw', target:'para'|'diagBD'|'heightDM'|'cevaCE'|'perpDF'|'segAF', durationMs} 逐渐画出",
+        "move": "{type:'move', param:'beta'|'gamma'|'AB', from, to, durationMs} 参数动画(演示条件变化时结论如何失效)",
+        "highlight": "{type:'highlight', target}",
+        "readout": "{type:'readout'}"
+      },
+      "handles": { "beta": "拖 B 处角内的点改 ∠DBC", "gamma": "拖 C 处角内的点改 ∠DCB", "AB": "滑杆改边长" },
+      "anchors": { "A": "点 A", "B": "点 B", "C": "点 C", "D": "点 D", "M": "垂足 M", "E": "点 E", "F": "点 F", "G": "垂足 G", "H": "交点 H", "readout": "读数面板" }
+    },
+    {
+      "id": "board-steps",
+      "name": "通用板书",
+      "subject": "通用",
+      "fits": ["上面六类交互模板之外的任何题:解方程(组)/不等式、代数式化简与因式分解、函数性质证明、与六个场景无关的几何证明、化学/生物/地理计算、文字应用题——只要能写成一行行板书就用它", "题目虽沾边但六模板的参数摆不出题设时,也用它(不要硬套)"],
+      "params": {},
+      "targets": {},
+      "actions": {
+        "show": "{type:'show', target:<lineId>, durationMs?} 把 board.lines 里 id 为 lineId 的那一行写到板书上(从左到右揭开);每行只 show 一次,按讲解顺序",
+        "hide": "{type:'hide', target:<lineId>} 擦掉一行(少用)",
+        "highlight": "{type:'highlight', target:<lineId>} 荧光笔在已写出的一行上闪一下(强调结论)"
+      },
+      "handles": {},
+      "anchors": { "<lineId>": "任一板书行(label/focus/pulse 的 target 直接填该行 id)", "board": "整块板书区", "steps": "左侧步骤栏" },
+      "board": "剧本必须给 board.lines:[{id:'L1', text:'…', kind:'text'|'formula'|'conclusion'}],6–16 行,按讲解顺序;text=说明句,formula=算式(等宽居中,用 Unicode 明文:√ ² ³ ∠ ⊥ ∥ ≈ ° × ÷ ≤ ≥ ≠ ⇒),conclusion=结论(带框);讲解词里说到的每个数都要在某一行里出现;explore.unlock 留空,tasks 写「重听第 n 步 / 重看总结」类"
+    }
+  ]
+}

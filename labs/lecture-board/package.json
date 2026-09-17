@@ -1,0 +1,17 @@
+{
+  "name": "@qiming-labs/lecture-board",
+  "private": true,
+  "version": "0.1.0",
+  "description": "讲题白板:上传题目截图+答案 → Qwen 规划 → Excalidraw 白板讲题(Seedream 配图 / 模板与 HTML 动画 / CosyVoice 语音)。实验区,不进主线门禁、不部署。",
+  "scripts": {
+    "install:all": "npm --prefix server install && npm --prefix web install",
+    "dev:server": "npm --prefix server run dev",
+    "dev:web": "npm --prefix web run dev",
+    "dev": "concurrently -n server,web -c blue,green \"npm run dev:server\" \"npm run dev:web\"",
+    "test": "npm --prefix server test && npm --prefix web test",
+    "typecheck": "npm --prefix server run typecheck && npm --prefix web run typecheck"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}

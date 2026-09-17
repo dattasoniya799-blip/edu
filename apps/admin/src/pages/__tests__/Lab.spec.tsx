@@ -13,7 +13,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it } from 'vitest';
 import { NAV_ITEMS } from '../Shell';
-import { LAB_EXHIBITS, exhibitHref } from '../lab-exhibits';
+import { LAB_EXHIBITS, LAB_SERVICES, exhibitHref } from '../lab-exhibits';
 import { Lab } from '../Lab';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -72,6 +72,32 @@ describe('实验室页渲染', () => {
       expect(ex).toBeDefined();
       expect(a.getAttribute('href')).toBe(exhibitHref(ex!.file));
       expect(a.textContent).toContain('打开');
+    }
+  });
+});
+
+describe('实验服务卡片 [2026-09-17 task/lab-kg-lecture]', () => {
+  it('登记了知识图谱与讲题白板两项,地址有缺省值', () => {
+    const ids = LAB_SERVICES.map((s) => s.id);
+    expect(ids).toEqual(['knowledge-graph', 'lecture-board']);
+    for (const sv of LAB_SERVICES) {
+      expect(sv.url).toMatch(/^https?:\/\//);
+      expect(sv.howToRun).toContain('labs/');
+    }
+  });
+  it('页上每个服务一张卡:标题、起法、地址、新开页打开链', async () => {
+    const host = await mountPage();
+    const text = host.textContent ?? '';
+    const links = [...host.querySelectorAll<HTMLAnchorElement>('a[data-service]')];
+    expect(links).toHaveLength(LAB_SERVICES.length);
+    for (const sv of LAB_SERVICES) {
+      expect(text).toContain(sv.title);
+      expect(text).toContain(sv.howToRun);
+      const a = links.find((l) => l.getAttribute('data-service') === sv.id);
+      expect(a).toBeDefined();
+      expect(a!.getAttribute('href')).toBe(sv.url);
+      expect(a!.target).toBe('_blank');
+      expect(a!.rel).toContain('noreferrer');
     }
   });
 });
