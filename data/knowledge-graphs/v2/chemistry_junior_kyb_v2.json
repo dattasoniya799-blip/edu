@@ -1,0 +1,7987 @@
+{
+ "metadata": {
+  "code": "chemistry_junior_kyb_v2",
+  "subject": "化学",
+  "grade_range": [
+   "初三"
+  ],
+  "curriculum": "科粤版初中化学（2024 版目录）",
+  "publisher": "科学出版社、广东教育出版社",
+  "notes": "v2 重做：教材由人教版改为科粤版（用户 2026-09-16 指定）；三级结构 单元→节→知识点；知识点粒度对齐数学；每点带认知层级/类型/难度；前置关系为知识点级。人教版 v1（chemistry_junior_pep_v1）已弃用。",
+  "graph_type": "curriculum_knowledge",
+  "version": 2,
+  "status": "draft",
+  "structure": "level 1=章/单元, level 2=节/课题, level 3=知识点；parent_code 指向上一级；edges.relation=parent_child 为结构边，prerequisite 为前置边；edges.level=point|section；edges.edge_kind=logic|sequence（sequence 为 v1 的节内顺序链，可按需过滤）",
+  "fields": {
+   "kp_type": "概念|规律|技能|实验|应用",
+   "cognitive_level": "了解|理解|掌握|运用（课标四级；数学 v1 迁移项暂空）",
+   "difficulty": "1–5",
+   "strength": "hard|soft"
+  },
+  "built_at": "2026-09-16T12:19:27"
+ },
+ "sources": [
+  {
+   "id": "kyb-chem-9a-2024",
+   "textbook": "化学九年级上册（科粤版 2024 秋版）",
+   "url": "http://www.dzkbw.com/books/kyb/huaxue/xc9s_2024/"
+  },
+  {
+   "id": "kyb-chem-9b-2025",
+   "textbook": "化学九年级下册（科粤版 2025 春版）",
+   "url": "http://www.dzkbw.com/books/kyb/huaxue/xc9x_2025/"
+  }
+ ],
+ "nodes": [
+  {
+   "code": "CHE-9A-01",
+   "name": "第一单元 大家都来学化学",
+   "subject": "化学",
+   "level": 1,
+   "parent_code": "",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第一单元 大家都来学化学",
+   "section": null,
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-01-01",
+   "name": "1.1 身边的化学",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9A-01",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第一单元 大家都来学化学",
+   "section": "1.1",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-01-01-01",
+   "name": "化学研究的对象与作用",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-01-01",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第一单元 大家都来学化学",
+   "section": "1.1",
+   "kp_type": "概念",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "化学看物质由什么组成、性质如何、怎样变化，并连到材料、能源、健康与环境。先框定研究范围，后面氧气、金属、酸碱才知道在学什么。",
+   "content": {
+    "typical_tasks": [
+     "能说出化学主要从组成、性质、变化哪些方面研究物质",
+     "能判断材料或环境问题是否属于化学研究范围"
+    ],
+    "common_mistakes": [
+     "把化学窄成只做实验、背方程式，漏掉组成和性质"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-01-01-02",
+   "name": "化学发展简史与绿色化学",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-01-01",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第一单元 大家都来学化学",
+   "section": "1.1",
+   "kp_type": "概念",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "古代已有冶炼与火药，近代才有原子分子论，当下讲究源头少排污。知道这条脉络，才不会把化学只看成制造、不管环境。",
+   "content": {
+    "typical_tasks": [
+     "能指出绿色化学强调从源头减少废物和污染",
+     "能判断冶炼、火药大致属于化学发展的哪一阶段"
+    ],
+    "common_mistakes": [
+     "把绿色化学理解成停产关厂，而不是减少污染产生"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-01-02",
+   "name": "1.2 化学实验室之旅",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9A-01",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第一单元 大家都来学化学",
+   "section": "1.2",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-01-02-01",
+   "name": "常用仪器的名称与用途",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-01-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第一单元 大家都来学化学",
+   "section": "1.2",
+   "kp_type": "概念",
+   "cognitive_level": "理解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "试管、烧杯、量筒、酒精灯、集气瓶、漏斗各管一类操作，不能互换。仪器认准，取药、加热、集气才不会拿错。",
+   "content": {
+    "typical_tasks": [
+     "能辨认试管、烧杯、量筒、酒精灯并说出主要用途",
+     "能判断量筒能否用来加热或充当反应容器"
+    ],
+    "common_mistakes": [
+     "把量筒当反应容器或给液体加热"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-01-02-02",
+   "name": "药品的取用",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-01-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第一单元 大家都来学化学",
+   "section": "1.2",
+   "kp_type": "技能",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "粉末用药匙或纸槽，块状用镊子；液体沿壁倒入，滴管悬空滴加。取用规矩，后续实验才安全、用量才准。",
+   "content": {
+    "typical_tasks": [
+     "能说出粉末、块状固体、液体各该怎样取用",
+     "能指出把滴管伸进试管滴加属于错误操作"
+    ],
+    "common_mistakes": [
+     "滴管伸进试管内滴加，污染试剂"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-01-02-03",
+   "name": "物质的加热",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-01-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第一单元 大家都来学化学",
+   "section": "1.2",
+   "kp_type": "技能",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "用酒精灯外焰加热，试管内液体不超过容积三分之一，管口不对人。加热规范，制氧气等必做实验才敢动手。",
+   "content": {
+    "typical_tasks": [
+     "能指出给液体加热时试管应怎样倾斜、管口朝哪",
+     "能说明加热应使用酒精灯的哪一层火焰"
+    ],
+    "common_mistakes": [
+     "用内焰加热，或液体超过试管容积三分之一"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-01-02-04",
+   "name": "仪器的连接与洗涤",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-01-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第一单元 大家都来学化学",
+   "section": "1.2",
+   "kp_type": "技能",
+   "cognitive_level": "掌握",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "组装仪器多从下到上、从左到右；洗净后内壁水膜均匀、不挂水珠。连对、洗净，实验才不被杂质带偏。",
+   "content": {
+    "typical_tasks": [
+     "能说出连接仪器的一般顺序",
+     "能判断内壁仍有水珠时仪器是否已洗净"
+    ],
+    "common_mistakes": [
+     "内壁挂水珠还当洗净，或先加药品再组装"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-01-02-05",
+   "name": "实验安全与事故处理",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-01-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第一单元 大家都来学化学",
+   "section": "1.2",
+   "kp_type": "应用",
+   "cognitive_level": "理解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "酒精洒出着火用湿布盖灭；酸碱沾皮肤先大量水冲再报告。会应急处理，后面所有实验才安全可做。",
+   "content": {
+    "typical_tasks": [
+     "能指出酒精灯着火时正确的灭火做法",
+     "能说明酸液沾到皮肤后应先做什么"
+    ],
+    "common_mistakes": [
+     "用嘴吹灭酒精灯，或酸液沾皮肤后先擦再冲"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-01-03",
+   "name": "1.3 物质的变化",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9A-01",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第一单元 大家都来学化学",
+   "section": "1.3",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-01-03-01",
+   "name": "物理变化与化学变化",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-01-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第一单元 大家都来学化学",
+   "section": "1.3",
+   "kp_type": "概念",
+   "cognitive_level": "掌握",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "有没有生成新物质，是区分物理变化和化学变化的唯一标准。后面燃烧、生锈、溶解都靠这一条来分类。",
+   "content": {
+    "typical_tasks": [
+     "能判断冰融化、铁生锈各属于哪一类变化",
+     "能指出仅凭发光放热判定化学变化是错的"
+    ],
+    "common_mistakes": [
+     "一看到发光、放热就断定发生了化学变化"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-01-03-02",
+   "name": "化学变化中的现象与能量变化",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-01-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第一单元 大家都来学化学",
+   "section": "1.3",
+   "kp_type": "概念",
+   "cognitive_level": "理解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "化学变化常有变色、放热、发光、产气或沉淀，并伴随能量变化。会把现象和能量对上，才能从实验推出反应。",
+   "content": {
+    "typical_tasks": [
+     "能指出变色、产气、沉淀等哪些是常见反应现象",
+     "能说明燃烧放热属于化学变化里的能量变化"
+    ],
+    "common_mistakes": [
+     "把现象本身当成新物质，或认定化学变化必定发光"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-01-03-03",
+   "name": "对蜡烛及其燃烧的探究",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-01-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第一单元 大家都来学化学",
+   "section": "1.3",
+   "kp_type": "实验",
+   "cognitive_level": "理解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "点燃前看性状，燃烧时看火焰和产物，熄灭后看白烟能否再燃。分阶段观察并推断，是探究入门实验。",
+   "content": {
+    "typical_tasks": [
+     "能指出蜡烛火焰哪一层温度最高",
+     "能说明熄灭后白烟是什么并判断能否被点燃"
+    ],
+    "common_mistakes": [
+     "只看火焰热闹，说不出燃烧生成了水和二氧化碳"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-01-04",
+   "name": "1.4 物质性质的探究",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9A-01",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第一单元 大家都来学化学",
+   "section": "1.4",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-01-04-01",
+   "name": "物理性质与化学性质",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-01-04",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第一单元 大家都来学化学",
+   "section": "1.4",
+   "kp_type": "概念",
+   "cognitive_level": "掌握",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "颜色、气味、熔沸点、密度不必发生化学变化就能表现；可燃性、氧化性要在变化中表现。分清两类，描述物质才不串。",
+   "content": {
+    "typical_tasks": [
+     "能判断熔沸点、可燃性各属于哪类性质",
+     "能写出铜的两项物理性质和一项化学性质"
+    ],
+    "common_mistakes": [
+     "把可燃性、还原性误写成物理性质"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-01-04-02",
+   "name": "变化与性质的区别",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-01-04",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第一单元 大家都来学化学",
+   "section": "1.4",
+   "kp_type": "应用",
+   "cognitive_level": "运用",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "性质是物质本来具有的属性，常用能、易、可以来写；变化是已经发生的过程。分清会燃烧和正在燃烧，读题才不混。",
+   "content": {
+    "typical_tasks": [
+     "能判断铁能生锈说的是性质还是变化",
+     "能指出把酒精燃烧写成酒精性质的错误"
+    ],
+    "common_mistakes": [
+     "把铁钉生锈了这种已发生过程当成铁的性质"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-01-04-03",
+   "name": "科学探究的基本环节",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-01-04",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第一单元 大家都来学化学",
+   "section": "1.4",
+   "kp_type": "技能",
+   "cognitive_level": "理解",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "探究通常按提出问题、猜想、设计实验、收集证据、得出结论、反思推进。环节清楚，测定氧气含量、探究燃烧条件才不乱。",
+   "content": {
+    "typical_tasks": [
+     "能按顺序排出科学探究的基本环节",
+     "能指出只凭猜想没有实验证据就下结论的错误"
+    ],
+    "common_mistakes": [
+     "把猜想直接当成结论，跳过实验验证"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-01-04-04",
+   "name": "探究金属铜的性质",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-01-04",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第一单元 大家都来学化学",
+   "section": "1.4",
+   "kp_type": "实验",
+   "cognitive_level": "理解",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "看颜色光泽是物理性质，加热变黑、能否与酸反应是化学性质。会自己观察和实验，金属性质才落到真实样品上。",
+   "content": {
+    "typical_tasks": [
+     "能指出加热铜片变黑说明铜具有什么化学性质",
+     "能说明观察外观和接触稀酸分别在探究哪类性质"
+    ],
+    "common_mistakes": [
+     "把铜加热变黑只当物理变化，说不出生成了氧化铜"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02",
+   "name": "第二单元 空气、物质的构成与组成",
+   "subject": "化学",
+   "level": 1,
+   "parent_code": "",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": null,
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-01",
+   "name": "2.1 空气的成分",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9A-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.1",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-01-01",
+   "name": "空气的成分及体积分数",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-02-01",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.1",
+   "kp_type": "概念",
+   "cognitive_level": "理解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "空气按体积大约氮气占百分之七十八、氧气占百分之二十一，其余是稀有气体和二氧化碳等。数据记准，测定氧含量时水面约升五分之一才说得通。",
+   "content": {
+    "typical_tasks": [
+     "能写出氮气、氧气在空气中的体积分数",
+     "能指出二氧化碳在空气中的体积分数远小于氧气"
+    ],
+    "common_mistakes": [
+     "把体积分数当成质量分数，或把氮氧比例记反"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-01-02",
+   "name": "测定空气中氧气含量实验",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-02-01",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.1",
+   "kp_type": "实验",
+   "cognitive_level": "掌握",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "红磷在密闭容器里燃烧耗氧，冷却后打开止水夹，水面约上升五分之一。会做并会析误差，才真正理解空气中氧约占两成。",
+   "content": {
+    "typical_tasks": [
+     "能指出红磷不足或装置漏气会使测定结果偏小",
+     "能说明为什么要冷却后再打开止水夹"
+    ],
+    "common_mistakes": [
+     "没冷却就开止水夹，或用木炭代替红磷却不知生成气体使结果不准"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-01-03",
+   "name": "纯净物与混合物",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-02-01",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.1",
+   "kp_type": "概念",
+   "cognitive_level": "掌握",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "只含一种物质的是纯净物，含多种物质的是混合物；空气和溶液都属于混合物。会分类，单质化合物、溶液、合金才分得开。",
+   "content": {
+    "typical_tasks": [
+     "能判断空气、氧气、蒸馏水各属于纯净物还是混合物",
+     "能指出混合物中各成分是否仍保持原有性质"
+    ],
+    "common_mistakes": [
+     "把蒸馏水当混合物，或把空气当一种纯净物"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-01-04",
+   "name": "空气的用途与保护",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-02-01",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.1",
+   "kp_type": "应用",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "氮气可作保护气，氧气供呼吸并助燃，稀有气体用于灯管；要防治颗粒物和二氧化硫等污染。用途和污染物对上，空气才说得具体。",
+   "content": {
+    "typical_tasks": [
+     "能说出氮气、稀有气体的一项主要用途",
+     "能指出二氧化硫、可吸入颗粒物属于空气污染物"
+    ],
+    "common_mistakes": [
+     "把氮气用途说成供给呼吸，或把二氧化碳当成主要空气污染物"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-02",
+   "name": "2.2 构成物质的微观粒子",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9A-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.2",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-02-01",
+   "name": "物质由微观粒子构成",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-02-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.2",
+   "kp_type": "概念",
+   "cognitive_level": "理解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "物质由分子、原子或离子这些看不见的粒子构成。先有粒子观念，后面才能用分子观点解释变化。",
+   "content": {
+    "typical_tasks": [
+     "能说出构成物质的三类微观粒子",
+     "能判断水、铁、氯化钠主要由哪类粒子构成"
+    ],
+    "common_mistakes": [
+     "以为所有物质都由分子构成，把铁、氯化钠也说成分子构成"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-02-02",
+   "name": "分子的基本性质",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-02-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.2",
+   "kp_type": "规律",
+   "cognitive_level": "理解",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "分子质量和体积都很小，在不断运动，分子间有间隔；升温后运动加快、间隔变大。会用这三条解释扩散和热胀冷缩。",
+   "content": {
+    "typical_tasks": [
+     "能用分子运动说明湿衣服晾干的原因",
+     "能说明温度升高时分子间隔如何变化"
+    ],
+    "common_mistakes": [
+     "把热胀冷缩说成分子本身变大，而不是间隔变大"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-02-03",
+   "name": "分子与原子的区别与联系",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-02-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.2",
+   "kp_type": "概念",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "分子由原子构成；化学变化中分子可分成原子，原子不再分。分清二者，才懂变化实质是原子重新组合。",
+   "content": {
+    "typical_tasks": [
+     "能判断化学变化中分子、原子谁可分谁不可分",
+     "能说明水分子由氢原子和氧原子构成"
+    ],
+    "common_mistakes": [
+     "说原子在化学变化中还可以再分成质子和电子"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-02-04",
+   "name": "用分子观点解释变化",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-02-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.2",
+   "kp_type": "应用",
+   "cognitive_level": "运用",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "物理变化里分子本身不变，只改间隔或排列；化学变化里分子破裂、原子重组成新分子。微观讲清，物化变化和混合物才有根。",
+   "content": {
+    "typical_tasks": [
+     "能用分子观点说明水蒸发属于物理变化",
+     "能指出混合物中存在不同种分子"
+    ],
+    "common_mistakes": [
+     "把水结冰说成水分子变成了冰分子"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-02-05",
+   "name": "原子的构成",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-02-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.2",
+   "kp_type": "概念",
+   "cognitive_level": "理解",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "原子由原子核和核外电子构成，核内有质子和中子；核电荷数等于质子数，也等于核外电子数。三个相等记牢，离子和元素才算得对。",
+   "content": {
+    "typical_tasks": [
+     "能写出核电荷数、质子数、核外电子数的相等关系",
+     "能指出中子不带电、质子带正电"
+    ],
+    "common_mistakes": [
+     "把相对原子质量直接当成质子数，漏掉中子"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-02-06",
+   "name": "原子核外电子的排布",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-02-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.2",
+   "kp_type": "概念",
+   "cognitive_level": "理解",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "电子在核外分层运动，第一层最多两个、最外层不超过八个；会画原子结构示意图。图画对，离子形成和化合价才接得上。",
+   "content": {
+    "typical_tasks": [
+     "能画出氧原子、钠原子的结构示意图",
+     "能指出第一层、最外层电子数的上限"
+    ],
+    "common_mistakes": [
+     "最外层画成超过八个电子，或第一层画成八个"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-02-07",
+   "name": "最外层电子数与元素化学性质",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-02-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.2",
+   "kp_type": "规律",
+   "cognitive_level": "掌握",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "最外层八个电子（氦是两个）结构稳定；金属原子易失电子，非金属原子易得电子。抓住最外层，才能判断元素更偏金属还是非金属。",
+   "content": {
+    "typical_tasks": [
+     "能根据最外层电子数判断原子易失电子还是易得电子",
+     "能指出稀有气体化学性质稳定的原因"
+    ],
+    "common_mistakes": [
+     "认为所有原子最外层都要满八个电子，连氢、氦也按八来套"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-02-08",
+   "name": "离子的形成",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-02-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.2",
+   "kp_type": "概念",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "原子得失电子后带电就成为离子：失电子成阳离子，得电子成阴离子。会写钠离子、氯离子符号，化合价和酸碱通性才有着落。",
+   "content": {
+    "typical_tasks": [
+     "能写出钠离子、氯离子的符号",
+     "能判断某原子是失电子还是得电子后形成离子"
+    ],
+    "common_mistakes": [
+     "把离子符号的正负号写在数字前面，或数字不标在右上角"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-02-09",
+   "name": "相对原子质量",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-02-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.2",
+   "kp_type": "概念",
+   "cognitive_level": "理解",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "相对原子质量以碳十二原子质量的十二分之一为标准，数值约等于质子数加中子数。会查表、会估算，相对分子质量和元素质量分数才有数据。",
+   "content": {
+    "typical_tasks": [
+     "能说明相对原子质量的标准是什么",
+     "能根据质子数和中子数估算相对原子质量"
+    ],
+    "common_mistakes": [
+     "把相对原子质量当成原子的实际质量，还带上克作单位"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-03",
+   "name": "2.3 辨别物质的组成",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9A-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.3",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-03-01",
+   "name": "元素的概念",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-02-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.3",
+   "kp_type": "概念",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "元素按质子数把同一类原子归并起来，说的是种类不是个数。分清原子和元素，读化学式、说组成才不混。",
+   "content": {
+    "typical_tasks": [
+     "能判断质子数相同的原子是否属于同种元素",
+     "能指出水由氢、氧元素组成中元素指的是种类"
+    ],
+    "common_mistakes": [
+     "把元素当成一个个具体原子，说元素也有质量、也会运动"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-03-02",
+   "name": "元素的分布与分类",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-02-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.3",
+   "kp_type": "概念",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "地壳中含量前四是氧、硅、铝、铁；人体中较多的是氧、碳、氢。记住分布，才明白这些元素为何反复出现在材料和生命话题里。",
+   "content": {
+    "typical_tasks": [
+     "能按含量顺序列出地壳中含量最多的四种元素",
+     "能指出人体中含量较多的三种元素"
+    ],
+    "common_mistakes": [
+     "把地壳中含量最多的元素说成硅或铁，而不是氧"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-03-03",
+   "name": "元素符号及其意义",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-02-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.3",
+   "kp_type": "技能",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "元素符号第一个字母大写、第二个小写，既表示一种元素，也表示该元素的一个原子。书写和意义分清，化学式才写得对。",
+   "content": {
+    "typical_tasks": [
+     "能正确写出钙、氯、钠的元素符号",
+     "能说明C既表示碳元素也表示一个碳原子"
+    ],
+    "common_mistakes": [
+     "把氯写成CL、钙写成CA，第二个字母没有小写"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-03-04",
+   "name": "元素周期表简介",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-02-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.3",
+   "kp_type": "概念",
+   "cognitive_level": "理解",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "周期表按原子序数排列，横行是周期、纵行是族；格子里有原子序数、符号、名称和相对原子质量。会读格子，查元素就不用死记。",
+   "content": {
+    "typical_tasks": [
+     "能从单元格中读出某元素的原子序数和相对原子质量",
+     "能指出周期和族分别是横行还是纵行"
+    ],
+    "common_mistakes": [
+     "把原子序数当成相对原子质量，或把周期和族搞反"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-03-05",
+   "name": "单质、化合物与氧化物",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-02-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.3",
+   "kp_type": "概念",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "纯净物按元素种类分为单质和化合物；由两种元素组成且其中一种是氧的化合物叫氧化物。会分类，氧气、水、氧化铜、空气才分得清。",
+   "content": {
+    "typical_tasks": [
+     "能判断氧气、水、空气、氧化汞各属于哪一类",
+     "能指出氧化物必须含氧且只含两种元素"
+    ],
+    "common_mistakes": [
+     "把空气当成单质，或把硫酸当成氧化物"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-04",
+   "name": "2.4 跨学科实践活动：学习探究水的组成的科学史并制作分子模型",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9A-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.4",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-04-01",
+   "name": "电解水实验",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-02-04",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.4",
+   "kp_type": "实验",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "通电后正极出氧气、负极出氢气，体积比约为一比二，说明水由氢、氧两种元素组成。会做并解释体积比，水是化合物才站得住。",
+   "content": {
+    "typical_tasks": [
+     "能指出电解水时正极、负极分别产生哪种气体",
+     "能完成检验两种气体的操作并说明体积比约为一比二"
+    ],
+    "common_mistakes": [
+     "把正极氧气、负极氢气记反，或把体积比一比二说成质量比"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-02-04-02",
+   "name": "水的组成探究史与分子模型",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-02-04",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第二单元 空气、物质的构成与组成",
+   "section": "2.4",
+   "kp_type": "应用",
+   "cognitive_level": "理解",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "电解水等实验确认水由氢、氧组成；一个水分子由两个氢原子和一个氧原子构成。会用模型表示，微观构成才不再抽象。",
+   "content": {
+    "typical_tasks": [
+     "能用模型说明一个水分子的构成",
+     "能指出电解水证明水由氢、氧两种元素组成"
+    ],
+    "common_mistakes": [
+     "把水的化学式理解成两个氢分子和一个氧分子"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03",
+   "name": "第三单元 维持生命的物质——氧气、水",
+   "subject": "化学",
+   "level": 1,
+   "parent_code": "",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": null,
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03-01",
+   "name": "3.1 氧气的性质和用途",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9A-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": "3.1",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03-01-01",
+   "name": "氧气的物理性质",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-03-01",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": "3.1",
+   "kp_type": "概念",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "氧气通常无色无味，不易溶于水，密度略大于空气。这三点决定了可用排水法或向上排空气法收集。",
+   "content": {
+    "typical_tasks": [
+     "能说出氧气的颜色、溶解性和密度相对空气的大小",
+     "能判断氧气可用排水法收集的原因"
+    ],
+    "common_mistakes": [
+     "把氧气说成密度小于空气，因而误用向下排空气法"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03-01-02",
+   "name": "氧气的化学性质",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-03-01",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": "3.1",
+   "kp_type": "规律",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "氧气能支持硫、碳、铁等燃烧并生成氧化物，本身一般不可燃、不能当燃料。分清助燃和可燃，性质与用途才对得上。",
+   "content": {
+    "typical_tasks": [
+     "能写出硫、碳、铁在氧气中燃烧的文字表达式",
+     "能指出铁丝在氧气中燃烧的现象并完成该性质实验描述"
+    ],
+    "common_mistakes": [
+     "把氧气的助燃性当成可燃性，把氧气当作燃料"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03-01-03",
+   "name": "化合反应与氧化反应",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-03-01",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": "3.1",
+   "kp_type": "概念",
+   "cognitive_level": "理解",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "多种物质生成一种物质的反应叫化合反应；物质与氧发生的反应叫氧化反应，二者不是一回事。先分开这两类，分解和缓慢氧化才不混。",
+   "content": {
+    "typical_tasks": [
+     "能判断某反应是否属于化合反应",
+     "能指出化合反应和氧化反应的区别"
+    ],
+    "common_mistakes": [
+     "认为氧化反应一定是化合反应，或把缓慢氧化排除在氧化反应外"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03-01-04",
+   "name": "氧气的检验与验满",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-03-01",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": "3.1",
+   "kp_type": "技能",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "带火星木条复燃说明气体是氧气，并不表示氧气自己会燃烧；验满时木条放在瓶口。检验和验满分清，收集氧气才知道何时该停。",
+   "content": {
+    "typical_tasks": [
+     "能说明用带火星木条检验氧气的操作和现象",
+     "能指出验满时木条应放在瓶口还是伸入瓶内"
+    ],
+    "common_mistakes": [
+     "把木条复燃理解成氧气在燃烧，或验满时把木条伸进瓶里"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03-02",
+   "name": "3.2 氧气的制取",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9A-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": "3.2",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03-02-01",
+   "name": "实验室制取氧气的原理",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-03-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": "3.2",
+   "kp_type": "规律",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "实验室常用过氧化氢催化分解，或加热高锰酸钾、氯酸钾来制氧气，三个反应都属于分解。原理选对，装置和催化剂才选得准。",
+   "content": {
+    "typical_tasks": [
+     "能写出过氧化氢分解制氧的文字表达式",
+     "能判断高锰酸钾、氯酸钾、过氧化氢制氧是否都属分解反应"
+    ],
+    "common_mistakes": [
+     "把二氧化锰写成反应物，而不是催化剂"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03-02-02",
+   "name": "催化剂与催化作用",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-03-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": "3.2",
+   "kp_type": "概念",
+   "cognitive_level": "理解",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "催化剂能改变化学反应速率，反应前后自身质量和化学性质不变。抓住变速率、自身不变，二氧化锰在制氧里的角色才说得清。",
+   "content": {
+    "typical_tasks": [
+     "能说出催化剂的两个基本特点",
+     "能判断二氧化锰在过氧化氢分解中是否被消耗"
+    ],
+    "common_mistakes": [
+     "以为催化剂加快反应后自己也消耗掉了，或认为催化剂只能加快不能减慢"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03-02-03",
+   "name": "分解反应",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-03-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": "3.2",
+   "kp_type": "概念",
+   "cognitive_level": "理解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "一种物质生成两种或多种物质的反应叫分解反应，和化合反应正好相反。会认一种变多种，实验室制氧气的三条路径才能归到一类。",
+   "content": {
+    "typical_tasks": [
+     "能判断高锰酸钾受热是否属于分解反应",
+     "能指出实验室制氧气的三个反应都属于分解反应"
+    ],
+    "common_mistakes": [
+     "把有多种生成物的反应都当成分解反应，忽略反应物必须是一种"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03-02-04",
+   "name": "实验室制取氧气的装置与步骤",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-03-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": "3.2",
+   "kp_type": "实验",
+   "cognitive_level": "掌握",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "固体加热制氧时试管口略向下，可用排水法或向上排空气法收集。操作按查气密、装药、加热、收集、先撤管再熄灯进行，才不会漏气或倒吸。",
+   "content": {
+    "typical_tasks": [
+     "能指出加热高锰酸钾时试管口应略向下倾斜",
+     "能按顺序完成排水法收集氧气的主要操作"
+    ],
+    "common_mistakes": [
+     "先熄灭酒精灯再把导管移出水面，造成水倒吸炸裂试管"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03-02-05",
+   "name": "工业制氧",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-03-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": "3.2",
+   "kp_type": "概念",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "工业上先把空气液化，再蒸发分离出氧气，没有生成新物质，属于物理变化。分清工业和实验室制法，才不会把分离空气写成化学反应。",
+   "content": {
+    "typical_tasks": [
+     "能说明工业制氧的基本方法",
+     "能判断分离液态空气属于物理变化还是化学变化"
+    ],
+    "common_mistakes": [
+     "把工业制氧说成加热高锰酸钾，或当成化学变化"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03-03",
+   "name": "3.3 燃烧条件与灭火原理",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9A-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": "3.3",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03-03-01",
+   "name": "燃烧的条件",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-03-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": "3.3",
+   "kp_type": "规律",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "燃烧需要可燃物、与氧气接触、温度达到着火点，三个条件缺一不可。会用实验验证，灭火和防火才有原理。",
+   "content": {
+    "typical_tasks": [
+     "能说出燃烧的三个必要条件",
+     "能指出白磷在热水下通氧气燃烧说明了哪条条件"
+    ],
+    "common_mistakes": [
+     "漏掉着火点，只说有可燃物和氧气就能燃烧"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03-03-02",
+   "name": "灭火的原理与方法",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-03-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": "3.3",
+   "kp_type": "应用",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "灭火就是破坏燃烧条件之一：隔离可燃物、隔绝氧气或降到着火点以下。会对应方法，遇到着火才知道该怎么选。",
+   "content": {
+    "typical_tasks": [
+     "能说明用水灭火主要破坏了哪一个燃烧条件",
+     "能指出油锅着火不能浇水的原因"
+    ],
+    "common_mistakes": [
+     "油锅着火浇水，或认为灭火必须把可燃物全部拿走"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03-03-03",
+   "name": "易燃易爆物的安全知识",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-03-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": "3.3",
+   "kp_type": "应用",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "可燃性气体或粉尘在空气中达到一定浓度，遇到明火可能爆炸；要认安全标志、远离火源。会看标志、懂爆炸条件，才能避开隐患。",
+   "content": {
+    "typical_tasks": [
+     "能指出可燃气体爆炸需要哪些条件",
+     "能辨认常见的易燃易爆安全标志"
+    ],
+    "common_mistakes": [
+     "只认为液体易燃，忽略粉尘、可燃气体也会爆炸"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03-04",
+   "name": "3.4 水资源",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9A-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": "3.4",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03-04-01",
+   "name": "水资源状况与保护",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-03-04",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": "3.4",
+   "kp_type": "应用",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "地球上水很多，但淡水少、分布不均，还面临污染。知道短缺和污染，节约用水、保护水源才不是空话。",
+   "content": {
+    "typical_tasks": [
+     "能说明地球上淡水资源短缺的原因",
+     "能指出工业废水、生活污水属于水污染来源"
+    ],
+    "common_mistakes": [
+     "以为地球上水很多就等于淡水够用"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03-04-02",
+   "name": "硬水与软水",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-03-04",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": "3.4",
+   "kp_type": "概念",
+   "cognitive_level": "理解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "含较多可溶性钙、镁化合物的水是硬水，肥皂水在硬水中泡沫少；煮沸可以降低硬度。会检验、会软化，生活和实验用水才选得对。",
+   "content": {
+    "typical_tasks": [
+     "能用肥皂水判断硬水和软水",
+     "能说明煮沸使硬水软化的方法"
+    ],
+    "common_mistakes": [
+     "把硬水软化当成蒸馏，或以为过滤就能把硬水变成软水"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03-05",
+   "name": "3.5 跨学科实践活动：水的净化与自制净水器",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9A-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": "3.5",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03-05-01",
+   "name": "水的净化方法",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-03-05",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": "3.5",
+   "kp_type": "技能",
+   "cognitive_level": "理解",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "沉淀、过滤除去不溶性杂质，活性炭吸附色素和异味，蒸馏得到更纯的水。会比较净化程度，才知道自来水和蒸馏水差在哪。",
+   "content": {
+    "typical_tasks": [
+     "能按净化程度比较过滤、吸附、蒸馏",
+     "能指出蒸馏可以除去可溶性杂质"
+    ],
+    "common_mistakes": [
+     "以为过滤后得到的就是纯净物，忽略可溶性杂质还在"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03-05-02",
+   "name": "过滤操作",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-03-05",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": "3.5",
+   "kp_type": "实验",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "过滤要一贴二低三靠，才能把不溶性固体和液体分开。操作规范滤液才清，这也是粗盐提纯的关键技能。",
+   "content": {
+    "typical_tasks": [
+     "能指出一贴二低三靠分别指什么",
+     "能完成过滤操作并说明滤液仍浑浊的常见原因"
+    ],
+    "common_mistakes": [
+     "漏斗下端管口没靠烧杯内壁，或液面高出滤纸边缘"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-03-05-03",
+   "name": "自制简易净水器",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-03-05",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第三单元 维持生命的物质——氧气、水",
+   "section": "3.5",
+   "kp_type": "应用",
+   "cognitive_level": "运用",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "用纱布、石英砂、活性炭等分层装填，可以模拟净水过程并比较出水是否变清。会设计层次、评价效果，净化方法才从记忆变成会用。",
+   "content": {
+    "typical_tasks": [
+     "能说明石英砂和活性炭在净水器中各起什么作用",
+     "能指出装填时应先放哪一层以免细沙漏出"
+    ],
+    "common_mistakes": [
+     "把活性炭放在最底层导致漏出，或以为自制净水器能得到蒸馏水"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-04",
+   "name": "第四单元 化学式与化学方程式",
+   "subject": "化学",
+   "level": 1,
+   "parent_code": "",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第四单元 化学式与化学方程式",
+   "section": null,
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-04-01",
+   "name": "4.1 化学式",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9A-04",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第四单元 化学式与化学方程式",
+   "section": "4.1",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-04-01-01",
+   "name": "化学式的意义",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-04-01",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第四单元 化学式与化学方程式",
+   "section": "4.1",
+   "kp_type": "概念",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "化学式宏观上表示一种物质和元素组成，微观上表示一个分子由哪些原子构成。会从宏、微两层读式子，化合价和计算才有对象。",
+   "content": {
+    "typical_tasks": [
+     "能说出水的化学式的宏观意义和微观意义",
+     "能指出化学式中右下角数字表示的是原子个数"
+    ],
+    "common_mistakes": [
+     "把水分子式里的二理解成两个水分子，而不是一个分子里有两个氢原子"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-04-01-02",
+   "name": "化合价",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-04-01",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第四单元 化学式与化学方程式",
+   "section": "4.1",
+   "kp_type": "概念",
+   "cognitive_level": "掌握",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "化合价表示原子之间的化合能力；化合物里正负化合价代数和为零。记住常见价、会用代数和为零，化学式才能写对。",
+   "content": {
+    "typical_tasks": [
+     "能写出氧、氢、钠、氯的常见化合价",
+     "能判断某化学式是否满足正负化合价代数和为零"
+    ],
+    "common_mistakes": [
+     "把氧的化合价记成正二，或把单质的化合价当成不是零"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-04-01-03",
+   "name": "根据化合价书写化学式",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-04-01",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第四单元 化学式与化学方程式",
+   "section": "4.1",
+   "kp_type": "技能",
+   "cognitive_level": "运用",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "按正价在左、负价在右，用十字交叉把化合价写到右下角并约简。会写会读，氧化铝、氯化钙这类式子才不会写反。",
+   "content": {
+    "typical_tasks": [
+     "能根据化合价写出氧化铝、氯化钙的化学式",
+     "能读出三氧化二铁的名称"
+    ],
+    "common_mistakes": [
+     "正负价交叉后不约简，或把金属写到右边"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-04-01-04",
+   "name": "有关相对分子质量的计算",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-04-01",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第四单元 化学式与化学方程式",
+   "section": "4.1",
+   "kp_type": "技能",
+   "cognitive_level": "运用",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "相对分子质量等于化学式中各原子相对原子质量的总和，由此可算元素质量比和质量分数。会这三类计算，方程式计算才有质量关系。",
+   "content": {
+    "typical_tasks": [
+     "能计算二氧化碳的相对分子质量",
+     "能计算水中氢元素的质量分数"
+    ],
+    "common_mistakes": [
+     "算质量分数时分母用了相对原子质量而不是相对分子质量"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-04-02",
+   "name": "4.2 质量守恒定律",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9A-04",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第四单元 化学式与化学方程式",
+   "section": "4.2",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-04-02-01",
+   "name": "质量守恒定律",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-04-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第四单元 化学式与化学方程式",
+   "section": "4.2",
+   "kp_type": "规律",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "参加化学反应的各物质质量总和，等于生成的各物质质量总和。会用这条定律，才能配平方程式、解释反应前后质量变化。",
+   "content": {
+    "typical_tasks": [
+     "能说出质量守恒定律的内容",
+     "能判断镁条在空气中燃烧后质量变大是否违反定律"
+    ],
+    "common_mistakes": [
+     "把没有参加反应的杂质质量也算进参加反应的质量"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-04-02-02",
+   "name": "质量守恒定律的微观解释",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-04-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第四单元 化学式与化学方程式",
+   "section": "4.2",
+   "kp_type": "规律",
+   "cognitive_level": "掌握",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "化学变化中原子的种类、数目和质量都不变，所以宏观质量守恒。会从原子不变去解释，配平和推断分子构成才有依据。",
+   "content": {
+    "typical_tasks": [
+     "能从原子角度说明质量守恒的原因",
+     "能指出反应前后原子种类和数目不变"
+    ],
+    "common_mistakes": [
+     "说分子的种类和数目反应前后都不变"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-04-02-03",
+   "name": "验证质量守恒定律的实验",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-04-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第四单元 化学式与化学方程式",
+   "section": "4.2",
+   "kp_type": "实验",
+   "cognitive_level": "掌握",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "有气体参加或生成的反应，必须在密闭容器里称量，质量才会守恒。会选装置、会解释敞口质量变化，这条定律才不会被实验打脸。",
+   "content": {
+    "typical_tasks": [
+     "能指出碳酸钠与盐酸反应必须在密闭容器中称量",
+     "能说明蜡烛燃烧后质量变小是因为生成的气体散逸"
+    ],
+    "common_mistakes": [
+     "在敞口容器里做有气体生成的反应，却认为质量不守恒"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-04-03",
+   "name": "4.3 化学方程式",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9A-04",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第四单元 化学式与化学方程式",
+   "section": "4.3",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-04-03-01",
+   "name": "化学方程式的意义与读法",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-04-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第四单元 化学式与化学方程式",
+   "section": "4.3",
+   "kp_type": "概念",
+   "cognitive_level": "理解",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "化学方程式表示反应物、生成物和反应条件，还能读出质量比和粒子个数比。会读式子，后面计算和实验现象才对得上。",
+   "content": {
+    "typical_tasks": [
+     "能从方程式中指出反应物、生成物和反应条件",
+     "能读出氢气燃烧生成水的分子个数比"
+    ],
+    "common_mistakes": [
+     "只读物质名称，不会读质量比或粒子个数比"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-04-03-02",
+   "name": "书写化学方程式的原则",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-04-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第四单元 化学式与化学方程式",
+   "section": "4.3",
+   "kp_type": "概念",
+   "cognitive_level": "理解",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "写方程式必须符合客观事实，并且配平后遵守质量守恒定律。先对事实再配平，铁与酸就不能写成三价铁。",
+   "content": {
+    "typical_tasks": [
+     "能指出书写化学方程式的两条原则",
+     "能判断某方程式是否符合客观事实"
+    ],
+    "common_mistakes": [
+     "只顾配平数字，写出铁和稀盐酸生成氯化铁这类不存在的反应"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-04-03-03",
+   "name": "化学方程式的配平",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-04-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第四单元 化学式与化学方程式",
+   "section": "4.3",
+   "kp_type": "技能",
+   "cognitive_level": "运用",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "配平是在化学式前面配系数，让左右两边每种原子个数相等。会用最小公倍数等方法配平，方程式才能用来计算。",
+   "content": {
+    "typical_tasks": [
+     "能配平铁与氧气生成四氧化三铁的方程式",
+     "能指出配平不能改化学式右下角的数字"
+    ],
+    "common_mistakes": [
+     "改化学式中的下标来配平，而不是改前面的系数"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-04-03-04",
+   "name": "反应条件与气体沉淀符号",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-04-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第四单元 化学式与化学方程式",
+   "section": "4.3",
+   "kp_type": "技能",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "点燃、加热、催化剂要写在等号上；气体箭头、沉淀箭头只在溶液中生成气体或沉淀时用。符号用对，方程式才像实验里真正发生的那样。",
+   "content": {
+    "typical_tasks": [
+     "能判断何时该标注气体或沉淀符号",
+     "能写出加热高锰酸钾制氧的条件和气体符号"
+    ],
+    "common_mistakes": [
+     "固体加热产生的氧气也标向上箭头，或把加热写成点燃"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-04-03-05",
+   "name": "利用化学方程式计算",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-04-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第四单元 化学式与化学方程式",
+   "section": "4.3",
+   "kp_type": "技能",
+   "cognitive_level": "运用",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "根据配平后的方程式，用各物质的质量比求未知质量。按设未知量、写方程式、找关系、列比例、求解作答来做，才不会漏步骤。",
+   "content": {
+    "typical_tasks": [
+     "能根据方程式列出已知量和未知量的质量比",
+     "能写出完整的设、写、找、列、解、答步骤"
+    ],
+    "common_mistakes": [
+     "用体积或未配平的式子直接列比例"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-04-03-06",
+   "name": "含杂质物质的计算",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-04-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第四单元 化学式与化学方程式",
+   "section": "4.3",
+   "kp_type": "技能",
+   "cognitive_level": "运用",
+   "difficulty": 4,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "方程式里的质量都是纯净物质量，含杂质时要先按纯度换算成纯净物再算。会换算，矿石、工业原料类题目才不会把杂质也代进式子。",
+   "content": {
+    "typical_tasks": [
+     "能根据纯度把含杂质样品换算成纯净物质量",
+     "能判断杂质是否参加反应"
+    ],
+    "common_mistakes": [
+     "把含杂质的质量直接代入方程式计算"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-05",
+   "name": "第五单元 燃料与二氧化碳",
+   "subject": "化学",
+   "level": 1,
+   "parent_code": "",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第五单元 燃料与二氧化碳",
+   "section": null,
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-05-01",
+   "name": "5.1 氢气",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9A-05",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第五单元 燃料与二氧化碳",
+   "section": "5.1",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-05-01-01",
+   "name": "氢气的性质与检验",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-05-01",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第五单元 燃料与二氧化碳",
+   "section": "5.1",
+   "kp_type": "规律",
+   "cognitive_level": "理解",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "氢气是密度最小的气体，具有可燃性；点燃前必须验纯，纯氢安静燃烧，不纯会爆鸣。会验纯，做氢相关实验才安全。",
+   "content": {
+    "typical_tasks": [
+     "能说明氢气验纯的方法",
+     "能指出氢气在空气中安静燃烧的产物"
+    ],
+    "common_mistakes": [
+     "不验纯就点燃氢气，或不纯时的爆鸣声当成已经纯了"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-05-01-02",
+   "name": "氢气的制取与用途",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-05-01",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第五单元 燃料与二氧化碳",
+   "section": "5.1",
+   "kp_type": "规律",
+   "cognitive_level": "理解",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "实验室常用锌与稀硫酸反应制氢气；氢气燃烧只生成水，是清洁能源，但储存运输不容易。会选药品和装置，才理解氢能源为什么好却难用。",
+   "content": {
+    "typical_tasks": [
+     "能写出锌与稀硫酸制氢的化学方程式",
+     "能根据反应物状态说明制氢该选哪类发生装置"
+    ],
+    "common_mistakes": [
+     "用浓硫酸或硝酸与锌反应制氢，忽略它们有强氧化性"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-05-02",
+   "name": "5.2 碳",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9A-05",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第五单元 燃料与二氧化碳",
+   "section": "5.2",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-05-02-01",
+   "name": "碳单质的物理性质与用途",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-05-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第五单元 燃料与二氧化碳",
+   "section": "5.2",
+   "kp_type": "概念",
+   "cognitive_level": "理解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "金刚石、石墨、活性炭结构不同，硬度、导电性、吸附性就不同，用途也不同。抓住结构决定性质、性质决定用途，碳单质才分得清。",
+   "content": {
+    "typical_tasks": [
+     "能指出金刚石、石墨、活性炭的一项主要用途",
+     "能说明活性炭能净水是利用了吸附性"
+    ],
+    "common_mistakes": [
+     "以为金刚石和石墨不是同一种元素组成，或把吸附当成吸收"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-05-02-02",
+   "name": "碳的化学性质",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-05-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第五单元 燃料与二氧化碳",
+   "section": "5.2",
+   "kp_type": "规律",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "碳常温下稳定，点燃可燃烧，高温下能夺取某些氧化物中的氧，表现还原性。会写燃烧和还原的方程式，碳在燃料和冶炼里的角色才清楚。",
+   "content": {
+    "typical_tasks": [
+     "能写出碳在氧气充足和不足时燃烧的化学方程式",
+     "能判断碳还原氧化铜是否表现还原性"
+    ],
+    "common_mistakes": [
+     "把碳充分燃烧的产物写成一氧化碳"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-05-02-03",
+   "name": "木炭还原氧化铜实验",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-05-02",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第五单元 燃料与二氧化碳",
+   "section": "5.2",
+   "kp_type": "实验",
+   "cognitive_level": "掌握",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "木炭与氧化铜共热，黑色固体变红，生成二氧化碳，说明碳具有还原性。会描述现象、写方程式并处理尾气，还原反应才从概念变成实验。",
+   "content": {
+    "typical_tasks": [
+     "能指出实验中黑色固体变红说明生成了铜",
+     "能写出木炭还原氧化铜的化学方程式"
+    ],
+    "common_mistakes": [
+     "不处理可能产生的一氧化碳尾气，或把红色固体说成氧化铜"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-05-03",
+   "name": "5.3 二氧化碳",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9A-05",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第五单元 燃料与二氧化碳",
+   "section": "5.3",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-05-03-01",
+   "name": "实验室制取二氧化碳的原理",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-05-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第五单元 燃料与二氧化碳",
+   "section": "5.3",
+   "kp_type": "规律",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "实验室用大理石或石灰石与稀盐酸反应制二氧化碳；不用浓盐酸、稀硫酸、碳酸钠，是为了气体较纯、反应好控制。会选药品，装置和收集方法才选得对。",
+   "content": {
+    "typical_tasks": [
+     "能写出大理石与稀盐酸反应的化学方程式",
+     "能说明不用稀硫酸与大理石制二氧化碳的原因"
+    ],
+    "common_mistakes": [
+     "用稀硫酸与大理石制气，生成微溶硫酸钙覆盖表面使反应停止"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-05-03-02",
+   "name": "二氧化碳的制取装置与检验验满",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-05-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第五单元 燃料与二氧化碳",
+   "section": "5.3",
+   "kp_type": "实验",
+   "cognitive_level": "掌握",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "固液不加热用锥形瓶加长颈漏斗，向上排空气法收集；澄清石灰水变浑浊是检验，燃着木条熄灭是验满。装置、收集、检验验满分清，制气思路才算会用。",
+   "content": {
+    "typical_tasks": [
+     "能指出长颈漏斗下端必须插入液面以下",
+     "能完成二氧化碳的检验和验满并说明二者有何不同"
+    ],
+    "common_mistakes": [
+     "用排水法收集二氧化碳，或把验满当成把木条伸进瓶里"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-05-03-03",
+   "name": "气体制取装置选择的一般思路",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-05-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第五单元 燃料与二氧化碳",
+   "section": "5.3",
+   "kp_type": "应用",
+   "cognitive_level": "运用",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "发生装置看反应物状态和是否加热，收集方法看气体密度和溶解性。会迁移这套思路，氧气、氢气、二氧化碳的装置就能自己选。",
+   "content": {
+    "typical_tasks": [
+     "能根据反应物状态和反应条件选择发生装置",
+     "能判断某气体该用排水法还是排空气法收集"
+    ],
+    "common_mistakes": [
+     "只看气体名称套装置，不看反应是否需要加热、气体是否溶于水"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-05-03-04",
+   "name": "二氧化碳的性质",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-05-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第五单元 燃料与二氧化碳",
+   "section": "5.3",
+   "kp_type": "规律",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "二氧化碳不能燃烧也不支持燃烧，密度比空气大，能与水反应使紫色石蕊变红，能使澄清石灰水变浑浊。性质记全，灭火、检验、用途才能对上。",
+   "content": {
+    "typical_tasks": [
+     "能写出二氧化碳与澄清石灰水反应的化学方程式",
+     "能指出阶梯蜡烛实验说明二氧化碳具有哪些性质"
+    ],
+    "common_mistakes": [
+     "把二氧化碳使石蕊变红说成二氧化碳是酸，忽略是碳酸的作用"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-05-03-05",
+   "name": "二氧化碳的用途与温室效应",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-05-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第五单元 燃料与二氧化碳",
+   "section": "5.3",
+   "kp_type": "应用",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "二氧化碳可灭火、作气体肥料，干冰用于制冷；含量过高会加剧温室效应。会把性质连到用途，也知道它通常不算空气污染物。",
+   "content": {
+    "typical_tasks": [
+     "能根据性质说明二氧化碳能灭火的原因",
+     "能指出温室效应与二氧化碳含量过高有关"
+    ],
+    "common_mistakes": [
+     "把二氧化碳当成空气污染物，或把温室效应和臭氧层破坏、酸雨混为一谈"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-05-03-06",
+   "name": "一氧化碳的性质",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-05-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第五单元 燃料与二氧化碳",
+   "section": "5.3",
+   "kp_type": "规律",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "一氧化碳无色无味，可燃烧、能还原某些金属氧化物，且有剧毒。性质记清，尾气处理、煤气中毒和冶炼原理才能讲明白。",
+   "content": {
+    "typical_tasks": [
+     "能写出一氧化碳还原氧化铜的化学方程式",
+     "能说明一氧化碳有毒的原因"
+    ],
+    "common_mistakes": [
+     "用澄清石灰水检验一氧化碳，或点燃一氧化碳却不处理尾气"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-05-03-07",
+   "name": "CO 与 CO2 的转化与鉴别",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-05-03",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第五单元 燃料与二氧化碳",
+   "section": "5.3",
+   "kp_type": "应用",
+   "cognitive_level": "运用",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "碳与二氧化碳高温生成一氧化碳，一氧化碳燃烧又变回二氧化碳；鉴别用燃着木条或石灰水。会转化、会鉴别除杂，碳的氧化物题才不会绕晕。",
+   "content": {
+    "typical_tasks": [
+     "能写出一氧化碳与二氧化碳相互转化的化学方程式",
+     "能说明如何鉴别一氧化碳和二氧化碳"
+    ],
+    "common_mistakes": [
+     "用点燃法鉴别时忘记一氧化碳燃烧后也生成二氧化碳"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-05-04",
+   "name": "5.4 化石燃料",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9A-05",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第五单元 燃料与二氧化碳",
+   "section": "5.4",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-05-04-01",
+   "name": "化石燃料",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-05-04",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第五单元 燃料与二氧化碳",
+   "section": "5.4",
+   "kp_type": "概念",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "煤、石油、天然气是化石燃料，主要成分含碳或碳氢化合物，天然气主要成分是甲烷。认识三类燃料，燃烧产物和污染来源才有着落。",
+   "content": {
+    "typical_tasks": [
+     "能指出煤、石油、天然气都属于化石燃料",
+     "能写出甲烷燃烧的化学方程式"
+    ],
+    "common_mistakes": [
+     "把氢气、乙醇当成化石燃料"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-05-04-02",
+   "name": "燃料燃烧对环境的影响",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-05-04",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第五单元 燃料与二氧化碳",
+   "section": "5.4",
+   "kp_type": "应用",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "含硫、含氮燃料燃烧会产生二氧化硫、氮氧化物，形成酸雨；汽车尾气还含一氧化碳和颗粒物。会对应污染物，减排和新能源才有针对性。",
+   "content": {
+    "typical_tasks": [
+     "能指出酸雨的主要酸性气体来源",
+     "能说明汽车尾气中的主要污染物"
+    ],
+    "common_mistakes": [
+     "把二氧化碳当成酸雨的主要成因"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9A-05-04-03",
+   "name": "使用和开发新能源",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9A-05-04",
+   "grade": "初三",
+   "textbook": "九年级上册",
+   "chapter": "第五单元 燃料与二氧化碳",
+   "section": "5.4",
+   "kp_type": "应用",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "乙醇、氢气、太阳能等相对清洁，但各有成本、储存或间歇性的限制。会比较优缺点，才不会把新能源理解成完全没有问题。",
+   "content": {
+    "typical_tasks": [
+     "能说出氢能、乙醇的一项优点和一项不足",
+     "能判断太阳能是否属于可再生能源"
+    ],
+    "common_mistakes": [
+     "认为新能源完全无污染、可无限使用，忽略生产氢气本身也耗能"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-06",
+   "name": "第六单元 金属和金属材料",
+   "subject": "化学",
+   "level": 1,
+   "parent_code": "",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第六单元 金属和金属材料",
+   "section": null,
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-06-01",
+   "name": "6.1 金属的物理性质",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9B-06",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第六单元 金属和金属材料",
+   "section": "6.1",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-06-01-01",
+   "name": "金属的物理性质与用途",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-06-01",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第六单元 金属和金属材料",
+   "section": "6.1",
+   "kp_type": "概念",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "多数金属有金属光泽，能导电导热、有延展性，因此可做导线、炊具和箔材。抓住共性，金属材料的选用才说得出理由。",
+   "content": {
+    "typical_tasks": [
+     "能说出金属共同的物理性质",
+     "能完成观察金属光泽、延展性等物理性质的实验描述"
+    ],
+    "common_mistakes": [
+     "以为所有金属都是银白色，忽略铜是紫红色、金是黄色"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-06-01-02",
+   "name": "合金",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-06-01",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第六单元 金属和金属材料",
+   "section": "6.1",
+   "kp_type": "概念",
+   "cognitive_level": "理解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "合金是在金属中加热熔合某些物质得到的，硬度一般更大、抗腐蚀更好，生铁和钢都是铁合金。会比较合金和纯金属，材料题才不会只盯纯铁。",
+   "content": {
+    "typical_tasks": [
+     "能判断生铁和钢是否属于合金",
+     "能指出合金与纯金属相比常见的性能优点"
+    ],
+    "common_mistakes": [
+     "把合金当成化合物或纯净物"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-06-02",
+   "name": "6.2 金属的化学性质",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9B-06",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第六单元 金属和金属材料",
+   "section": "6.2",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-06-02-01",
+   "name": "金属与氧气的反应",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-06-02",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第六单元 金属和金属材料",
+   "section": "6.2",
+   "kp_type": "规律",
+   "cognitive_level": "理解",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "镁、铝常温就能与氧气反应生成保护膜，铁、铜要在点燃或加热时才明显反应。比较反应条件，金属活动性强弱就开始有感觉。",
+   "content": {
+    "typical_tasks": [
+     "能写出镁在空气中燃烧的化学方程式",
+     "能指出铝表面氧化膜对铝的保护作用"
+    ],
+    "common_mistakes": [
+     "认为铝不与氧气反应，或把铁在氧气中燃烧产物写成氧化铁"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-06-02-02",
+   "name": "金属与酸的反应",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-06-02",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第六单元 金属和金属材料",
+   "section": "6.2",
+   "kp_type": "规律",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "排在氢前面的金属能与稀盐酸、稀硫酸反应生成盐和氢气；铁生成亚铁盐而不是高铁盐。会写方程式、会验氢，活动性顺序才有实验依据。",
+   "content": {
+    "typical_tasks": [
+     "能判断铜能否与稀盐酸反应产生氢气",
+     "能写出铁与稀硫酸反应生成硫酸亚铁和氢气的化学方程式"
+    ],
+    "common_mistakes": [
+     "把铁与稀酸反应的产物写成三价铁盐，而不是亚铁"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-06-02-03",
+   "name": "金属与盐溶液的反应",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-06-02",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第六单元 金属和金属材料",
+   "section": "6.2",
+   "kp_type": "规律",
+   "cognitive_level": "掌握",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "活动性强的金属可以把盐溶液里活动性弱的金属置换出来，但钾、钙、钠太活泼，先与水反应，初中不做它们与盐溶液的反应。会判断能否发生，除杂才不会选错药品。",
+   "content": {
+    "typical_tasks": [
+     "能判断铁能否把硫酸铜溶液中的铜置换出来",
+     "能指出不能用钠与硫酸铜溶液制铜的原因"
+    ],
+    "common_mistakes": [
+     "用钾、钙、钠去置换盐溶液中的金属"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-06-02-04",
+   "name": "置换反应",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-06-02",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第六单元 金属和金属材料",
+   "section": "6.2",
+   "kp_type": "概念",
+   "cognitive_level": "理解",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "一种单质和一种化合物反应，生成另一种单质和另一种化合物，叫置换反应。会辨认这一类型，金属与酸、金属与盐溶液就能归到一起。",
+   "content": {
+    "typical_tasks": [
+     "能判断某反应是否属于置换反应",
+     "能指出置换反应与化合、分解反应的区别"
+    ],
+    "common_mistakes": [
+     "看到有单质生成就当成置换反应，忽略反应物也必须有单质"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-06-02-05",
+   "name": "金属活动性顺序及其应用",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-06-02",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第六单元 金属和金属材料",
+   "section": "6.2",
+   "kp_type": "应用",
+   "cognitive_level": "运用",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "金属活动性顺序用来判断金属与酸、与盐溶液能否反应，还能设计实验比较活动性。顺序会用，但钾钙钠与盐溶液的反应初中不拿来套。",
+   "content": {
+    "typical_tasks": [
+     "能根据活动性顺序判断某置换反应能否发生",
+     "能说明怎样用实验比较铁、铜的活动性强弱"
+    ],
+    "common_mistakes": [
+     "套用钾、钙、钠与盐溶液反应来比较活动性，忽略它们先与水反应"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-06-03",
+   "name": "6.3 金属矿物与金属冶炼",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9B-06",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第六单元 金属和金属材料",
+   "section": "6.3",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-06-03-01",
+   "name": "铁的冶炼",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-06-03",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第六单元 金属和金属材料",
+   "section": "6.3",
+   "kp_type": "规律",
+   "cognitive_level": "掌握",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "工业上用一氧化碳在高温下还原氧化铁得到铁；实验室中红棕色粉末会逐渐变黑。会写原理、会描述现象，冶炼和方程式计算才连得上。",
+   "content": {
+    "typical_tasks": [
+     "能写出一氧化碳还原氧化铁的化学方程式",
+     "能指出实验中红棕色固体变黑说明生成了铁"
+    ],
+    "common_mistakes": [
+     "先加热再通一氧化碳，管内空气未赶尽就加热，有爆炸危险"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-06-03-02",
+   "name": "含杂质物质的化学方程式计算",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-06-03",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第六单元 金属和金属材料",
+   "section": "6.3",
+   "kp_type": "技能",
+   "cognitive_level": "运用",
+   "difficulty": 4,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "矿石不纯，要先按纯度算出氧化铁等纯净物质量，再按方程式求铁的质量。会这一步，产量类题目才不会把矿石质量直接代进去。",
+   "content": {
+    "typical_tasks": [
+     "能根据矿石纯度计算其中氧化铁的质量",
+     "能用方程式求出一定质量矿石理论上能炼出多少铁"
+    ],
+    "common_mistakes": [
+     "把矿石质量当成氧化铁质量直接代入方程式"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-06-03-03",
+   "name": "金属资源的保护",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-06-03",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第六单元 金属和金属材料",
+   "section": "6.3",
+   "kp_type": "应用",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "金属资源有限，保护办法是防止锈蚀、回收废金属、寻找代用品。会提具体措施，资源话题才不会只停留在要节约。",
+   "content": {
+    "typical_tasks": [
+     "能说出保护金属资源的三种常用途径",
+     "能判断回收废铁是否属于保护金属资源"
+    ],
+    "common_mistakes": [
+     "只提节约使用，说不出回收和寻找代用品"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-06-04",
+   "name": "6.4 金属的腐蚀",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9B-06",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第六单元 金属和金属材料",
+   "section": "6.4",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-06-04-01",
+   "name": "金属的锈蚀与防护",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-06-04",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第六单元 金属和金属材料",
+   "section": "6.4",
+   "kp_type": "规律",
+   "cognitive_level": "理解",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "铁生锈需要水和氧气同时存在；防锈可以隔绝水或氧气，如刷漆、涂油、镀层。会用实验验证条件，防锈方法才选得对。",
+   "content": {
+    "typical_tasks": [
+     "能指出铁生锈的两个必要条件",
+     "能说明刷漆、镀锌分别怎样防止铁生锈"
+    ],
+    "common_mistakes": [
+     "认为铁生锈只需要氧气，或把不锈钢当成在铁上刷一层漆"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-07",
+   "name": "第七单元 溶液",
+   "subject": "化学",
+   "level": 1,
+   "parent_code": "",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第七单元 溶液",
+   "section": null,
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-07-01",
+   "name": "7.1 物质的溶解",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9B-07",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第七单元 溶液",
+   "section": "7.1",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-07-01-01",
+   "name": "溶液、溶质与溶剂",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-07-01",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第七单元 溶液",
+   "section": "7.1",
+   "kp_type": "概念",
+   "cognitive_level": "掌握",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "溶液是均一、稳定的混合物；被溶解的是溶质，溶解它的是溶剂，水是最常见溶剂。会判断溶质溶剂，溶解度和质量分数才有对象。",
+   "content": {
+    "typical_tasks": [
+     "能判断碘酒中的溶质和溶剂",
+     "能指出溶液是混合物且具有均一、稳定的特点"
+    ],
+    "common_mistakes": [
+     "把溶液当成纯净物，或认为溶质一定是固体"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-07-01-02",
+   "name": "溶解时的吸热与放热",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-07-01",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第七单元 溶液",
+   "section": "7.1",
+   "kp_type": "规律",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "氢氧化钠溶解放热，硝酸铵溶解吸热，溶液温度会升高或降低。记住典型例子，才能解释冰袋和实验中试管变热变凉。",
+   "content": {
+    "typical_tasks": [
+     "能指出氢氧化钠、硝酸铵溶解时温度如何变化",
+     "能判断某溶解过程是吸热还是放热"
+    ],
+    "common_mistakes": [
+     "以为所有物质溶解都放热"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-07-01-03",
+   "name": "乳浊液与乳化",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-07-01",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第七单元 溶液",
+   "section": "7.1",
+   "kp_type": "概念",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "油和水形成的乳浊液不稳定，洗涤剂能把油分散成小液滴而不易分层，这叫乳化。会区分乳化与溶解，去油污原理才说得清。",
+   "content": {
+    "typical_tasks": [
+     "能说明洗涤剂去油污利用的是乳化作用",
+     "能指出乳浊液和溶液在稳定性上的区别"
+    ],
+    "common_mistakes": [
+     "把乳化当成油溶解在水里形成了溶液"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-07-02",
+   "name": "7.2 物质溶解的量",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9B-07",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第七单元 溶液",
+   "section": "7.2",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-07-02-01",
+   "name": "饱和溶液与不饱和溶液",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-07-02",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第七单元 溶液",
+   "section": "7.2",
+   "kp_type": "概念",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "在一定温度、一定量溶剂里不能再溶解某种溶质的是饱和溶液，溶解是有限度的。饱和只看还能不能溶，不等于浓溶液。",
+   "content": {
+    "typical_tasks": [
+     "能说明如何判断某溶液是否饱和",
+     "能指出加溶剂或升温可使饱和溶液转化为不饱和溶液"
+    ],
+    "common_mistakes": [
+     "把饱和溶液等同于浓溶液，不饱和溶液等同于稀溶液"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-07-02-02",
+   "name": "固体的溶解度",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-07-02",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第七单元 溶液",
+   "section": "7.2",
+   "kp_type": "概念",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "溶解度是一定温度下某固体在一百克溶剂里达到饱和时所溶解的质量。四要素缺一不可，比较溶解能力才有统一标准。",
+   "content": {
+    "typical_tasks": [
+     "能说出固体溶解度定义中的四个要素",
+     "能根据溶解度判断该物质易溶还是难溶"
+    ],
+    "common_mistakes": [
+     "把溶解度说成一百克溶液里溶了多少，漏掉溶剂和饱和两个要点"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-07-02-03",
+   "name": "溶解度曲线",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-07-02",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第七单元 溶液",
+   "section": "7.2",
+   "kp_type": "技能",
+   "cognitive_level": "运用",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "溶解度曲线表示固体溶解度随温度的变化；可比较溶解度、确定某温度是否饱和、选择结晶方法。会读图，溶液计算和提纯就有了工具。",
+   "content": {
+    "typical_tasks": [
+     "能从曲线上读出某温度时的溶解度",
+     "能根据曲线判断应用蒸发结晶还是降温结晶"
+    ],
+    "common_mistakes": [
+     "把曲线交点当成两种物质发生了化学反应"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-07-02-04",
+   "name": "气体的溶解度",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-07-02",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第七单元 溶液",
+   "section": "7.2",
+   "kp_type": "概念",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "气体溶解度随温度升高而减小，随压强增大而增大。会用这条规律，打开汽水冒泡、加热除氧才解释得通。",
+   "content": {
+    "typical_tasks": [
+     "能说明加热或减压时气体溶解度如何变化",
+     "能指出汽水中二氧化碳在受热时更容易逸出"
+    ],
+    "common_mistakes": [
+     "把气体溶解度随温度的变化套成和固体一样，认为升温气体更易溶"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-07-02-05",
+   "name": "结晶方法",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-07-02",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第七单元 溶液",
+   "section": "7.2",
+   "kp_type": "应用",
+   "cognitive_level": "理解",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "溶解度受温度影响大的用降温结晶，受温度影响小的用蒸发结晶。会根据曲线选方法，粗盐提纯和混合物分离才知道怎么做。",
+   "content": {
+    "typical_tasks": [
+     "能判断氯化钠从溶液中析出应选用哪种结晶方法",
+     "能说明硝酸钾适合降温结晶的原因"
+    ],
+    "common_mistakes": [
+     "提纯粗盐也用降温结晶，忽略氯化钠溶解度受温度影响不大"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-07-03",
+   "name": "7.3 溶液浓稀的表示",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9B-07",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第七单元 溶液",
+   "section": "7.3",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-07-03-01",
+   "name": "溶质质量分数",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-07-03",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第七单元 溶液",
+   "section": "7.3",
+   "kp_type": "概念",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "溶质质量分数等于溶质质量除以溶液质量再乘百分之百，表示溶液的浓稀。公式记准，稀释、配制和综合计算才有起点。",
+   "content": {
+    "typical_tasks": [
+     "能写出溶质质量分数的计算公式",
+     "能指出溶液质量等于溶质质量加溶剂质量"
+    ],
+    "common_mistakes": [
+     "分母用溶剂质量而不是溶液质量"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-07-03-02",
+   "name": "溶质质量分数的计算",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-07-03",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第七单元 溶液",
+   "section": "7.3",
+   "kp_type": "技能",
+   "cognitive_level": "运用",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "稀释时溶质质量不变；增浓可加溶质或蒸发溶剂；溶解度与质量分数可以换算。会这几类计算，配制溶液和综合题才不会列错式。",
+   "content": {
+    "typical_tasks": [
+     "能根据稀释前后溶质质量不变列式计算",
+     "能由溶解度求出该温度饱和溶液的溶质质量分数"
+    ],
+    "common_mistakes": [
+     "稀释时把溶液质量当成不变，或把水的体积直接当质量却忘了密度"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-07-03-03",
+   "name": "配制一定溶质质量分数的溶液",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-07-03",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第七单元 溶液",
+   "section": "7.3",
+   "kp_type": "实验",
+   "cognitive_level": "掌握",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "按计算、称量或量取、溶解的步骤配制氯化钠溶液，天平、量筒和玻璃棒的用法会带来误差。会操作也会析误差，质量分数才不只停在公式上。",
+   "content": {
+    "typical_tasks": [
+     "能按顺序完成配制一定溶质质量分数氯化钠溶液的主要步骤",
+     "能指出量筒量水时仰视读数会使结果偏小还是偏大"
+    ],
+    "common_mistakes": [
+     "量取液体后仰视读数，或把量筒当作溶解用的容器，忘了用玻璃棒搅拌引流"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-07-03-04",
+   "name": "溶质质量分数与化学方程式的综合计算",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-07-03",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第七单元 溶液",
+   "section": "7.3",
+   "kp_type": "技能",
+   "cognitive_level": "运用",
+   "difficulty": 4,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "先由方程式求出参加反应或生成的溶质质量，再除以反应后溶液的质量。关键是溶液质量怎么算，综合计算才不会漏水、漏气体。",
+   "content": {
+    "typical_tasks": [
+     "能指出反应后溶液质量应怎样确定",
+     "能判断生成的气体质量不能计入溶液质量"
+    ],
+    "common_mistakes": [
+     "把生成的气体或沉淀也算进溶液质量里"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-07-04",
+   "name": "7.4 跨学科实践活动：海洋资源的综合利用与制盐",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9B-07",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第七单元 溶液",
+   "section": "7.4",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-07-04-01",
+   "name": "粗盐提纯",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-07-04",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第七单元 溶液",
+   "section": "7.4",
+   "kp_type": "实验",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "粗盐提纯先把样品溶于水，再过滤去泥沙，最后蒸发得到较纯食盐。会操作并知道每步目的，必做实验里的过滤和蒸发才真正用上。",
+   "content": {
+    "typical_tasks": [
+     "能按顺序完成粗盐提纯的溶解、过滤、蒸发操作",
+     "能指出蒸发时要用玻璃棒搅拌并余少量液体时停止加热"
+    ],
+    "common_mistakes": [
+     "蒸发时蒸干再移开酒精灯，造成晶体飞溅或炸裂"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-07-04-02",
+   "name": "海水制盐与海洋资源利用",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-07-04",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第七单元 溶液",
+   "section": "7.4",
+   "kp_type": "应用",
+   "cognitive_level": "理解",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "海水晒盐是蒸发结晶得到粗盐；海水里还有镁、溴等化学资源。会连接结晶方法和资源利用，海洋话题才有化学依据。",
+   "content": {
+    "typical_tasks": [
+     "能说明海水制盐利用的是哪一种结晶方法",
+     "能指出海水中除食盐外还可提取的化学资源"
+    ],
+    "common_mistakes": [
+     "把海水晒盐说成降温结晶"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08",
+   "name": "第八单元 常见的酸、碱、盐",
+   "subject": "化学",
+   "level": 1,
+   "parent_code": "",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": null,
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08-01",
+   "name": "8.1 溶液的酸碱性",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9B-08",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": "8.1",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08-01-01",
+   "name": "酸碱指示剂",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-08-01",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": "8.1",
+   "kp_type": "概念",
+   "cognitive_level": "理解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "紫色石蕊遇酸变红、遇碱变蓝；无色酚酞遇酸不变色、遇碱变红。会看颜色，溶液酸碱性才有第一判断工具。",
+   "content": {
+    "typical_tasks": [
+     "能写出石蕊、酚酞在酸溶液和碱溶液中的颜色",
+     "能判断滴入酚酞变红的溶液显酸性还是碱性"
+    ],
+    "common_mistakes": [
+     "把酚酞遇酸说成变红，或把酸碱性和酸碱度混为一谈"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08-01-02",
+   "name": "溶液的酸碱度 pH",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-08-01",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": "8.1",
+   "kp_type": "技能",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "酸碱性看溶液显酸还是显碱，酸碱度用pH表示强弱；pH小于七酸性、等于七中性、大于七碱性。会测会读，中和与土壤问题才能量化。",
+   "content": {
+    "typical_tasks": [
+     "能根据pH判断溶液显酸性、中性还是碱性",
+     "能指出pH试纸使用时不能先用水润湿"
+    ],
+    "common_mistakes": [
+     "把酸碱性与酸碱度混为一谈，或把pH试纸用水润湿再测"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08-02",
+   "name": "8.2 常见的酸和碱",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9B-08",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": "8.2",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08-02-01",
+   "name": "常见的酸及其物理性质",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-08-02",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": "8.2",
+   "kp_type": "概念",
+   "cognitive_level": "理解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "浓盐酸易挥发冒白雾，浓硫酸黏稠、吸水且能使纸张变黑；稀释时一定要把浓硫酸沿器壁注入水中。性质和稀释规范记住，用酸才安全。",
+   "content": {
+    "typical_tasks": [
+     "能指出浓盐酸、浓硫酸各有什么重要物理性质",
+     "能说明稀释浓硫酸的正确操作"
+    ],
+    "common_mistakes": [
+     "把浓盐酸挥发出的白雾当成化学变化，或把水倒进浓硫酸里稀释"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08-02-02",
+   "name": "酸的化学性质",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-08-02",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": "8.2",
+   "kp_type": "规律",
+   "cognitive_level": "掌握",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "酸能使指示剂变色，能与活泼金属、金属氧化物、碱和某些盐反应。抓住通性，盐酸、硫酸的反应就能一类一类写出来。",
+   "content": {
+    "typical_tasks": [
+     "能写出稀盐酸与铁、氧化铁反应的化学方程式",
+     "能判断某酸是否能与氢氧化铜反应"
+    ],
+    "common_mistakes": [
+     "把铁与稀酸反应写成生成氯化铁或硫酸铁，而不是亚铁盐"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08-02-03",
+   "name": "常见的碱及其物理性质",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-08-02",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": "8.2",
+   "kp_type": "概念",
+   "cognitive_level": "理解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "氢氧化钠有强腐蚀性、易潮解，要密封保存；氢氧化钙微溶于水，水溶液叫石灰水。性质记清，保存、称量和用途才不会弄错。",
+   "content": {
+    "typical_tasks": [
+     "能指出氢氧化钠必须密封保存的原因",
+     "能说明澄清石灰水的溶质是什么"
+    ],
+    "common_mistakes": [
+     "把氢氧化钙当成易溶于水，或把熟石灰、石灰水、石灰石混为一谈"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08-02-04",
+   "name": "碱的化学性质",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-08-02",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": "8.2",
+   "kp_type": "规律",
+   "cognitive_level": "掌握",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "碱能使指示剂变色，能与非金属氧化物、酸和某些盐反应。抓住通性，氢氧化钠吸收二氧化碳、中和酸才能写对方程式。",
+   "content": {
+    "typical_tasks": [
+     "能写出氢氧化钠与二氧化碳、与盐酸反应的化学方程式",
+     "能判断氢氧化铜能否与稀硫酸反应"
+    ],
+    "common_mistakes": [
+     "漏写二氧化碳与氢氧化钠反应，或不配平"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08-02-05",
+   "name": "酸碱的通性与微观解释",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-08-02",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": "8.2",
+   "kp_type": "应用",
+   "cognitive_level": "运用",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "酸的通性来自溶液中都有氢离子，碱的通性来自都有氢氧根离子。会从离子找原因，不同酸、不同碱为什么性质相似才讲得通。",
+   "content": {
+    "typical_tasks": [
+     "能说明不同酸具有通性的微观原因",
+     "能指出碱溶液中使酚酞变红的离子"
+    ],
+    "common_mistakes": [
+     "把酸溶液中的氢离子说成氢原子，或认为没溶于水的酸也有酸的通性"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08-03",
+   "name": "8.3 酸和碱的反应",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9B-08",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": "8.3",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08-03-01",
+   "name": "中和反应",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-08-03",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": "8.3",
+   "kp_type": "规律",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "酸和碱作用生成盐和水的反应叫中和反应，实质是氢离子与氢氧根结合成水。会写方程式、会举应用，改良土壤、处理废水才有化学依据。",
+   "content": {
+    "typical_tasks": [
+     "能写出盐酸与氢氧化钠反应的化学方程式",
+     "能说明用熟石灰改良酸性土壤属于哪类反应"
+    ],
+    "common_mistakes": [
+     "把所有生成盐和水的反应都当成中和，忽略反应物必须是酸和碱"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08-03-02",
+   "name": "中和反应过程中 pH 的变化",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-08-03",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": "8.3",
+   "kp_type": "应用",
+   "cognitive_level": "运用",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "向酸里滴碱，pH逐渐升高，恰好完全中和时接近七，碱过量后大于七。会读pH变化，才能判断滴到了哪一阶段。",
+   "content": {
+    "typical_tasks": [
+     "能根据pH变化判断酸中滴碱是否已过量",
+     "能指出恰好中和时溶液的pH约为七"
+    ],
+    "common_mistakes": [
+     "以为只要混合酸和碱，溶液pH就一定等于七，把酸碱性和酸碱度混在一起"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08-04",
+   "name": "8.4 常见的盐",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9B-08",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": "8.4",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08-04-01",
+   "name": "常见的盐及其用途",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-08-04",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": "8.4",
+   "kp_type": "概念",
+   "cognitive_level": "理解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "氯化钠、碳酸钠、碳酸氢钠、碳酸钙是常见盐；纯碱是碳酸钠、是盐不是碱。认清名称和类别，用途和溶液酸碱性才不会写反。",
+   "content": {
+    "typical_tasks": [
+     "能指出氯化钠、碳酸钠、碳酸氢钠、碳酸钙的一项主要用途",
+     "能判断纯碱是碳酸钠还是氢氧化钠"
+    ],
+    "common_mistakes": [
+     "把纯碱当成碱或氢氧化钠，忽略它是碳酸钠、属于盐"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08-04-02",
+   "name": "碳酸根离子的检验",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-08-04",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": "8.4",
+   "kp_type": "技能",
+   "cognitive_level": "掌握",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "加稀盐酸产生气体，再把气体通入澄清石灰水，若变浑浊，说明含碳酸根或碳酸氢根。两步都要做，检验才可靠。",
+   "content": {
+    "typical_tasks": [
+     "能说出检验碳酸根离子的操作和现象",
+     "能指出只加盐酸产生气泡还不能确定就是二氧化碳"
+    ],
+    "common_mistakes": [
+     "只加盐酸看到气泡就断定含碳酸根，不通入石灰水"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08-04-03",
+   "name": "复分解反应及其发生条件",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-08-04",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": "8.4",
+   "kp_type": "规律",
+   "cognitive_level": "掌握",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "两种化合物互相交换成分生成另外两种化合物，叫复分解反应；需要有沉淀、气体或水生成，且反应物溶解性要满足条件。会判断条件，酸碱盐之间能否反应就能自己推。",
+   "content": {
+    "typical_tasks": [
+     "能判断某反应是否属于复分解反应",
+     "能指出没有沉淀、气体或水生成时反应不能发生"
+    ],
+    "common_mistakes": [
+     "只要是两种化合物就写成能反应，不看是否生成沉淀、气体或水，也不查溶解性"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08-04-04",
+   "name": "盐的化学性质",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-08-04",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": "8.4",
+   "kp_type": "规律",
+   "cognitive_level": "掌握",
+   "difficulty": 3,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "盐能与某些金属、酸、碱、盐反应，前提是满足置换或复分解的条件。会逐条判断，鉴别、除杂才能选出试剂。",
+   "content": {
+    "typical_tasks": [
+     "能判断氯化钠溶液能否与硝酸银溶液反应",
+     "能写出碳酸钠与稀盐酸反应的化学方程式"
+    ],
+    "common_mistakes": [
+     "认为所有盐之间都能反应，不查溶解性和是否有沉淀、气体或水生成"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08-04-05",
+   "name": "常见酸碱盐的溶解性",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-08-04",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": "8.4",
+   "kp_type": "概念",
+   "cognitive_level": "理解",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "钾钠铵盐和硝酸盐都溶，盐酸盐中氯化银不溶，硫酸盐中硫酸钡不溶，碳酸盐大多不溶。口诀会用，复分解能不能发生才能判断。",
+   "content": {
+    "typical_tasks": [
+     "能判断氢氧化钙、碳酸钠、氯化银是否溶于水",
+     "能指出硫酸钡、碳酸钙难溶于水"
+    ],
+    "common_mistakes": [
+     "以为氢氧化钙完全不溶，忽略它微溶、能配石灰水"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08-04-06",
+   "name": "物质的鉴别、除杂与共存",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-08-04",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": "8.4",
+   "kp_type": "应用",
+   "cognitive_level": "运用",
+   "difficulty": 4,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "鉴别要选能产生不同现象的试剂；除杂不能引入新杂质；共存则看它们是否会相互反应。三类题会分、会选试剂，酸碱盐才算综合会用。",
+   "content": {
+    "typical_tasks": [
+     "能指出除杂时所选试剂不能引入新的杂质",
+     "能判断氢氧化钠和二氧化碳能否在同一溶液中大量共存"
+    ],
+    "common_mistakes": [
+     "除杂时把要保留的物质也反应掉，或引入了新杂质却不除去"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08-05",
+   "name": "8.5 化学肥料",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9B-08",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": "8.5",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08-05-01",
+   "name": "化肥的种类与作用",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-08-05",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": "8.5",
+   "kp_type": "概念",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "氮肥促枝叶生长，磷肥促根系和果实，钾肥促茎秆健壮，复合肥含两种以上营养元素。会认包装上的氮磷钾，选肥才不会乱。",
+   "content": {
+    "typical_tasks": [
+     "能判断尿素、磷矿粉、硫酸钾各属于哪类肥料",
+     "能指出复合肥与氮肥的区别"
+    ],
+    "common_mistakes": [
+     "看到含氮就当成氮肥，把硝酸钾只当成氮肥而忽略它也是钾肥"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-08-05-02",
+   "name": "铵态氮肥的检验",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-08-05",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第八单元 常见的酸、碱、盐",
+   "section": "8.5",
+   "kp_type": "技能",
+   "cognitive_level": "理解",
+   "difficulty": 2,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "铵态氮肥与碱混合研磨会放出有刺激性气味的氨气，能使湿润红色石蕊试纸变蓝。会操作、会认现象，氮肥种类才能在实验室里区分。",
+   "content": {
+    "typical_tasks": [
+     "能说明检验铵态氮肥的药品和现象",
+     "能指出氨气使湿润红色石蕊试纸变蓝"
+    ],
+    "common_mistakes": [
+     "把氯化铵溶液当成一定中性，忽略铵盐溶液可显酸性；或用干燥石蕊试纸检氨"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-09",
+   "name": "第九单元 现代生活与化学",
+   "subject": "化学",
+   "level": 1,
+   "parent_code": "",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第九单元 现代生活与化学",
+   "section": null,
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-09-01",
+   "name": "9.1 有机物的常识",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9B-09",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第九单元 现代生活与化学",
+   "section": "9.1",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-09-01-01",
+   "name": "有机物的概念与常见有机物",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-09-01",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第九单元 现代生活与化学",
+   "section": "9.1",
+   "kp_type": "概念",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "有机物一般指含碳的化合物，但一氧化碳、二氧化碳、碳酸盐不算；甲烷、乙醇、葡萄糖是常见有机物。会判断范围，才不会把所有含碳物质都叫有机物。",
+   "content": {
+    "typical_tasks": [
+     "能判断二氧化碳、甲烷、碳酸钙是否属于有机物",
+     "能写出甲烷、乙醇的化学式"
+    ],
+    "common_mistakes": [
+     "把二氧化碳、碳酸钙当成有机物"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-09-02",
+   "name": "9.2 合成材料",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9B-09",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第九单元 现代生活与化学",
+   "section": "9.2",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-09-02-01",
+   "name": "有机高分子材料",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-09-02",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第九单元 现代生活与化学",
+   "section": "9.2",
+   "kp_type": "概念",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "塑料、合成纤维、合成橡胶属于有机高分子材料，使用方便但废弃塑料会造成白色污染。会分类、会谈污染与回收，材料话题才连得上化学。",
+   "content": {
+    "typical_tasks": [
+     "能指出塑料、合成纤维、合成橡胶都属于有机高分子材料",
+     "能说明白色污染主要来自哪类材料"
+    ],
+    "common_mistakes": [
+     "把棉花、羊毛当成合成纤维"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-09-03",
+   "name": "9.3 化学与能源",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9B-09",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第九单元 现代生活与化学",
+   "section": "9.3",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-09-03-01",
+   "name": "化学能与能源利用",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-09-03",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第九单元 现代生活与化学",
+   "section": "9.3",
+   "kp_type": "应用",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "燃烧、电池都是把化学能转化成热能或电能；使用能源时要兼顾效率和环境。会说能量去向，化学与能源才不只是背燃料名称。",
+   "content": {
+    "typical_tasks": [
+     "能指出燃烧时化学能主要转化成什么能",
+     "能说明电池是把化学能转化成电能"
+    ],
+    "common_mistakes": [
+     "把燃烧当成只释放氧气，或说电池里没有化学变化"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-09-04",
+   "name": "9.4 化学与健康",
+   "subject": "化学",
+   "level": 2,
+   "parent_code": "CHE-9B-09",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第九单元 现代生活与化学",
+   "section": "9.4",
+   "kp_type": null,
+   "cognitive_level": null,
+   "difficulty": null,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": null,
+   "content": null,
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-09-04-01",
+   "name": "六大营养素",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-09-04",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第九单元 现代生活与化学",
+   "section": "9.4",
+   "kp_type": "概念",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "人体需要蛋白质、糖类、油脂、维生素、无机盐和水这六大营养素，它们来自不同食物、作用不同。会对应食物和功能，化学与健康才具体。",
+   "content": {
+    "typical_tasks": [
+     "能列出六大营养素的名称",
+     "能指出米饭主要提供哪类营养素"
+    ],
+    "common_mistakes": [
+     "漏掉水或无机盐，只背有机营养素"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  },
+  {
+   "code": "CHE-9B-09-04-02",
+   "name": "常量元素与微量元素",
+   "subject": "化学",
+   "level": 3,
+   "parent_code": "CHE-9B-09-04",
+   "grade": "初三",
+   "textbook": "九年级下册",
+   "chapter": "第九单元 现代生活与化学",
+   "section": "9.4",
+   "kp_type": "概念",
+   "cognitive_level": "了解",
+   "difficulty": 1,
+   "exam_weight": null,
+   "ability_tags": [],
+   "summary": "钙、钾、钠等需要量较大，铁、锌、碘等需要量很小但缺了会生病，如缺钙影响骨骼、缺碘引起甲状腺肿大。会对应缺乏症，元素对健康的意义才记得住。",
+   "content": {
+    "typical_tasks": [
+     "能指出缺钙、缺铁、缺碘对人体的主要影响",
+     "能判断碘属于常量元素还是微量元素"
+    ],
+    "common_mistakes": [
+     "把碘当成常量元素，或把缺铁与缺碘的病症记混"
+    ]
+   },
+   "source_refs": [],
+   "status": "draft",
+   "version": 2
+  }
+ ],
+ "edges": [
+  {
+   "from_code": "CHE-9A-01",
+   "to_code": "CHE-9A-01-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-01-01",
+   "to_code": "CHE-9A-01-01-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-01-01",
+   "to_code": "CHE-9A-01-01-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-01",
+   "to_code": "CHE-9A-01-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-01-02",
+   "to_code": "CHE-9A-01-02-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-01-02",
+   "to_code": "CHE-9A-01-02-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-01-02",
+   "to_code": "CHE-9A-01-02-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-01-02",
+   "to_code": "CHE-9A-01-02-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-01-02",
+   "to_code": "CHE-9A-01-02-05",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-01",
+   "to_code": "CHE-9A-01-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-01-03",
+   "to_code": "CHE-9A-01-03-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-01-03",
+   "to_code": "CHE-9A-01-03-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-01-03",
+   "to_code": "CHE-9A-01-03-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-01",
+   "to_code": "CHE-9A-01-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-01-04",
+   "to_code": "CHE-9A-01-04-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-01-04",
+   "to_code": "CHE-9A-01-04-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-01-04",
+   "to_code": "CHE-9A-01-04-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-01-04",
+   "to_code": "CHE-9A-01-04-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02",
+   "to_code": "CHE-9A-02-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02-01",
+   "to_code": "CHE-9A-02-01-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02-01",
+   "to_code": "CHE-9A-02-01-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02-01",
+   "to_code": "CHE-9A-02-01-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02-01",
+   "to_code": "CHE-9A-02-01-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02",
+   "to_code": "CHE-9A-02-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02-02",
+   "to_code": "CHE-9A-02-02-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02-02",
+   "to_code": "CHE-9A-02-02-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02-02",
+   "to_code": "CHE-9A-02-02-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02-02",
+   "to_code": "CHE-9A-02-02-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02-02",
+   "to_code": "CHE-9A-02-02-05",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02-02",
+   "to_code": "CHE-9A-02-02-06",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02-02",
+   "to_code": "CHE-9A-02-02-07",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02-02",
+   "to_code": "CHE-9A-02-02-08",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02-02",
+   "to_code": "CHE-9A-02-02-09",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02",
+   "to_code": "CHE-9A-02-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02-03",
+   "to_code": "CHE-9A-02-03-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02-03",
+   "to_code": "CHE-9A-02-03-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02-03",
+   "to_code": "CHE-9A-02-03-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02-03",
+   "to_code": "CHE-9A-02-03-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02-03",
+   "to_code": "CHE-9A-02-03-05",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02",
+   "to_code": "CHE-9A-02-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02-04",
+   "to_code": "CHE-9A-02-04-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-02-04",
+   "to_code": "CHE-9A-02-04-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-03",
+   "to_code": "CHE-9A-03-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-03-01",
+   "to_code": "CHE-9A-03-01-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-03-01",
+   "to_code": "CHE-9A-03-01-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-03-01",
+   "to_code": "CHE-9A-03-01-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-03-01",
+   "to_code": "CHE-9A-03-01-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-03",
+   "to_code": "CHE-9A-03-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-03-02",
+   "to_code": "CHE-9A-03-02-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-03-02",
+   "to_code": "CHE-9A-03-02-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-03-02",
+   "to_code": "CHE-9A-03-02-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-03-02",
+   "to_code": "CHE-9A-03-02-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-03-02",
+   "to_code": "CHE-9A-03-02-05",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-03",
+   "to_code": "CHE-9A-03-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-03-03",
+   "to_code": "CHE-9A-03-03-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-03-03",
+   "to_code": "CHE-9A-03-03-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-03-03",
+   "to_code": "CHE-9A-03-03-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-03",
+   "to_code": "CHE-9A-03-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-03-04",
+   "to_code": "CHE-9A-03-04-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-03-04",
+   "to_code": "CHE-9A-03-04-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-03",
+   "to_code": "CHE-9A-03-05",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-03-05",
+   "to_code": "CHE-9A-03-05-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-03-05",
+   "to_code": "CHE-9A-03-05-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-03-05",
+   "to_code": "CHE-9A-03-05-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-04",
+   "to_code": "CHE-9A-04-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-04-01",
+   "to_code": "CHE-9A-04-01-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-04-01",
+   "to_code": "CHE-9A-04-01-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-04-01",
+   "to_code": "CHE-9A-04-01-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-04-01",
+   "to_code": "CHE-9A-04-01-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-04",
+   "to_code": "CHE-9A-04-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-04-02",
+   "to_code": "CHE-9A-04-02-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-04-02",
+   "to_code": "CHE-9A-04-02-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-04-02",
+   "to_code": "CHE-9A-04-02-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-04",
+   "to_code": "CHE-9A-04-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-04-03",
+   "to_code": "CHE-9A-04-03-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-04-03",
+   "to_code": "CHE-9A-04-03-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-04-03",
+   "to_code": "CHE-9A-04-03-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-04-03",
+   "to_code": "CHE-9A-04-03-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-04-03",
+   "to_code": "CHE-9A-04-03-05",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-04-03",
+   "to_code": "CHE-9A-04-03-06",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-05",
+   "to_code": "CHE-9A-05-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-05-01",
+   "to_code": "CHE-9A-05-01-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-05-01",
+   "to_code": "CHE-9A-05-01-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-05",
+   "to_code": "CHE-9A-05-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-05-02",
+   "to_code": "CHE-9A-05-02-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-05-02",
+   "to_code": "CHE-9A-05-02-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-05-02",
+   "to_code": "CHE-9A-05-02-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-05",
+   "to_code": "CHE-9A-05-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-05-03",
+   "to_code": "CHE-9A-05-03-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-05-03",
+   "to_code": "CHE-9A-05-03-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-05-03",
+   "to_code": "CHE-9A-05-03-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-05-03",
+   "to_code": "CHE-9A-05-03-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-05-03",
+   "to_code": "CHE-9A-05-03-05",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-05-03",
+   "to_code": "CHE-9A-05-03-06",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-05-03",
+   "to_code": "CHE-9A-05-03-07",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-05",
+   "to_code": "CHE-9A-05-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-05-04",
+   "to_code": "CHE-9A-05-04-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-05-04",
+   "to_code": "CHE-9A-05-04-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-05-04",
+   "to_code": "CHE-9A-05-04-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-06",
+   "to_code": "CHE-9B-06-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-06-01",
+   "to_code": "CHE-9B-06-01-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-06-01",
+   "to_code": "CHE-9B-06-01-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-06",
+   "to_code": "CHE-9B-06-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-06-02",
+   "to_code": "CHE-9B-06-02-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-06-02",
+   "to_code": "CHE-9B-06-02-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-06-02",
+   "to_code": "CHE-9B-06-02-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-06-02",
+   "to_code": "CHE-9B-06-02-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-06-02",
+   "to_code": "CHE-9B-06-02-05",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-06",
+   "to_code": "CHE-9B-06-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-06-03",
+   "to_code": "CHE-9B-06-03-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-06-03",
+   "to_code": "CHE-9B-06-03-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-06-03",
+   "to_code": "CHE-9B-06-03-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-06",
+   "to_code": "CHE-9B-06-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-06-04",
+   "to_code": "CHE-9B-06-04-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-07",
+   "to_code": "CHE-9B-07-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-07-01",
+   "to_code": "CHE-9B-07-01-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-07-01",
+   "to_code": "CHE-9B-07-01-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-07-01",
+   "to_code": "CHE-9B-07-01-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-07",
+   "to_code": "CHE-9B-07-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-07-02",
+   "to_code": "CHE-9B-07-02-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-07-02",
+   "to_code": "CHE-9B-07-02-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-07-02",
+   "to_code": "CHE-9B-07-02-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-07-02",
+   "to_code": "CHE-9B-07-02-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-07-02",
+   "to_code": "CHE-9B-07-02-05",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-07",
+   "to_code": "CHE-9B-07-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-07-03",
+   "to_code": "CHE-9B-07-03-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-07-03",
+   "to_code": "CHE-9B-07-03-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-07-03",
+   "to_code": "CHE-9B-07-03-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-07-03",
+   "to_code": "CHE-9B-07-03-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-07",
+   "to_code": "CHE-9B-07-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-07-04",
+   "to_code": "CHE-9B-07-04-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-07-04",
+   "to_code": "CHE-9B-07-04-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-08",
+   "to_code": "CHE-9B-08-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-08-01",
+   "to_code": "CHE-9B-08-01-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-08-01",
+   "to_code": "CHE-9B-08-01-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-08",
+   "to_code": "CHE-9B-08-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-08-02",
+   "to_code": "CHE-9B-08-02-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-08-02",
+   "to_code": "CHE-9B-08-02-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-08-02",
+   "to_code": "CHE-9B-08-02-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-08-02",
+   "to_code": "CHE-9B-08-02-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-08-02",
+   "to_code": "CHE-9B-08-02-05",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-08",
+   "to_code": "CHE-9B-08-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-08-03",
+   "to_code": "CHE-9B-08-03-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-08-03",
+   "to_code": "CHE-9B-08-03-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-08",
+   "to_code": "CHE-9B-08-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-08-04",
+   "to_code": "CHE-9B-08-04-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-08-04",
+   "to_code": "CHE-9B-08-04-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-08-04",
+   "to_code": "CHE-9B-08-04-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-08-04",
+   "to_code": "CHE-9B-08-04-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-08-04",
+   "to_code": "CHE-9B-08-04-05",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-08-04",
+   "to_code": "CHE-9B-08-04-06",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-08",
+   "to_code": "CHE-9B-08-05",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-08-05",
+   "to_code": "CHE-9B-08-05-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-08-05",
+   "to_code": "CHE-9B-08-05-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-09",
+   "to_code": "CHE-9B-09-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-09-01",
+   "to_code": "CHE-9B-09-01-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-09",
+   "to_code": "CHE-9B-09-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-09-02",
+   "to_code": "CHE-9B-09-02-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-09",
+   "to_code": "CHE-9B-09-03",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-09-03",
+   "to_code": "CHE-9B-09-03-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-09",
+   "to_code": "CHE-9B-09-04",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "章→节",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-09-04",
+   "to_code": "CHE-9B-09-04-01",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9B-09-04",
+   "to_code": "CHE-9B-09-04-02",
+   "relation": "parent_child",
+   "confidence": 1.0,
+   "rationale": "节→知识点",
+   "level": "structure"
+  },
+  {
+   "from_code": "CHE-9A-01-01-01",
+   "to_code": "CHE-9A-01-01-02",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "先知道化学研究什么",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-02-01",
+   "to_code": "CHE-9A-01-02-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "取用要用到仪器",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-02-01",
+   "to_code": "CHE-9A-01-02-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "加热要用酒精灯与试管",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-02-02",
+   "to_code": "CHE-9A-01-02-04",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "实验基本操作的一部分",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-02-03",
+   "to_code": "CHE-9A-01-02-05",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "加热是主要安全风险",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-01-01",
+   "to_code": "CHE-9A-01-03-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "化学研究物质的变化",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-03-01",
+   "to_code": "CHE-9A-01-03-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "现象伴随化学变化",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-02-03",
+   "to_code": "CHE-9A-01-03-03",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "实验操作",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-03-02",
+   "to_code": "CHE-9A-01-03-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "观察燃烧现象",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-03-01",
+   "to_code": "CHE-9A-01-04-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "性质由变化中表现出来",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-04-01",
+   "to_code": "CHE-9A-01-04-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "辨析建立在两组概念上",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-03-03",
+   "to_code": "CHE-9A-01-04-03",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "从探究活动归纳环节",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-04-03",
+   "to_code": "CHE-9A-01-04-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "按探究环节进行",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-04-01",
+   "to_code": "CHE-9A-01-04-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "探究的是性质",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-01-01",
+   "to_code": "CHE-9A-02-01-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "实验验证氧气约占 1/5",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-02-03",
+   "to_code": "CHE-9A-02-01-02",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "点燃红磷",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-01-01",
+   "to_code": "CHE-9A-02-01-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "空气是混合物的典型",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-01-01",
+   "to_code": "CHE-9A-02-01-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "用途由成分决定",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-03-01",
+   "to_code": "CHE-9A-02-02-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "被解释的对象",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-02-01",
+   "to_code": "CHE-9A-02-02-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "先有粒子再谈性质",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-02-02",
+   "to_code": "CHE-9A-02-02-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "在性质基础上区分",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-02-03",
+   "to_code": "CHE-9A-02-02-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "解释基于可分不可分",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-01-03",
+   "to_code": "CHE-9A-02-02-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "微观解释纯净物与混合物",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-02-03",
+   "to_code": "CHE-9A-02-02-05",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "深入原子内部",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-02-05",
+   "to_code": "CHE-9A-02-02-06",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "电子如何排布",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-02-06",
+   "to_code": "CHE-9A-02-02-07",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "性质由最外层决定",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-02-07",
+   "to_code": "CHE-9A-02-02-08",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "得失电子形成离子",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-02-05",
+   "to_code": "CHE-9A-02-02-09",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "由质子中子质量估算",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-02-05",
+   "to_code": "CHE-9A-02-03-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "元素以质子数定义",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-03-01",
+   "to_code": "CHE-9A-02-03-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "分布的是元素",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-03-01",
+   "to_code": "CHE-9A-02-03-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "符号表示元素",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-03-01",
+   "to_code": "CHE-9A-02-03-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "周期表是元素的排列",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-02-06",
+   "to_code": "CHE-9A-02-03-04",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "周期与电子层数对应",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-03-01",
+   "to_code": "CHE-9A-02-03-05",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "按元素种类分类",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-01-03",
+   "to_code": "CHE-9A-02-03-05",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "纯净物再细分",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-02-03",
+   "to_code": "CHE-9A-02-04-01",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "实验操作",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-03-05",
+   "to_code": "CHE-9A-02-04-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "由实验说明水是化合物",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-03-01",
+   "to_code": "CHE-9A-02-04-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "水由氢氧元素组成",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-04-01",
+   "to_code": "CHE-9A-02-04-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "科学史围绕该实验",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-02-03",
+   "to_code": "CHE-9A-02-04-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "分子模型",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-01-03",
+   "to_code": "CHE-9A-03-01-01",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "氧气是纯净物",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-01-01",
+   "to_code": "CHE-9A-03-01-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "先物性再化性",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-03-02",
+   "to_code": "CHE-9A-03-01-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "观察燃烧现象",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-01-02",
+   "to_code": "CHE-9A-03-01-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "反应类型从实例归纳",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-01-02",
+   "to_code": "CHE-9A-03-01-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "检验利用助燃性",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-03-01",
+   "to_code": "CHE-9A-03-02-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "制取氧气是化学变化，用文字表达式表示",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-01-01",
+   "to_code": "CHE-9A-03-02-01",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "先认识氧气再谈制取",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-02-01",
+   "to_code": "CHE-9A-03-02-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "二氧化锰引出催化剂",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-02-01",
+   "to_code": "CHE-9A-03-02-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "反应类型从实例归纳",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-01-03",
+   "to_code": "CHE-9A-03-02-03",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "两类基本反应对照",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-02-01",
+   "to_code": "CHE-9A-03-02-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "装置由原理决定",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-02-03",
+   "to_code": "CHE-9A-03-02-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "加热高锰酸钾",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-01-01",
+   "to_code": "CHE-9A-03-02-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "收集方法由物性决定",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-01-04",
+   "to_code": "CHE-9A-03-02-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "制取后检验验满",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-01-01",
+   "to_code": "CHE-9A-03-02-05",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "从空气中分离",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-01-02",
+   "to_code": "CHE-9A-03-03-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "燃烧是与氧气的剧烈反应",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-03-01",
+   "to_code": "CHE-9A-03-03-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "灭火是破坏燃烧条件",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-03-01",
+   "to_code": "CHE-9A-03-03-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "爆炸是急速燃烧",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-04-01",
+   "to_code": "CHE-9A-03-04-01",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "认识水后谈资源",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-04-01",
+   "to_code": "CHE-9A-03-04-02",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "水质问题",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-01-03",
+   "to_code": "CHE-9A-03-05-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "净化是从混合物中分离",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-04-02",
+   "to_code": "CHE-9A-03-05-01",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "软化是净化的一种",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-05-01",
+   "to_code": "CHE-9A-03-05-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "过滤是净化方法之一",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-02-01",
+   "to_code": "CHE-9A-03-05-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "漏斗、烧杯、玻璃棒",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-05-01",
+   "to_code": "CHE-9A-03-05-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "净水器综合多种方法",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-05-02",
+   "to_code": "CHE-9A-03-05-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "净水器核心是过滤吸附",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-03-03",
+   "to_code": "CHE-9A-04-01-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "化学式由元素符号组成",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-02-08",
+   "to_code": "CHE-9A-04-01-02",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "化合价与得失电子相关",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-04-01-01",
+   "to_code": "CHE-9A-04-01-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "化合价用来书写化学式",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-04-01-02",
+   "to_code": "CHE-9A-04-01-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "书写依据化合价",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-02-09",
+   "to_code": "CHE-9A-04-01-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "相对分子质量由相对原子质量求和",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-04-01-01",
+   "to_code": "CHE-9A-04-01-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "计算基于化学式",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-03-01",
+   "to_code": "CHE-9A-04-02-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "定律描述化学变化",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-02-03",
+   "to_code": "CHE-9A-04-02-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "原子不变是解释依据",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-04-02-01",
+   "to_code": "CHE-9A-04-02-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "先有定律再解释",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-04-02-01",
+   "to_code": "CHE-9A-04-02-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "实验验证定律",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-04-01-03",
+   "to_code": "CHE-9A-04-03-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "方程式由化学式组成",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-04-02-01",
+   "to_code": "CHE-9A-04-03-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "遵守守恒是原则之一",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-04-03-01",
+   "to_code": "CHE-9A-04-03-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "先认识方程式再书写",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-04-03-02",
+   "to_code": "CHE-9A-04-03-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "配平为满足守恒",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-04-03-03",
+   "to_code": "CHE-9A-04-03-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "配平后标注条件与符号",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-04-01-04",
+   "to_code": "CHE-9A-04-03-05",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "计算需相对分子质量",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-04-03-04",
+   "to_code": "CHE-9A-04-03-05",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "需完整正确的方程式",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-04-03-05",
+   "to_code": "CHE-9A-04-03-06",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "在基本计算上加纯度换算",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-04-01",
+   "to_code": "CHE-9A-05-01-01",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "电解水引出氢气",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-01-04",
+   "to_code": "CHE-9A-05-01-01",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "气体检验方法的类比",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-03-01",
+   "to_code": "CHE-9A-05-01-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "验纯是防爆炸",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-05-01-01",
+   "to_code": "CHE-9A-05-01-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "先性质再制取用途",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-02-04",
+   "to_code": "CHE-9A-05-01-02",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "制气装置的类比",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-05-02-01",
+   "to_code": "CHE-9A-05-02-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "先物性再化性",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-03-05",
+   "to_code": "CHE-9A-05-02-01",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "碳单质",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-05-02-02",
+   "to_code": "CHE-9A-05-02-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "实验体现还原性",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-04-03-04",
+   "to_code": "CHE-9A-05-02-03",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "需书写方程式",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-02-04",
+   "to_code": "CHE-9A-05-03-01",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "第二种气体制取的类比",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-05-03-01",
+   "to_code": "CHE-9A-05-03-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "装置由原理决定",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-02-04",
+   "to_code": "CHE-9A-05-03-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "归纳自两种气体的制取",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-05-03-02",
+   "to_code": "CHE-9A-05-03-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "归纳自两种气体的制取",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-05-03-02",
+   "to_code": "CHE-9A-05-03-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "检验验满基于性质",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-05-03-04",
+   "to_code": "CHE-9A-05-03-05",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "用途由性质决定",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-05-02-02",
+   "to_code": "CHE-9A-05-03-06",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "CO 的还原性与碳类似",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-05-02-03",
+   "to_code": "CHE-9A-05-03-06",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "还原性对照",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-05-03-04",
+   "to_code": "CHE-9A-05-03-07",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "鉴别基于性质差异",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-05-03-06",
+   "to_code": "CHE-9A-05-03-07",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "鉴别基于性质差异",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-03-01",
+   "to_code": "CHE-9A-05-04-01",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "燃料的燃烧",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-05-02-02",
+   "to_code": "CHE-9A-05-04-01",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "化石燃料含碳",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-05-04-01",
+   "to_code": "CHE-9A-05-04-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "影响来自化石燃料",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-05-04-02",
+   "to_code": "CHE-9A-05-04-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "新能源为解决环境问题",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-05-01-02",
+   "to_code": "CHE-9A-05-04-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "氢能是新能源",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-06-01-01",
+   "to_code": "CHE-9B-06-01-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "合金改善金属性能",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-04-01",
+   "to_code": "CHE-9B-06-01-01",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "物性概念",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-01-02",
+   "to_code": "CHE-9B-06-02-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "铁、镁与氧气反应已学",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-04-03-04",
+   "to_code": "CHE-9B-06-02-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "需书写化学方程式",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-05-01-01",
+   "to_code": "CHE-9B-06-02-02",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "产物是氢气",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-06-02-02",
+   "to_code": "CHE-9B-06-02-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "反应类型从实例归纳",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-06-02-02",
+   "to_code": "CHE-9B-06-02-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "两类反应都体现活动性",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-06-02-03",
+   "to_code": "CHE-9B-06-02-05",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "顺序由两类反应归纳",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-06-02-02",
+   "to_code": "CHE-9B-06-02-05",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "顺序由两类反应归纳",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-05-03-06",
+   "to_code": "CHE-9B-06-03-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "CO 还原氧化铁",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-05-02-03",
+   "to_code": "CHE-9B-06-03-01",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "还原反应的类比",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-04-03-06",
+   "to_code": "CHE-9B-06-03-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "同一方法用于冶炼计算",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-06-03-01",
+   "to_code": "CHE-9B-06-03-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "计算载体是冶炼反应",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-06-03-01",
+   "to_code": "CHE-9B-06-03-03",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "冶炼消耗资源",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-06-02-01",
+   "to_code": "CHE-9B-06-04-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "锈蚀是与氧气、水的反应",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-06-04-01",
+   "to_code": "CHE-9B-06-03-03",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "防锈是保护措施之一",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-01-03",
+   "to_code": "CHE-9B-07-01-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "溶液是均一稳定的混合物",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-07-01-01",
+   "to_code": "CHE-9B-07-01-02",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "溶解过程的能量变化",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-07-01-01",
+   "to_code": "CHE-9B-07-01-03",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "与溶液对比",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-07-01-01",
+   "to_code": "CHE-9B-07-02-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "对溶液的进一步分类",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-07-02-01",
+   "to_code": "CHE-9B-07-02-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "溶解度以饱和为前提",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-07-02-02",
+   "to_code": "CHE-9B-07-02-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "曲线是溶解度随温度变化",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-07-02-02",
+   "to_code": "CHE-9B-07-02-04",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "对比学习",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-07-02-03",
+   "to_code": "CHE-9B-07-02-05",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "由曲线陡缓选结晶方式",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-07-02-01",
+   "to_code": "CHE-9B-07-02-05",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "结晶从饱和溶液析出",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-07-01-01",
+   "to_code": "CHE-9B-07-03-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "分数由溶质溶液质量定义",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-07-03-01",
+   "to_code": "CHE-9B-07-03-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "计算是公式应用",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-07-02-02",
+   "to_code": "CHE-9B-07-03-02",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "饱和溶液质量分数与溶解度换算",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-07-03-02",
+   "to_code": "CHE-9B-07-03-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "配制先计算",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-02-02",
+   "to_code": "CHE-9B-07-03-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "称量、量取操作",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-04-03-05",
+   "to_code": "CHE-9B-07-03-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "综合两类计算",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-07-03-02",
+   "to_code": "CHE-9B-07-03-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "综合两类计算",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-03-05-02",
+   "to_code": "CHE-9B-07-04-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "提纯用到过滤",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-07-02-05",
+   "to_code": "CHE-9B-07-04-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "蒸发结晶",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-07-04-01",
+   "to_code": "CHE-9B-07-04-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "海水制盐即蒸发结晶得粗盐",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-07-03-01",
+   "to_code": "CHE-9B-07-04-02",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "海水盐度",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-07-01-01",
+   "to_code": "CHE-9B-08-01-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "指示剂检验的是溶液的酸碱性",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-04-01",
+   "to_code": "CHE-9B-08-02-01",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "物理性质概念",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-04-01",
+   "to_code": "CHE-9B-08-02-03",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "物理性质概念",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-07-02-02",
+   "to_code": "CHE-9B-08-04-05",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "溶解性由溶解度分级",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-01-01",
+   "to_code": "CHE-9B-08-01-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "从定性到定量",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-01-01",
+   "to_code": "CHE-9B-08-02-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "与指示剂作用是性质之一",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-02-01",
+   "to_code": "CHE-9B-08-02-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "先物性再化性",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-06-02-02",
+   "to_code": "CHE-9B-08-02-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "已学的一条性质",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-01-01",
+   "to_code": "CHE-9B-08-02-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "与指示剂作用是性质之一",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-02-03",
+   "to_code": "CHE-9B-08-02-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "先物性再化性",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-05-03-04",
+   "to_code": "CHE-9B-08-02-04",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "CO2 与石灰水反应已学",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-02-08",
+   "to_code": "CHE-9B-08-02-05",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "H+ 与 OH− 是离子",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-02-02",
+   "to_code": "CHE-9B-08-02-05",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "通性归纳自性质",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-02-04",
+   "to_code": "CHE-9B-08-02-05",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "通性归纳自性质",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-02-02",
+   "to_code": "CHE-9B-08-03-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "酸与碱反应",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-02-04",
+   "to_code": "CHE-9B-08-03-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "酸与碱反应",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-03-01",
+   "to_code": "CHE-9B-08-03-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "过程分析",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-01-02",
+   "to_code": "CHE-9B-08-03-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "用 pH 描述过程",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-03-05",
+   "to_code": "CHE-9B-08-04-01",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "盐是化合物",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-03-01",
+   "to_code": "CHE-9B-08-04-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "盐由中和反应引出",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-05-03-04",
+   "to_code": "CHE-9B-08-04-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "检验产物 CO2",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-04-01",
+   "to_code": "CHE-9B-08-04-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "碳酸盐",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-02-02",
+   "to_code": "CHE-9B-08-04-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "酸碱盐间反应的类型",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-02-04",
+   "to_code": "CHE-9B-08-04-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "酸碱盐间反应的类型",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-04-05",
+   "to_code": "CHE-9B-08-04-03",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "判断是否生成沉淀",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-04-03",
+   "to_code": "CHE-9B-08-04-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "盐的反应多为复分解",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-06-02-03",
+   "to_code": "CHE-9B-08-04-04",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "已学的一条性质",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-04-04",
+   "to_code": "CHE-9B-08-04-06",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "综合应用",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-02-05",
+   "to_code": "CHE-9B-08-04-06",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "综合应用",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-04-05",
+   "to_code": "CHE-9B-08-04-06",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "判断沉淀",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-04-01",
+   "to_code": "CHE-9B-08-05-01",
+   "relation": "prerequisite",
+   "strength": "soft",
+   "confidence": 0.7,
+   "rationale": "化肥多为盐",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-02-04",
+   "to_code": "CHE-9B-08-05-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "铵盐与碱反应放氨气",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-08-05-01",
+   "to_code": "CHE-9B-08-05-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "检验的是氮肥",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-05-04-01",
+   "to_code": "CHE-9B-09-01-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "甲烷、石油是有机物",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-03-05",
+   "to_code": "CHE-9B-09-01-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "有机物是含碳化合物",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-09-01-01",
+   "to_code": "CHE-9B-09-02-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "高分子材料是有机物",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-05-04-03",
+   "to_code": "CHE-9B-09-03-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "能源利用",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-01-03-02",
+   "to_code": "CHE-9B-09-03-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "化学能转化",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9B-09-01-01",
+   "to_code": "CHE-9B-09-04-01",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "糖类、油脂、蛋白质是有机物",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  },
+  {
+   "from_code": "CHE-9A-02-03-02",
+   "to_code": "CHE-9B-09-04-02",
+   "relation": "prerequisite",
+   "strength": "hard",
+   "confidence": 0.95,
+   "rationale": "人体中的元素",
+   "level": "point",
+   "edge_kind": "logic",
+   "source": "v2"
+  }
+ ]
+}

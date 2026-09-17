@@ -1,0 +1,11 @@
+{
+  "name": "@qiming-labs/knowledge-graph",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs",
+    "verify": "node scripts/verify-parity.mjs",
+    "test": "node --test test/*.test.mjs"
+  }
+}

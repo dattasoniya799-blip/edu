@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#f4f1eb" />
+    <title>错的不是这道题 · 初中数理化知识图谱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css?v=11" />
+  </head>
+  <body>
+    <div id="wrap" aria-label="错的不是这道题,是前面那一步">
+      <canvas id="cv"></canvas>
+
+      <div id="head">
+        <h1>错的不是这道题<span class="rp">。</span></h1>
+        <p class="kicker">是前面那一步没过关。再刷十套卷、再报一个班，补的都不是那一环。</p>
+        <p>
+          初中三年数理化，<b id="nCount">0</b> 个知识点、<b id="eCount">0</b> 条前后依赖，焊成一张图。
+          <b>点孩子错的那一点</b>，一路追下去，停在哪里，哪里就是该补的课。
+        </p>
+        <div id="ctas">
+          <button class="btn is-on" type="button" data-stage="junior">初中</button>
+          <button class="btn" type="button" data-stage="senior">高中</button>
+        </div>
+      </div>
+
+      <div id="legend" aria-label="学科，点击切换">
+        <div class="lg-title">点学科，看清孩子三年要走的路</div>
+        <div id="chips"></div>
+      </div>
+
+      <div id="tip" role="tooltip">
+        <div class="tmeta"><span class="sw"></span><span class="ts"></span></div>
+        <div class="ttl"></div>
+        <div class="q"></div>
+      </div>
+
+      <div id="card" role="dialog" aria-label="选中的知识点">
+        <div class="cbar">
+          <button class="back" type="button" aria-label="返回上一个"><span aria-hidden="true">←</span> 返回</button>
+          <span class="sp"></span>
+          <button class="close" type="button" aria-label="关闭">×</button>
+        </div>
+        <div class="cmeta"><span class="sw"></span><span class="cs"></span></div>
+        <div class="ctl"></div>
+        <div class="cq"></div>
+        <div class="intro can" hidden>
+          <div class="seclabel">做到这几条，才算真会</div>
+          <ul class="ev ev-can"></ul>
+        </div>
+        <div class="intro pit" hidden>
+          <div class="seclabel">孩子最容易栽在这儿</div>
+          <ul class="ev ev-pit"></ul>
+        </div>
+        <div class="big"><span class="n mono">0</span><span class="u">步铺路</span></div>
+        <div class="sub"></div>
+        <div class="sec sec-pre">
+          <div class="seclabel">这一步压着前面 <span class="k mono"></span> 步</div>
+          <div class="rows rows-pre"></div>
+        </div>
+        <div class="sec sec-next">
+          <div class="seclabel">过了这一步，后面 <span class="k mono"></span> 步才通</div>
+          <div class="rows rows-next"></div>
+        </div>
+      </div>
+
+      <div id="empty" hidden>
+        <div class="ctl">高中版在路上</div>
+        <p>初中三年数理化已经全部铺好。高中这条路，很快接上。</p>
+      </div>
+
+      <div id="hint"><b>拖动</b>旋转 · <b>滚轮</b>缩放 · <b>点一个点</b>，看它背后压着的整条链</div>
+    </div>
+    <script src="/app.js?v=22" type="module"></script>
+  </body>
+</html>
