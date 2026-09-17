@@ -152,8 +152,8 @@ export function questionToForm(q: QuestionDto): QuestionForm {
   f.type = q.type; f.stage = q.stage; f.subject = q.subject;
   f.textbookVersion = q.textbookVersion ?? ''; f.chapter = q.chapter ?? '';
   f.stemLatex = q.stemLatex;
-  f.figures = q.figures.map((x) => ({ ossKey: x.ossKey, position: x.position, anchor: x.anchor }));
-  if (q.options.length > 0) {
+  f.figures = (q.figures ?? []).map((x) => ({ ossKey: x.ossKey, position: x.position, anchor: x.anchor }));
+  if ((q.options ?? []).length > 0) {
     f.options = q.options.map((o) => ({ label: o.label, contentLatex: o.contentLatex, isCorrect: o.isCorrect === true }));
     while (f.options.length < 4) f.options.push({ label: 'ABCDEFGH'[f.options.length], contentLatex: '', isCorrect: false });
   }
@@ -164,11 +164,11 @@ export function questionToForm(q: QuestionDto): QuestionForm {
     else if ('texts' in a) f.blankAnswers = a.texts.length > 0 ? [...a.texts] : [''];
     else if ('referenceLatex' in a) f.referenceLatex = a.referenceLatex;
   }
-  f.rubric = q.rubric.map((r) => ({ ...r }));
+  f.rubric = (q.rubric ?? []).map((r) => ({ ...r }));
   f.analysisBriefLatex = q.analysisBriefLatex ?? '';
   f.analysisLatex = q.analysisLatex ?? '';
   f.analysisDetailLatex = q.analysisDetailLatex ?? '';
   f.difficulty = q.difficulty;
-  f.tags = q.tags.map((t) => ({ ...t }));
+  f.tags = (q.tags ?? []).map((t) => ({ ...t }));
   return f;
 }

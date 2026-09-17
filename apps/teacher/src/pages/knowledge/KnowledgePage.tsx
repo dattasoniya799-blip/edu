@@ -12,6 +12,7 @@ import type { KpContentPackDto, KpGraphDto, KpNodeDto, PaperDto, ResourceDto } f
 import { Button, Card, EmptyState, Modal, Skeleton, Tag, TexText, useToast } from '@qiming/ui';
 import { api } from '../../api';
 import { PageHead } from '../Shell';
+import { paperQuestions } from '../paper/lib/paperLibrary';
 import { curriculumSubjects, defaultKnowledgeSubject, filterNodesByKeyword, pickKnowledgeGraph } from './lib/knowledge';
 
 const LINK_CLS = 'text-[13px] font-semibold text-primary hover:underline';
@@ -154,7 +155,7 @@ export function KnowledgePage() {
       ? (selectedId == null ? resources : [...resources.filter((r) => r.kpNodeId === selectedId), ...resources.filter((r) => r.kpNodeId !== selectedId)])
           .map((r) => ({ id: r.id, name: r.name, meta: r.kpNodeId === selectedId ? `${r.type} · 本知识点` : r.type }))
       : mount === 'practice'
-        ? papers.filter((p) => p.type === 'practice').map((p) => ({ id: p.id, name: p.name, meta: `${p.questions.length} 题 · ${p.totalScore} 分` }))
+        ? papers.filter((p) => p.type === 'practice').map((p) => ({ id: p.id, name: p.name, meta: `${paperQuestions(p).length} 题 · ${p.totalScore} 分` }))
         : [];
 
   if (loading) {
@@ -301,7 +302,7 @@ export function KnowledgePage() {
                         ? (() => {
                           const p = paperById.get(pack.practicePaperId!);
                           return p
-                            ? <>《{p.name}》 · {p.questions.length} 题 · 共 {p.totalScore} 分</>
+                            ? <>《{p.name}》 · {paperQuestions(p).length} 题 · 共 {p.totalScore} 分</>
                             : <>《{pack.practicePaperName ?? `试卷 #${pack.practicePaperId}`}》</>;
                         })()
                         : <span className="text-ink-3">未挂随堂练卷</span>}

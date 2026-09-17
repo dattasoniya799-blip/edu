@@ -7,6 +7,8 @@ import {
   countByType,
   collectPaperPages,
   filterPapers,
+  paperKpNodes,
+  paperQuestions,
   paperStatusLabel,
 } from '../paperLibrary';
 
@@ -77,6 +79,40 @@ describe('paperStatusLabel(状态文案)', () => {
   it('published=已发布,其余=草稿', () => {
     expect(paperStatusLabel('published')).toBe('已发布');
     expect(paperStatusLabel('draft')).toBe('草稿');
+  });
+});
+
+describe('paperQuestions / paperKpNodes(走查 A · 试卷库崩溃防守)', () => {
+  it('正常数组 → 原样返回', () => {
+    const withQ = { ...mk(1, 'x', 'practice'), questions: [{ seq: 1, questionId: 9, score: 5, type: 'single' as const, stemLatex: 's' }] };
+    expect(paperQuestions(withQ)).toHaveLength(1);
+    const withKp = { ...mk(1, 'x', 'practice'), kpNodes: [{ id: 1, name: '一次函数' }] };
+    expect(paperKpNodes(withKp)).toHaveLength(1);
+  });
+
+  it('字段缺失(undefined)→ 兜底空数组,不抛错', () => {
+    // 故意脱离 PaperDto 的类型保证,模拟运行时真的缺字段(版本滚动升级 / 半成品对象);
+    // 这正是走查 A 想防的场景 —— 类型上"必填"不等于运行时一定给到。
+    const broken = { ...mk(1, 'x', 'practice') } as Record<string, unknown>;
+    delete broken.questions;
+    delete broken.kpNodes;
+    const brokenPaper = broken as unknown as PaperDto;
+    expect(() => paperQuestions(brokenPaper).length).not.toThrow();
+    expect(() => paperKpNodes(brokenPaper).length).not.toThrow();
+    expect(paperQuestions(brokenPaper)).toEqual([]);
+    expect(paperKpNodes(brokenPaper)).toEqual([]);
+  });
+
+  it('字段为 null → 同样兜底空数组', () => {
+    const nulled = { ...mk(1, 'x', 'practice'), questions: null, kpNodes: null } as unknown as PaperDto;
+    expect(paperQuestions(nulled)).toEqual([]);
+    expect(paperKpNodes(nulled)).toEqual([]);
+  });
+
+  it('传 null/undefined 本体也不抛错', () => {
+    expect(paperQuestions(null)).toEqual([]);
+    expect(paperQuestions(undefined)).toEqual([]);
+    expect(paperKpNodes(null)).toEqual([]);
   });
 });
 

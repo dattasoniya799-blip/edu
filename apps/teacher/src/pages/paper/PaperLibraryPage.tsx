@@ -19,6 +19,8 @@ import {
   collectPaperPages,
   countByType,
   filterPapers,
+  paperKpNodes,
+  paperQuestions,
   paperStatusLabel,
   paperSubjects,
   type PaperTab,
@@ -195,9 +197,9 @@ export function PaperLibraryPage() {
                       {p.subject && <Tag tone="primary">{p.subject}</Tag>}
                     </div>
                     <div className="mt-0.5 text-[12.5px] text-ink-2 tabular-nums">
-                      {p.questions.length} 题 · 共 {p.totalScore} 分
-                      {p.kpNodes.length > 0 && (
-                        <span className="ml-2 text-ink-3">· 知识点:{p.kpNodes.slice(0, 3).map((k) => k.name).join('、')}{p.kpNodes.length > 3 ? ` 等 ${p.kpNodes.length} 个` : ''}</span>
+                      {paperQuestions(p).length} 题 · 共 {p.totalScore} 分
+                      {paperKpNodes(p).length > 0 && (
+                        <span className="ml-2 text-ink-3">· 知识点:{paperKpNodes(p).slice(0, 3).map((k) => k.name).join('、')}{paperKpNodes(p).length > 3 ? ` 等 ${paperKpNodes(p).length} 个` : ''}</span>
                       )}
                     </div>
                   </div>
@@ -235,10 +237,10 @@ export function PaperLibraryPage() {
                         action={<Button variant="primary" onClick={() => loadDetail(p.id)}>重试</Button>}
                       />
                     ) : detail ? (
-                      detail.questions.length === 0 ? (
+                      paperQuestions(detail).length === 0 ? (
                         <EmptyState icon="▤" text="该试卷暂无题目" />
                       ) : (
-                        detail.questions.map((q) => (
+                        paperQuestions(detail).map((q) => (
                           <div key={q.seq} className="flex items-start gap-3.5 border-b border-line px-5 py-3.5 last:border-none">
                             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-pill bg-primary-soft text-[13px] font-bold tabular-nums text-primary">
                               {q.seq}

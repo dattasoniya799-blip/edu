@@ -51,6 +51,15 @@ describe('契约变更 · 试卷分类 / 草稿态 / 课堂课件下发(2026-09-
 
   it('GET /papers:每张卷带 subject / kpNodes;subject / kpNodeId / status 筛选生效', async () => {
     const list = await get('/papers?size=50', teacherAt).expect(200);
+    // 走查 A(教师端试卷库点开就崩,Cannot read .../reading 'length'):前端此前直读
+    // p.questions.length / p.kpNodes.length 没有防守;根因排查确认服务端 toDto 始终把二者
+    // 拼成数组(可空但绝不缺失/为 null)。这里把该不变式钉进 e2e——任何未来改动(如为分页
+    // 性能加一版只选部分字段的轻量查询)一旦让某条记录漏出这两个数组字段,测试立刻红,
+    // 不必等前端崩了才发现(前端侧防守见 apps/teacher paperLibrary.ts#paperQuestions/paperKpNodes)。
+    for (const p of list.body.data.items) {
+      expect(Array.isArray(p.questions)).toBe(true);
+      expect(Array.isArray(p.kpNodes)).toBe(true);
+    }
     const seed = list.body.data.items.find((p: { id: number }) => p.id === Number(fx.paperId));
     expect(seed.subject).toBe('数学');
     expect(seed.kpNodes).toEqual([{ id: expect.any(Number), name: fx.kpNodeName }]);

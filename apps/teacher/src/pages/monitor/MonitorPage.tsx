@@ -13,6 +13,7 @@ import { getToken } from '../../auth/token';
 import { PageHead } from '../Shell';
 import { fmtClock, fmtDateTime } from '../course/lib/format';
 import { SEGMENT_LABEL } from '../lesson/lib/segments';
+import { paperQuestions } from '../paper/lib/paperLibrary';
 import { deriveStats, mergeRoster, pushAlerts, type AlertEntry } from './lib/roster';
 import { createMonitorSource, type MonitorSource } from './source';
 
@@ -105,7 +106,8 @@ export function MonitorPage() {
         const practice = r.data.find((s) => s.type === 'practice');
         if (practice?.paperId != null) {
           const p = await api.get('/papers/{id}', { params: { id: practice.paperId } });
-          if (p.data.questions.length > 0) setQuestionTotal(p.data.questions.length);
+          const qCount = paperQuestions(p.data).length;
+          if (qCount > 0) setQuestionTotal(qCount);
         }
       })
       .catch(() => {});
