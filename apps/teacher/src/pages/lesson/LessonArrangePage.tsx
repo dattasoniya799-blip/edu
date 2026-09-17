@@ -10,20 +10,28 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ERROR_CODES } from '@qiming/contracts';
-import type { KpNodeDto, PaperDto } from '@qiming/contracts';
+import type { KpGraphDto, KpNodeDto, PaperDto } from '@qiming/contracts';
 import { Button, Card, EmptyState, Modal, Skeleton, Tag, useToast } from '@qiming/ui';
 import { api, type GetData } from '../../api';
 import { useFeatures } from '../../features/FeaturesProvider';
 import { FEATURE_AI_COURSEWARE } from '../../features/lib/features';
+import { GroupedPicker, type GroupedItem } from '../../components/GroupedPicker';
 import { PageHead } from '../Shell';
-import { PAPER_TYPE_LABEL } from '../paper/lib/paperLibrary';
+import { PAPER_TYPE_LABEL, paperQuestions } from '../paper/lib/paperLibrary';
+import { TYPE_META } from '../resources/lib/resource';
 import { CHECKLIST_LABEL, bizError, missingMessages, newSegment, pendingPaperKeys } from './lib/segments';
 import { arrangeKpGraphId, homeworkPaperChoices } from './lib/pickers';
+import { buildKpDirectory, curriculumGraphs, paperGrade, paperGroupPath, resourceGroupPath } from './lib/kpDirectory';
 import {
   UNIT_SLOT_LABEL, mergeSegments, newUnit, openingFromLesson, openingToConfig, outsideSegments,
   segmentsToUnits, unitWarnings, unitsDuration, unitsToSegments,
   type KpUnit, type OpeningConfig, type SegmentLike, type UnitSlotType,
 } from './lib/units';
+
+/** B/C:资源类型筛选下拉的中文展示(复用资源库既有口径,勿另造) */
+const RESOURCE_KIND_LABEL: Record<string, string> = Object.fromEntries(
+  Object.entries(TYPE_META).map(([k, v]) => [k, v.label]),
+);
 
 const LINK_CLS = 'text-[13px] font-semibold text-primary hover:underline';
 const SLOT_ICON: Record<UnitSlotType, { glyph: string; cls: string }> = {
@@ -38,12 +46,6 @@ function bySubjectFirst<T extends { subject: string | null }>(list: T[], subject
   if (!subject) return list;
   return [...list.filter((p) => p.subject === subject), ...list.filter((p) => p.subject !== subject)];
 }
-/** 选卷面板的学科前缀:本课程学科标「本学科」,其他学科标学科名,未标学科留空 */
-function subjectMeta(p: { subject: string | null }, subject?: string): string {
-  if (!p.subject) return '';
-  return `${p.subject === subject ? '本学科' : p.subject} · `;
-}
-
 export function LessonArrangePage() {
   const { id } = useParams();
   const lessonId = Number(id);
@@ -70,6 +72,26 @@ export function LessonArrangePage() {
   const [missing, setMissing] = useState<string[] | null>(null);
   /** 挂载弹窗:{unitIdx, slot} 或 opening 资源 或 homework 作业卷 */
   const [mount, setMount] = useState<{ unitIdx: number; slot: 'lecture' | 'practice' } | 'opening' | 'homework' | null>(null);
+  /**
+   * [B/C 挂载课件 / 选卷弹窗的目录分组] 知识点目录(学科/年级/章节),懒加载:
+   * 只在两个挂载弹窗第一次打开时才拉 /kp/graphs + 每张教材知识点图谱的 /kp/nodes,
+   * 避免编排页一进来就多打一批与「知识点选择」弹窗重复的请求。
+   */
+  const [kpGraphsAll, setKpGraphsAll] = useState<KpGraphDto[] | null>(null);
+  const [nodesByGraph, setNodesByGraph] = useState<Record<number, KpNodeDto[]>>({});
+  useEffect(() => {
+    if (mount == null || kpGraphsAll != null) return;
+    api.get('/kp/graphs')
+      .then((r) => {
+        setKpGraphsAll(r.data);
+        const graphs = curriculumGraphs(r.data);
+        return Promise.all(graphs.map((g) => api.get('/kp/nodes', { query: { graphId: g.id } })
+          .then((n) => setNodesByGraph((m) => ({ ...m, [g.id]: n.data })))
+          .catch(() => undefined)));
+      })
+      .catch(() => setKpGraphsAll([])); // 目录拉取失败不阻断弹窗,退化为「全部未归类/未标年级」
+  }, [mount, kpGraphsAll]);
+  const kpDir = useMemo(() => buildKpDirectory(kpGraphsAll ?? [], nodesByGraph), [kpGraphsAll, nodesByGraph]);
   /** 知识点选择弹窗目标单元 */
   const [kpIdx, setKpIdx] = useState<number | null>(null);
   const [kpKeyword, setKpKeyword] = useState('');
@@ -285,21 +307,40 @@ export function LessonArrangePage() {
   const lectureResources = mountUnitKp == null
     ? resources
     : [...resources.filter((r) => r.kpNodeId === mountUnitKp), ...resources.filter((r) => r.kpNodeId !== mountUnitKp)];
-  const mountItems: { id: number; name: string; meta: string }[] =
+  /**
+   * [B/C 走查] 两个弹窗此前都是一张平铺列表,东西一多找不到。改成 GroupedPicker 分组:
+   *   - 挂载课件:学科 › 年级 › 章节(资源 kpNodeId 经知识点目录推,未挂/查不到 → 未归类)
+   *     + 类型(ppt/video/pdf/image/interactive)筛选;
+   *   - 选随堂练 / 课后作业试卷:学科 › 类型(随堂练/课后作业/考试)
+   *     + 年级(卷内 kpNodes 命中知识点的年级推,一个都没命中 → 未标年级)筛选。
+   * 保留原「本学科优先」排序(不改变候选集,只影响同组内呈现顺序,过滤后顺序不变)。
+   */
+  const mountGroupedItems: GroupedItem[] =
     mountSlot === 'lecture'
-      ? lectureResources.map((r) => ({ id: r.id, name: r.name, meta: mountUnitKp != null && r.kpNodeId === mountUnitKp ? `${r.type} · 本知识点` : r.type }))
+      ? lectureResources.map((r) => ({
+        id: r.id,
+        name: r.name,
+        meta: mountUnitKp != null && r.kpNodeId === mountUnitKp ? '本知识点' : undefined,
+        path: resourceGroupPath(r, kpDir),
+        kind: r.type,
+      }))
       : mountSlot === 'practice'
-        // [2026-09-02 A-2] 本课程学科的卷置顶并标学科(PaperDto.subject 聚合值);其他学科的卷仍可选但排后
+        // [2026-09-02 A-2] 本课程学科的卷置顶(PaperDto.subject 聚合值);其他学科的卷仍可选但排后
         ? bySubjectFirst(papers.filter((p) => p.type === 'practice'), myCourse?.subject).map((p) => ({
-          id: p.id, name: p.name,
-          meta: `${subjectMeta(p, myCourse?.subject)}${p.questions.length} 题 · ${p.totalScore} 分${p.status !== 'published' ? ' · 未发布' : ''}`,
+          id: p.id,
+          name: p.name,
+          meta: `${paperQuestions(p).length} 题 · ${p.totalScore} 分${p.status !== 'published' ? ' · 未发布' : ''}`,
+          path: paperGroupPath(p, PAPER_TYPE_LABEL),
+          kind: paperGrade(p, kpDir),
         }))
         : mountSlot === 'homework'
-          // 任意已发布卷都能布置为课后作业(此前只列 type=homework,练习卷被静默排除;2026-07 用户批准);
-          // 选项带类型标注(随堂练/课后作业/考试),homework 优先。若服务端仍限制 homework 段挂卷类型,需另行放开。
+          // 任意已发布卷都能布置为课后作业(此前只列 type=homework,练习卷被静默排除;2026-07 用户批准)。
           ? bySubjectFirst(homeworkPaperChoices(papers), myCourse?.subject).map((p) => ({
-            id: p.id, name: p.name,
-            meta: `${subjectMeta(p, myCourse?.subject)}${PAPER_TYPE_LABEL[p.type]} · ${p.questions.length} 题 · ${p.totalScore} 分${p.status !== 'published' ? ' · 未发布' : ''}`,
+            id: p.id,
+            name: p.name,
+            meta: `${paperQuestions(p).length} 题 · ${p.totalScore} 分${p.status !== 'published' ? ' · 未发布' : ''}`,
+            path: paperGroupPath(p, PAPER_TYPE_LABEL),
+            kind: paperGrade(p, kpDir),
           }))
           : [];
   const mountSelectedId = mountIsOpening
@@ -453,7 +494,7 @@ export function LessonArrangePage() {
                 {homeworkSeg?.paperId != null ? (() => {
                   const p = paperById.get(homeworkSeg.paperId!);
                   return p
-                    ? <>《{p.name}》 · {p.questions.length} 题 · 共 {p.totalScore} 分{p.status !== 'published' && <span className="text-red"> · 未发布(发布会被拦截)</span>}</>
+                    ? <>《{p.name}》 · {paperQuestions(p).length} 题 · 共 {p.totalScore} 分{p.status !== 'published' && <span className="text-red"> · 未发布(发布会被拦截)</span>}</>
                     : <span className="text-ink-3">已挂作业卷 #{homeworkSeg.paperId}</span>;
                 })() : (
                   <span className="text-ink-3">未布置课后作业 —— 「去组卷」从题库选题发布作业,或「选择已有卷」挂一份现成卷</span>
@@ -533,33 +574,26 @@ export function LessonArrangePage() {
             </button>
           </div>
         )}
-        {mountItems.length === 0 ? (
+        {mountGroupedItems.length === 0 ? (
           <EmptyState icon="▣" text={mountSlot === 'lecture' ? '资源库暂无课件' : mountSlot === 'homework' ? '暂无可用课后作业试卷,可「去组卷」新建' : '暂无可用随堂练试卷'} />
         ) : (
-          <div className="flex flex-col gap-2">
-            {mountItems.map((it) => {
-              const selected = mountSelectedId === it.id;
-              return (
-                <button
-                  key={it.id} type="button"
-                  className={`flex items-center justify-between rounded-md border-[1.5px] px-3.5 py-2.5 text-left text-[13.5px] ${
-                    selected ? 'border-primary bg-primary-soft font-bold text-primary' : 'border-line hover:border-ink-3'
-                  }`}
-                  onClick={() => {
-                    if (mount == null) return;
-                    if (mount === 'opening') patchOpening({ resourceId: it.id });
-                    else if (mount === 'homework') setHomeworkPaper(it.id);
-                    else if (mount.slot === 'lecture') patchSlot(mount.unitIdx, 'lecture', { resourceId: it.id });
-                    else patchSlot(mount.unitIdx, 'practice', { paperId: it.id });
-                    setMount(null);
-                  }}
-                >
-                  <span>{it.name}</span>
-                  <small className="text-xs text-ink-3">{it.meta}</small>
-                </button>
-              );
-            })}
-          </div>
+          <GroupedPicker
+            items={mountGroupedItems}
+            levelLabels={mountSlot === 'lecture' ? ['学科', '年级', '章节'] : ['学科', '类型']}
+            kindLabel={mountSlot === 'lecture' ? '课件类型' : '年级'}
+            kindOptionLabels={mountSlot === 'lecture' ? RESOURCE_KIND_LABEL : undefined}
+            keywordPlaceholder={mountSlot === 'lecture' ? '按课件名搜索…' : '按试卷名搜索…'}
+            selectedId={mountSelectedId}
+            emptyText="没有符合筛选条件的候选,换个筛选试试"
+            onSelect={(itemId) => {
+              if (mount == null) return;
+              if (mount === 'opening') patchOpening({ resourceId: itemId });
+              else if (mount === 'homework') setHomeworkPaper(itemId);
+              else if (mount.slot === 'lecture') patchSlot(mount.unitIdx, 'lecture', { resourceId: itemId });
+              else patchSlot(mount.unitIdx, 'practice', { paperId: itemId });
+              setMount(null);
+            }}
+          />
         )}
       </Modal>
 
@@ -629,7 +663,7 @@ function SlotRow({
       : <span className="text-ink-3">未挂课件 —— 点右侧「挂载课件」</span>;
   } else if (slot === 'practice') {
     desc = paper
-      ? <>《{paper.name}》 · {paper.questions.length} 题 · 共 {paper.totalScore} 分{paper.status !== 'published' && <span className="text-red"> · 未发布</span>}</>
+      ? <>《{paper.name}》 · {paperQuestions(paper).length} 题 · 共 {paper.totalScore} 分{paper.status !== 'published' && <span className="text-red"> · 未发布</span>}</>
       : <span className="text-ink-3">未挂题目/卷 —— 点右侧「选择试卷」</span>;
   } else {
     // 2026-09-02 走查 C-1:此前写「AI 按每位学生本单元错题生成 2–4 道巩固题」,服务端并无该能力,改为如实描述
