@@ -290,18 +290,18 @@ export function BankList() {
                 <div key={q.id} className="border-b border-line px-5 py-4 last:border-none">
                   <div className="mb-2 flex flex-wrap items-center gap-2">
                     <Tag tone={TYPE_TONE[q.type]}>{TYPE_LABEL[q.type]}</Tag>
-                    {q.tags.filter((t) => t.graphType === 'curriculum_knowledge').map((t) => (
+                    {(q.tags ?? []).filter((t) => t.graphType === 'curriculum_knowledge').map((t) => (
                       <Tag key={t.nodeId}>{(q.chapter ? `${q.chapter.replace(/^第.+章\s*/, '')} · ` : '') + t.name}</Tag>
                     ))}
-                    {q.tags.filter((t) => t.graphType === 'problem_solving_ability').map((t) => (
+                    {(q.tags ?? []).filter((t) => t.graphType === 'problem_solving_ability').map((t) => (
                       <Tag key={t.nodeId} tone="violet">{t.name}</Tag>
                     ))}
-                    {q.tags.filter((t) => t.graphType === 'problem_solving_strategy').map((t) => (
+                    {(q.tags ?? []).filter((t) => t.graphType === 'problem_solving_strategy').map((t) => (
                       <Tag key={t.nodeId} tone="orange">{t.name}</Tag>
                     ))}
-                    {q.figures.length > 0 && (
+                    {(q.figures ?? []).length > 0 && (
                       <span className="inline-flex items-center gap-1.5 rounded-[7px] bg-primary-soft px-2 py-0.5 text-[11.5px] text-primary">
-                        ⛶ 含 {q.figures.length} 张图
+                        ⛶ 含 {(q.figures ?? []).length} 张图
                       </span>
                     )}
                     {q.status !== 'published' && (

@@ -93,3 +93,19 @@ export function countByType(papers: PaperDto[]): Record<PaperTab, number> {
   for (const p of papers) counts[p.type] += 1;
   return counts;
 }
+
+/**
+ * [走查 A · 试卷库崩溃] 契约 `PaperDto.questions` / `.kpNodes` 是必填数组,服务端
+ * `paper.service.ts#toDto` 与 mock `withPaperMeta` 目前都始终产出数组(可能为空,绝不缺失)。
+ * 但页面此前直读 `p.questions.length` / `p.kpNodes.length`——一旦任何来源(未来的服务端改造、
+ * 版本滚动升级时的旧节点、手工拼的半成品对象)给出缺字段的记录,整页会被 ErrorBoundary
+ * 接住并显示"Cannot read properties of undefined (reading 'length')",刷新也不会好
+ * (数据本身就是坏的,不是网络抖动)。这里统一兜底,任何用到 questions/kpNodes 的地方都应
+ * 走这两个函数,不要再直接 `.length`(试卷库 / 编排页 / 知识点内容库 / 监控页同口径)。
+ */
+export function paperQuestions(p: Pick<PaperDto, 'questions'> | null | undefined): PaperDto['questions'] {
+  return Array.isArray(p?.questions) ? p.questions : [];
+}
+export function paperKpNodes(p: Pick<PaperDto, 'kpNodes'> | null | undefined): PaperDto['kpNodes'] {
+  return Array.isArray(p?.kpNodes) ? p.kpNodes : [];
+}
