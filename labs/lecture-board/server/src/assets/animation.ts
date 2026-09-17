@@ -31,7 +31,23 @@ const HTML_SYSTEM_PROMPT = `你给中学讲题白板写一张「动画卡」:一
 
 硬要求(服务端会逐条静态扫描 + 无头浏览器跑一遍,任一不过就作废):
 1. 一个文件搞定:内联 <style> 与 <script>,**不许** fetch(、XMLHttpRequest、import(、<script src=、<link href=,不许出现任何 http:// 或 https:// 地址(要内嵌图片只能用 data:)。总大小 ≤ ${HTML_MAX_BYTES / 1024} KB。
-2. 画面用 <canvas> 或内联 <svg> + 原生 JS 画,不用任何库。画布自适应:宽度 100%,高宽比约 16:10,背景米白 #faf7f0,线条 #3a3a3a,强调色 #d1495b,辅助色 #2e86ab,字体 sans-serif。
+2. **画布必须真的占满容器,内容必须真的占满画布**(这是最容易画错的地方,历史上多次翻车:画面缩在左上角一小块):
+   - html/body: \`margin:0;padding:0;width:100%;height:100%;overflow:hidden\`。
+   - <canvas> 或 <svg> 本身: CSS \`width:100%;height:100%;display:block\`(不要用 height:auto,也不要留死板的 16:10 letterbox——容器多高就画多高)。
+   - **canvas 的绘图分辨率(.width / .height 属性)必须按容器实际尺寸算,不能写死常量**:
+     \`\`\`js
+     function resize() {
+       const dpr = Math.min(window.devicePixelRatio || 1, 2);
+       const w = canvas.clientWidth, h = canvas.clientHeight;
+       canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+       draw(w, h); // 用实际 w/h 重画,不要用生成时估的一个数
+     }
+     new ResizeObserver(resize).observe(canvas);
+     resize();
+     \`\`\`
+   - **几何坐标按 w/h 的相对比例算,禁止写死一堆假设「画布很小」的绝对像素**(如 \`CX=300\` \`R=26\` 这种写死的数,不管画布多大都只占那一小块,画面就会缩在角落里)。画的东西要铺满 90% 以上的宽高——比如圆心用 \`w*0.5, h*0.45\`、半径用 \`Math.min(w,h)*0.22\` 这样按比例算,四周留白 ≤ 8%。svg 用 \`viewBox="0 0 100 62.5"\`(或任意比例)+ 上面那条 CSS,内部坐标也按这个虚拟视口的百分比摆。
+   - 背景米白 #faf7f0,线条 #3a3a3a,强调色 #d1495b,辅助色 #2e86ab,字体 sans-serif。
 3. 必须在 window 上暴露:
    window.lecture = {
      do(name, params) { … },      // 按动作名演示一段,幂等可重复调用

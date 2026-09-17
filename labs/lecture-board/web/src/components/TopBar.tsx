@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { BrandLogo } from './home/BrandLogo';
 
 export const RATES = [0.8, 1, 1.25, 1.5];
 
@@ -41,6 +42,7 @@ export function TopBar(props: {
       <button className="tb-close" onClick={props.onBack} aria-label="返回">
         ✕
       </button>
+      <BrandLogo size={20} withWordmark={false} />
       <div className="tb-pill">{props.title}</div>
 
       <div className="tb-center">

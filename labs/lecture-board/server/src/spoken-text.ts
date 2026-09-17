@@ -80,6 +80,31 @@ export function chineseNumeral(text: string): number | null {
 const PERCENT_HOLDER = '\uE010'
 
 /**
+ * 成语 / 惯用语白名单:这些词里的字看起来像「中文数字 + 量词」,但整体是固定说法,不该被拆开数字化
+ * (2026-09-17 实测:「百分之百」被当成「百分之」+「百」这个数,改成了「百分之 100」——「百」在这里
+ * 是「百分之百」的一部分,不是「百分之」后面接的那个数)。
+ * NUM_UNITS 的设计已经故意不收「角/边/次/样/下/些」等量词,躲开了「三角形」「一次函数」这类误伤;
+ * 这里额外显式保护一批常见惯用语,双重兜底,也覆盖「百分之百」这种单靠排除量词躲不掉的个例。
+ */
+const IDIOM_WHITELIST = [
+  '百分之百',
+  '一半',
+  '一样',
+  '一下',
+  '一些',
+  '二次函数',
+  '一次函数',
+  '一元二次',
+  '三角形',
+  '四边形',
+  '五边形',
+  '六边形',
+  '八边形',
+  '多边形'
+]
+const IDIOM_HOLDER = (i: number): string => `\uE030${i}\uE031`
+
+/**
  * 本身就带「千 / 百」的单位。不保护的话「千克」会被读成数字 1000 + 单位「克」
  * (2026-09-17 浮力题实测:旁白「0.48 千克」被改成「0.48 1000 克」)。
  * 故意不收带「十」的:「十分钟」「十秒」真的是数字 + 单位。
@@ -98,6 +123,11 @@ export function normalizeSpokenText(input: string): SpokenTextResult {
   if (!original.trim()) return { text: original.trim(), fixes: [] }
   const fixes: string[] = []
   let s = original
+
+  // ---- 0. 成语 / 惯用语先保护起来,后面的数字化一律看不到它们 ----
+  // 按长度降序,避免短词(如「一半」)先吃掉长词里的字符
+  const idiomOrder = IDIOM_WHITELIST.map((idiom, i) => ({ idiom, i })).sort((a, b) => b.idiom.length - a.idiom.length)
+  for (const { idiom, i } of idiomOrder) s = s.split(idiom).join(IDIOM_HOLDER(i))
 
   // ---- 1. 希腊字母 ----
   for (const [re, out] of GREEK_COMPOUND) {
@@ -143,6 +173,9 @@ export function normalizeSpokenText(input: string): SpokenTextResult {
   })
   s = s.replace(new RegExp(PERCENT_HOLDER, 'g'), '百分之')
   s = s.replace(/\uE020(\d+)\uE021/g, (_m, i: string) => COMPOUND_UNITS[Number(i)])
+
+  // ---- 2b. 还原成语 / 惯用语 ----
+  for (const { idiom, i } of idiomOrder) s = s.split(IDIOM_HOLDER(i)).join(idiom)
 
   // ---- 3. 间距归一(与 tex-to-speech 的拼法一致) ----
   s = s

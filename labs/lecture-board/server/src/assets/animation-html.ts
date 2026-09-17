@@ -24,6 +24,32 @@ const FORBIDDEN: Array<[RegExp, string]> = [
   [/https?:\/\//i, '出现了 http(s):// 地址:动画禁止访问网络(要内嵌图就用 data:)']
 ]
 
+/** 有没有代码在响应尺寸变化(ResizeObserver / window resize / devicePixelRatio 重算) */
+const HAS_RESIZE_HANDLING = /ResizeObserver|addEventListener\(\s*['"]resize['"]|onresize\s*=|devicePixelRatio/i
+
+/**
+ * 画布画偏小的老毛病(README「已知待改」1):`<canvas width="480" height="270">` 这种写了固定像素尺寸的
+ * HTML 属性,又没有任何 resize 处理代码,画面就永远是那么大一块,缩在 iframe 左上角(canvas 属性尺寸
+ * 才是它的绘图分辨率,CSS 宽高不会让内容跟着放大;svg 同理)。
+ * 只要写了 resize 处理(哪怕 canvas 标签上仍带一个初始尺寸)就不算违规——那说明会在运行时重算。
+ */
+function checkCanvasSizing(html: string): string[] {
+  if (HAS_RESIZE_HANDLING.test(html)) return []
+  const tags = html.match(/<(canvas|svg)\b[^>]*>/gi) ?? []
+  for (const tag of tags) {
+    const hasWidth = /\bwidth\s*=\s*["']?\d+/i.test(tag)
+    const hasHeight = /\bheight\s*=\s*["']?\d+/i.test(tag)
+    if (hasWidth && hasHeight) {
+      const el = tag.match(/<(canvas|svg)/i)?.[1]?.toLowerCase() ?? 'canvas'
+      return [
+        `${el}标签写了固定像素尺寸(如 width="480" height="270")又没有 resize 处理:画面会缩在一角,不会随卡片放大;` +
+          `请让 ${el} 占满容器(CSS 100%/100vw×100vh),用 ResizeObserver 或 window resize 监听重新计算尺寸与 DPR,坐标按容器尺寸的相对比例画`
+      ]
+    }
+  }
+  return []
+}
+
 /** 第一道:静态扫描。返回问题列表,空 = 通过 */
 export function checkHtmlStatic(html: string): string[] {
   const issues: string[] = []
@@ -34,6 +60,7 @@ export function checkHtmlStatic(html: string): string[] {
   for (const [re, message] of FORBIDDEN) if (re.test(src)) issues.push(message)
   if (!/window\.lecture/.test(src)) issues.push('没有在 window.lecture 上暴露 { do, unlock, reset }')
   if (!/lecture:ready/.test(src)) issues.push('加载完没有 postMessage { type: "lecture:ready" }')
+  issues.push(...checkCanvasSizing(src))
   return issues
 }
 

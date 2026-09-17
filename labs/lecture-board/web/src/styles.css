@@ -31,6 +31,46 @@
   --col-w: 445px;
   --col-gap: 60px;
   --card-gap: 24px;
+
+  /* 品牌令牌(鲸云AI教育平台):值拷自 qiming/packages/contracts/src/design-tokens.ts,
+     只读参考,不 import —— 这里的变量名带 --qm- 前缀,跟白板自己的 --purple 系区分开。 */
+  --qm-bg: #f4f6fb;
+  --qm-card: #ffffff;
+  --qm-ink: #1e2a44;
+  --qm-ink-2: #5b6b86;
+  --qm-ink-3: #94a3b8;
+  --qm-primary: #4f6bf5;
+  --qm-primary-deep: #3b53d6;
+  --qm-primary-soft: #eef1fe;
+  --qm-green: #10b981;
+  --qm-green-soft: #e7f8f1;
+  --qm-red: #f25555;
+  --qm-red-soft: #feecec;
+  --qm-line: #e6eaf2;
+  --qm-radius-lg: 16px;
+  --qm-radius-md: 12px;
+  --qm-shadow-card: 0 1px 3px rgba(30, 42, 68, 0.06), 0 10px 30px rgba(30, 42, 68, 0.06);
+  --qm-font: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
+}
+
+/* 品牌标识(首页顶栏 + 讲题页顶栏共用) */
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.brand-word {
+  font-family: var(--qm-font);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--qm-ink);
+  letter-spacing: 0.2px;
+}
+
+.brand-word-accent {
+  color: var(--qm-primary);
 }
 
 * {

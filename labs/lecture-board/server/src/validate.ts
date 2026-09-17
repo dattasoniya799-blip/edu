@@ -90,6 +90,24 @@ const SAY_MAX = 120
 /** 每题情境图上限(方案 §四) */
 export const SCENE_FIGURE_MAX = 2
 
+/** purpose 只该是给学生看的一句话上限(提示词 E3);超过只告警,不强行截断整句话 */
+const PURPOSE_MAX = 40
+/**
+ * 模型有时把「动作名/参数」这些实现细节写进 purpose(如「…动作名:rotate(旋转), showPerp(显示垂直)」),
+ * 这段本该只讲给生成动画的模型听,不该出现在学生看的动画卡上(2026-09-17 多道真题实测复现)。
+ * 一旦出现这几个触发词就把它和它之后的内容一起切掉。
+ */
+const PURPOSE_ACTION_LEAK = /(动作名|动作包括|参数)[:：]?/
+
+/** purpose 净化:切掉「动作名/动作包括/参数」及其后的实现细节,只留给学生看的那一句话 */
+export function sanitizePurpose(raw: string): { text: string; truncated: boolean } {
+  const s = String(raw ?? '').trim()
+  const m = s.match(PURPOSE_ACTION_LEAK)
+  if (!m || m.index == null) return { text: s, truncated: false }
+  const cut = s.slice(0, m.index).replace(/[，,。;;::、\s]+$/, '').trim()
+  return { text: cut || s.slice(0, PURPOSE_MAX), truncated: true }
+}
+
 function str(v: unknown): string {
   return typeof v === 'string' ? v.trim() : ''
 }
@@ -266,7 +284,14 @@ export function normalizeBoardScript(input: unknown, ctx: NormalizeContext = {})
     const id = str(item.id)
     if (!claimId(id, '动画')) continue
     const kind = ['template', 'html', 'static'].includes(str(item.kind)) ? (str(item.kind) as Animation['kind']) : 'html'
-    const anim: Animation = { id, kind, purpose: str(item.purpose) || '演示这一步', status: 'pending' }
+    const { text: purposeText, truncated } = sanitizePurpose(str(item.purpose) || '演示这一步')
+    if (truncated) {
+      warnings.push(`动画 ${id} 的 purpose 混进了动作名/参数这类实现细节(这只该讲给学生一句话),已截掉:「${purposeText}」`)
+    }
+    if (purposeText.length > PURPOSE_MAX) {
+      warnings.push(`动画 ${id} 的 purpose「${purposeText}」超过 ${PURPOSE_MAX} 字,建议再精简`)
+    }
+    const anim: Animation = { id, kind, purpose: purposeText || '演示这一步', status: 'pending' }
     if (kind === 'template') {
       const templateId = str(item.template)
       const tpl = templates.find((t) => t.id === templateId)

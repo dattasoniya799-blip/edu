@@ -13,6 +13,8 @@ export default defineConfig({
     proxy: {
       '/api': { target: SERVER, changeOrigin: true },
       '/assets': { target: SERVER, changeOrigin: true },
+      // 首页「示例题目 · 一键试讲」的题目图(server/src/samples.ts 托管 ../题目/)
+      '/samples': { target: SERVER, changeOrigin: true },
     },
   },
   test: {

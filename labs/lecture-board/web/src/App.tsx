@@ -1,8 +1,8 @@
 /** 极简路由(不引 react-router):/ 上传页,/lesson/:id 讲题页,/sample 离线样例。 */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { prepareSample } from './mock/sample';
+import { HomePage } from './pages/HomePage';
 import { LessonPage } from './pages/LessonPage';
-import { UploadPage } from './pages/UploadPage';
 
 export function App() {
   const [path, setPath] = useState(() => window.location.pathname);
@@ -31,5 +31,5 @@ export function App() {
   if (m) {
     return <LessonPage lessonId={decodeURIComponent(m[1])} onBack={() => go('/')} />;
   }
-  return <UploadPage onCreated={(id) => go(`/lesson/${encodeURIComponent(id)}`)} onSample={() => go('/sample')} />;
+  return <HomePage onCreated={(id) => go(`/lesson/${encodeURIComponent(id)}`)} onSample={() => go('/sample')} />;
 }

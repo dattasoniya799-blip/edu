@@ -240,7 +240,7 @@ describe('审题 step 是硬要求', () => {
     expect(r.warnings.filter((w) => w.startsWith('已自动修正') && w.includes('ref')).length).toBeGreaterThanOrEqual(1)
   })
 
-  it('审题 say 少于 5 句 → 告警(不打回)', () => {
+  it('审题 say 少于 4 句 → 告警(不打回)', () => {
     const r = run({
       steps: [
         {
@@ -250,7 +250,27 @@ describe('审题 step 是硬要求', () => {
         { id: 's1', title: '压强', col: 'c1', flow: [{ do: 'reveal', target: 'l2' }, { say: '得 600 帕。', ref: 'l2' }] }
       ]
     })
-    expect(r.warnings.some((w) => w.includes('审题') && w.includes('5'))).toBe(true)
+    expect(r.warnings.some((w) => w.includes('审题') && w.includes('4–8'))).toBe(true)
+    expect(r.errors).toEqual([])
+  })
+
+  it('审题逐条念数据(≥3 句短旁白各指一处 mark)→ 告警「像在逐条念条件」', () => {
+    const r = run({
+      steps: [
+        {
+          id: 's0', title: '审题', col: 'c0',
+          flow: [
+            { say: '这道题考压强与浮力。', ref: 'k_problem' },
+            { do: 'reveal', target: 'mark:0.48 kg' }, { say: '质量 0.48 千克。', ref: 'mark:0.48 kg', emph: 'mark' },
+            { do: 'reveal', target: 'mark:0.48 kg' }, { say: '体积是这个。', ref: 'mark:0.48 kg', emph: 'mark' },
+            { do: 'reveal', target: 'mark:0.48 kg' }, { say: '面积是这个。', ref: 'mark:0.48 kg', emph: 'mark' },
+            { do: 'reveal', target: 'analysis:find' }, { say: '求三个量。', ref: 'analysis:find' }
+          ]
+        },
+        { id: 's1', title: '压强', col: 'c1', flow: [{ do: 'reveal', target: 'l2' }, { say: '得 600 帕。', ref: 'l2' }] }
+      ]
+    })
+    expect(r.warnings.some((w) => w.includes('逐条念条件'))).toBe(true)
     expect(r.errors).toEqual([])
   })
 })
