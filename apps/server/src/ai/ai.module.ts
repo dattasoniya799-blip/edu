@@ -11,6 +11,7 @@ import { LlmPreGradeGateway } from './features/pre-grading.gateway';
 import { QaService } from './features/qa.service';
 import { CoursewareOutlineService } from './features/courseware-outline.service';
 import { LlmGatewayService } from './llm/llm-gateway.service';
+import { ArkImageProvider } from './llm/providers/ark-image.provider';
 import { MockImageProvider } from './llm/providers/mock-image.provider';
 import { MockProvider } from './llm/providers/mock.provider';
 import { OpenAiCompatibleImageProvider } from './llm/providers/openai-compatible-image.provider';
@@ -25,8 +26,9 @@ import { LocalOcrStub, OCR_SERVICE } from './ocr/ocr.service';
  * - 供应商注册制(工厂内同步 register,A5 worker 起跑前即就绪):
  *   mock(验收用,确定性)+ openai_compatible(真实适配器,原生 fetch,
  *   env 读 LLM_API_KEY/LLM_BASE_URL/LLM_MODEL,不写死厂商);
- *   [2026-08-22 courseware] 另注册两个**生图**供应商(registerImage,独立注册表):
- *   mock_image + openai_compatible_image(env 读 IMAGE_*),供 AI 生成课件逐页出图;
+ *   [2026-08-22 courseware] 另注册**生图**供应商(registerImage,独立注册表):
+ *   mock_image + openai_compatible_image + ark_image(后两家共用 env IMAGE_*,由 IMAGE_PROVIDER 选一家
+ *   作为 courseware=real 的条目,2026-09-17),供 AI 生成课件逐页出图;
  * - 课堂伴学(CompanionService)/学情诊断(DiagnosisService)模板版导出,
  *   供 classroom 等后续任务接线(本卡不改 classroom)。
  */
@@ -39,6 +41,7 @@ import { LocalOcrStub, OCR_SERVICE } from './ocr/ocr.service';
     OpenAiCompatibleProvider,
     MockImageProvider,
     OpenAiCompatibleImageProvider,
+    ArkImageProvider,
     {
       provide: LlmGatewayService,
       inject: [
@@ -50,6 +53,7 @@ import { LocalOcrStub, OCR_SERVICE } from './ocr/ocr.service';
         OpenAiCompatibleProvider,
         MockImageProvider,
         OpenAiCompatibleImageProvider,
+        ArkImageProvider,
       ],
       useFactory: (
         prisma: PrismaService,
@@ -60,12 +64,14 @@ import { LocalOcrStub, OCR_SERVICE } from './ocr/ocr.service';
         openai: OpenAiCompatibleProvider,
         mockImage: MockImageProvider,
         openaiImage: OpenAiCompatibleImageProvider,
+        arkImage: ArkImageProvider,
       ) => {
         const gateway = new LlmGatewayService(prisma, routes, audit, redis);
         gateway.register(mock);
         gateway.register(openai);
         gateway.registerImage(mockImage);
         gateway.registerImage(openaiImage);
+        gateway.registerImage(arkImage);
         return gateway;
       },
     },

@@ -15,19 +15,18 @@ import { REDIS } from '../redis/redis.module';
 import { BizException, ERR_AI_IMAGE_KEY_MISSING } from './ai.codes';
 import { loadAiConfigJson } from './config-loader';
 import { LlmGatewayService } from './llm/llm-gateway.service';
+import { ArkImageProvider } from './llm/providers/ark-image.provider';
 import { OpenAiCompatibleImageProvider } from './llm/providers/openai-compatible-image.provider';
 import {
   DEFAULT_CONCURRENCY,
   OpenAiCompatibleProvider,
   PROVIDER_CONFIG_KEY,
 } from './llm/providers/openai-compatible.provider';
-import { imageRealEntry, ROUTES_OVERRIDE_KEY, RouteTableService } from './llm/route-table.service';
+import { imageRealEntry, imageRealProvider, ROUTES_OVERRIDE_KEY, RouteTableService } from './llm/route-table.service';
 import type { RouteEntry, RouteTable } from './llm/types';
 
 const FEATURES: AiFeature[] = ['qa', 'pre_grading', 'class_companion', 'diagnosis', 'courseware'];
 const REAL_PROVIDER = 'openai_compatible';
-/** [2026-08-22 courseware] 生图能力的真实供应商(与文本能力不同 provider、不同 key) */
-const IMAGE_REAL_PROVIDER = 'openai_compatible_image';
 
 /** apiKey 脱敏:前缀 + **** + 后 4 位(绝不回明文);过短的整体打码 */
 function maskApiKey(key: string): string {
@@ -39,8 +38,8 @@ function maskApiKey(key: string): string {
 /**
  * AI 接口管理(admin)运行态服务(全局一把,a7:ai:provider / a7:ai:routes 不带 org 前缀):
  * - provider 配置读写(key 脱敏读、留空保留写)、并发闸刷新;
- * - 逐功能真假路由读写(real=openai_compatible,mock=默认 mock 模型);
- * - 连通性测试(直连 openai_compatible provider,绕开路由/额度)。
+ * - 逐功能真假路由读写(文本 real=openai_compatible;生图 real=env IMAGE_PROVIDER 选中的那家;mock=默认 mock 模型);
+ * - 连通性测试(直连 openai_compatible provider,绕开路由/额度;feature=courseware 时打生图供应商)。
  * 写操作记 audit_logs(actor/org 为 admin 本人)。
  */
 @Injectable()
@@ -55,6 +54,7 @@ export class AiAdminService {
     private readonly gateway: LlmGatewayService,
     private readonly provider: OpenAiCompatibleProvider,
     private readonly imageProvider: OpenAiCompatibleImageProvider,
+    private readonly arkImageProvider: ArkImageProvider,
     private readonly audit: AuditService,
   ) {}
 
@@ -188,9 +188,13 @@ export class AiAdminService {
     return { provider: mockProvider, model: mockModel, fallback: def?.fallback ?? null };
   }
 
-  /** 该 feature 的真实供应商名(生图能力与文本能力不同) */
+  /**
+   * 该 feature 的真实供应商名(生图能力与文本能力不同)。
+   * [2026-09-17 ark-image] 生图那家由 env IMAGE_PROVIDER 决定;换供应商后旧的 Redis 覆盖条目
+   * 会被判成 mock(provider 名对不上),管理端再切一次 real 即写入新条目 —— 这是期望行为,不做静默迁移。
+   */
   private realProviderOf(feature: AiFeature): string {
-    return feature === 'courseware' ? IMAGE_REAL_PROVIDER : REAL_PROVIDER;
+    return feature === 'courseware' ? imageRealProvider(this.cfg) : REAL_PROVIDER;
   }
 
   /** 该 feature 的 mock 供应商名(生图能力为 mock_image) */
@@ -214,7 +218,12 @@ export class AiAdminService {
    * 两条路径都永不抛错,一律返回结构化 {ok,error}(controller 不该因此 500)。
    */
   async test(feature?: string): Promise<AiTestResultDto> {
-    if (feature === 'courseware') return this.imageProvider.testConnection();
+    if (feature === 'courseware') {
+      // 探活打到 env 选中的那家生图供应商(IMAGE_PROVIDER),与 putRoutes 写入的 real 条目一致
+      return imageRealProvider(this.cfg) === 'ark_image'
+        ? this.arkImageProvider.testConnection()
+        : this.imageProvider.testConnection();
+    }
     // 直接用配置好的 openai_compatible provider 打一发极小 prompt(绕开路由/额度);永不抛 500
     return this.provider.testConnection();
   }

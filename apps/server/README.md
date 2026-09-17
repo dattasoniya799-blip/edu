@@ -951,11 +951,13 @@ POST /courseware/jobs/{id}/retry  只重新入队 status=failed 的页
 
 | 层 | 文件 | 要点 |
 |---|---|---|
-| 生图供应商 | `src/ai/llm/providers/openai-compatible-image.provider.ts` | POST `{IMAGE_BASE_URL}/images/generations`,body `{model,prompt,size,quality,n:1}`,原生 fetch + AbortController 120s;取 `data[0].b64_json` 与**顶层实际** `usage/size/quality`(中转会归一参数,实测请求 1536x1024/medium 可能回 1264x848/low → 记账与元数据一律以响应实际值为准)。key 只在本类内读,上游错误体最多截 120 字符 |
+| 生图供应商(OpenAI 形状) | `src/ai/llm/providers/openai-compatible-image.provider.ts` | POST `{IMAGE_BASE_URL}/images/generations`,body `{model,prompt,size,quality,n:1}`,原生 fetch + AbortController 120s;取 `data[0].b64_json` 与**顶层实际** `usage/size/quality`(中转会归一参数,实测请求 1536x1024/medium 可能回 1264x848/low → 记账与元数据一律以响应实际值为准)。key 只在本类内读,上游错误体最多截 120 字符 |
+| 生图供应商(火山方舟) | `src/ai/llm/providers/ark-image.provider.ts` | **2026-09-17 接入**,`IMAGE_PROVIDER=ark_image` 时选中,与上一行共用同组 `IMAGE_*` env。body `{model,prompt,size,response_format:'b64_json',watermark,sequential_image_generation:'disabled',stream:false}`;实测差异:必须显式 `response_format`(缺省回 URL)、`size` 用档位 `1K/2K/4K` 或「宽x高」且 ≥ 3,686,400 像素(`1536x1024` 被 400 拒)、实际尺寸在 `data[0].size`、usage 只有 `output_tokens`(2K 一张 17800)、**返图是 JPEG**。`IMAGE_WATERMARK` 缺省 false。探活同样 `GET /models`(方舟支持)。真机冒烟:`doubao-seedream-5-0-260128` 2K 一张 20–33s,回 2848x1600 JPEG 约 135–195KB |
 | mock 生图 | `src/ai/llm/providers/mock-image.provider.ts` | 恒回内置 1x1 合法 PNG(解码即可落盘),usage 固定小值;`mockImageFailOnce` 静态钩子(或 env `MOCK_IMAGE_FAIL_SEQ`)按页码注入「首次失败」供重试验收 |
 | 网关 | `src/ai/llm/llm-gateway.service.ts` | 新增 `image()`:额度预检(`disable_qa`/`pause_all` 封禁面均含 `courseware`,见 audit-fix S1)→ 路由 resolve → **与 chat 共享**并发闸 → provider → `ai_calls` 落账。`registerImage()` 独立注册表;`LlmChatRequest.route?` 显式路由(大纲那步要文本供应商,与逐页出图不同 provider) |
-| 路由表 | `src/ai/llm/route-table.service.ts`、`config/ai-routes.default.json` | `courseware` 默认 `mock_image/mock-image-v1`;**`IMAGE_API_KEY` 配了则默认走 real**(与 `LLM_API_KEY` 互不牵连),条目 model 写 `IMAGE_MODEL` 真实名以对上 pricing 表的 `gpt-image-2` 单价。**real 条目 `fallback: null`**(audit-fix P0-1:失败降级 mock 会产出「看起来成功的空白课件」) |
-| 管理端 | `src/ai/ai-admin.service.ts`、`ai-admin.dto.ts` | `GET/PUT /admin/ai/routes` 读写第 5 个开关 `courseware`;`real` 对应 `openai_compatible_image`(无 fallback),切 real 时校验 `IMAGE_API_KEY` 非空;`POST /admin/ai/test` 按 feature 分流(`courseware` → 生图 provider 探活) |
+| 路由表 | `src/ai/llm/route-table.service.ts`、`config/ai-routes.default.json` | `courseware` 默认 `mock_image/mock-image-v1`(功能已 off,配了 `IMAGE_API_KEY` 也不自动切 real,2026-09-02);`imageRealEntry` 的 provider 取 `imageRealProvider(cfg)`(env `IMAGE_PROVIDER`,缺省 `openai_compatible_image`,非法值回落缺省),model 写 `IMAGE_MODEL` 真实名(缺省按供应商:`gpt-image-2` / `doubao-seedream-5-0-260128`)以对上 pricing 表单价(seedream 条目 `perImage: 0.3` 为**估算**,按方舟控制台账单校正)。**real 条目 `fallback: null`**(audit-fix P0-1:失败降级 mock 会产出「看起来成功的空白课件」) |
+| 管理端 | `src/ai/ai-admin.service.ts`、`ai-admin.dto.ts` | `GET/PUT /admin/ai/routes` 读写第 5 个开关 `courseware`;`real` 对应 env 选中的那家生图供应商(无 fallback),切 real 时校验 `IMAGE_API_KEY` 非空;`POST /admin/ai/test` 按 feature 分流(`courseware` → 选中那家生图 provider 探活)。换 `IMAGE_PROVIDER` 后旧的 Redis 覆盖条目 provider 名对不上会被判 mock,管理端再切一次 real 即可,不做静默迁移 |
+| 落盘扩展名 | `src/courseware/courseware-page.service.ts` `imageExtOf`、`courseware-storage.service.ts` | 按字节魔数取 `.png`/`.jpg`(`/storage/*` 按扩展名给 Content-Type;方舟回 JPEG,原先固定 `.png` 会以 `image/png` 头回 JPEG 字节)。mock 与 gpt-image 仍是 `.png`,courseware e2e 断言不变 |
 | 大纲 | `src/ai/features/courseware-outline.service.ts` | real:提示词 `config/courseware-outline-prompt.md` + `{文字稿/页数/风格名/知识点上下文}` → `parseStrictJson` + `validateJsonSchema` 严格校验(仿预批),不合法 → **4601**;mock:`config/courseware-outline-templates.json` 的确定性教学页序(引入→概念/推导/例题/变式/易错/应用/结构→分层练习→小结),与 teacher 走查用 msw mock 同口径 |
 | 风格 | `src/ai/features/courseware-style.ts`、`config/courseware-styles.json` | 5 套内置 promptTemplate + 自定义护栏由 `apps/teacher/src/pages/courseware/lib/styles.ts` **脚本原样搬运**(非手抄);`composeStylePrefix`/`composePagePrompt` 与前端逐字同构(风格前缀 + 标题 + 要点 + 配图说明 + 页码 n/N) |
 | 业务 | `src/courseware/` | controller(4 端点 `@Roles('teacher')`)+ service(编排/归属校验)+ `courseware.store.ts`(运行态)+ `courseware.queue.ts`(BullMQ)+ `courseware-page.service.ts`(worker)+ `courseware-storage.service.ts`(落盘/签名) |
@@ -998,9 +1000,10 @@ POST /courseware/jobs/{id}/retry  只重新入队 status=failed 的页
 
 ### 遗留风险
 
-- **真实生图链路未经真机验证**:本波全部用例走 `mock_image`(无 IMAGE_API_KEY)。`openai_compatible_image` 的 URL/body/解析
-  按 OpenAI images API 形状实现,首次接真 key 需冒烟一次(尤其中转网关的参数归一与 `usage` 字段名差异,代码已同时兼容
-  `input_tokens/output_tokens` 与 `prompt_tokens/completion_tokens`)。
+- **真实生图链路**:e2e 全部用例走 `mock_image`(无 IMAGE_API_KEY)。`openai_compatible_image` 的 URL/body/解析
+  按 OpenAI images API 形状实现,**仍未接真 key 冒烟**(尤其中转网关的参数归一与 `usage` 字段名差异,代码已同时兼容
+  `input_tokens/output_tokens` 与 `prompt_tokens/completion_tokens`)。`ark_image` 已于 2026-09-17 用编译产物直接调 `generate()`/`testConnection()`
+  真机冒烟通过(见上表);但「教师端贴稿 → 大纲 → 逐页出图 → 落库」整链仍因 `ai_courseware=off` 未真机走过,重启验收条件不变。
 - **大纲那步的路由粒度**:`courseware` 只有一个真假开关,`real` 时大纲固定走 `openai_compatible`(model=env,无 fallback)。
   若机构只配了 `IMAGE_API_KEY` 没配 `LLM_API_KEY`,大纲会失败(4601 或供应商不可用),需两把 key 都配。
 - **jobId 归属绑到教师本人**:同机构他教师看不到任务(含代课/教研组协作场景)。当前口径按任务卡「job.teacherId===当前教师」执行。
