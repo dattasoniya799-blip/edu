@@ -32,7 +32,9 @@ export async function createFixcOrg(): Promise<FixcFixture> {
       name: 'FIXC · 教师点评下发测试机构',
       settings: {
         ai: { qaGuideOnly: true, preGrading: true },
-        studentHours: { start: '06:00', end: '22:30' },
+        // [2026-09-17] 与其余夹具同口径:全天可登录,使套件与运行时刻(机构时区)无关。
+        // 此前 06:00–22:30 让 CI 在 Asia/Shanghai 零点附近跑时学生登录 403(run 35243609618),属时刻依赖假红。
+        studentHours: { start: '00:00', end: '23:59' },
         deviceBinding: true,
       },
     },
