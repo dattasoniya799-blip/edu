@@ -11,6 +11,7 @@
 import { INestApplication } from '@nestjs/common';
 import Redis from 'ioredis';
 import request from 'supertest';
+import { minutesOfDayIn, orgTimeZone } from '../src/common/student-hours';
 import { num } from '../src/admin/helpers';
 import { loadAiConfigJson } from '../src/ai/config-loader';
 import { MOCK_ECHO_TAIL_PREFIX, MOCK_ECHO_TAIL_TRIGGER, MOCK_META_LEAK_TRIGGER } from '../src/ai/llm/providers/mock.provider';
@@ -168,9 +169,10 @@ describe('fix-core A(后端核心 5 项)', () => {
 
   // ================= A3 =================
   describe('A3 studentHours 登录门禁', () => {
-    // 收窄到排除"当前时刻"的窗口(留足余量,避免分钟漂移);始终 start<end 且不跨零点
-    const now = new Date();
-    const nowMin = now.getHours() * 60 + now.getMinutes();
+    // 收窄到排除"当前时刻"的窗口(留足余量,避免分钟漂移);始终 start<end 且不跨零点。
+    // [2026-09-17] 「当前时刻」必须按机构时区算(服务端 student-hours.ts 同口径),不能用进程本地时间:
+    // CI 跑在 UTC,Asia/Shanghai 零点附近 getHours() 与机构时刻差 8 小时,曾把排除窗选成包含当前时刻(run 35244070828)。
+    const nowMin = minutesOfDayIn(new Date(), orgTimeZone());
     const excludeWin = nowMin > 120 ? { start: '00:00', end: '00:30' } : { start: '23:00', end: '23:30' };
 
     afterAll(async () => {
