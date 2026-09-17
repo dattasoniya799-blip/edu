@@ -1,0 +1,560 @@
+/**
+ * 首页(HomePage)专用样式。讲题页(白板本身)沿用 styles.css 那套手绘视觉系统;
+ * 首页是「产品官网」质感:无衬线字体、qiming design tokens 配色(见 styles.css 的 --qm-* 变量)、
+ * 米白底 + 淡点阵,响应式下限 1280。
+ */
+
+.home {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle, rgba(79, 107, 245, 0.08) 1px, transparent 1px) 0 0 / 26px 26px,
+    var(--qm-bg);
+  font-family: var(--qm-font);
+  color: var(--qm-ink);
+}
+
+/* ------------------------------ 顶栏 ------------------------------ */
+
+.home-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px clamp(20px, 4vw, 56px);
+  background: rgba(244, 246, 251, 0.85);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--qm-line);
+}
+
+.home-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.home-header-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--qm-line);
+}
+
+.home-header-module {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--qm-ink-2);
+}
+
+.home-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--qm-card);
+  border: 1px solid var(--qm-line);
+  font-size: 12px;
+  color: var(--qm-ink-2);
+}
+
+.home-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--qm-ink-3);
+}
+
+.home-status-dot.is-up {
+  background: var(--qm-green);
+  box-shadow: 0 0 0 3px var(--qm-green-soft);
+}
+
+.home-status-dot.is-down {
+  background: var(--qm-red);
+  box-shadow: 0 0 0 3px var(--qm-red-soft);
+}
+
+.home-status-label {
+  margin-right: 4px;
+}
+
+.home-status-label:last-of-type {
+  margin-right: 0;
+}
+
+/* ------------------------------ 主体 ------------------------------ */
+
+.home-main {
+  flex: 1;
+  width: min(1180px, 100% - 40px);
+  margin: 0 auto;
+  padding: 36px 0 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+}
+
+/* ------------------------------ Hero ------------------------------ */
+
+.hero {
+  text-align: center;
+  padding: 12px 0 4px;
+}
+
+.hero-title {
+  margin: 0 0 12px;
+  font-size: clamp(26px, 3.2vw, 38px);
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--qm-ink);
+}
+
+.hero-sub {
+  margin: 0 auto 32px;
+  max-width: 560px;
+  font-size: 15px;
+  color: var(--qm-ink-2);
+}
+
+.hero-features {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.hero-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: var(--qm-radius-lg);
+  background: var(--qm-card);
+  border: 1px solid var(--qm-line);
+  text-align: left;
+}
+
+.hero-feature-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--qm-primary-soft);
+  color: var(--qm-primary-deep);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.hero-feature-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--qm-ink);
+  margin-bottom: 3px;
+}
+
+.hero-feature-text {
+  font-size: 12.5px;
+  color: var(--qm-ink-2);
+  line-height: 1.5;
+}
+
+/* ------------------------------ 通用 section ------------------------------ */
+
+.section-head {
+  margin-bottom: 18px;
+}
+
+.section-title {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--qm-ink);
+}
+
+.section-sub {
+  margin: 0;
+  font-size: 13px;
+  color: var(--qm-ink-2);
+}
+
+/* ------------------------------ 上传区(沿用 .panel/.field,首页里加个外壳) ------------------------------ */
+
+.home .panel {
+  width: auto;
+  max-width: none;
+  border: 1px solid var(--qm-line);
+  border-radius: var(--qm-radius-lg);
+  box-shadow: var(--qm-shadow-card);
+}
+
+.upload-panel {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.panel-title {
+  margin: 0 0 4px;
+  font-family: var(--qm-font);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--qm-ink);
+}
+
+.home .sub {
+  color: var(--qm-ink-2);
+}
+
+.home .field label {
+  color: var(--qm-ink-2);
+}
+
+.home .field textarea,
+.home .field input[type='text'] {
+  border-color: var(--qm-line);
+}
+
+.home .field textarea:focus,
+.home .field input:focus {
+  border-color: var(--qm-primary);
+  box-shadow: 0 0 0 3px var(--qm-primary-soft);
+}
+
+.home .btn-primary {
+  background: var(--qm-primary);
+  border-radius: var(--qm-radius-md);
+}
+
+.home .btn-primary:hover:not(:disabled) {
+  background: var(--qm-primary-deep);
+}
+
+.home .alert {
+  background: var(--qm-red-soft);
+  border-color: rgba(242, 85, 85, 0.3);
+  color: #b23a3a;
+}
+
+.thumb-item {
+  position: relative;
+}
+
+.thumb-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 999px;
+  background: #18181b;
+  color: #fff;
+  font-size: 13px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ------------------------------ 通用小按钮(卡片上的次要动作) ------------------------------ */
+
+.btn-secondary {
+  width: 100%;
+  padding: 9px;
+  border: 1px solid var(--qm-primary);
+  border-radius: var(--qm-radius-md);
+  background: var(--qm-primary-soft);
+  color: var(--qm-primary-deep);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--qm-primary);
+  color: #fff;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: default;
+  border-color: var(--qm-line);
+  background: var(--qm-bg);
+  color: var(--qm-ink-3);
+}
+
+/* ------------------------------ 学科标签 ------------------------------ */
+
+.subject-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--qm-ink-2);
+}
+
+.subject-badge.subject-math {
+  color: var(--qm-primary-deep);
+}
+.subject-badge.subject-physics {
+  color: #b45309;
+}
+.subject-badge.subject-chemistry {
+  color: #0f766e;
+}
+
+/* ------------------------------ 示例题网格 ------------------------------ */
+
+.sample-grid,
+.lesson-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.sample-card,
+.lesson-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--qm-radius-lg);
+  background: var(--qm-card);
+  border: 1px solid var(--qm-line);
+  overflow: hidden;
+  box-shadow: var(--qm-shadow-card);
+}
+
+.sample-card.is-skeleton {
+  min-height: 240px;
+  background: linear-gradient(90deg, #eef0f6 25%, #f6f7fb 50%, #eef0f6 75%);
+  background-size: 200% 100%;
+  animation: home-shimmer 1.4s infinite;
+  border: 1px solid var(--qm-line);
+}
+
+@keyframes home-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.sample-thumb,
+.lesson-thumb {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: repeating-linear-gradient(45deg, #eef0f6, #eef0f6 10px, #f4f6fb 10px, #f4f6fb 20px);
+  padding: 8px;
+}
+
+.sample-thumb img,
+.lesson-thumb img {
+  width: 100%;
+  height: 100%;
+  /* 题目截图多是竖长的试卷照,cover 会把文字切到看不清;contain + 淡底更像「文档缩略图」 */
+  object-fit: contain;
+  object-position: top center;
+  display: block;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(30, 42, 68, 0.08);
+}
+
+.lesson-thumb-empty {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--qm-primary-soft), var(--qm-bg));
+}
+
+.sample-body,
+.lesson-body {
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.sample-title,
+.lesson-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--qm-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sample-answer {
+  margin: 0;
+  font-size: 12px;
+  color: var(--qm-ink-2);
+  line-height: 1.5;
+  min-height: 2.7em;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.sample-card .btn-secondary,
+.lesson-card .btn-secondary {
+  margin-top: auto;
+}
+
+/* ------------------------------ 课程库 ------------------------------ */
+
+.lessons-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.subject-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--qm-card);
+  border: 1px solid var(--qm-line);
+}
+
+.subject-tab {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  font-size: 13px;
+  color: var(--qm-ink-2);
+}
+
+.subject-tab.is-active {
+  background: var(--qm-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.lessons-search {
+  width: 220px;
+  max-width: 100%;
+  padding: 8px 14px;
+  border: 1px solid var(--qm-line);
+  border-radius: 999px;
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--qm-card);
+}
+
+.lessons-search:focus {
+  outline: none;
+  border-color: var(--qm-primary);
+  box-shadow: 0 0 0 3px var(--qm-primary-soft);
+}
+
+.lessons-empty {
+  padding: 32px 0;
+  text-align: center;
+  color: var(--qm-ink-3);
+  font-size: 13px;
+}
+
+.lesson-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--qm-ink-2);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+
+.status-dot.status-ready {
+  background: var(--qm-green);
+}
+.status-dot.status-failed {
+  background: var(--qm-red);
+}
+.status-dot.status-pending {
+  background: var(--qm-primary);
+  animation: home-pulse 1.2s infinite;
+}
+
+@keyframes home-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.lesson-time {
+  margin-left: auto;
+  color: var(--qm-ink-3);
+}
+
+.lesson-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--qm-primary-soft);
+  overflow: hidden;
+}
+
+.lesson-progress-bar {
+  height: 100%;
+  background: var(--qm-primary);
+  transition: width 400ms ease;
+}
+
+/* ------------------------------ 底部落款 ------------------------------ */
+
+.home-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 18px;
+  border-top: 1px solid var(--qm-line);
+  font-size: 12px;
+  color: var(--qm-ink-3);
+}
+
+.home-footer .btn-link {
+  color: var(--qm-primary-deep);
+  font-size: 12px;
+}
+
+/* ------------------------------ 响应式(下限 1280) ------------------------------ */
+
+@media (max-width: 900px) {
+  .hero-features {
+    grid-template-columns: 1fr;
+  }
+  .lessons-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .lessons-search {
+    width: 100%;
+  }
+}

@@ -8,7 +8,7 @@
 import { appendFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import type { BoardScript, LessonStage, LessonState } from '../../shared/schema'
+import type { BoardScript, LessonStage, LessonState, Subject } from '../../shared/schema'
 import { LESSONS_ROOT, redact } from './config'
 import type { ChatMessage } from './ports'
 
@@ -67,14 +67,40 @@ export async function loadState(id: string): Promise<LessonState | undefined> {
   }
 }
 
-export async function listLessons(): Promise<Array<{ id: string; createdAt: string; stage: LessonStage; title?: string }>> {
+/**
+ * 首页课程库要的列表形状(**不是** shared 契约,只是这个调试/列表接口自己的返回体,
+ * 两侧都不依赖 shared/schema.ts 里没有的字段)。
+ */
+export interface LessonListItem {
+  id: string
+  createdAt: string
+  stage: LessonStage
+  title?: string
+  /** 学科标签,script 到位前是 undefined(生成中/失败) */
+  subject?: Subject
+  /** 首张输入题目图 URL,给列表卡片当缩略图 */
+  thumb?: string
+  /** 一句话讲什么(script.summary) */
+  summary?: string
+}
+
+export async function listLessons(): Promise<LessonListItem[]> {
   if (!existsSync(LESSONS_ROOT)) return []
   const dirs = await readdir(LESSONS_ROOT, { withFileTypes: true })
-  const out: Array<{ id: string; createdAt: string; stage: LessonStage; title?: string }> = []
+  const out: LessonListItem[] = []
   for (const d of dirs) {
     if (!d.isDirectory()) continue
     const state = await loadState(d.name)
-    if (state) out.push({ id: state.id, createdAt: state.createdAt, stage: state.stage, title: state.script?.title })
+    if (state)
+      out.push({
+        id: state.id,
+        createdAt: state.createdAt,
+        stage: state.stage,
+        title: state.script?.title,
+        subject: state.script?.subject,
+        thumb: state.input.images[0],
+        summary: state.script?.summary
+      })
   }
   return out.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 }

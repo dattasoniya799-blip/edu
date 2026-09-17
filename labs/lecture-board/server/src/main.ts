@@ -1,12 +1,16 @@
 /**
- * HTTP + SSE 服务(端点形状严格按 protocol.md)。
- *   POST /api/lessons            multipart:images[] + answer + problemText → { id },立即返回,后台跑流水线
- *   GET  /api/lessons/:id        LessonState
- *   GET  /api/lessons/:id/events SSE
- *   GET  /api/lessons            列表(调试)
- *   GET  /assets/:lessonId/*     静态素材
- *   GET  /api/health             { ok: true }
+ * HTTP + SSE 服务(端点形状严格按 protocol.md,另加两个首页用的小接口 —— 见文末)。
+ *   POST /api/lessons                    multipart:images[] + answer + problemText → { id },立即返回,后台跑流水线
+ *   GET  /api/lessons/:id                LessonState
+ *   GET  /api/lessons/:id/events         SSE
+ *   GET  /api/lessons                    列表(首页课程库用,形状见 store.ts 的 LessonListItem)
+ *   GET  /assets/:lessonId/*             静态素材
+ *   GET  /api/health                     { ok, bailian, seedream }
+ *   GET  /api/samples                    首页「一键试讲」示例题列表(见 samples.ts)
+ *   POST /api/lessons/from-sample/:dir   用某道示例题的图 + 答案.md 走同一条上传流水线 → { id }
+ *   GET  /samples/:dir/*                 示例题目录的静态托管(题目图)
  */
+import { readFile } from 'node:fs/promises'
 import { mkdir } from 'node:fs/promises'
 import cors from '@fastify/cors'
 import multipart from '@fastify/multipart'
@@ -14,6 +18,7 @@ import fastifyStatic from '@fastify/static'
 import Fastify from 'fastify'
 import { LESSONS_ROOT, PORT, hasBailianKey, hasSeedreamKey, redact } from './config'
 import { createLesson, runPipeline, type LessonInput } from './pipeline'
+import { listSamples, loadSampleInput, SAMPLES_ROOT } from './samples'
 import { listLessons, loadState, newLessonId, subscribe, type ServerEvent } from './store'
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024
@@ -26,6 +31,7 @@ async function main(): Promise<void> {
   await app.register(cors, { origin: true })
   await app.register(multipart, { limits: { fileSize: MAX_IMAGE_BYTES, files: MAX_IMAGES } })
   await app.register(fastifyStatic, { root: LESSONS_ROOT, prefix: '/assets/', decorateReply: false })
+  await app.register(fastifyStatic, { root: SAMPLES_ROOT, prefix: '/samples/', decorateReply: false })
 
   app.get('/api/health', async () => ({ ok: true, bailian: hasBailianKey(), seedream: hasSeedreamKey() }))
 
@@ -59,6 +65,27 @@ async function main(): Promise<void> {
     const state = await createLesson(input)
     // 立即返回,后台跑
     void runPipeline(state, input).catch((error) => app.log.error({ err: redact(error) }, '流水线异常'))
+    return reply.code(201).send({ id: state.id })
+  })
+
+  // 首页「示例题目 · 一键试讲」:列表见 samples.ts(扫 ../题目/*/)
+  app.get('/api/samples', async () => listSamples())
+
+  // 用某道示例题的图 + 答案.md 全文,走跟 POST /api/lessons 完全一样的 createLesson/runPipeline
+  app.post<{ Params: { dir: string } }>('/api/lessons/from-sample/:dir', async (request, reply) => {
+    const dir = decodeURIComponent(request.params.dir)
+    const sample = await loadSampleInput(dir)
+    if (!sample) return reply.code(404).send({ error: `没有这道示例题:${dir}` })
+    if (!sample.answerText) return reply.code(400).send({ error: `示例题缺少答案文本:${dir}/答案.md` })
+
+    const bytes = await readFile(sample.imagePath)
+    const input: LessonInput = {
+      id: newLessonId(),
+      images: [{ bytes, ext: sample.imageExt }],
+      answer: sample.answerText
+    }
+    const state = await createLesson(input)
+    void runPipeline(state, input).catch((error) => app.log.error({ err: redact(error) }, '流水线异常(示例题)'))
     return reply.code(201).send({ id: state.id })
   })
 
