@@ -1,0 +1,115 @@
+/* LectureScene 播放器样式:板书配色(纸白 / 墨黑 / 板书蓝 / 红笔 / 石墨灰 / 深字幕条) */
+.ls-player {
+  --ls-paper: #fbfaf7;
+  --ls-ink: #1f2328;
+  --ls-blue: #1d4ed8;
+  --ls-red: #c8102e;
+  --ls-grey: #6b7280;
+  --ls-line: #e5e7eb;
+  --ls-bar: #2b2f36;
+  --ls-bar-text: #f5f5f4;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 560px;
+  background: var(--ls-paper);
+  color: var(--ls-ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+.ls-head { flex: none; display: flex; align-items: center; gap: 14px; padding: 12px 18px; border-bottom: 1px solid var(--ls-line); }
+.ls-title { font-weight: 800; font-size: 16px; }
+.ls-step-label { color: var(--ls-grey); font-size: 13px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ls-dots { display: flex; gap: 6px; }
+.ls-dot { width: 26px; height: 26px; border-radius: 999px; border: 1.5px solid var(--ls-line); background: #fff; color: var(--ls-grey); font-size: 12px; font-weight: 700; cursor: pointer; }
+.ls-dot.is-done { border-color: var(--ls-blue); color: var(--ls-blue); }
+.ls-dot.is-current { background: var(--ls-blue); border-color: var(--ls-blue); color: #fff; }
+.ls-stage { position: relative; flex: 1 1 auto; min-height: 0; }
+.ls-stage svg { width: 100%; height: 100%; display: block; touch-action: none; user-select: none; }
+.ls-hint { flex: none; min-height: 0; max-height: 0; overflow: hidden; padding: 0 18px; font-size: 13.5px; color: var(--ls-ink); transition: max-height 0.25s ease, padding 0.25s ease; }
+.ls-hint.is-visible { max-height: 60px; padding: 8px 18px; }
+.ls-hint.is-play { background: #eef2ff; color: #1e3a8a; }
+.ls-hint.is-info { background: #f3f4f6; color: var(--ls-grey); }
+.ls-hint.is-done { background: #ecfdf5; color: #065f46; }
+.ls-subtitle { flex: none; position: relative; background: var(--ls-bar); color: var(--ls-bar-text); padding: 12px 18px 14px; min-height: 56px; }
+.ls-subtitle-text { font-size: 16px; line-height: 1.6; }
+.ls-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255, 255, 255, 0.12); }
+.ls-progress-fill { height: 100%; width: 0; background: #93c5fd; transition: width 0.12s linear; }
+.ls-controls { flex: none; display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #fff; border-top: 1px solid var(--ls-line); }
+.ls-controls-right { margin-left: auto; display: flex; gap: 8px; }
+.ls-btn { border: 1.5px solid var(--ls-line); background: #fff; color: var(--ls-ink); border-radius: 10px; padding: 8px 14px; font-size: 13.5px; font-weight: 600; cursor: pointer; min-height: 38px; }
+.ls-btn:hover:not(:disabled) { border-color: var(--ls-grey); }
+.ls-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.ls-btn-play { background: var(--ls-blue); border-color: var(--ls-blue); color: #fff; min-width: 120px; }
+.ls-btn-play:hover:not(:disabled) { background: #1e40af; }
+.ls-btn-next { border-color: var(--ls-blue); color: var(--ls-blue); }
+.ls-player[data-state='waiting'] .ls-btn-next { background: var(--ls-blue); color: #fff; animation: ls-glow 1.8s ease-in-out infinite; }
+@keyframes ls-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(29, 78, 216, 0); } 50% { box-shadow: 0 0 0 6px rgba(29, 78, 216, 0.25); } }
+.ls-btn-primary { background: var(--ls-blue); border-color: var(--ls-blue); color: #fff; }
+
+/* 动手环节:探索任务条(hint 下方一条,不遮场景;点一条划一条) */
+.ls-tasks { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 18px; background: #fffbeb; border-top: 1px solid #fde68a; }
+.ls-tasks-title { font-size: 12px; font-weight: 800; letter-spacing: 0.06em; color: #92400e; margin-right: 2px; }
+.ls-task { display: inline-flex; align-items: center; gap: 6px; border: 1px solid #fde68a; background: #fff; padding: 4px 10px; font-size: 12.5px; line-height: 1.4; color: var(--ls-ink); cursor: pointer; border-radius: 999px; }
+.ls-task:hover { border-color: #f59e0b; }
+.ls-task-mark { flex: none; font-weight: 800; color: var(--ls-grey); }
+.ls-task.is-done { color: var(--ls-grey); text-decoration: line-through; }
+.ls-task.is-done .ls-task-mark { color: #059669; }
+
+/* 手柄:锁定时隐藏,开放时亮起并轻微呼吸 */
+.ls-handle { cursor: grab; opacity: 0; transition: opacity 0.25s ease; pointer-events: none; }
+.ls-handle.ls-handle-active, .ls-slider.ls-handle-active .ls-handle { opacity: 1; pointer-events: auto; }
+.ls-handle.ls-handle-active > circle:first-child { animation: ls-breathe 1.8s ease-in-out infinite; }
+@keyframes ls-breathe { 0%, 100% { r: 16; } 50% { r: 20; } }
+.ls-handle.ls-dragging { cursor: grabbing; }
+.ls-slider { opacity: 0.35; transition: opacity 0.25s ease; }
+.ls-slider.ls-handle-active { opacity: 1; }
+
+/* 审题页:一页 PPT 式(占满舞台,全静默):题干(三色高亮)+ 题图 + 已知/隐含/求/思路 四块 */
+.ls-analysis-page { position: absolute; inset: 0; z-index: 5; background: var(--ls-paper); padding: 18px 26px 22px; overflow: auto; }
+.ls-analysis-head { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+.ls-analysis-eyebrow { font-size: 13px; font-weight: 800; letter-spacing: 0.14em; color: var(--ls-blue); }
+.ls-analysis-legend { display: inline-flex; gap: 10px; font-size: 11.5px; margin-left: auto; }
+.ls-analysis-body { display: flex; gap: 22px; align-items: flex-start; padding-bottom: 12px; border-bottom: 1px dashed var(--ls-line); }
+.ls-analysis-stem { flex: 1 1 auto; min-width: 0; }
+.ls-problem-line { font-size: 16px; line-height: 1.85; color: var(--ls-ink); margin-top: 5px; }
+.ls-problem-line.is-stem { font-weight: 600; }
+.ls-analysis-figs { flex: 0 0 auto; display: flex; flex-direction: column; gap: 8px; max-width: 42%; }
+.ls-analysis-fig { max-width: 100%; max-height: 190px; object-fit: contain; background: #fff; border: 1px solid var(--ls-line); border-radius: 10px; padding: 6px; }
+.ls-mark-red { color: #b91c1c; background: #fef2f2; border-bottom: 2px solid #dc2626; padding: 0 2px; border-radius: 3px; font-weight: 600; }
+.ls-mark-blue { color: #1d4ed8; background: #eff6ff; border-bottom: 2px solid #3b82f6; padding: 0 2px; border-radius: 3px; font-weight: 600; }
+.ls-mark-green { color: #047857; background: #ecfdf5; border-bottom: 2px solid #10b981; padding: 0 2px; border-radius: 3px; font-weight: 600; }
+.ls-analysis-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-top: 14px; }
+.ls-analysis-block { background: #fff; border: 1px solid var(--ls-line); border-radius: 12px; padding: 10px 14px; }
+.ls-analysis-block-title { font-size: 12.5px; font-weight: 800; color: var(--ls-blue); border-left: 3px solid var(--ls-blue); padding-left: 8px; margin-bottom: 6px; }
+.ls-analysis-block.is-hidden .ls-analysis-block-title { color: #047857; border-color: #10b981; }
+.ls-analysis-block.is-find .ls-analysis-block-title { color: #b91c1c; border-color: #dc2626; }
+.ls-analysis-block.is-ideas .ls-analysis-block-title { color: #92400e; border-color: #f59e0b; }
+.ls-analysis-item { display: flex; gap: 7px; font-size: 13.5px; line-height: 1.65; color: var(--ls-ink); margin-top: 4px; }
+.ls-analysis-item-mark { flex: none; color: var(--ls-grey); font-weight: 800; }
+.ls-analysis-return, .ls-summary-return { position: sticky; bottom: 0; float: right; margin-top: 12px; box-shadow: 0 6px 18px rgba(29, 78, 216, 0.35); }
+.ls-problem-pill { position: absolute; left: 10px; top: 10px; z-index: 6; border: 1px solid var(--ls-line); background: rgba(255, 255, 255, 0.95); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; font-weight: 700; color: var(--ls-ink); cursor: pointer; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); }
+.ls-problem-pill:hover { border-color: var(--ls-blue); color: var(--ls-blue); }
+
+/* 总结页:一页 PPT 式(占满舞台),四色块分区(板书规范:红=易错警示,色不过三系),
+   条目内【重点词】渲染为该组重点色胶囊 */
+.ls-summary-page { position: absolute; inset: 0; z-index: 5; background: var(--ls-paper); padding: 18px 26px 22px; overflow: auto; }
+/* 「题目」标签悬在左上,页眉让开它 */
+.ls-summary-page .ls-analysis-head, .ls-analysis-page .ls-analysis-head { margin-left: 72px; min-height: 26px; }
+.ls-summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 12px; }
+.ls-summary-block { --sum-color: var(--ls-blue); --sum-bg: #eff6ff; border: 1.5px solid var(--sum-color); border-left-width: 6px; background: var(--sum-bg); border-radius: 14px; padding: 12px 16px 14px; transition: opacity 0.2s; }
+.ls-summary-block.is-keypoints { --sum-color: #dc2626; --sum-bg: #fef2f2; }
+.ls-summary-block.is-methods { --sum-color: #d97706; --sum-bg: #fffbeb; }
+.ls-summary-block.is-variants { --sum-color: #059669; --sum-bg: #ecfdf5; }
+.ls-summary-block-title { display: flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 800; color: var(--sum-color); }
+.ls-summary-icon { font-size: 16px; }
+.ls-summary-item { display: flex; gap: 8px; margin-top: 9px; font-size: 15px; line-height: 1.7; color: var(--ls-ink); }
+.ls-summary-item-mark { flex: none; font-weight: 800; color: var(--sum-color); }
+.ls-sum-accent { color: var(--sum-color); background: #fff; border: 1px solid var(--sum-color); border-radius: 6px; padding: 0 5px; margin: 0 1px; font-weight: 800; }
+
+/* 读数面板(模板在 SVG 里画,这里只给字体) */
+.ls-readout { font-family: 'SF Mono', Menlo, Consolas, monospace; }

@@ -1,0 +1,29 @@
+{
+  "name": "lecture-board-server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "讲题白板 lab · server:识题 → 规划 → 剧本 → 素材并行(Qwen / Seedream / CosyVoice / 动画校验)",
+  "scripts": {
+    "dev": "tsx watch --ignore \"./data/**\" --ignore \"./.scratch/**\" src/main.ts",
+    "start": "tsx src/main.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "run-problem": "tsx src/cli/run-problem.ts"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.1",
+    "@fastify/multipart": "^9.0.1",
+    "@fastify/static": "^8.0.3",
+    "fastify": "^5.2.0",
+    "playwright": "^1.49.1",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
