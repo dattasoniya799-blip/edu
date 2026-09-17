@@ -12,6 +12,7 @@
     "mock-chat-mini": { "inPer1k": 0.5, "outPer1k": 1 },
     "mock-image-v1": { "inPer1k": 0.5, "outPer1k": 1 },
     "gpt-image-2": { "inPer1k": 0.036, "outPer1k": 0.288, "perImage": 0.45 },
+    "doubao-seedream-5-0-260128": { "inPer1k": 0, "outPer1k": 0, "perImage": 0.3 },
     "default": { "inPer1k": 1, "outPer1k": 2 }
   }
 }

@@ -21,15 +21,30 @@ const REAL_DEFAULT_FEATURES: AiFeature[] = ['qa'];
 /**
  * [2026-08-22 courseware] 生图是独立供应商与独立 key:文本 key(LLM_API_KEY)配了不代表能出图,
  * 故 courseware 的「默认走真实」由 IMAGE_API_KEY 单独决定(与四个文本能力互不牵连)。
+ *
+ * [2026-09-17 ark-image] 真实生图供应商有两家,由 env `IMAGE_PROVIDER` 选择(缺省仍是 OpenAI 形状):
+ *   openai_compatible_image → gpt-image 系(OpenAI / 中转),ark_image → 火山方舟 Seedream。
+ * 两家共用同一组 `IMAGE_*` 变量(与 LLM_* 一样:一组变量、base URL 决定厂商),各自的默认模型名不同。
  */
-const IMAGE_REAL_PROVIDER = 'openai_compatible_image';
-/** IMAGE_MODEL 未配置时的生图模型名(与 provider 内部默认一致,亦是 pricing 表键) */
-export const DEFAULT_IMAGE_MODEL = 'gpt-image-2';
+export const IMAGE_REAL_PROVIDERS = ['openai_compatible_image', 'ark_image'] as const;
+export type ImageRealProvider = (typeof IMAGE_REAL_PROVIDERS)[number];
+const DEFAULT_IMAGE_REAL_PROVIDER: ImageRealProvider = 'openai_compatible_image';
+/** IMAGE_MODEL 未配置时各家的生图模型名(与 provider 内部默认一致,亦是 pricing 表键) */
+export const DEFAULT_IMAGE_MODELS: Record<ImageRealProvider, string> = {
+  openai_compatible_image: 'gpt-image-2',
+  ark_image: 'doubao-seedream-5-0-260128',
+};
+
+/** 当前 env 选中的真实生图供应商;非法值回落 openai_compatible_image(管理端「测试连接」会暴露配置问题) */
+export function imageRealProvider(cfg: ConfigService): ImageRealProvider {
+  const raw = (cfg.get<string>('IMAGE_PROVIDER', '') ?? '').trim();
+  return (IMAGE_REAL_PROVIDERS as readonly string[]).includes(raw) ? (raw as ImageRealProvider) : DEFAULT_IMAGE_REAL_PROVIDER;
+}
 
 /**
  * courseware=real 的路由条目。与文本能力的 `model:'env'` 不同,这里把**真实模型名**写进条目:
  * 生图 provider 的模型来自 env(接口不收 model 参数),把模型名落进路由表能让
- * ai_calls.model 与 pricing 表(gpt-image-2 单价)对得上,而不是全部落 pricing.default。
+ * ai_calls.model 与 pricing 表(gpt-image-2 / doubao-seedream 单价)对得上,而不是全部落 pricing.default。
  *
  * [2026-08-22 audit-fix-server · P0-1] **fallback 恒为 null**。文本能力回退 mock 时人
  * 一眼看得出是假数据;生图回退 mock 拿到的是一张「合法但全白」的 1×1 PNG,前端 <img>
@@ -37,9 +52,11 @@ export const DEFAULT_IMAGE_MODEL = 'gpt-image-2';
  * 空白课件。真实生图失败必须老实变成 failed 页(业务层本来就有 retry 出口)。
  */
 export function imageRealEntry(cfg: ConfigService): RouteEntry {
+  const provider = imageRealProvider(cfg);
+  const defaultModel = DEFAULT_IMAGE_MODELS[provider];
   return {
-    provider: IMAGE_REAL_PROVIDER,
-    model: cfg.get<string>('IMAGE_MODEL', DEFAULT_IMAGE_MODEL) || DEFAULT_IMAGE_MODEL,
+    provider,
+    model: cfg.get<string>('IMAGE_MODEL', defaultModel) || defaultModel,
     fallback: null,
   };
 }

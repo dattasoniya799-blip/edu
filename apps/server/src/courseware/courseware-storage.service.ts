@@ -32,11 +32,15 @@ export class CoursewareStorageService {
     this.secret = getJwtSecret(cfg);
   }
 
-  /** 生成本机构的整页图片对象键:resource/{orgId}/{yyyyMM}/{hex}.png */
-  ossKeyFor(orgId: number): string {
+  /**
+   * 生成本机构的整页图片对象键:resource/{orgId}/{yyyyMM}/{hex}.{ext}
+   * ext 由调用方按真实字节魔数给(见 imageExtOf):gpt-image 系回 PNG,火山方舟 Seedream 回 JPEG,
+   * `/storage/*` 按扩展名给 Content-Type,写错会以 image/png 头回 JPEG 字节。缺省 png(兼容旧调用)。
+   */
+  ossKeyFor(orgId: number, ext: 'png' | 'jpg' = 'png'): string {
     const now = new Date();
     const ym = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`;
-    return `resource/${orgId}/${ym}/${randomBytes(12).toString('hex')}.png`;
+    return `resource/${orgId}/${ym}/${randomBytes(12).toString('hex')}.${ext}`;
   }
 
   /** 字节落盘(防路径穿越:落点必须在 UPLOAD_ROOT 之内,同 A3 saveObject) */

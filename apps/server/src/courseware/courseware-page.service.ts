@@ -31,11 +31,20 @@ const MIN_REMAINING_TTL_SEC = 10 * 60;
 const MIN_IMAGE_BYTES = 10 * 1024;
 
 /**
+ * [2026-09-17 ark-image] 按字节魔数判定落盘扩展名:PNG 以 89 50 4E 47 起头,JPEG 以 FF D8 FF 起头。
+ * gpt-image 系回 PNG、火山方舟 Seedream 回 JPEG,供应商层不声明格式(不可信),以真实字节为准;
+ * 其它一律按 png 落(与 2026-09-17 之前行为一致)。
+ */
+export function imageExtOf(bytes: Buffer): 'png' | 'jpg' {
+  return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff ? 'jpg' : 'png';
+}
+
+/**
  * 逐页出图 worker 的实际处理逻辑(队列壳见 courseware.queue.ts)。
  * 单页流水:认领本页(条件写入 startedAt,并发下只有一个 worker 能认领)
  * → 组装提示词(风格前缀 + 整页内容 + 页码,与前端 composePagePrompt 同构)
  * → AiGateway.image(额度/路由/并发/计量都在网关内,业务不见任何供应商)
- * → base64 解码 + 字节体检 → 落盘(resource/{orgId}/{yyyyMM}/{hex}.png)→ 条件写回该页运行态。
+ * → base64 解码 + 字节体检 → 落盘(resource/{orgId}/{yyyyMM}/{hex}.png|jpg,按魔数)→ 条件写回该页运行态。
  * 单页失败只把该页置 failed 并记原因,**不抛给 BullMQ、不中断其他页**(attempts=1,
  * 重试由业务层 POST /courseware/jobs/{jobId}/retry 驱动)。
  * 全部页 done 时抢一次落库权,建 Resource(type=ppt)并把 resourceId 写回运行态。
@@ -104,7 +113,7 @@ export class CoursewarePageService {
         if (!image.mock && bytes.length < MIN_IMAGE_BYTES) {
           throw new Error(`生图结果异常:整页图片仅 ${bytes.length} 字节,疑似上游返回占位图`);
         }
-        const ossKey = this.storage.ossKeyFor(job.orgId);
+        const ossKey = this.storage.ossKeyFor(job.orgId, imageExtOf(bytes));
         await this.storage.save(ossKey, bytes);
         settled = {
           ...page,

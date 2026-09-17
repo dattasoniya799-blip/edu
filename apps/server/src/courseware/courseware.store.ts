@@ -52,7 +52,7 @@ export interface CoursewareJobPageState {
    * 同时它也充当**认领令牌**:worker 结算时要求 startedAt 未被他人改写才写回结果。
    */
   startedAt?: string | null;
-  /** 出图成功后的对象键(resource/{orgId}/{yyyyMM}/{hex}.png) */
+  /** 出图成功后的对象键(resource/{orgId}/{yyyyMM}/{hex}.png|jpg,扩展名按真实字节魔数) */
   imageOssKey?: string | null;
   /** 该页图片字节数(成品 Resource.size 为各页之和) */
   bytes?: number;

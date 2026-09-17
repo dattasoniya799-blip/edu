@@ -46,6 +46,8 @@ describe('AI 接口管理:运行态 LLM 配置 + 真假路由 + 测试连接(adm
     env.IMAGE_API_KEY = 'sk-image-fake-for-e2e';
     env.IMAGE_BASE_URL = 'http://127.0.0.1:9/v1';
     env.IMAGE_MODEL = 'gpt-image-2';
+    // [2026-09-17 ark-image] 本套件基线固定为 OpenAI 形状那家;方舟用例在 it 体内自行切换并还原
+    env.IMAGE_PROVIDER = 'openai_compatible_image';
     redis = new Redis(process.env.REDIS_URL ?? 'redis://127.0.0.1:6379');
     await cleanupKeys(); // 防御:上轮残留
     app = await createApp();
@@ -233,6 +235,62 @@ describe('AI 接口管理:运行态 LLM 配置 + 真假路由 + 测试连接(adm
       expect(res.body.data.error).toContain('IMAGE_API_KEY');
     } finally {
       process.env.IMAGE_API_KEY = saved;
+    }
+  });
+
+  // ================= [2026-09-17 ark-image] 生图真实供应商由 IMAGE_PROVIDER 选择 =================
+  it('PUT routes:IMAGE_PROVIDER=ark_image 时 courseware=real 写入 ark_image 条目(model 缺省 doubao-seedream,fallback null)', async () => {
+    const saved = { provider: process.env.IMAGE_PROVIDER, model: process.env.IMAGE_MODEL };
+    process.env.IMAGE_PROVIDER = 'ark_image';
+    process.env.IMAGE_MODEL = '';
+    try {
+      await request(http)
+        .put('/api/v1/admin/ai/routes')
+        .set(auth(admin))
+        .send({ qa: 'mock', pre_grading: 'mock', class_companion: 'mock', diagnosis: 'mock', courseware: 'real' })
+        .expect(200);
+      const override = JSON.parse((await redis.get(ROUTES_OVERRIDE_KEY))!);
+      expect(override.routes.courseware).toEqual({ provider: 'ark_image', model: 'doubao-seedream-5-0-260128', fallback: null });
+      // GET 按当前 env 选中的供应商判真假 → real
+      const res = await request(http).get('/api/v1/admin/ai/routes').set(auth(admin)).expect(200);
+      expect(res.body.data.courseware).toBe('real');
+
+      // 换回 OpenAI 形状那家:旧的 ark_image 条目对不上 → 判 mock(不静默迁移,管理端再切一次即可)
+      process.env.IMAGE_PROVIDER = 'openai_compatible_image';
+      const res2 = await request(http).get('/api/v1/admin/ai/routes').set(auth(admin)).expect(200);
+      expect(res2.body.data.courseware).toBe('mock');
+    } finally {
+      process.env.IMAGE_PROVIDER = saved.provider;
+      process.env.IMAGE_MODEL = saved.model;
+    }
+  });
+
+  it('POST test:feature=courseware 且 IMAGE_PROVIDER=ark_image → 探的是方舟 provider(无 key 结构化失败,不 500)', async () => {
+    const saved = { provider: process.env.IMAGE_PROVIDER, key: process.env.IMAGE_API_KEY };
+    process.env.IMAGE_PROVIDER = 'ark_image';
+    process.env.IMAGE_API_KEY = '';
+    try {
+      const res = await request(http).post('/api/v1/admin/ai/test').set(auth(admin)).send({ feature: 'courseware' }).expect(200);
+      expect(res.body.data.ok).toBe(false);
+      expect(res.body.data.error).toContain('IMAGE_API_KEY');
+    } finally {
+      process.env.IMAGE_PROVIDER = saved.provider;
+      process.env.IMAGE_API_KEY = saved.key;
+    }
+  });
+
+  it('POST test:IMAGE_PROVIDER=ark_image 有 key 但上游不可达 → {ok:false,error} 而非 500', async () => {
+    const saved = { provider: process.env.IMAGE_PROVIDER, base: process.env.IMAGE_BASE_URL };
+    process.env.IMAGE_PROVIDER = 'ark_image';
+    process.env.IMAGE_BASE_URL = 'http://127.0.0.1:9/api/v3'; // 端口 9(discard)必然拒连
+    try {
+      const res = await request(http).post('/api/v1/admin/ai/test').set(auth(admin)).send({ feature: 'courseware' }).expect(200);
+      expect(res.body.data.ok).toBe(false);
+      expect(typeof res.body.data.error).toBe('string');
+      expect(res.body.data.error).not.toContain('sk-image-fake-for-e2e'); // key 不进出参
+    } finally {
+      process.env.IMAGE_PROVIDER = saved.provider;
+      process.env.IMAGE_BASE_URL = saved.base;
     }
   });
 
