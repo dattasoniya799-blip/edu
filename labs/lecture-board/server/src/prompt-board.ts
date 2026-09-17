@@ -65,7 +65,7 @@ export function buildBoardSystemPrompt(templates: BoardTemplateInfo[]): string {
     { "id": "k_take", "col": "c9", "kind": "takeaways" }
   ],
   "figures": [ { "id": "f_scene", "kind": "scene", "prompt": "场景内容描述,不含风格词", "caption": "≤12 字" } ],
-  "animations": [ { "id": "a1", "kind": "template", "purpose": "这张动画演示什么(一句话)", "template": "模板 id", "params": { } } ],
+  "animations": [ { "id": "a1", "kind": "template", "purpose": "这张动画演示什么,给学生看的一句话,≤40 字,不要写动作名/参数", "template": "模板 id", "params": { } } ],
   "steps": [
     { "id": "s0", "title": "审题", "col": "c0", "flow": [
       { "do": "focus", "target": "c0" },
@@ -161,7 +161,7 @@ D4. kind=diagram 是关系/流程图,必须给 mermaid 源码,前端即时渲染
 ## E 动画(animations)
 E1. 题目场景和下面某个交互模板明确对应(能用它的 params 把题设摆出来)→ kind="template",填 template 与 params;params 只能用该模板有的参数,数值必须落在给出的范围内。
 E2. flow 里驱动 template 动画的 action,**type 只能是该模板 actions 列出的那几个,target 只能是该模板 targets 列出的那几个,run 的 phase 只能是说明里列出的那几个**。写错整条剧本会被打回。
-E3. 六个模板都摆不出题设(例如图形旋转、动点轨迹、天平配平)→ kind="html",只写 purpose(一句话说清这张动画要演示什么,服务端会照着现场生成一个自包含 HTML)。html 动画的 action 只有一种形状:{ "type": "do", "name": "动作名", "params": {} };动作名自己起英文小写名(如 "rotate"、"step1"、"showProof"),2–4 个,在 purpose 里说明每个动作各演示什么。
+E3. 六个模板都摆不出题设(例如图形旋转、动点轨迹、天平配平)→ kind="html"。**purpose 只写给学生看的一句话**(≤40 字,说清这张动画演示什么,如「演示三角形绕顶点旋转,边长不变、对应边始终相等」),**不要**在 purpose 里列动作名、参数或实现细节——那些是讲给生成模型的,学生在动画卡下面看到的只应该是这一句话。html 动画的 action 只有一种形状:{ "type": "do", "name": "动作名", "params": {} };动作名自己起英文小写名(如 "rotate"、"step1"、"showProof"),2–4 个,**只需要在 flow 里的 anim.action.name 用到它们即可**,不用在 purpose 或别处再解释一遍——生成动画的模型会自动读取 flow 里实际调用的动作名列表。
 E4. 每题至少一张动画卡,**每一问最多一张**。动画卡放在它服务的那一问的列里。
 E5. **发动作之前必须先让动画卡浮现**:任何一条 do 为 anim 的 flow 项之前,同一步或更早的步里必须有一条 do 为 reveal、target 是承载这张动画的动画卡 id 的 flow 项。忘了这一条,动作就发给了一张还没出现的卡。
 E6. **template 动画的第一个动作必须先把底图层 show 出来**,否则学生看到的是一张空白卡。底图层就是场景本身:circle-angle → circle、triangle;buoyancy → tank、model;quadratic-line → axes、parabola;linear-shift → axes、line;cart-collision → track、carts;parallelogram-angle → para、diagBD。先 show 这两层,再发 run / move / highlight / 角标注。
@@ -217,7 +217,7 @@ export function formatKeypoints(k: Keypoints): string {
       .filter(Boolean)
       .join('\n'),
     k.template.id === 'board-steps'
-      ? '动画:识题判断六个交互模板都不贴切,请出 kind="html" 的现场动画(写清 purpose 与 2–4 个动作名)。'
+      ? '动画:识题判断六个交互模板都不贴切,请出 kind="html" 的现场动画(purpose 只写给学生看的一句话,≤40 字;2–4 个动作名只需要在 flow 的 anim.action.name 里用到,不要写进 purpose)。'
       : `动画:识题推荐模板 ${k.template.id}(${k.template.reason};置信度 ${k.template.confidence})${
           k.template.params ? `,建议 params ${JSON.stringify(k.template.params)}` : ''
         }。模板摆不出题设时改用 kind="html"。`

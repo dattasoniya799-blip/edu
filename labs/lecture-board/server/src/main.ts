@@ -19,13 +19,17 @@ import Fastify from 'fastify'
 import { LESSONS_ROOT, PORT, hasBailianKey, hasSeedreamKey, redact } from './config'
 import { createLesson, runPipeline, type LessonInput } from './pipeline'
 import { listSamples, loadSampleInput, SAMPLES_ROOT } from './samples'
-import { listLessons, loadState, newLessonId, subscribe, type ServerEvent } from './store'
+import { listLessons, loadState, newLessonId, reapInterruptedLessons, subscribe, type ServerEvent } from './store'
+import { sniffImageExt } from './upload'
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024
 const MAX_IMAGES = 3
 
 async function main(): Promise<void> {
   await mkdir(LESSONS_ROOT, { recursive: true })
+  // 上次进程(比如 tsx watch 重载、或者直接被杀)留下的半成品 lesson:标 failed 并给原因,
+  // 不然前端会对着一个再也不会推进的 stage 干等(运行问题复查 2026-09-17)
+  const reaped = await reapInterruptedLessons()
   const app = Fastify({ logger: { level: 'info', transport: undefined } })
 
   await app.register(cors, { origin: true })
@@ -46,11 +50,12 @@ async function main(): Promise<void> {
         if (part.type === 'file') {
           const bytes = await part.toBuffer()
           if (!bytes.length) continue
-          const ext = (part.filename?.split('.').pop() ?? 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png'
-          if (!['png', 'jpg', 'jpeg', 'webp'].includes(ext)) {
-            return reply.code(400).send({ error: `只收 png / jpg / webp,收到 .${ext}` })
+          // 按文件头字节判断类型,不信文件名后缀(后缀是客户端随便写的;运行问题复查 2026-09-17)
+          const sniffed = sniffImageExt(bytes)
+          if (!sniffed) {
+            return reply.code(400).send({ error: '文件内容不是可识别的图片(按文件头判断,不看文件名):只收 png / jpg / webp' })
           }
-          images.push({ bytes, ext: ext === 'jpeg' ? 'jpg' : ext })
+          images.push({ bytes, ext: sniffed })
         } else if (part.fieldname === 'answer') answer = String(part.value ?? '').trim()
         else if (part.fieldname === 'problemText') problemText = String(part.value ?? '').trim()
       }
@@ -124,6 +129,7 @@ async function main(): Promise<void> {
   app.log.info(
     `讲题白板 server :${PORT} —— 百炼 key ${hasBailianKey() ? '已读到' : '缺失'},生图 key ${hasSeedreamKey() ? '已读到' : '缺失'}`
   )
+  if (reaped.length) app.log.warn(`启动时把 ${reaped.length} 个未完成的 lesson 标了 failed:${reaped.join('、')}`)
 }
 
 main().catch((error) => {

@@ -156,6 +156,40 @@ export async function failLesson(state: LessonState, error: unknown): Promise<vo
   emit(state.id, { type: 'error', message })
 }
 
+const TERMINAL_STAGES: LessonStage[] = ['ready', 'failed']
+
+/**
+ * server 重启(比如 `tsx watch` 因为改代码重载)时,原来在跑的 lesson 的流水线 Promise 跟着进程一起
+ * 没了,但 `state.json` 还停在 recognizing/planning/scripting/assets 某一步 —— 没有任何东西会再把它
+ * 推进,前端只会永远看着进度条转(运行问题复查 2026-09-17)。
+ * 启动时扫一遍 `data/lessons/`,把所有非终态(不是 ready/failed)的课直接标 failed 并写清原因,
+ * 前端能看到「服务重启,请重新上传」而不是干等。返回被标记的 lessonId 列表,给启动日志用。
+ */
+export async function reapInterruptedLessons(): Promise<string[]> {
+  if (!existsSync(LESSONS_ROOT)) return []
+  const dirs = await readdir(LESSONS_ROOT, { withFileTypes: true })
+  const reaped: string[] = []
+  for (const d of dirs) {
+    if (!d.isDirectory()) continue
+    const file = join(lessonDir(d.name), 'state.json')
+    if (!existsSync(file)) continue
+    let state: LessonState
+    try {
+      state = JSON.parse(await readFile(file, 'utf8')) as LessonState
+    } catch {
+      continue
+    }
+    if (TERMINAL_STAGES.includes(state.stage)) continue
+    const interruptedStage = state.stage
+    state.stage = 'failed'
+    state.error = `服务在「${interruptedStage}」阶段重启,流水线没跑完,请重新上传这道题`
+    states.set(state.id, state)
+    await writeFile(file, JSON.stringify(state, null, 2), 'utf8')
+    reaped.push(state.id)
+  }
+  return reaped
+}
+
 // ---------------- 调用日志 ----------------
 
 export interface CallLogRecord {

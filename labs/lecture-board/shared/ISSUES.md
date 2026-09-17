@@ -108,3 +108,29 @@
   `FlowScheduler.speak()`);`emph:'mark'` 仍按字面「念完才留黄底」不变,没有这个提前的问题。
 - **建议**:protocol.md 那句话明确一下到底是哪种时机,两侧口径对齐(如果 server 出剧本/校验器以后要按
   时机做什么假设,现在 web 的口径是「提前画」)。
+
+---
+
+# 三、运行问题复查(2026-09-17,由复查会话追加)
+
+## W11. `{ type: 'complete' }` 的语义「全部素材落定(含失败)」只覆盖「资产部分失败」,不覆盖「整道题都没跑起来」
+- **现象**:protocol.md 给 `complete` 的注释是「全部素材落定(含失败)」。实测 `pipeline.ts` 的 `runPipeline`:
+  流水线一路顺利跑到 `ready` 才会发 `complete`;但如果 `recognizing`/`planning`/`scripting` 任一步直接抛错
+  (比如 Qwen 超时、两次都拿不到合格 JSON),走的是 `catch (error) { await failLesson(state, error) }`,只发
+  `{ type: 'error', message }`,**从来不会再发 `complete`**。协议注释「含失败」容易被读成「不管成不成功最终
+  都会收到一条 complete」,但实际上只有「figures/animations/audio 这几项素材部分失败」才算在“含失败”里,
+  整题失败(stage=failed)完全是另一条路径,靠 `error` 事件收尾。
+- **口径**:web 侧(本次复查新加的 `lib/api.ts` 的 `connectEvents`)把「收到 `error` 事件」与「`snapshot` 里
+  `state.stage` 已经是 `failed`」也当作终态处理(自动断开 SSE 连接),不再假设一定会收到 `complete`。
+- **建议**:protocol.md 那句注释改成「`complete`:资产阶段全部落定(单项失败也算落定);整道题失败走
+  `error`,不会再发 `complete`」,把两条终态路径分开写清楚,免得两侧各自猜。
+
+## W12. 动画桥没有 `lecture:pause`/`lecture:resume`,暂停播放器时 html 动画的内部动画不会收到信号
+- **现象**:protocol.md「动画桥 · html 动画」只定义了 `lecture:do`/`lecture:unlock`/`lecture:reset` 三种
+  parent→iframe 消息。播放器暂停(`FlowScheduler.pause()`)时,template 动画会调 `setSceneClockPaused(true)`
+  暂停 `LectureScene.Clock`,但沙箱 iframe 里的 html 动画完全不知道播放器暂停了——如果它内部用
+  `requestAnimationFrame` 跑一段比较长的动画,暂停期间它会继续跑完。
+- **口径**:目前靠约定弱化影响——`animation.ts` 的 `HTML_SYSTEM_PROMPT` 要求「单次 ≤2 秒」的短动画,不是
+  持续循环,所以暂停时最多有一段 2 秒以内的动画继续跑完,影响很小,本次复查没有新增消息类型去修。
+- **建议**:protocol.md 补一条 `{ type: 'lecture:pause' }` / `{ type: 'lecture:resume' }`,html 动画收到后
+  自行决定要不要 `cancelAnimationFrame`(多数场景可以什么都不做,只有做了长循环动画的才需要响应)。

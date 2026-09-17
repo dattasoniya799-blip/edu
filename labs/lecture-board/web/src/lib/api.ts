@@ -124,7 +124,20 @@ export interface EventStream {
   close(): void;
 }
 
-/** 连 SSE;断线按 1s→8s 退避自动重连,重连时服务端会补发 snapshot。 */
+/**
+ * lesson 到终态之后就不会再有事件了(complete = 全部素材落定;stage=failed 的课流水线抛错时只发
+ * error,从来不会再发 complete —— 见 pipeline.ts 的 catch 分支),繼续攥着这条 SSE 连接没有意义。
+ * 之前的写法只在组件卸载(离开这个 lesson 页)时才关连接:用户看完一节课站在结果页不走,
+ * 或者重连到一节早就失败的课(snapshot 里 stage 已经是 failed),连接会一直开着 ——
+ * server 那边的 15s 心跳定时器和 listeners 订阅也跟着永远不释放(运行问题复查 2026-09-17)。
+ */
+function isTerminalEvent(e: ServerEvent): boolean {
+  if (e.type === 'complete' || e.type === 'error') return true;
+  if (e.type === 'snapshot' && (e.state.stage === 'ready' || e.state.stage === 'failed')) return true;
+  return false;
+}
+
+/** 连 SSE;断线按 1s→8s 退避自动重连,重连时服务端会补发 snapshot;到终态后自动断开释放连接。 */
 export function connectEvents(
   id: string,
   handlers: { onEvent(e: ServerEvent): void; onStatus?(s: 'open' | 'reconnecting'): void },
@@ -134,6 +147,13 @@ export function connectEvents(
   let delay = 1000;
   let timer: ReturnType<typeof setTimeout> | null = null;
 
+  const shutdown = () => {
+    closed = true;
+    if (timer) clearTimeout(timer);
+    source?.close();
+    source = null;
+  };
+
   const open = () => {
     if (closed) return;
     source = new EventSource(`/api/lessons/${encodeURIComponent(id)}/events`);
@@ -142,11 +162,14 @@ export function connectEvents(
       handlers.onStatus?.('open');
     };
     source.onmessage = (ev) => {
+      let event: ServerEvent;
       try {
-        handlers.onEvent(JSON.parse(ev.data) as ServerEvent);
+        event = JSON.parse(ev.data) as ServerEvent;
       } catch {
-        /* 半条 JSON,丢弃 */
+        return; /* 半条 JSON,丢弃 */
       }
+      handlers.onEvent(event);
+      if (isTerminalEvent(event)) shutdown();
     };
     source.onerror = () => {
       source?.close();
@@ -160,11 +183,7 @@ export function connectEvents(
   open();
 
   return {
-    close() {
-      closed = true;
-      if (timer) clearTimeout(timer);
-      source?.close();
-    },
+    close: shutdown,
   };
 }
 

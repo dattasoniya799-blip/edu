@@ -6,7 +6,7 @@
  */
 import { existsSync } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
-import { join, resolve } from 'node:path'
+import { join, resolve, sep } from 'node:path'
 import type { Subject } from '../../shared/schema'
 import { LAB_ROOT } from './config'
 
@@ -112,10 +112,26 @@ export interface SampleInput {
   answerText: string
 }
 
+/**
+ * `POST /api/lessons/from-sample/:dir` 的 dir 是用户可控的 URL 段(实测 `../../../server/src` 这种
+ * 能让 `join(SAMPLES_ROOT, dir)` 逃出 `题目/` 目录,虽然目前只会去找一个叫「题目.png」的文件、命中率低,
+ * 但这仍是一条不该开着的路径穿越口子)。白名单校验:必须是 `SAMPLES_ROOT` 直接子目录里的一个,
+ * 不含路径分隔符、不含 `..`,解析后的绝对路径也必须真的落在 `SAMPLES_ROOT` 里面。
+ */
+export function resolveSampleDir(dir: string): string | undefined {
+  const name = String(dir ?? '')
+  if (!name || name === '.' || name === '..' || name.includes('/') || name.includes('\\') || name.includes('\0')) return undefined
+  const root = resolve(SAMPLES_ROOT)
+  const full = resolve(root, name)
+  if (full !== root && !full.startsWith(root + sep)) return undefined
+  if (!existsSync(full)) return undefined
+  return full
+}
+
 /** 给「试讲这道」用:找到该文件夹的题目图 + 答案.md 全文。 */
 export async function loadSampleInput(dir: string): Promise<SampleInput | undefined> {
-  const full = join(SAMPLES_ROOT, dir)
-  if (!existsSync(full)) return undefined
+  const full = resolveSampleDir(dir)
+  if (!full) return undefined
   const image = await findImageFile(full)
   if (!image) return undefined
   const answerPath = join(full, '答案.md')

@@ -7,11 +7,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AnimController } from '../../board-context';
 import { useBoard } from '../../board-context';
+import { animIframeHeight, withBaseCss } from '../../lib/html-anim';
 import { baseTargetsFor, loadLectureScene, type LectureSceneHandle } from '../../lib/lecture-scene';
+import { sanitizePurpose } from '../../lib/purpose';
 import type { Animation } from '../../types';
 
 export function AnimationCard({ anim }: { anim: Animation }) {
   const badge = anim.kind === 'template' ? `模板 · ${anim.template ?? ''}` : anim.kind === 'html' ? '沙箱 HTML' : '静态降级';
+  // 已存的老剧本可能把「动作名:rotate(...)」这类实现细节写进了 purpose,渲染前兜底截掉(见 lib/purpose.ts)
+  const purpose = sanitizePurpose(anim.purpose);
   return (
     <>
       <span className="anim-badge">{badge}</span>
@@ -26,7 +30,7 @@ export function AnimationCard({ anim }: { anim: Animation }) {
       ) : (
         <StaticScene anim={anim} />
       )}
-      {anim.purpose && <div className="anim-purpose">{anim.purpose}</div>}
+      {purpose && <div className="anim-purpose">{purpose}</div>}
     </>
   );
 }
@@ -132,10 +136,28 @@ function TemplateScene({ anim }: { anim: Animation }) {
 /* ----------------------------- html ----------------------------- */
 
 function HtmlScene({ anim }: { anim: Animation }) {
+  const wrap = useRef<HTMLDivElement>(null);
   const ref = useRef<HTMLIFrameElement>(null);
   const { registerAnim } = useBoard();
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [message, setMessage] = useState('');
+  // 卡宽会随列宽/画布缩放变化,iframe 高度跟着按 16:10 算,不用写死的一个数(README「已知待改」1)
+  const [height, setHeight] = useState(280);
+
+  useEffect(() => {
+    const el = wrap.current;
+    if (!el) return;
+    const measure = () => {
+      const w = el.clientWidth;
+      if (w > 0) setHeight(animIframeHeight(w));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const srcDoc = useMemo(() => withBaseCss(anim.html), [anim.html]);
 
   useEffect(() => {
     let ready = false;
@@ -182,15 +204,15 @@ function HtmlScene({ anim }: { anim: Animation }) {
   }, [anim.id, registerAnim]);
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div ref={wrap} style={{ position: 'relative' }}>
       <iframe
         ref={ref}
         className="anim-iframe"
-        title={anim.purpose || '动画'}
-        srcDoc={anim.html ?? ''}
+        title={sanitizePurpose(anim.purpose) || '动画'}
+        srcDoc={srcDoc}
         sandbox="allow-scripts"
         referrerPolicy="no-referrer"
-        style={{ height: 280 }}
+        style={{ height }}
       />
       {status === 'loading' && <div className="anim-purpose">动画加载中…(等 lecture:ready)</div>}
       {status === 'error' && <div className="figure-failed">{message}</div>}

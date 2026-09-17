@@ -9,6 +9,7 @@ import { TAKEAWAY_GROUPS, TAKEAWAY_GROUP_TITLE } from '../../lib/audio-keys';
 import { takeawayTarget } from '../../lib/flow';
 import { highlightClass } from '../../lib/highlight';
 import { mdToHtml } from '../../lib/markdown';
+import { sanitizePurpose } from '../../lib/purpose';
 import {
   analysisTarget,
   hasAnalysisStep,
@@ -328,7 +329,7 @@ export function ExploreCard() {
         <MarkerTitle>动手试试</MarkerTitle>
         <div className="explore-box">
           <div className="explore-title">
-            {anim ? `「${anim.purpose}」那张动画卡已解锁:${explore.unlock.join(' / ')}` : '动画卡已解锁'}
+            {anim ? `「${sanitizePurpose(anim.purpose)}」那张动画卡已解锁:${explore.unlock.join(' / ')}` : '动画卡已解锁'}
           </div>
           {explore.tasks.map((task, i) => (
             <div className="explore-task" key={i}>

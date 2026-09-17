@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { extractJson, normalizeBoardScript } from '../src/validate'
+import { extractJson, normalizeBoardScript, sanitizePurpose } from '../src/validate'
 import { ANIMATION_TEMPLATES } from '../src/templates'
 
 const PROBLEM = '13.物理小组研究遥控潜艇模型。模型体积为 6×10⁻⁴ m³,注水前模型质量为 0.48 kg,与桌面接触面积为 8×10⁻³ m²。模型沉入水底。求\n(1)注水前模型对水平桌面的压强;\n(2)模型沉在水底受到的浮力。'
@@ -294,6 +294,57 @@ describe('normalizeBoardScript · template 动画参数越界', () => {
       steps: [{ id: 's1', title: 'x', col: 'c1', flow: [{ say: '看动画。' }, { do: 'anim', target: 'a1', action: { type: 'run', phase: 'rise' } }] }]
     })
     expect(normalizeBoardScript(s, ctx).errors.some((e) => e.includes('do'))).toBe(true)
+  })
+})
+
+describe('sanitizePurpose · 动画 purpose 只该是给学生看的一句话', () => {
+  it('「动作名:…」之后的实现细节被切掉', () => {
+    const r = sanitizePurpose(
+      '演示三角形AEF绕点A逆时针旋转，展示对应边始终相等。动作名：rotate(旋转动画), showPerp(显示垂直状态)'
+    )
+    expect(r.truncated).toBe(true)
+    expect(r.text).toBe('演示三角形AEF绕点A逆时针旋转，展示对应边始终相等')
+    expect(r.text).not.toContain('动作名')
+    expect(r.text).not.toContain('rotate')
+  })
+  it('「动作包括:…」同样被切掉(真题实测句式)', () => {
+    const r = sanitizePurpose(
+      '演示等腰直角三角形绕正方形顶点 A 逆时针旋转的过程。动作包括:startRotate(开始连续旋转), stopAtPerp(停止在垂直位置)。'
+    )
+    expect(r.truncated).toBe(true)
+    expect(r.text).toBe('演示等腰直角三角形绕正方形顶点 A 逆时针旋转的过程')
+  })
+  it('半角冒号 + 逗号分隔的动作名列表(滑轮组真题实测)', () => {
+    const r = sanitizePurpose('演示滑轮组结构，展示物体上升高度 h 与绳端移动距离 s 的关系。动作名: showStructure(显示滑轮组), liftObject(提升物体)。')
+    expect(r.text).toBe('演示滑轮组结构，展示物体上升高度 h 与绳端移动距离 s 的关系')
+  })
+  it('正常的一句话不受影响', () => {
+    const r = sanitizePurpose('演示模型入水沉底、排水后竖直上浮,并显示力箭头。')
+    expect(r.truncated).toBe(false)
+    expect(r.text).toBe('演示模型入水沉底、排水后竖直上浮,并显示力箭头。')
+  })
+  it('normalizeBoardScript 里动画的 purpose 也会被净化并告警', () => {
+    const s = makeScript({
+      animations: [
+        {
+          id: 'a1',
+          kind: 'html',
+          purpose: '演示旋转全等。动作名：rotate(旋转), showPerp(显示垂直)',
+          status: 'pending'
+        }
+      ],
+      steps: [
+        {
+          id: 's1',
+          title: 'x',
+          col: 'c1',
+          flow: [{ say: '看动画。' }, { do: 'anim', target: 'a1', action: { type: 'do', name: 'rotate' } }]
+        }
+      ]
+    })
+    const r = normalizeBoardScript(s, ctx)
+    expect(r.script.animations[0].purpose).toBe('演示旋转全等')
+    expect(r.warnings.some((w) => w.includes('purpose') && w.includes('动作名'))).toBe(true)
   })
 })
 

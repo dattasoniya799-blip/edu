@@ -1,6 +1,14 @@
 import { existsSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { answerPreview, guessSubject, listSamples, loadSampleInput, sampleTitle, SAMPLES_ROOT } from '../src/samples'
+import {
+  answerPreview,
+  guessSubject,
+  listSamples,
+  loadSampleInput,
+  resolveSampleDir,
+  sampleTitle,
+  SAMPLES_ROOT
+} from '../src/samples'
 
 describe('sampleTitle', () => {
   it('去掉数字序号前缀', () => {
@@ -99,5 +107,35 @@ describe('loadSampleInput(真实 题目/ 目录)', () => {
 
   it('不存在的文件夹返回 undefined', async () => {
     expect(await loadSampleInput('99-不存在')).toBeUndefined()
+  })
+})
+
+// 运行问题复查(2026-09-17)· 安全:POST /api/lessons/from-sample/:dir 的 dir 必须白名单校验,
+// 不能靠 join() 隐式拼出去的路径逃出 题目/ 目录(实测 `../../../server/src` 能拼到仓库别的目录)。
+describe('resolveSampleDir · 路径穿越防护', () => {
+  it('合法目录名 → 解析成 SAMPLES_ROOT 下的绝对路径', () => {
+    const full = resolveSampleDir('03-浮力潜艇')
+    expect(full).toBeDefined()
+    expect(full).toContain(SAMPLES_ROOT)
+  })
+  it('.. 逃出 SAMPLES_ROOT → undefined', () => {
+    expect(resolveSampleDir('../../../server/src')).toBeUndefined()
+    expect(resolveSampleDir('..')).toBeUndefined()
+  })
+  it('带路径分隔符(编码后的 / 或 \\)→ undefined', () => {
+    expect(resolveSampleDir('03-浮力潜艇/../../server')).toBeUndefined()
+    expect(resolveSampleDir('a/b')).toBeUndefined()
+    expect(resolveSampleDir('a\\b')).toBeUndefined()
+  })
+  it('不存在的目录名 → undefined(即使名字本身合法)', () => {
+    expect(resolveSampleDir('99-不存在')).toBeUndefined()
+  })
+  it('空字符串 / . → undefined', () => {
+    expect(resolveSampleDir('')).toBeUndefined()
+    expect(resolveSampleDir('.')).toBeUndefined()
+  })
+  it('loadSampleInput 对同样的穿越 payload 也拿不到东西(端到端)', async () => {
+    expect(await loadSampleInput('../../../server/src')).toBeUndefined()
+    expect(await loadSampleInput('..%2f..%2fserver')).toBeUndefined()
   })
 })
