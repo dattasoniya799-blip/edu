@@ -180,7 +180,7 @@ export function enforceAnimationFlow(
 /**
  * 「讲到哪、亮到哪」的纪律(protocol 2026-09-17 11:40):
  *  - steps 必须以 phase=analysis 的审题步开头(缺了打回重写)——审题是讲出来的,不是摆出来的;
- *  - 审题步合计 5–9 句 say;
+ *  - 审题步合计 4–8 句 say(老师在分析题,不是念条件:读懂题 → 考点 → 抓关键条件 → 求什么/怎么串;2026-09-17 13:20 收窄);
  *  - 解题阶段 ≥ 60% 的 say 带 ref,否则旁白没有视觉锚点;
  *  - conclusion 行 reveal 之后紧跟的那句 say 自动配上 ref + emph:'circle'(结论要留红圈)。
  * 审题步缺 ref 的兜底在 normalizeFlowItem 里逐句做,这里只做跨步的统计与结论红圈。
@@ -200,8 +200,17 @@ export function enforceNarrationAnchors(
     )
   } else {
     const saysCount = analysisSteps.reduce((n, s) => n + s.flow.filter((f) => sayOf(f)).length, 0)
-    if (saysCount < 5 || saysCount > 9) {
-      warnings.push(`审题步一共 ${saysCount} 句旁白,纪律是 5–9 句(一句总览 + 逐条已知 + 隐含条件 + 求什么 + 思路)`)
+    if (saysCount < 4 || saysCount > 8) {
+      warnings.push(`审题步一共 ${saysCount} 句旁白,纪律是 4–8 句(读懂题 → 考点定位 → 抓 2–3 处关键条件 → 求什么与怎么串;数据不逐条念)`)
+    }
+    // 「念条件」反模式:一句 say 只念一处数据类 mark(ref 指 data mark 且句子短)连着出现 ≥3 次 → 告警
+    const dataRefSays = analysisSteps.flatMap((s) => s.flow.filter((f) => {
+      const say = sayOf(f)
+      const ref = (f as { ref?: string | string[] }).ref
+      return say && typeof ref === 'string' && ref.startsWith('mark:') && say.length <= 30
+    }))
+    if (dataRefSays.length >= 3) {
+      warnings.push(`审题步有 ${dataRefSays.length} 句短旁白各自只指一处题干片段,像在逐条念条件;审题应分析题型、考点与关键条件,数据类 mark 用连续 reveal 一次亮出`)
     }
   }
 

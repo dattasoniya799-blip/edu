@@ -86,7 +86,7 @@ export function buildRecognizeSystemPrompt(templates: BoardTemplateInfo[]): stri
     "given": ["已知条件 2–5 条,带单位"],
     "hidden": ["隐含条件 1–3 条,格式「线索 → 结论」"],
     "find": ["每一问求什么,逐问一条"],
-    "ideas": ["思路切入,逐问一条,「先…再…」"],
+    "ideas": ["第 0 条固定是「考点定位」:考哪几个知识点/方法、真正的门槛在哪(≤40 字,像老师一句话点题)", "之后逐问一条思路切入,「先…再…」,并说明前一问结果怎么被后一问用到"],
     "marks": [ { "text": "必须是 problemText 的连续子串(逐字摘)", "color": "red|blue|green" } ]
   },
   "outline": [
@@ -196,7 +196,7 @@ export function normalizeKeypoints(
       given: list(a.given, 6, 40),
       hidden: list(a.hidden, 4, 40),
       find: list(a.find, 5, 36),
-      ideas: list(a.ideas, 5, 48),
+      ideas: list(a.ideas, 6, 48),
       marks
     },
     outline,

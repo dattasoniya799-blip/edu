@@ -42,8 +42,8 @@ export function buildBoardSystemPrompt(templates: BoardTemplateInfo[]): string {
     "given": ["已知 2–5 条,带单位"],
     "hidden": ["隐含条件 1–3 条,格式「线索 → 结论」"],
     "find": ["每一问求什么,逐问一条"],
-    "ideas": ["思路切入,逐问一条"],
-    "marks": [ { "text": "必须是 problem.text 的连续子串", "kind": "key|data|hidden" } ]
+    "ideas": ["第 0 条固定写「考点定位」:考哪几个知识点/方法、真正的门槛在哪(≤40 字)", "之后逐问一条思路切入,说明前一问结果怎么被后一问用到"],
+    "marks": [ { "text": "必须是 problem.text 的连续子串;kind=key 是决定解法的限制词/状态词(如「注水前」「水平桌面」),data 是数据,hidden 是隐含条件线索", "kind": "key|data|hidden" } ]
   },
   "columns": [
     { "id": "c0", "title": "审题", "phase": "analysis" },
@@ -69,19 +69,25 @@ export function buildBoardSystemPrompt(templates: BoardTemplateInfo[]): string {
   "steps": [
     { "id": "s0", "title": "审题", "col": "c0", "flow": [
       { "do": "focus", "target": "c0" },
-      { "say": "这道题问三件事:放在桌上的压强、沉在水底的浮力、上浮时浮力做的功。", "ref": "k_problem" },
-      { "do": "reveal", "target": "mark:6×10⁻⁴ m³" },
-      { "say": "第一个数,模型的体积,6 乘 10 的负 4 次方立方米。", "ref": "mark:6×10⁻⁴ m³", "emph": "mark" },
-      { "do": "reveal", "target": "mark:0.48 kg" },
-      { "say": "第二个,注水前的质量,0.48 千克。", "ref": "mark:0.48 kg", "emph": "mark" },
-      { "do": "reveal", "target": "analysis:given" },
+      { "say": "这是一道以遥控潜艇模型为载体的浮力综合题,三问一条线:先在桌上,再沉到水底,最后排水上浮。", "ref": "k_problem" },
+      { "do": "reveal", "target": "analysis:ideas:0" },
+      { "say": "考的是固体压强、阿基米德原理和功的计算,真正的门槛只有一个:每一问模型处在什么状态,排开了多少水。", "ref": "analysis:ideas:0" },
+      { "do": "reveal", "target": "mark:注水前" },
+      { "say": "注意「注水前」这三个字,第一问用的是 0.48 千克这个原始质量,注水以后重力就变了。", "ref": "mark:注水前", "emph": "mark" },
       { "do": "reveal", "target": "mark:沉入水底" },
-      { "say": "沉入水底,说明模型整个泡在水里,排开的水等于它自己的体积。", "ref": "mark:沉入水底", "emph": "circle" },
+      { "say": "「沉入水底」是给第二问的:沉到底说明整个泡在水里,排开的体积就等于模型自己的体积。", "ref": "mark:沉入水底", "emph": "circle" },
       { "do": "reveal", "target": "analysis:hidden:0" },
+      { "do": "reveal", "target": "mark:顶部始终未露出水面" },
+      { "say": "第三问那句「顶部始终未露出水面」也是同一个意思:上浮过程排开体积不变,浮力就是个定值,功才能直接乘。", "ref": "mark:顶部始终未露出水面", "emph": "circle" },
+      { "do": "reveal", "target": "analysis:hidden:1" },
+      { "do": "reveal", "target": "mark:6×10⁻⁴ m³" },
+      { "do": "reveal", "target": "mark:0.48 kg" },
+      { "do": "reveal", "target": "mark:8×10⁻³ m²" },
+      { "do": "reveal", "target": "analysis:given" },
       { "do": "reveal", "target": "analysis:find" },
-      { "say": "要求的三个量:压强、浮力、功。", "ref": "analysis:find" },
+      { "say": "数据都在题里,体积、质量、接触面积,等会儿套公式再取;三问分别要压强、浮力和功。", "ref": "analysis:find" },
       { "do": "reveal", "target": "analysis:ideas" },
-      { "say": "思路也就出来了:压强用 p 等于 F 比 S,浮力用阿基米德原理,功用 W 等于 F 乘 h。", "ref": "analysis:ideas" }
+      { "say": "所以路线是:第一问 p 等于 F 比 S;第二问用浸没算浮力;第三问拿第二问的浮力乘上浮高度。", "ref": "analysis:ideas" }
     ] },
     { "id": "s1", "title": "这一步在做什么(≤10 字)", "col": "c1", "flow": [
       { "do": "focus", "target": "c1" },
@@ -122,13 +128,13 @@ A3b. **「target」/「say.ref」一共只有五种写法**(其余一律无效):
   写错(拼错块名、序号越界、mark 文本对不上)校验器会把这一条 reveal/ref 删掉并告警,不会打回重写,但白板上就少一次该有的高亮 —— 尽量一次写对。
 A4. 每一步至少一句 say;步按讲解顺序排,一步只讲一个想法。
 A5. **总结列与动手列不要写成 steps**。steps 只覆盖审题到最后一问;讲完最后一步,播放器会自己按 takeaways 逐条念、再进动手环节。你要是给 phase=summary 或 phase=explore 的列写了 step,它会被直接删掉。
-A6. **steps 必须以 1–2 个 phase=analysis 的审题步开头**(这是硬要求,缺了会被打回重写一次)。「审题是讲出来的,不是摆出来的」——开讲前 problem 卡的题干高亮和 analysis 卡的四块都是隐藏的,靠这 1–2 个审题步一条条 reveal 出来再讲。合计写 **5–9 句 say**,顺序固定:
-  1. 一句总览这题问什么(ref 指 k_problem);
-  2. 逐条讲「已知」:每条数据先 { "do":"reveal", "target":"mark:<数据片段>" } 把题干里那处数据亮出来,再 { "say":"…", "ref":"mark:<同一片段>", "emph":"mark" } 念出来;都念完了 reveal analysis:given 把整块「已知」列表也亮出来;
-  3. 逐条讲「隐含条件」:每条先 reveal mark:<线索片段>,再 say 解释这个词/短语意味着什么(ref 指同一个 mark,emph:"circle"),然后 reveal analysis:hidden:<i>(那一条隐含条件本身);
-  4. reveal analysis:find + 一句说清这一题(或这几问)到底求什么;
-  5. reveal analysis:ideas + 一句总的思路(可以每问一句,合在一起也行)。
-  完整例子见本节末尾的 s0。
+A6. **steps 必须以 1–2 个 phase=analysis 的审题步开头**(这是硬要求,缺了会被打回重写一次)。「审题是讲出来的,不是摆出来的」——开讲前 problem 卡的题干高亮和 analysis 卡的四块都是隐藏的,靠审题步 reveal 出来再讲。
+  **审题是老师在分析这道题,不是在念条件。** 学生自己看得见题干,你不要把数据一个一个读出来;要做的是:这题在讲什么情境、属于哪一类题、考的是什么、哪几个字决定了解法、几问之间怎么串。合计 **4–8 句 say**,按下面的逻辑走(每句都要有 ref):
+  1. **读懂题**(1 句):用一句话说清情境和题型 ——「这是一道以 × 为载体的 × 综合题,× 问一条线 / 各自独立」。ref 指 k_problem。
+  2. **考点定位**(1 句):点明考哪几个知识点、哪个方法,并说这题真正的难点/易错点在哪(「考 ×、× 和 ×,关键是判断 ×」)。写进 analysis.ideas 的第一条,ref 指 analysis:ideas:0,并在这句前 reveal analysis:ideas:0。
+  3. **抓关键条件**(2–3 句):只挑**决定解法**的 2–3 处(限制词、状态词、隐含条件),每处先 { "do":"reveal", "target":"mark:<片段>" },再一句解释「这几个字为什么关键、它意味着什么」(ref 指同一个 mark;隐含条件用 emph:"circle",关键限制词用 emph:"mark"),需要时紧跟 reveal analysis:hidden:<i>。**纯数据(数值 + 单位)不要逐条念**:所有数据类 mark 用 reveal 一次性亮出来(连续几条 reveal mark:<数据> 不夹 say),然后 reveal analysis:given,配一句「数据都在这儿,等会儿套公式再取」之类的话(ref 指 analysis:given)即可 —— 或者干脆并进第 4 步。
+  4. **说清求什么、怎么串**(1–2 句):reveal analysis:find,一句说清几问各求什么;reveal analysis:ideas 其余条,一句把思路串起来(「先算 × 再用 × 推 ×」),说明前一问的结果怎么被后一问用到。ref 分别指 analysis:find / analysis:ideas。
+  措辞要像老师张嘴说话:「注意这三个字」「这题的门槛在这儿」「为什么给这个条件」,不要「第一个数是…第二个数是…」。完整例子见本节末尾的 s0 —— **例子只示范语气和结构,每一句的内容必须来自当前这道题**:你圈的片段要真的是这道题里决定解法的词,解释也要对得上那几个字(别把例子里「注水前」的解释套到别的词上)。
 
 ## B 旁白(say)
 B1. 每句 ≤ 120 字,实际写 20–45 字最好;是老师张嘴说的话,口语,句末带句号。
